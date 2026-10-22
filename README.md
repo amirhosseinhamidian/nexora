@@ -8,8 +8,9 @@ does not share the TRD Bot database and does not submit live orders in v0.1.0.
 
 `NEX-P0-01` freezes the initial product scope, Crypto Spot Paper/Shadow target,
 system boundary, export-first policy, and AI/ML safety boundary. `NEX-P0-02` is
-the current candidate: it selects the technical baseline, lightweight polyglot
-monorepo, modular-monolith boundaries, repository layout, and bootstrap plan.
+frozen: it selects the technical baseline, lightweight polyglot monorepo,
+modular-monolith boundaries, repository layout, and bootstrap plan. The next
+allowed stage is `NEX-P0-03`.
 
 The repository currently contains governance and verification assets only. The
 runtime code, database schema, authentication mechanism, and deployment topology
@@ -30,6 +31,7 @@ Expected result:
 NEX_P0_01_SCOPE_CONTRACT=PASS
 NEX_P0_01_FREEZE=PASS
 NEX_P0_02_TECHNICAL_BASELINE=PASS
+NEX_P0_02_FREEZE=PASS
 ```
 
 ## Documents
@@ -40,3 +42,4 @@ NEX_P0_02_TECHNICAL_BASELINE=PASS
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
+- [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

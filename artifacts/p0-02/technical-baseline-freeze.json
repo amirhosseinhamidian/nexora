@@ -1,0 +1,41 @@
+{
+  "schema_version": "nexora-technical-baseline-freeze-v1",
+  "decision_id": "NEX-P0-02",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "9336889fdd69547a9e984152ce2d52b934cd9d5d",
+  "candidate_commit_message": "docs(nexora): establish P0-02 technical baseline",
+  "github_actions": {
+    "run_id": 39770872404,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/39770872404",
+    "conclusion": "success",
+    "jobs": {
+      "scope_contract": {
+        "job_id": 119796899899,
+        "name": "scope-contract",
+        "conclusion": "success",
+        "scope_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "technical_baseline": {
+        "job_id": 119796899722,
+        "name": "technical-baseline",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_verifier_passed": true,
+        "contract_tests_passed": true
+      }
+    }
+  },
+  "technical_baseline_contract": {
+    "schema_version": "nexora-technical-baseline-v1",
+    "checksum": "fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3"
+  },
+  "scope_prerequisite": {
+    "decision_id": "NEX-P0-01",
+    "frozen": true,
+    "contract_checksum": "9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c"
+  },
+  "recorded_on": "2026-10-22",
+  "frozen": true,
+  "next_allowed_stage": "NEX-P0-03"
+}

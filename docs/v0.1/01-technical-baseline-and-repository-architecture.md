@@ -1,6 +1,6 @@
 # NEX-P0-02 - Technical Baseline and Repository Architecture
 
-وضعیت: **Candidate آماده بررسی و Freeze**
+وضعیت: **Frozen**
 
 تاریخ تصمیم: `2026-10-22`
 
@@ -258,7 +258,7 @@ Bootstrap فقط بعد از `NEX-P0-05` انجام می‌شود:
 رد NestJS به معنی نامناسب‌بودن آن به‌صورت عمومی نیست؛ FastAPI برای نزدیکی به TRD Bot، workloadهای
 داده‌ای، Export و ML آینده در Nexora انتخاب شده است.
 
-## 14. معیار خروج NEX-P0-02 candidate
+## 14. معیار خروج NEX-P0-02
 
 - [x] Stack Web و Server انتخاب و دلیل آن ثبت شد.
 - [x] Repository layout و deployment unitها مشخص شدند.
@@ -287,12 +287,39 @@ git diff --check
 NEX_P0_02_TECHNICAL_BASELINE=PASS
 ```
 
-پس از commit، push و سبزشدن CI همان candidate، فقط Freeze Record مرحله
-`NEX-P0-02-FREEZE` اضافه می‌شود.
-تا قبل از آن `NEX-P0-03` و runtime bootstrap مجاز نیستند.
+Candidate این مرحله با commit و CI همسان پذیرفته شده است. Freeze همچنان فقط اجازه ورود به
+`NEX-P0-03` را می‌دهد و runtime bootstrap تا Freeze کامل Phase 0 مجاز نیست.
 
 ## 16. منابع snapshot تصمیم
 
 Baseline در تاریخ تصمیم با منابع رسمی Next.js، Node.js، Python و PostgreSQL بررسی شده است. URLها
 داخل contract ثبت شده‌اند تا منشأ تصمیم قابل audit باشد؛ آن‌ها dependency resolution یا lockfile
 محسوب نمی‌شوند.
+
+## 17. Freeze evidence
+
+این مرحله بر اساس candidate و اجرای CI زیر فریز شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `9336889fdd69547a9e984152ce2d52b934cd9d5d` |
+| commit message | `docs(nexora): establish P0-02 technical baseline` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/39770872404` |
+| required jobs | `scope-contract` و `technical-baseline` |
+| conclusion | `success` برای هر دو job |
+| Technical Baseline checksum | `fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3` |
+| Scope prerequisite checksum | `9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c` |
+
+GitHub در همان run، Scope prerequisite، Technical Baseline verifier و تمام ۲۹ تست contract را با
+نتیجه موفق اجرا کرده است. Freeze Record ماشین‌خوان در
+[`artifacts/p0-02/technical-baseline-freeze.json`](../../artifacts/p0-02/technical-baseline-freeze.json)
+نگهداری می‌شود.
+
+خروجی verifier پس از Freeze باید شامل marker زیر باشد:
+
+```text
+NEX_P0_02_FREEZE=PASS
+```
+
+گام مجاز بعدی فقط `NEX-P0-03 - API/Event/Export Contracts and Compatibility Matrix` است.

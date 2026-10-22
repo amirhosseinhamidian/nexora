@@ -1,6 +1,6 @@
 # ADR-0001 - Lightweight Polyglot Monorepo and Modular Monolith
 
-وضعیت: **Accepted candidate for NEX-P0-02**
+وضعیت: **Accepted and frozen by NEX-P0-02**
 
 تاریخ: `2026-10-22`
 

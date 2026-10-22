@@ -1,0 +1,175 @@
+{
+  "schema_version": "nexora-scope-contract-v1",
+  "decision_id": "NEX-P0-01",
+  "decision_date": "2026-10-22",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner",
+    "public_registration": false,
+    "saas_enabled": false
+  },
+  "target": {
+    "asset_classes": [
+      "crypto"
+    ],
+    "market_types": [
+      "spot"
+    ],
+    "portfolio_modes": [
+      "shadow",
+      "paper"
+    ],
+    "live_trading": false,
+    "canonical_timezone": "UTC"
+  },
+  "integration": {
+    "source_product": "TRD Bot",
+    "compatible_release_line": "0.3.x",
+    "direct_database_access": false,
+    "required_boundaries": [
+      "versioned_rest_api",
+      "versioned_event_contract",
+      "versioned_export_contract"
+    ],
+    "required_semantics": [
+      "schema_version",
+      "correlation_id",
+      "idempotency_key",
+      "source_reference",
+      "health_status",
+      "freshness_status",
+      "fail_closed_compatibility"
+    ]
+  },
+  "ownership": {
+    "nexora": [
+      "owner_profile",
+      "preferences",
+      "watchlist",
+      "portfolio_workspace",
+      "portfolio_snapshot",
+      "decision_review",
+      "alert_inbox_state",
+      "journal_entry",
+      "human_feedback",
+      "export_job",
+      "export_manifest"
+    ],
+    "trd_bot": [
+      "market_observation",
+      "dataset",
+      "feature_set",
+      "market_context",
+      "regime",
+      "strategy",
+      "signal",
+      "candidate",
+      "risk_gate",
+      "decision_evidence",
+      "paper_shadow_simulation",
+      "outcome"
+    ]
+  },
+  "export": {
+    "required": true,
+    "modes": [
+      "full",
+      "incremental",
+      "selected"
+    ],
+    "formats": [
+      "json",
+      "jsonl",
+      "csv",
+      "parquet",
+      "zip_bundle"
+    ],
+    "profiles": [
+      "private",
+      "ai_safe"
+    ],
+    "required_metadata": [
+      "schema_version",
+      "export_id",
+      "generated_at",
+      "source_versions",
+      "scope",
+      "filters",
+      "timezone",
+      "currency_unit_context",
+      "lineage_references",
+      "file_checksums",
+      "redaction_profile",
+      "completion_status"
+    ],
+    "forbidden_fields": [
+      "password",
+      "password_hash",
+      "session_token",
+      "refresh_token",
+      "api_secret",
+      "encryption_key",
+      "raw_exchange_credential"
+    ]
+  },
+  "ai_ml": {
+    "v0_1_delivery_layer": "ai_ready_data",
+    "internal_copilot_enabled": false,
+    "predictive_ml_enabled": false,
+    "autonomous_execution_allowed": false,
+    "trd_bot_domain": [
+      "market_regime",
+      "volatility_forecasting",
+      "signal_quality",
+      "candidate_ranking",
+      "strategy_drift",
+      "execution_quality"
+    ],
+    "nexora_domain": [
+      "portfolio_health",
+      "personal_risk_trend",
+      "decision_behavior_analysis",
+      "financial_reporting",
+      "evidence_grounded_rag",
+      "human_feedback_learning"
+    ],
+    "future_model_requirements": [
+      "dataset_lineage",
+      "temporal_validation",
+      "leakage_prevention",
+      "calibration",
+      "uncertainty",
+      "model_registry",
+      "drift_monitoring",
+      "human_approval"
+    ]
+  },
+  "forbidden_capabilities": [
+    "multi_tenant_saas",
+    "public_registration",
+    "billing",
+    "subscription",
+    "exchange_account_connection",
+    "production_exchange_credentials",
+    "real_balance",
+    "wallet",
+    "deposit",
+    "withdrawal",
+    "fund_transfer",
+    "live_order_submit",
+    "live_order_modify",
+    "live_order_cancel",
+    "autonomous_ai_policy_change",
+    "autonomous_ai_execution"
+  ],
+  "phase_zero": [
+    "NEX-P0-01",
+    "NEX-P0-02",
+    "NEX-P0-03",
+    "NEX-P0-04",
+    "NEX-P0-05"
+  ],
+  "next_allowed_stage": "NEX-P0-02"
+}

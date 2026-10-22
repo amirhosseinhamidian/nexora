@@ -1,0 +1,45 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
+artifacts/generated/
+
+# Operating system
+Thumbs.db
+
+*.patch
+
+*.tar.gz
+
+# Testing and quality caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+
+# IDE
+.idea/
+.vscode/
+
+# Frontend
+node_modules/
+.next/
+out/

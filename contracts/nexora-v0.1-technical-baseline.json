@@ -1,0 +1,307 @@
+{
+  "schema_version": "nexora-technical-baseline-v1",
+  "decision_id": "NEX-P0-02",
+  "decision_date": "2026-10-22",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "architecture": {
+    "repository_model": "lightweight_polyglot_monorepo",
+    "application_style": "modular_monolith",
+    "deployment_units": [
+      "web",
+      "server_api",
+      "server_worker"
+    ],
+    "source_of_truth_database": "nexora_postgresql",
+    "trd_bot_database_access": "forbidden",
+    "runtime_bootstrap_delivered": false,
+    "microservices_required": false
+  },
+  "technology_baseline": {
+    "web": {
+      "runtime": "nodejs",
+      "runtime_release_line": "24.x-lts",
+      "package_manager": "pnpm",
+      "package_manager_release_line": "10.x",
+      "framework": "nextjs",
+      "framework_release_line": "16.x",
+      "router": "app_router",
+      "ui_runtime": "react",
+      "ui_runtime_release_line": "19.x",
+      "language": "typescript",
+      "language_release_line": "5.x",
+      "typescript_strict": true,
+      "styling": "tailwind_css_4",
+      "component_primitives": "radix_ui",
+      "unit_tests": "vitest_and_testing_library",
+      "e2e_tests": "playwright"
+    },
+    "server": {
+      "runtime": "python",
+      "runtime_release_line": "3.13.x",
+      "package_manager": "uv",
+      "framework": "fastapi",
+      "validation": "pydantic_2",
+      "orm": "sqlalchemy_2",
+      "migrations": "alembic_1",
+      "postgres_driver": "psycopg_3",
+      "unit_and_integration_tests": "pytest",
+      "format_and_lint": "ruff",
+      "typecheck": "mypy_strict"
+    },
+    "data": {
+      "database": "postgresql",
+      "database_release_line": "17.x",
+      "durable_job_backend": "postgresql",
+      "event_delivery_pattern": "transactional_outbox",
+      "artifact_storage_initial": "versioned_local_filesystem_adapter",
+      "artifact_storage_future": "s3_compatible_adapter",
+      "parquet_engine": "pyarrow",
+      "redis_required": false,
+      "external_message_broker_required": false
+    },
+    "delivery": {
+      "local_and_single_host_orchestration": "docker_compose",
+      "ci": "github_actions",
+      "javascript_lockfile": "pnpm-lock.yaml",
+      "python_lockfile": "uv.lock",
+      "container_base_images_pinned": true
+    }
+  },
+  "repository_layout": [
+    {
+      "path": "apps/web",
+      "owner": "web",
+      "purpose": "Next.js user interface and same-origin transport adapter"
+    },
+    {
+      "path": "apps/server",
+      "owner": "server",
+      "purpose": "FastAPI API and durable worker entry points over one modular backend"
+    },
+    {
+      "path": "packages/contracts",
+      "owner": "contracts",
+      "purpose": "Language-neutral schemas, fixtures, OpenAPI snapshots, and compatibility evidence"
+    },
+    {
+      "path": "packages/ui",
+      "owner": "web",
+      "purpose": "Reusable accessible UI primitives and design tokens"
+    },
+    {
+      "path": "packages/config",
+      "owner": "web",
+      "purpose": "Shared TypeScript, lint, formatting, and test configuration"
+    },
+    {
+      "path": "infra/compose",
+      "owner": "operations",
+      "purpose": "Local and private single-host infrastructure definitions"
+    },
+    {
+      "path": "docs/adr",
+      "owner": "architecture",
+      "purpose": "Immutable architecture decision records"
+    },
+    {
+      "path": "scripts",
+      "owner": "tooling",
+      "purpose": "Deterministic verification and operational entry points"
+    },
+    {
+      "path": "tests",
+      "owner": "quality",
+      "purpose": "Repository, contract, acceptance, and cross-boundary tests"
+    },
+    {
+      "path": "artifacts",
+      "owner": "release",
+      "purpose": "Committed acceptance and freeze records only"
+    }
+  ],
+  "server_layers": [
+    {
+      "name": "domain",
+      "may_depend_on": []
+    },
+    {
+      "name": "application",
+      "may_depend_on": [
+        "domain"
+      ]
+    },
+    {
+      "name": "adapters",
+      "may_depend_on": [
+        "application",
+        "domain"
+      ]
+    },
+    {
+      "name": "api",
+      "may_depend_on": [
+        "application",
+        "adapters",
+        "domain"
+      ]
+    },
+    {
+      "name": "worker",
+      "may_depend_on": [
+        "application",
+        "adapters",
+        "domain"
+      ]
+    }
+  ],
+  "boundary_rules": {
+    "web_business_logic": "forbidden",
+    "next_route_handlers": "same_origin_transport_only",
+    "server_owns_domain_commands": true,
+    "contracts_depend_on_runtime": false,
+    "direct_cross_database_queries": false,
+    "trd_bot_integration": [
+      "versioned_rest_api",
+      "versioned_event_contract",
+      "versioned_export_contract"
+    ],
+    "unknown_schema_behavior": "fail_closed",
+    "canonical_storage_timezone": "UTC",
+    "money_requires_currency": true,
+    "quantity_requires_unit": true
+  },
+  "database_rules": {
+    "schema_owner": "nexora_server",
+    "migration_tool": "alembic",
+    "migration_policy": "forward_and_reversible_until_release_freeze",
+    "production_schema_mutation_on_startup": false,
+    "application_tables_require_owner_id": true,
+    "external_source_projections_require_source_reference": true,
+    "external_evidence_is_immutable": true,
+    "jobs_require_idempotency_key": true,
+    "outbox_written_in_domain_transaction": true,
+    "timestamps_are_timezone_aware": true
+  },
+  "quality_gates": {
+    "repository": [
+      "format",
+      "lint",
+      "typecheck",
+      "unit_tests",
+      "contract_tests",
+      "build"
+    ],
+    "server": [
+      "ruff_format_check",
+      "ruff_check",
+      "mypy_strict",
+      "pytest"
+    ],
+    "web": [
+      "prettier_check",
+      "eslint",
+      "typescript_no_emit",
+      "vitest",
+      "next_build"
+    ],
+    "database": [
+      "upgrade_head",
+      "downgrade_base",
+      "rebuild_head",
+      "alembic_check"
+    ],
+    "security": [
+      "dependency_audit",
+      "secret_scan",
+      "forbidden_capability_inventory"
+    ]
+  },
+  "dependency_policy": {
+    "lockfiles_committed": true,
+    "exact_resolutions_recorded": true,
+    "automated_major_updates": false,
+    "security_updates_reviewed": true,
+    "dependency_addition_requires_owner_and_reason": true,
+    "no_turborepo_or_nx_initially": true,
+    "no_redis_initially": true,
+    "no_kubernetes_initially": true
+  },
+  "debt_inventory": [
+    {
+      "id": "NEX-DEBT-P0-02-001",
+      "item": "Exact dependency pins and lockfiles do not exist before runtime bootstrap",
+      "owner": "NEX-P1-01",
+      "due_stage": "NEX-P1-01",
+      "risk": "medium",
+      "temporary_behavior": "Only release lines are frozen in Phase 0"
+    },
+    {
+      "id": "NEX-DEBT-P0-02-002",
+      "item": "TRD Bot endpoint, event, and export schemas are not yet frozen",
+      "owner": "NEX-P0-03",
+      "due_stage": "NEX-P0-03",
+      "risk": "high",
+      "temporary_behavior": "No runtime integration may be implemented"
+    },
+    {
+      "id": "NEX-DEBT-P0-02-003",
+      "item": "Authentication, session storage, and deployment topology are not yet selected",
+      "owner": "NEX-P0-04",
+      "due_stage": "NEX-P0-04",
+      "risk": "high",
+      "temporary_behavior": "No production access path may be claimed"
+    },
+    {
+      "id": "NEX-DEBT-P0-02-004",
+      "item": "SLO, retention, backup, restore, and capacity targets are not yet measurable",
+      "owner": "NEX-P0-04",
+      "due_stage": "NEX-P0-04",
+      "risk": "medium",
+      "temporary_behavior": "Operational readiness remains false"
+    },
+    {
+      "id": "NEX-DEBT-P0-02-005",
+      "item": "Phase 0 acceptance matrix and candidate freeze runner are not yet defined",
+      "owner": "NEX-P0-05",
+      "due_stage": "NEX-P0-05",
+      "risk": "medium",
+      "temporary_behavior": "Phase 1 remains blocked"
+    }
+  ],
+  "forbidden_architecture": [
+    "shared_database_with_trd_bot",
+    "direct_trd_bot_database_read",
+    "frontend_domain_persistence",
+    "microservice_per_domain",
+    "redis_as_source_of_truth",
+    "in_memory_only_durable_jobs",
+    "runtime_schema_auto_create_in_production",
+    "unversioned_external_contract",
+    "live_order_module",
+    "exchange_credential_module",
+    "wallet_module",
+    "multi_tenant_billing_module"
+  ],
+  "bootstrap_sequence": [
+    "NEX-P0-03",
+    "NEX-P0-04",
+    "NEX-P0-05",
+    "NEX-P1-01"
+  ],
+  "next_allowed_stage": "NEX-P0-02-FREEZE",
+  "reference_snapshot": {
+    "checked_on": "2026-10-22",
+    "sources": [
+      "https://nextjs.org/docs/app/guides/upgrading/version-16",
+      "https://nodejs.org/en/about/previous-releases",
+      "https://www.python.org/downloads/",
+      "https://www.postgresql.org/support/versioning/"
+    ]
+  }
+}

@@ -10,6 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-scope.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "00-scope-and-system-boundary.md"
+FREEZE_PATH = ROOT / "artifacts" / "p0-01" / "scope-freeze.json"
 
 
 class ScopeContractError(ValueError):
@@ -31,6 +32,13 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     with path.open(encoding="utf-8") as stream:
         payload = json.load(stream)
     _require(isinstance(payload, dict), "scope contract must be an object")
+    return payload
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    with path.open(encoding="utf-8") as stream:
+        payload = json.load(stream)
+    _require(isinstance(payload, dict), "freeze record must be an object")
     return payload
 
 
@@ -143,6 +151,10 @@ def validate_document(path: Path = DOCUMENT_PATH) -> None:
         "AI-ready Data",
         "NEX-P0-02",
         "NEX_P0_01_SCOPE_CONTRACT=PASS",
+        "NEX_P0_01_FREEZE=PASS",
+        "وضعیت: **Frozen**",
+        "da7b9d5c2f04129c055aaf403b196bac4bd7f992",
+        "39763668108",
     )
     missing = [marker for marker in required_markers if marker not in text]
     _require(not missing, f"scope document is missing markers: {missing}")
@@ -158,14 +170,62 @@ def canonical_checksum(contract: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-scope-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P0-01", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    candidate_sha = record.get("candidate_commit_sha")
+    _require(
+        isinstance(candidate_sha, str)
+        and len(candidate_sha) == 40
+        and all(character in "0123456789abcdef" for character in candidate_sha),
+        "candidate SHA must be a full lowercase Git SHA",
+    )
+    _require(
+        candidate_sha == "da7b9d5c2f04129c055aaf403b196bac4bd7f992",
+        "candidate SHA does not match accepted evidence",
+    )
+
+    github_actions = record.get("github_actions")
+    _require(isinstance(github_actions, dict), "github_actions must be an object")
+    run_id = github_actions.get("run_id")
+    _require(run_id == 39763668108, "invalid GitHub Actions run ID")
+    _require(
+        github_actions.get("run_url")
+        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/39763668108",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(github_actions.get("job_name") == "scope-contract", "invalid workflow job")
+    _require(github_actions.get("conclusion") == "success", "workflow was not successful")
+    _require(github_actions.get("scope_verifier_passed") is True, "scope verifier not confirmed")
+    _require(github_actions.get("contract_tests_passed") is True, "contract tests not confirmed")
+
+    scope_contract = record.get("scope_contract")
+    _require(isinstance(scope_contract, dict), "scope_contract evidence must be an object")
+    _require(
+        scope_contract.get("schema_version") == contract.get("schema_version"),
+        "scope schema mismatch",
+    )
+    _require(
+        scope_contract.get("checksum") == canonical_checksum(contract),
+        "scope contract checksum mismatch",
+    )
+    _require(record.get("frozen") is True, "freeze record is not frozen")
+    _require(record.get("next_allowed_stage") == "NEX-P0-02", "invalid frozen next stage")
+
+
 def main() -> int:
     contract = load_contract()
+    freeze_record = load_freeze_record()
     validate_contract(contract)
     validate_document()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P0_01_SCOPE_CONTRACT=PASS")
+    print("NEX_P0_01_FREEZE=PASS")
     return 0
 
 

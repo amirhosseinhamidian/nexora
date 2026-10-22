@@ -1,0 +1,22 @@
+{
+  "schema_version": "nexora-scope-freeze-v1",
+  "decision_id": "NEX-P0-01",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "da7b9d5c2f04129c055aaf403b196bac4bd7f992",
+  "candidate_commit_message": "docs(nexora): establish v0.1 scope and system boundary",
+  "github_actions": {
+    "run_id": 39763668108,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/39763668108",
+    "job_name": "scope-contract",
+    "conclusion": "success",
+    "scope_verifier_passed": true,
+    "contract_tests_passed": true
+  },
+  "scope_contract": {
+    "schema_version": "nexora-scope-contract-v1",
+    "checksum": "9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c"
+  },
+  "recorded_on": "2026-10-22",
+  "frozen": true,
+  "next_allowed_stage": "NEX-P0-02"
+}

@@ -20,10 +20,12 @@ SPEC.loader.exec_module(MODULE)
 class ScopeContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_contract_is_valid(self) -> None:
         MODULE.validate_contract(self.contract)
         MODULE.validate_document()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_contract_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
@@ -67,6 +69,24 @@ class ScopeContractTests(unittest.TestCase):
         changed["next_allowed_stage"] = "NEX-P1-01"
         with self.assertRaisesRegex(MODULE.ScopeContractError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.ScopeContractError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_failed_ci(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.ScopeContractError, "not successful"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["product"]["version"] = "0.1.1"
+        with self.assertRaisesRegex(MODULE.ScopeContractError, "checksum mismatch"):
+            MODULE.validate_freeze_record(self.freeze_record, changed_contract)
 
 
 if __name__ == "__main__":

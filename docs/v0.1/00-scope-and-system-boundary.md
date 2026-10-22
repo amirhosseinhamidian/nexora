@@ -1,6 +1,6 @@
 # NEX-P0-01 - تثبیت Scope، بازار هدف و مرز Nexora/TRD Bot
 
-وضعیت: **Candidate آماده بررسی و Freeze**
+وضعیت: **Frozen**
 
 تاریخ تصمیم: `2026-10-22`
 
@@ -310,8 +310,26 @@ git diff --check
 
 ```text
 NEX_P0_01_SCOPE_CONTRACT=PASS
+NEX_P0_01_FREEZE=PASS
 ```
 
-پس از commit، push و CI سبز همین candidate، سند می‌تواند از وضعیت Candidate به `Frozen` تغییر کند.
+## 16. Freeze evidence
+
+این مرحله بر اساس candidate و اجرای CI زیر فریز شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `da7b9d5c2f04129c055aaf403b196bac4bd7f992` |
+| commit message | `docs(nexora): establish v0.1 scope and system boundary` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/39763668108` |
+| workflow job | `scope-contract` |
+| conclusion | `success` |
+| Scope Contract checksum | `9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c` |
+
+GitHub در همان run، verifier و هشت تست Scope Contract را با نتیجه موفق اجرا کرده است. رکورد
+ماشین‌خوان Freeze در [`artifacts/p0-01/scope-freeze.json`](../../artifacts/p0-01/scope-freeze.json)
+نگهداری می‌شود و verifier تطابق SHA، run URL، checksum و next stage را fail-closed بررسی می‌کند.
+
 گام مجاز بعدی فقط `NEX-P0-02 - baseline، Stack و repository layout` است؛ شروع runtime application
 پیش از Freeze کامل Phase 0 مجاز نیست.

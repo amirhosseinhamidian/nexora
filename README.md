@@ -24,9 +24,11 @@ Expected result:
 
 ```text
 NEX_P0_01_SCOPE_CONTRACT=PASS
+NEX_P0_01_FREEZE=PASS
 ```
 
 ## Documents
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
+- [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

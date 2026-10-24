@@ -14,6 +14,7 @@ CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-phase-zero-acceptance.json"
 MATRIX_PATH = ROOT / "contracts" / "acceptance" / "v1" / "phase-zero-traceability.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "04-phase-zero-acceptance-matrix.md"
 ADR_PATH = ROOT / "docs" / "adr" / "0013-evidence-gated-phase-transition.md"
+FREEZE_PATH = ROOT / "artifacts" / "p0-05" / "phase-zero-freeze.json"
 SECURITY_VERIFIER_PATH = ROOT / "scripts" / "verify_security_boundary.py"
 
 EXPECTED_PREREQUISITES = {
@@ -90,6 +91,10 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
 
 
 def load_matrix(path: Path = MATRIX_PATH) -> dict[str, Any]:
+    return _load_json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _load_json(path)
 
 
@@ -328,11 +333,141 @@ def validate_matrix(matrix: dict[str, Any], contract: dict[str, Any]) -> None:
     )
 
 
+def validate_freeze_record(
+    record: dict[str, Any],
+    contract: dict[str, Any],
+    matrix: dict[str, Any],
+) -> None:
+    _require(
+        record.get("schema_version") == "nexora-phase-zero-freeze-v1",
+        "invalid Phase 0 freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P0-05", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    _require(
+        record.get("candidate_commit_sha")
+        == "20cf4eacc095d19711b3b80f518c56019445e87e",
+        "candidate SHA does not match accepted P0-05 evidence",
+    )
+    _require(
+        GIT_SHA.fullmatch(record.get("candidate_commit_sha", "")) is not None,
+        "candidate SHA must be a full lowercase Git SHA",
+    )
+    _require(
+        record.get("candidate_commit_message")
+        == "docs(nexora): establish P0-05 phase-zero acceptance",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _require(isinstance(actions, dict), "github_actions must be an object")
+    _require(actions.get("run_id") == 40080625175, "invalid GitHub Actions run ID")
+    _require(
+        actions.get("run_url")
+        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40080625175",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(
+        actions.get("head_branch") == "feature/v0.1-foundation",
+        "invalid GitHub Actions head branch",
+    )
+    _require(actions.get("event") == "push", "invalid GitHub Actions event")
+    _require(actions.get("attempt") == 1, "invalid GitHub Actions attempt")
+    _require(actions.get("conclusion") == "success", "workflow was not successful")
+
+    jobs = actions.get("jobs")
+    _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
+    expected_jobs = {
+        "scope_contract": (120833225184, "scope-contract"),
+        "technical_baseline": (120833225186, "technical-baseline"),
+        "integration_contract": (120833225261, "integration-contract"),
+        "security_boundary": (120833225127, "security-boundary"),
+        "phase_zero_acceptance": (120833225051, "phase-zero-acceptance"),
+    }
+    _require(set(jobs) == set(expected_jobs), "freeze requires all five Phase 0 CI jobs")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {name} job ID")
+        _require(job.get("name") == name, f"invalid {name} job name")
+        _require(job.get("conclusion") == "success", f"{name} job was not successful")
+        _require(job.get("contract_tests_passed") is True, f"{name} contract tests not confirmed")
+
+    required_markers = {
+        "scope_contract": ("scope_verifier_passed",),
+        "technical_baseline": ("scope_prerequisite_passed", "baseline_verifier_passed"),
+        "integration_contract": (
+            "scope_prerequisite_passed",
+            "baseline_prerequisite_passed",
+            "integration_verifier_passed",
+        ),
+        "security_boundary": (
+            "scope_prerequisite_passed",
+            "baseline_prerequisite_passed",
+            "integration_prerequisite_passed",
+            "security_verifier_passed",
+        ),
+        "phase_zero_acceptance": (
+            "scope_prerequisite_passed",
+            "baseline_prerequisite_passed",
+            "integration_prerequisite_passed",
+            "security_prerequisite_passed",
+            "acceptance_verifier_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(jobs[job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    contract_evidence = record.get("phase_zero_acceptance_contract")
+    _require(isinstance(contract_evidence, dict), "acceptance contract evidence must be an object")
+    _require(
+        contract_evidence.get("schema_version") == contract.get("schema_version"),
+        "acceptance contract schema mismatch",
+    )
+    _require(
+        contract_evidence.get("checksum") == canonical_checksum(contract),
+        "acceptance contract checksum mismatch",
+    )
+
+    matrix_evidence = record.get("traceability_matrix")
+    _require(isinstance(matrix_evidence, dict), "traceability evidence must be an object")
+    _require(
+        matrix_evidence.get("schema_version") == matrix.get("schema_version"),
+        "traceability schema mismatch",
+    )
+    _require(
+        matrix_evidence.get("checksum") == canonical_checksum(matrix),
+        "traceability checksum mismatch",
+    )
+
+    security_module = _load_security_verifier()
+    security_contract = security_module.load_contract()
+    prerequisite = record.get("security_boundary_prerequisite")
+    _require(isinstance(prerequisite, dict), "security prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P0-04", "invalid security prerequisite")
+    _require(prerequisite.get("frozen") is True, "security prerequisite is not frozen")
+    _require(
+        prerequisite.get("contract_checksum")
+        == security_module.canonical_checksum(security_contract),
+        "security prerequisite checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-24", "invalid freeze record date")
+    _require(record.get("frozen") is True, "Phase 0 is not frozen")
+    _require(record.get("phase_zero_complete") is True, "Phase 0 completion is not confirmed")
+    _require(
+        record.get("runtime_bootstrap_authorized") is True,
+        "runtime bootstrap was not authorized by the final freeze",
+    )
+    _require(record.get("next_allowed_stage") == "NEX-P1-01", "invalid post-freeze next stage")
+
+
 def validate_documents() -> None:
     document = DOCUMENT_PATH.read_text(encoding="utf-8")
     markers = (
         "NEX-P0-05",
-        "وضعیت: **Candidate**",
+        "وضعیت: **Frozen**",
         "NEX-P0-01",
         "NEX-P0-02",
         "NEX-P0-03",
@@ -343,11 +478,14 @@ def validate_documents() -> None:
         "runtime_bootstrap_authorized=false",
         "NEX_P0_04_PREREQUISITE=PASS",
         "NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS",
+        "NEX_P0_05_FREEZE=PASS",
+        "20cf4eacc095d19711b3b80f518c56019445e87e",
+        "40080625175",
     )
     missing = [marker for marker in markers if marker not in document]
     _require(not missing, f"acceptance document is missing markers: {missing}")
     adr = ADR_PATH.read_text(encoding="utf-8")
-    for marker in ("Status: Proposed by NEX-P0-05", "## Decision", "## Consequences", "candidate SHA", "NEX-P1-01"):
+    for marker in ("Status: Accepted and frozen by NEX-P0-05", "## Decision", "## Consequences", "candidate SHA", "NEX-P1-01"):
         _require(marker in adr, f"transition ADR is missing marker: {marker}")
 
 
@@ -358,12 +496,16 @@ def main() -> int:
     validate_contract(contract)
     validate_matrix(matrix, contract)
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract, matrix)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
     print(f"traceability_checksum={canonical_checksum(matrix)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P0_04_PREREQUISITE=PASS")
     print("NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS")
+    print("NEX_P0_05_FREEZE=PASS")
     return 0
 
 

@@ -21,6 +21,7 @@ class PhaseZeroAcceptanceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
         self.matrix = MODULE.load_matrix()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p0_04_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_security_boundary()
@@ -29,6 +30,7 @@ class PhaseZeroAcceptanceTests(unittest.TestCase):
         MODULE.validate_contract(self.contract)
         MODULE.validate_matrix(self.matrix, self.contract)
         MODULE.validate_documents()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract, self.matrix)
 
     def test_contract_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
@@ -196,6 +198,72 @@ class PhaseZeroAcceptanceTests(unittest.TestCase):
             ] or ["NEX-P0-04"]
         with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "not every Phase 0 decision"):
             MODULE.validate_matrix(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "docs(nexora): wrong candidate"
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "commit message"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_requires_all_five_jobs(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["github_actions"]["jobs"]["phase_zero_acceptance"]
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "all five"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_rejects_a_failed_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["phase_zero_acceptance"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "was not successful"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_rejects_a_different_job_id(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["security_boundary"]["job_id"] = 0
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "job ID"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_requires_acceptance_verifier_evidence(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["phase_zero_acceptance"]["acceptance_verifier_passed"] = False
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "acceptance_verifier_passed"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_rejects_acceptance_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["acceptance_summary"]["unresolved_phase_zero_blockers"] = 1
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "acceptance contract checksum"):
+            MODULE.validate_freeze_record(self.freeze_record, changed_contract, self.matrix)
+
+    def test_freeze_record_rejects_traceability_drift(self) -> None:
+        changed_matrix = copy.deepcopy(self.matrix)
+        changed_matrix["requirements"][0]["owner"] = "changed"
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "traceability checksum"):
+            MODULE.validate_freeze_record(self.freeze_record, self.contract, changed_matrix)
+
+    def test_freeze_record_rejects_security_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["security_boundary_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "security prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_must_authorize_runtime_bootstrap(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["runtime_bootstrap_authorized"] = False
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "runtime bootstrap"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
+
+    def test_freeze_record_opens_only_p1_01(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-02"
+        with self.assertRaisesRegex(MODULE.PhaseZeroAcceptanceError, "post-freeze next stage"):
+            MODULE.validate_freeze_record(changed, self.contract, self.matrix)
 
 
 if __name__ == "__main__":

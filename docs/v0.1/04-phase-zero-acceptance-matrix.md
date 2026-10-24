@@ -1,6 +1,6 @@
 # NEX-P0-05 — Phase 0 Acceptance Matrix
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 
 تاریخ تصمیم: `2026-10-24`
 
@@ -9,10 +9,10 @@
 ## 1. نتیجه مرحله
 
 چهار تصمیم پیش‌نیاز به‌صورت مستقل فریز شده‌اند و P0-05 آن‌ها را در یک زنجیره
-fail-closed جمع می‌کند. این candidate آماده اتصال به commit SHA و CI است، اما تا ثبت
-Freeze نهایی مقدار `runtime_bootstrap_authorized=false` باقی می‌ماند. بنابراین گام مجاز
-بعدی فقط `NEX-P0-05-FREEZE` است؛ پس از آن `NEX-P1-01` می‌تواند bootstrap واقعی runtime
-را آغاز کند.
+fail-closed جمع می‌کند. Candidate بدون تغییر به commit SHA و CI موفق متصل و Freeze
+نهایی در یک artifact جدا ثبت شده است. قرارداد candidate همچنان به‌درستی
+`runtime_bootstrap_authorized=false` را نگه می‌دارد، اما Freeze record نهایی مجوز
+`runtime_bootstrap_authorized=true` و ورود به `NEX-P1-01` را صادر می‌کند.
 
 ## 2. زنجیره Freeze
 
@@ -22,7 +22,7 @@ Freeze نهایی مقدار `runtime_bootstrap_authorized=false` باقی می�
 | `NEX-P0-02` | Stack، معماری و repository | `386526c1324ffbf42e081dda0c362b5e92e21fce` | `artifacts/p0-02/technical-baseline-freeze.json` | Frozen |
 | `NEX-P0-03` | API/Event/Export compatibility | `6243f0f28c6e7970d1323bad164e54b06bf2e173` | `artifacts/p0-03/integration-contract-freeze.json` | Frozen |
 | `NEX-P0-04` | Security، private deployment و operations | `53e87e875d874f79def32468ece5dae43d8ddccf` | `artifacts/p0-04/security-boundary-freeze.json` | Frozen |
-| `NEX-P0-05` | Acceptance و transition gate | پس از CI candidate ثبت می‌شود | Freeze record در commit جدا | Candidate |
+| `NEX-P0-05` | Acceptance و transition gate | `20cf4eacc095d19711b3b80f518c56019445e87e` | `artifacts/p0-05/phase-zero-freeze.json` | Frozen |
 
 Verifier ابتدا کل زنجیره P0-04 را اجرا می‌کند؛ verifier آن مرحله نیز به‌ترتیب P0-03،
 P0-02 و P0-01 را بررسی می‌کند. در نتیجه یک freeze record منفرد نمی‌تواند جای پیش‌نیاز
@@ -115,7 +115,33 @@ NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS
 
 ## 8. Freeze نهایی
 
-پس از commit و push این candidate، باید GitHub Actions برای **همان candidate SHA** تمام
-jobهای scope، technical baseline، integration، security و phase-zero acceptance را
-موفق کند. سپس فقط freeze record شامل SHA، URL و job evidence در commit جدا ثبت می‌شود.
-تا آن لحظه `NEX-P1-01` مسدود است و این سند هیچ runtimeای را تحویل‌شده اعلام نمی‌کند.
+مرحله `NEX-P0-05-FREEZE` پس از پذیرش candidate و بدون تغییر contract یا ماتریس
+پذیرفته‌شده اجرا شد.
+
+Freeze نهایی بر اساس شاهدهای زیر ثبت شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `20cf4eacc095d19711b3b80f518c56019445e87e` |
+| commit message | `docs(nexora): establish P0-05 phase-zero acceptance` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/40080625175` |
+| required jobs | scope، technical baseline، integration، security و phase-zero acceptance |
+| conclusion | `success` برای هر پنج job |
+| Acceptance checksum | `43aea2aeadd0cb3fec022d29f28ca2e3ec903ae227d7b81b61fae708b0d6136c` |
+| Traceability checksum | `c2ab3cad3e68bf5a1f85f3c24090b623ec2418827ae6d78b57a8004f51175ffb` |
+
+رکورد ماشین‌خوان در
+[`artifacts/p0-05/phase-zero-freeze.json`](../../artifacts/p0-05/phase-zero-freeze.json)
+نگهداری می‌شود. Verifier تطابق SHA، run، تمام jobها، checksumها و Freeze پیش‌نیاز را
+fail-closed بررسی می‌کند.
+
+خروجی نهایی باید marker زیر را نیز داشته باشد:
+
+```text
+NEX_P0_05_FREEZE=PASS
+```
+
+Phase 0 اکنون کامل است و گام مجاز بعدی فقط `NEX-P1-01 — Repository & Runtime
+Bootstrap` است. این Freeze مجوز شروع runtime را می‌دهد، اما runtime یا production
+readiness را تحویل‌شده اعلام نمی‌کند.

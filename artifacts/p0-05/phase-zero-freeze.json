@@ -1,0 +1,80 @@
+{
+  "schema_version": "nexora-phase-zero-freeze-v1",
+  "decision_id": "NEX-P0-05",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "20cf4eacc095d19711b3b80f518c56019445e87e",
+  "candidate_commit_message": "docs(nexora): establish P0-05 phase-zero acceptance",
+  "github_actions": {
+    "run_id": 40080625175,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40080625175",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "scope_contract": {
+        "job_id": 120833225184,
+        "name": "scope-contract",
+        "conclusion": "success",
+        "scope_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "technical_baseline": {
+        "job_id": 120833225186,
+        "name": "technical-baseline",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "integration_contract": {
+        "job_id": 120833225261,
+        "name": "integration-contract",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_prerequisite_passed": true,
+        "integration_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "security_boundary": {
+        "job_id": 120833225127,
+        "name": "security-boundary",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_prerequisite_passed": true,
+        "integration_prerequisite_passed": true,
+        "security_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "phase_zero_acceptance": {
+        "job_id": 120833225051,
+        "name": "phase-zero-acceptance",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_prerequisite_passed": true,
+        "integration_prerequisite_passed": true,
+        "security_prerequisite_passed": true,
+        "acceptance_verifier_passed": true,
+        "contract_tests_passed": true
+      }
+    }
+  },
+  "phase_zero_acceptance_contract": {
+    "schema_version": "nexora-phase-zero-acceptance-v1",
+    "checksum": "43aea2aeadd0cb3fec022d29f28ca2e3ec903ae227d7b81b61fae708b0d6136c"
+  },
+  "traceability_matrix": {
+    "schema_version": "nexora-phase-zero-traceability-v1",
+    "checksum": "c2ab3cad3e68bf5a1f85f3c24090b623ec2418827ae6d78b57a8004f51175ffb"
+  },
+  "security_boundary_prerequisite": {
+    "decision_id": "NEX-P0-04",
+    "frozen": true,
+    "contract_checksum": "42120711a6884797b9dbf8db0304d4d24b69743a9ad1077bd0bf23ab488464ca"
+  },
+  "recorded_on": "2026-10-24",
+  "frozen": true,
+  "phase_zero_complete": true,
+  "runtime_bootstrap_authorized": true,
+  "next_allowed_stage": "NEX-P1-01"
+}

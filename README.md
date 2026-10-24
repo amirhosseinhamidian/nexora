@@ -15,15 +15,16 @@ boundary, compatibility matrix, deterministic fixtures, and failure semantics.
 `NEX-P0-04` is frozen: it defines passkey-first single-owner identity,
 server-side sessions, scoped TRD Bot service authentication, secret handling,
 encrypted recovery, the private-only production topology, measurable SLO and
-capacity budgets, retention, and bounded artifact storage. `NEX-P0-05` is now a
-candidate: it adds the Phase 0 acceptance and traceability matrix, resolves or
-transfers every declared debt, and verifies the complete P0-01 through P0-04
-freeze chain. The next allowed stage is only `NEX-P0-05-FREEZE`.
+capacity budgets, retention, and bounded artifact storage. `NEX-P0-05` is frozen:
+it adds the Phase 0 acceptance and traceability matrix, resolves or transfers
+every declared debt, verifies the complete P0-01 through P0-04 freeze chain, and
+binds the accepted candidate to successful CI evidence. Phase 0 is complete and
+the next allowed stage is `NEX-P1-01`.
 
 The repository currently contains governance and verification assets only. The
 runtime code, database schema, authentication mechanism, and deployment topology
-remain deliberately deferred. Runtime bootstrap cannot start before the final
-Phase 0 freeze.
+remain deliberately deferred. The final Phase 0 freeze now authorizes runtime
+bootstrap; it does not claim that the runtime or production deployment exists.
 
 ## Verify the scope contract
 
@@ -49,6 +50,7 @@ NEX_P0_04_SECURITY_BOUNDARY=PASS
 NEX_P0_04_FREEZE=PASS
 NEX_P0_04_PREREQUISITE=PASS
 NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS
+NEX_P0_05_FREEZE=PASS
 ```
 
 ## Documents
@@ -70,3 +72,4 @@ NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)
 - [`artifacts/p0-03/integration-contract-freeze.json`](artifacts/p0-03/integration-contract-freeze.json)
 - [`artifacts/p0-04/security-boundary-freeze.json`](artifacts/p0-04/security-boundary-freeze.json)
+- [`artifacts/p0-05/phase-zero-freeze.json`](artifacts/p0-05/phase-zero-freeze.json)

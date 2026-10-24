@@ -1,6 +1,6 @@
 # ADR 0013: Evidence-gated Phase 0 transition
 
-Status: Proposed by NEX-P0-05
+Status: Accepted and frozen by NEX-P0-05
 
 ## Context
 
@@ -25,6 +25,12 @@ following:
 The acceptance candidate itself does not authorize runtime bootstrap. Only the final
 freeze record may set the next allowed stage to `NEX-P1-01`. Later implementation
 must not rewrite the historical candidate or freeze evidence.
+
+The final freeze binds candidate SHA
+`20cf4eacc095d19711b3b80f518c56019445e87e` to successful GitHub Actions run
+`40080625175`. The immutable record is stored at
+`artifacts/p0-05/phase-zero-freeze.json`; it is the authority that opens
+`NEX-P1-01`.
 
 ## Consequences
 

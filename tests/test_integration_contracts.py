@@ -25,11 +25,12 @@ class IntegrationContractTests(unittest.TestCase):
         self.openapi = MODULE.load_openapi()
         self.schemas = MODULE.load_schemas()
         self.fixtures = MODULE.load_fixtures()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p0_02_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_baseline()
 
-    def test_candidate_contract_and_evidence_are_valid(self) -> None:
+    def test_frozen_contract_and_evidence_are_valid(self) -> None:
         MODULE.validate_contract(self.contract)
         MODULE.validate_matrix(self.matrix)
         MODULE.validate_inventory(self.inventory)
@@ -37,6 +38,7 @@ class IntegrationContractTests(unittest.TestCase):
         MODULE.validate_schemas(self.schemas)
         MODULE.validate_fixtures(self.fixtures, self.contract)
         MODULE.validate_documents()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_contract_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
@@ -132,6 +134,54 @@ class IntegrationContractTests(unittest.TestCase):
         changed["next_allowed_stage"] = "NEX-P0-04"
         with self.assertRaisesRegex(MODULE.IntegrationContractError, "P0-03-FREEZE"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "chore(nexora): freeze NEX-P0-02 technical baseline"
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "commit message"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_successful_jobs(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["integration_contract"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "was not successful"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["integration_contract"]["job_id"] = 0
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "job ID"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["retry_policy"]["maximum_attempts"] = 5
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "checksum mismatch"):
+            MODULE.validate_freeze_record(self.freeze_record, changed_contract)
+
+    def test_freeze_record_rejects_baseline_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["technical_baseline_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "baseline prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_scope_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["scope_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "scope prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p0_04(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-01"
+        with self.assertRaisesRegex(MODULE.IntegrationContractError, "frozen next stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

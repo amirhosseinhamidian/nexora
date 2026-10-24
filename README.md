@@ -10,9 +10,9 @@ does not share the TRD Bot database and does not submit live orders in v0.1.0.
 system boundary, export-first policy, and AI/ML safety boundary. `NEX-P0-02` is
 frozen: it selects the technical baseline, lightweight polyglot monorepo,
 modular-monolith boundaries, repository layout, and bootstrap plan.
-`NEX-P0-03` is now a candidate: it defines the versioned TRD Bot API/event/export
+`NEX-P0-03` is frozen: it defines the versioned TRD Bot API/event/export
 boundary, compatibility matrix, deterministic fixtures, and failure semantics.
-The next allowed stage is `NEX-P0-03-FREEZE`.
+The next allowed stage is `NEX-P0-04`.
 
 The repository currently contains governance and verification assets only. The
 runtime code, database schema, authentication mechanism, and deployment topology
@@ -36,6 +36,7 @@ NEX_P0_01_FREEZE=PASS
 NEX_P0_02_TECHNICAL_BASELINE=PASS
 NEX_P0_02_FREEZE=PASS
 NEX_P0_03_INTEGRATION_CONTRACT=PASS
+NEX_P0_03_FREEZE=PASS
 ```
 
 ## Documents
@@ -49,3 +50,4 @@ NEX_P0_03_INTEGRATION_CONTRACT=PASS
 - [`contracts/integration/v1/`](contracts/integration/v1/)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)
+- [`artifacts/p0-03/integration-contract-freeze.json`](artifacts/p0-03/integration-contract-freeze.json)

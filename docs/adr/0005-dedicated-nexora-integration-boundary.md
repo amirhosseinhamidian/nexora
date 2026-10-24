@@ -1,6 +1,6 @@
 # ADR 0005: Dedicated Nexora integration boundary
 
-Status: **Accepted candidate for NEX-P0-03**
+Status: **Accepted and frozen by NEX-P0-03**
 
 ## Context
 

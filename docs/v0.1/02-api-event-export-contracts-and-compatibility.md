@@ -1,12 +1,12 @@
 # NEX-P0-03 — قراردادهای API، Event، Export و سازگاری
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 
 تاریخ تصمیم: `2026-10-22`
 
 پیش‌نیاز: `NEX-P0-02` در وضعیت Frozen
 
-گام مجاز بعدی: `NEX-P0-03-FREEZE`
+گام مجاز بعدی: `NEX-P0-04`
 
 ## هدف
 
@@ -199,3 +199,35 @@ python3 -m unittest discover -s tests -v
 ```text
 NEX_P0_03_INTEGRATION_CONTRACT=PASS
 ```
+
+## Freeze evidence
+
+Candidate این مرحله با commit و اجرای CI همسان زیر پذیرفته و فریز شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `c15ff7a0d6010d11c8536790d7dd50d0a2eb9fb1` |
+| commit message | `docs(nexora): establish P0-03 integration contracts` |
+| branch | `feature/v0.1-foundation` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/40077691014` |
+| required jobs | `scope-contract`، `technical-baseline` و `integration-contract` |
+| conclusion | `success` برای هر سه job |
+| Integration Contract checksum | `435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52c6d78c88` |
+| Technical Baseline checksum | `fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3` |
+| Scope Contract checksum | `9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c` |
+
+GitHub در همین run تمام verifierها و `53` تست contract را با نتیجه موفق اجرا
+کرده است. Freeze Record ماشین‌خوان در
+[`artifacts/p0-03/integration-contract-freeze.json`](../../artifacts/p0-03/integration-contract-freeze.json)
+نگهداری می‌شود.
+
+خروجی verifier پس از Freeze باید شامل marker زیر باشد:
+
+```text
+NEX_P0_03_FREEZE=PASS
+```
+
+گام مجاز بعدی فقط `NEX-P0-04 — Security, Identity and Private Deployment Boundary`
+است. همچنان تا Freeze نهایی Phase 0 هیچ runtime integration یا bootstrap مجاز
+نیست.

@@ -19,6 +19,7 @@ OPENAPI_PATH = BASE / "openapi.json"
 SCHEMA_DIR = BASE / "schemas"
 FIXTURE_DIR = BASE / "fixtures"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "02-api-event-export-contracts-and-compatibility.md"
+FREEZE_PATH = ROOT / "artifacts" / "p0-03" / "integration-contract-freeze.json"
 ADR_PATHS = (
     ROOT / "docs" / "adr" / "0005-dedicated-nexora-integration-boundary.md",
     ROOT / "docs" / "adr" / "0006-pollable-event-feed-at-least-once.md",
@@ -132,6 +133,10 @@ def load_openapi(path: Path = OPENAPI_PATH) -> dict[str, Any]:
     return _load_json(path)
 
 
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _load_json(path)
+
+
 def load_schemas() -> dict[str, dict[str, Any]]:
     return {path.name: _load_json(path) for path in sorted(SCHEMA_DIR.glob("*.schema.json"))}
 
@@ -170,6 +175,121 @@ def validate_frozen_baseline() -> None:
     module.validate_contract(contract)
     module.validate_documents()
     module.validate_freeze_record(freeze_record, contract)
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-integration-contract-freeze-v1",
+        "invalid integration contract freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P0-03", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+
+    candidate_sha = record.get("candidate_commit_sha")
+    _require(
+        isinstance(candidate_sha, str)
+        and len(candidate_sha) == 40
+        and all(character in "0123456789abcdef" for character in candidate_sha),
+        "candidate SHA must be a full lowercase Git SHA",
+    )
+    _require(
+        candidate_sha == "c15ff7a0d6010d11c8536790d7dd50d0a2eb9fb1",
+        "candidate SHA does not match accepted P0-03 evidence",
+    )
+    _require(
+        record.get("candidate_commit_message")
+        == "docs(nexora): establish P0-03 integration contracts",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    github_actions = record.get("github_actions")
+    _require(isinstance(github_actions, dict), "github_actions must be an object")
+    _require(github_actions.get("run_id") == 40077691014, "invalid GitHub Actions run ID")
+    _require(
+        github_actions.get("run_url")
+        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40077691014",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(
+        github_actions.get("head_branch") == "feature/v0.1-foundation",
+        "invalid GitHub Actions head branch",
+    )
+    _require(github_actions.get("event") == "push", "invalid GitHub Actions event")
+    _require(github_actions.get("attempt") == 1, "invalid GitHub Actions attempt")
+    _require(github_actions.get("conclusion") == "success", "workflow was not successful")
+
+    jobs = github_actions.get("jobs")
+    _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
+    _require(
+        set(jobs) == {"scope_contract", "technical_baseline", "integration_contract"},
+        "freeze requires all three CI jobs",
+    )
+
+    scope_job = jobs.get("scope_contract")
+    _require(isinstance(scope_job, dict), "scope-contract evidence must be an object")
+    _require(scope_job.get("job_id") == 120824515285, "invalid scope-contract job ID")
+    _require(scope_job.get("name") == "scope-contract", "invalid scope-contract job name")
+    _require(scope_job.get("conclusion") == "success", "scope-contract job was not successful")
+    _require(scope_job.get("scope_verifier_passed") is True, "scope verifier was not confirmed")
+    _require(scope_job.get("contract_tests_passed") is True, "scope contract tests not confirmed")
+
+    baseline_job = jobs.get("technical_baseline")
+    _require(isinstance(baseline_job, dict), "technical-baseline evidence must be an object")
+    _require(baseline_job.get("job_id") == 120824515621, "invalid technical-baseline job ID")
+    _require(baseline_job.get("name") == "technical-baseline", "invalid technical-baseline job name")
+    _require(baseline_job.get("conclusion") == "success", "technical-baseline job was not successful")
+    _require(baseline_job.get("scope_prerequisite_passed") is True, "scope prerequisite was not confirmed")
+    _require(baseline_job.get("baseline_verifier_passed") is True, "baseline verifier was not confirmed")
+    _require(baseline_job.get("contract_tests_passed") is True, "baseline contract tests not confirmed")
+
+    integration_job = jobs.get("integration_contract")
+    _require(isinstance(integration_job, dict), "integration-contract evidence must be an object")
+    _require(integration_job.get("job_id") == 120824515546, "invalid integration-contract job ID")
+    _require(integration_job.get("name") == "integration-contract", "invalid integration-contract job name")
+    _require(integration_job.get("conclusion") == "success", "integration-contract job was not successful")
+    _require(integration_job.get("scope_prerequisite_passed") is True, "integration scope prerequisite was not confirmed")
+    _require(integration_job.get("baseline_prerequisite_passed") is True, "integration baseline prerequisite was not confirmed")
+    _require(integration_job.get("integration_verifier_passed") is True, "integration verifier was not confirmed")
+    _require(integration_job.get("contract_tests_passed") is True, "integration contract tests not confirmed")
+
+    contract_evidence = record.get("integration_contract")
+    _require(isinstance(contract_evidence, dict), "integration contract evidence must be an object")
+    _require(
+        contract_evidence.get("schema_version") == contract.get("schema_version"),
+        "integration contract schema mismatch",
+    )
+    _require(
+        contract_evidence.get("checksum") == canonical_checksum(contract),
+        "integration contract checksum mismatch",
+    )
+
+    baseline_module = _load_baseline_verifier()
+    baseline_contract = baseline_module.load_contract()
+    baseline_prerequisite = record.get("technical_baseline_prerequisite")
+    _require(isinstance(baseline_prerequisite, dict), "technical baseline prerequisite must be an object")
+    _require(baseline_prerequisite.get("decision_id") == "NEX-P0-02", "invalid technical baseline prerequisite")
+    _require(baseline_prerequisite.get("frozen") is True, "technical baseline prerequisite is not frozen")
+    _require(
+        baseline_prerequisite.get("contract_checksum")
+        == baseline_module.canonical_checksum(baseline_contract),
+        "technical baseline prerequisite checksum mismatch",
+    )
+
+    scope_module = baseline_module._load_scope_verifier()
+    scope_contract = scope_module.load_contract()
+    scope_prerequisite = record.get("scope_prerequisite")
+    _require(isinstance(scope_prerequisite, dict), "scope prerequisite must be an object")
+    _require(scope_prerequisite.get("decision_id") == "NEX-P0-01", "invalid scope prerequisite")
+    _require(scope_prerequisite.get("frozen") is True, "scope prerequisite is not frozen")
+    _require(
+        scope_prerequisite.get("contract_checksum")
+        == scope_module.canonical_checksum(scope_contract),
+        "scope prerequisite checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-24", "invalid freeze record date")
+    _require(record.get("frozen") is True, "integration contract is not frozen")
+    _require(record.get("next_allowed_stage") == "NEX-P0-04", "invalid frozen next stage")
 
 
 def _exact_set(payload: dict[str, Any], key: str, expected: set[Any]) -> None:
@@ -600,7 +720,7 @@ def validate_documents() -> None:
     text = DOCUMENT_PATH.read_text(encoding="utf-8")
     markers = (
         "NEX-P0-03",
-        "وضعیت: **Candidate**",
+        "وضعیت: **Frozen**",
         "legacy_read_only_blocked",
         "TRD Bot `0.3.1+`",
         "at_least_once",
@@ -608,15 +728,18 @@ def validate_documents() -> None:
         "full snapshot resync",
         "RFC 8785",
         "NEX-P0-04",
-        "NEX-P0-03-FREEZE",
         "NEX_P0_03_INTEGRATION_CONTRACT=PASS",
+        "NEX_P0_03_FREEZE=PASS",
+        "c15ff7a0d6010d11c8536790d7dd50d0a2eb9fb1",
+        "40077691014",
+        "NEX-P0-04",
     )
     missing = [marker for marker in markers if marker not in text]
     _require(not missing, f"integration contract document is missing markers: {missing}")
     for path in ADR_PATHS:
         _require(path.is_file(), f"missing ADR: {path.relative_to(ROOT)}")
         adr = path.read_text(encoding="utf-8")
-        _require("Accepted candidate for NEX-P0-03" in adr, f"invalid ADR status: {path.name}")
+        _require("Accepted and frozen by NEX-P0-03" in adr, f"invalid ADR status: {path.name}")
         _require("## Decision" in adr, f"ADR decision is missing: {path.name}")
         _require("## Consequences" in adr, f"ADR consequences are missing: {path.name}")
 
@@ -629,6 +752,7 @@ def main() -> int:
     openapi = load_openapi()
     schemas = load_schemas()
     fixtures = load_fixtures()
+    freeze_record = load_freeze_record()
     validate_contract(contract)
     validate_matrix(matrix)
     validate_inventory(inventory)
@@ -636,11 +760,14 @@ def main() -> int:
     validate_schemas(schemas)
     validate_fixtures(fixtures, contract)
     validate_documents()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P0_02_PREREQUISITE=PASS")
     print("NEX_P0_03_INTEGRATION_CONTRACT=PASS")
+    print("NEX_P0_03_FREEZE=PASS")
     return 0
 
 

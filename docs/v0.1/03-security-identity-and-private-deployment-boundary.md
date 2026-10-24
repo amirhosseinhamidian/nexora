@@ -1,12 +1,12 @@
 # NEX-P0-04 — مرز امنیت، هویت و استقرار خصوصی
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 
 تاریخ تصمیم: `2026-10-24`
 
 پیش‌نیاز: `NEX-P0-03` در وضعیت Frozen
 
-گام مجاز بعدی: `NEX-P0-04-FREEZE`
+گام مجاز بعدی: `NEX-P0-05`
 
 ## هدف
 
@@ -331,3 +331,36 @@ python3 -m unittest discover -s tests -v
 ```text
 NEX_P0_04_SECURITY_BOUNDARY=PASS
 ```
+
+## Freeze evidence
+
+نسخه کامل‌شده این مرحله با commit و اجرای CI همسان زیر پذیرفته و فریز شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `3e363766380bf9190342cf4f9138423c1ebaaf54` |
+| candidate parent | `1b23de9752794314ef71f590d1045c8b4be7bc56` |
+| commit message | `docs(nexora): complete P0-04 operational boundary` |
+| branch | `feature/v0.1-foundation` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/40079759760` |
+| required jobs | `scope-contract`، `technical-baseline`، `integration-contract` و `security-boundary` |
+| conclusion | `success` برای هر چهار job |
+| Security Boundary checksum | `42120711a6884797b9dbf8db0304d4d24b69743a9ad1077bd0bf23ab488464ca` |
+| Operational Policy checksum | `59f43b15ba53bb37b86897a6207b35ebdc9962b5a209720fb1c49671daee70bd` |
+| Integration Contract checksum | `435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52c6d78c88` |
+| Technical Baseline checksum | `fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3` |
+| Scope Contract checksum | `9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c` |
+
+GitHub در همین run تمام verifierها و `93` تست contract را با نتیجه موفق اجرا
+کرده است. Freeze Record ماشین‌خوان در
+[`artifacts/p0-04/security-boundary-freeze.json`](../../artifacts/p0-04/security-boundary-freeze.json)
+نگهداری می‌شود.
+
+خروجی verifier پس از Freeze باید marker زیر را نیز داشته باشد:
+
+```text
+NEX_P0_04_FREEZE=PASS
+```
+
+گام مجاز بعدی فقط `NEX-P0-05 — Phase 0 Acceptance Matrix and Final Freeze` است.

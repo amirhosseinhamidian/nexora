@@ -1,0 +1,79 @@
+{
+  "schema_version": "nexora-security-boundary-freeze-v1",
+  "decision_id": "NEX-P0-04",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "3e363766380bf9190342cf4f9138423c1ebaaf54",
+  "candidate_commit_message": "docs(nexora): complete P0-04 operational boundary",
+  "candidate_parent_commit_sha": "1b23de9752794314ef71f590d1045c8b4be7bc56",
+  "candidate_parent_commit_message": "docs(nexora): establish P0-04 security boundary",
+  "github_actions": {
+    "run_id": 40079759760,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40079759760",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "scope_contract": {
+        "job_id": 120830663370,
+        "name": "scope-contract",
+        "conclusion": "success",
+        "scope_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "technical_baseline": {
+        "job_id": 120830663389,
+        "name": "technical-baseline",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "integration_contract": {
+        "job_id": 120830663217,
+        "name": "integration-contract",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_prerequisite_passed": true,
+        "integration_verifier_passed": true,
+        "contract_tests_passed": true
+      },
+      "security_boundary": {
+        "job_id": 120830663367,
+        "name": "security-boundary",
+        "conclusion": "success",
+        "scope_prerequisite_passed": true,
+        "baseline_prerequisite_passed": true,
+        "integration_prerequisite_passed": true,
+        "security_verifier_passed": true,
+        "contract_tests_passed": true
+      }
+    }
+  },
+  "security_boundary_contract": {
+    "schema_version": "nexora-security-boundary-v1",
+    "checksum": "42120711a6884797b9dbf8db0304d4d24b69743a9ad1077bd0bf23ab488464ca"
+  },
+  "operational_policy": {
+    "schema_version": "nexora-private-operations-policy-v1",
+    "checksum": "59f43b15ba53bb37b86897a6207b35ebdc9962b5a209720fb1c49671daee70bd"
+  },
+  "integration_contract_prerequisite": {
+    "decision_id": "NEX-P0-03",
+    "frozen": true,
+    "contract_checksum": "435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52c6d78c88"
+  },
+  "technical_baseline_prerequisite": {
+    "decision_id": "NEX-P0-02",
+    "frozen": true,
+    "contract_checksum": "fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3"
+  },
+  "scope_prerequisite": {
+    "decision_id": "NEX-P0-01",
+    "frozen": true,
+    "contract_checksum": "9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c"
+  },
+  "recorded_on": "2026-10-24",
+  "frozen": true,
+  "next_allowed_stage": "NEX-P0-05"
+}

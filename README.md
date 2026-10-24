@@ -12,11 +12,11 @@ frozen: it selects the technical baseline, lightweight polyglot monorepo,
 modular-monolith boundaries, repository layout, and bootstrap plan.
 `NEX-P0-03` is frozen: it defines the versioned TRD Bot API/event/export
 boundary, compatibility matrix, deterministic fixtures, and failure semantics.
-`NEX-P0-04` is now a candidate: it defines passkey-first single-owner identity,
+`NEX-P0-04` is frozen: it defines passkey-first single-owner identity,
 server-side sessions, scoped TRD Bot service authentication, secret handling,
 encrypted recovery, the private-only production topology, measurable SLO and
 capacity budgets, retention, and bounded artifact storage. The next allowed
-stage is `NEX-P0-04-FREEZE`.
+stage is `NEX-P0-05`.
 
 The repository currently contains governance and verification assets only. The
 runtime code, database schema, authentication mechanism, and deployment topology
@@ -43,6 +43,7 @@ NEX_P0_02_FREEZE=PASS
 NEX_P0_03_INTEGRATION_CONTRACT=PASS
 NEX_P0_03_FREEZE=PASS
 NEX_P0_04_SECURITY_BOUNDARY=PASS
+NEX_P0_04_FREEZE=PASS
 ```
 
 ## Documents
@@ -60,3 +61,4 @@ NEX_P0_04_SECURITY_BOUNDARY=PASS
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)
 - [`artifacts/p0-03/integration-contract-freeze.json`](artifacts/p0-03/integration-contract-freeze.json)
+- [`artifacts/p0-04/security-boundary-freeze.json`](artifacts/p0-04/security-boundary-freeze.json)

@@ -1,6 +1,6 @@
 # ADR 0010: Private-network deployment and service authentication
 
-Status: **Accepted candidate for NEX-P0-04**
+Status: **Accepted and frozen by NEX-P0-04**
 
 ## Context
 

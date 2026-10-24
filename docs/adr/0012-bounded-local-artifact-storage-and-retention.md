@@ -1,6 +1,6 @@
 # ADR 0012: Bounded local artifact storage and retention
 
-Status: **Accepted candidate for NEX-P0-04**
+Status: **Accepted and frozen by NEX-P0-04**
 
 ## Context
 

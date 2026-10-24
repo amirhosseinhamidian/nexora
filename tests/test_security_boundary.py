@@ -26,6 +26,7 @@ class SecurityBoundaryTests(unittest.TestCase):
         self.audit_schema = MODULE.load_audit_schema()
         self.audit_fixture = MODULE.load_audit_fixture()
         self.operational_policy = MODULE.load_operational_policy()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p0_03_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_integration_contract()
@@ -38,6 +39,11 @@ class SecurityBoundaryTests(unittest.TestCase):
         MODULE.validate_audit_contract(self.audit_schema, self.audit_fixture, self.contract)
         MODULE.validate_operational_policy(self.operational_policy, self.contract)
         MODULE.validate_documents()
+        MODULE.validate_freeze_record(
+            self.freeze_record,
+            self.contract,
+            self.operational_policy,
+        )
 
     def test_contract_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
@@ -219,6 +225,80 @@ class SecurityBoundaryTests(unittest.TestCase):
         changed["backup_retention"]["runtime_host_copy_counts_as_geographic_copy"] = True
         with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "cannot count as off-host"):
             MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "docs(nexora): establish P0-04 security boundary"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "commit message"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_wrong_candidate_parent(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_parent_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "parent SHA"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_requires_all_successful_jobs(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["security_boundary"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "was not successful"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_a_different_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["security_boundary"]["job_id"] = 0
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "job ID"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_security_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["operational_boundary"]["rto_hours"] = 8
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "security boundary checksum"):
+            MODULE.validate_freeze_record(
+                self.freeze_record,
+                changed_contract,
+                self.operational_policy,
+            )
+
+    def test_freeze_record_rejects_operational_policy_drift(self) -> None:
+        changed_policy = copy.deepcopy(self.operational_policy)
+        changed_policy["capacity_budget"]["database_soft_limit_gib"] = 40
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "operational policy checksum"):
+            MODULE.validate_freeze_record(
+                self.freeze_record,
+                self.contract,
+                changed_policy,
+            )
+
+    def test_freeze_record_rejects_integration_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["integration_contract_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "integration prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_baseline_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["technical_baseline_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "baseline prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_rejects_scope_prerequisite_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["scope_prerequisite"]["contract_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "scope prerequisite checksum"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
+
+    def test_freeze_record_opens_only_p0_05(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-01"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "frozen next stage"):
+            MODULE.validate_freeze_record(changed, self.contract, self.operational_policy)
 
 
 if __name__ == "__main__":

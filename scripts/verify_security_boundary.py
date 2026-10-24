@@ -20,6 +20,7 @@ AUDIT_SCHEMA_PATH = SECURITY_BASE / "audit-event.schema.json"
 AUDIT_FIXTURE_PATH = SECURITY_BASE / "fixtures" / "security-audit-event.json"
 OPERATIONAL_POLICY_PATH = ROOT / "contracts" / "operations" / "v1" / "private-runtime-budget.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "03-security-identity-and-private-deployment-boundary.md"
+FREEZE_PATH = ROOT / "artifacts" / "p0-04" / "security-boundary-freeze.json"
 ADR_PATHS = (
     ROOT / "docs" / "adr" / "0008-passkey-first-single-owner-identity.md",
     ROOT / "docs" / "adr" / "0009-opaque-server-side-sessions.md",
@@ -118,6 +119,10 @@ def load_operational_policy(path: Path = OPERATIONAL_POLICY_PATH) -> dict[str, A
     return _load_json(path)
 
 
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _load_json(path)
+
+
 def canonical_checksum(payload: dict[str, Any]) -> str:
     encoded = json.dumps(
         payload,
@@ -152,6 +157,140 @@ def validate_frozen_integration_contract() -> None:
     module.validate_fixtures(module.load_fixtures(), contract)
     module.validate_documents()
     module.validate_freeze_record(module.load_freeze_record(), contract)
+
+
+def validate_freeze_record(
+    record: dict[str, Any],
+    contract: dict[str, Any],
+    operational_policy: dict[str, Any],
+) -> None:
+    _require(
+        record.get("schema_version") == "nexora-security-boundary-freeze-v1",
+        "invalid security boundary freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P0-04", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+
+    candidate_sha = record.get("candidate_commit_sha")
+    _require(
+        isinstance(candidate_sha, str)
+        and len(candidate_sha) == 40
+        and all(character in "0123456789abcdef" for character in candidate_sha),
+        "candidate SHA must be a full lowercase Git SHA",
+    )
+    _require(
+        candidate_sha == "3e363766380bf9190342cf4f9138423c1ebaaf54",
+        "candidate SHA does not match accepted P0-04 evidence",
+    )
+    _require(
+        record.get("candidate_commit_message")
+        == "docs(nexora): complete P0-04 operational boundary",
+        "candidate commit message does not match accepted evidence",
+    )
+    _require(
+        record.get("candidate_parent_commit_sha")
+        == "1b23de9752794314ef71f590d1045c8b4be7bc56",
+        "candidate parent SHA does not match the security-boundary commit",
+    )
+    _require(
+        record.get("candidate_parent_commit_message")
+        == "docs(nexora): establish P0-04 security boundary",
+        "candidate parent message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _require(isinstance(actions, dict), "github_actions must be an object")
+    _require(actions.get("run_id") == 40079759760, "invalid GitHub Actions run ID")
+    _require(
+        actions.get("run_url")
+        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40079759760",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions head branch")
+    _require(actions.get("event") == "push", "invalid GitHub Actions event")
+    _require(actions.get("attempt") == 1, "invalid GitHub Actions attempt")
+    _require(actions.get("conclusion") == "success", "workflow was not successful")
+
+    jobs = actions.get("jobs")
+    _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
+    _require(
+        set(jobs)
+        == {"scope_contract", "technical_baseline", "integration_contract", "security_boundary"},
+        "freeze requires all four CI jobs",
+    )
+    expected_jobs = {
+        "scope_contract": (120830663370, "scope-contract"),
+        "technical_baseline": (120830663389, "technical-baseline"),
+        "integration_contract": (120830663217, "integration-contract"),
+        "security_boundary": (120830663367, "security-boundary"),
+    }
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {name} job ID")
+        _require(job.get("name") == name, f"invalid {name} job name")
+        _require(job.get("conclusion") == "success", f"{name} job was not successful")
+        _require(job.get("contract_tests_passed") is True, f"{name} contract tests not confirmed")
+    _require(jobs["scope_contract"].get("scope_verifier_passed") is True, "scope verifier was not confirmed")
+    _require(jobs["technical_baseline"].get("scope_prerequisite_passed") is True, "baseline scope prerequisite was not confirmed")
+    _require(jobs["technical_baseline"].get("baseline_verifier_passed") is True, "baseline verifier was not confirmed")
+    _require(jobs["integration_contract"].get("scope_prerequisite_passed") is True, "integration scope prerequisite was not confirmed")
+    _require(jobs["integration_contract"].get("baseline_prerequisite_passed") is True, "integration baseline prerequisite was not confirmed")
+    _require(jobs["integration_contract"].get("integration_verifier_passed") is True, "integration verifier was not confirmed")
+    _require(jobs["security_boundary"].get("scope_prerequisite_passed") is True, "security scope prerequisite was not confirmed")
+    _require(jobs["security_boundary"].get("baseline_prerequisite_passed") is True, "security baseline prerequisite was not confirmed")
+    _require(jobs["security_boundary"].get("integration_prerequisite_passed") is True, "security integration prerequisite was not confirmed")
+    _require(jobs["security_boundary"].get("security_verifier_passed") is True, "security verifier was not confirmed")
+
+    security_evidence = record.get("security_boundary_contract")
+    _require(isinstance(security_evidence, dict), "security boundary evidence must be an object")
+    _require(security_evidence.get("schema_version") == contract.get("schema_version"), "security boundary schema mismatch")
+    _require(security_evidence.get("checksum") == canonical_checksum(contract), "security boundary checksum mismatch")
+
+    operational_evidence = record.get("operational_policy")
+    _require(isinstance(operational_evidence, dict), "operational policy evidence must be an object")
+    _require(operational_evidence.get("schema_version") == operational_policy.get("schema_version"), "operational policy schema mismatch")
+    _require(operational_evidence.get("checksum") == canonical_checksum(operational_policy), "operational policy checksum mismatch")
+
+    integration_module = _load_integration_verifier()
+    integration_contract = integration_module.load_contract()
+    integration_prerequisite = record.get("integration_contract_prerequisite")
+    _require(isinstance(integration_prerequisite, dict), "integration prerequisite must be an object")
+    _require(integration_prerequisite.get("decision_id") == "NEX-P0-03", "invalid integration prerequisite")
+    _require(integration_prerequisite.get("frozen") is True, "integration prerequisite is not frozen")
+    _require(
+        integration_prerequisite.get("contract_checksum")
+        == integration_module.canonical_checksum(integration_contract),
+        "integration prerequisite checksum mismatch",
+    )
+
+    baseline_module = integration_module._load_baseline_verifier()
+    baseline_contract = baseline_module.load_contract()
+    baseline_prerequisite = record.get("technical_baseline_prerequisite")
+    _require(isinstance(baseline_prerequisite, dict), "technical baseline prerequisite must be an object")
+    _require(baseline_prerequisite.get("decision_id") == "NEX-P0-02", "invalid technical baseline prerequisite")
+    _require(baseline_prerequisite.get("frozen") is True, "technical baseline prerequisite is not frozen")
+    _require(
+        baseline_prerequisite.get("contract_checksum")
+        == baseline_module.canonical_checksum(baseline_contract),
+        "technical baseline prerequisite checksum mismatch",
+    )
+
+    scope_module = baseline_module._load_scope_verifier()
+    scope_contract = scope_module.load_contract()
+    scope_prerequisite = record.get("scope_prerequisite")
+    _require(isinstance(scope_prerequisite, dict), "scope prerequisite must be an object")
+    _require(scope_prerequisite.get("decision_id") == "NEX-P0-01", "invalid scope prerequisite")
+    _require(scope_prerequisite.get("frozen") is True, "scope prerequisite is not frozen")
+    _require(
+        scope_prerequisite.get("contract_checksum")
+        == scope_module.canonical_checksum(scope_contract),
+        "scope prerequisite checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-24", "invalid freeze record date")
+    _require(record.get("frozen") is True, "security boundary is not frozen")
+    _require(record.get("next_allowed_stage") == "NEX-P0-05", "invalid frozen next stage")
 
 
 def _exact_set(payload: dict[str, Any], key: str, expected: set[Any]) -> None:
@@ -669,7 +808,7 @@ def validate_documents() -> None:
     text = DOCUMENT_PATH.read_text(encoding="utf-8")
     markers = (
         "NEX-P0-04",
-        "وضعیت: **Candidate**",
+        "وضعیت: **Frozen**",
         "WebAuthn passkey",
         "__Host-nexora_session",
         "SameSite=Strict",
@@ -685,15 +824,18 @@ def validate_documents() -> None:
         "RTO",
         "OWASP ASVS `5.0.0`",
         "NIST SP 800-63B-4",
-        "NEX-P0-04-FREEZE",
         "NEX_P0_04_SECURITY_BOUNDARY=PASS",
+        "NEX_P0_04_FREEZE=PASS",
+        "3e363766380bf9190342cf4f9138423c1ebaaf54",
+        "40079759760",
+        "NEX-P0-05",
     )
     missing = [marker for marker in markers if marker not in text]
     _require(not missing, f"security boundary document is missing markers: {missing}")
     for path in ADR_PATHS:
         _require(path.is_file(), f"missing ADR: {path.relative_to(ROOT)}")
         adr = path.read_text(encoding="utf-8")
-        _require("Accepted candidate for NEX-P0-04" in adr, f"invalid ADR status: {path.name}")
+        _require("Accepted and frozen by NEX-P0-04" in adr, f"invalid ADR status: {path.name}")
         _require("## Decision" in adr, f"ADR decision is missing: {path.name}")
         _require("## Consequences" in adr, f"ADR consequences are missing: {path.name}")
 
@@ -705,14 +847,19 @@ def main() -> int:
     validate_deployment_profiles(load_deployment_profiles())
     validate_security_headers(load_security_headers())
     validate_threat_model(load_threat_model())
-    validate_operational_policy(load_operational_policy(), contract)
+    operational_policy = load_operational_policy()
+    validate_operational_policy(operational_policy, contract)
     validate_audit_contract(load_audit_schema(), load_audit_fixture(), contract)
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract, operational_policy)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P0_03_PREREQUISITE=PASS")
     print("NEX_P0_04_SECURITY_BOUNDARY=PASS")
+    print("NEX_P0_04_FREEZE=PASS")
     return 0
 
 

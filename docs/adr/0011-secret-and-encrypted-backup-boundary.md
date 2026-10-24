@@ -1,6 +1,6 @@
 # ADR 0011: Secret and encrypted-backup boundary
 
-Status: **Accepted candidate for NEX-P0-04**
+Status: **Accepted and frozen by NEX-P0-04**
 
 ## Context
 

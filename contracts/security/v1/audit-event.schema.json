@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexora.local/contracts/security/v1/audit-event.schema.json",
+  "title": "Nexora security audit event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "correlation_id",
+    "actor",
+    "target",
+    "outcome",
+    "reason_code",
+    "network_context",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "nexora-security-audit-event-v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^sec_[A-Za-z0-9_-]{16,64}$"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "identity.bootstrap.started",
+        "identity.bootstrap.completed",
+        "authentication.succeeded",
+        "authentication.failed",
+        "session.created",
+        "session.rotated",
+        "session.revoked",
+        "credential.enrolled",
+        "credential.revoked",
+        "recovery.used",
+        "service_token.rotated",
+        "authorization.denied",
+        "security.rate_limited",
+        "backup.created",
+        "backup.restored"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "enum": ["owner", "service", "system", "unknown"]
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
+      }
+    },
+    "outcome": {
+      "enum": ["success", "failure", "denied"]
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{2,79}$"
+    },
+    "network_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_class", "ip_address_hmac"],
+      "properties": {
+        "source_class": {
+          "enum": ["loopback", "private_overlay", "internal_service", "unknown"]
+        },
+        "ip_address_hmac": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

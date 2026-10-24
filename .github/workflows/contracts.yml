@@ -52,3 +52,22 @@ jobs:
         run: python3 scripts/verify_integration_contracts.py
       - name: Run contract tests
         run: python3 -m unittest discover -s tests -v
+
+  security-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen scope prerequisite
+        run: python3 scripts/verify_scope_contract.py
+      - name: Verify frozen technical baseline prerequisite
+        run: python3 scripts/verify_technical_baseline.py
+      - name: Verify frozen integration contract prerequisite
+        run: python3 scripts/verify_integration_contracts.py
+      - name: Verify security boundary candidate
+        run: python3 scripts/verify_security_boundary.py
+      - name: Run contract tests
+        run: python3 -m unittest discover -s tests -v

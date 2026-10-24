@@ -1,0 +1,26 @@
+{
+  "schema_version": "nexora-security-audit-event-v1",
+  "event_id": "sec_auth_01JB0Y8W2Q6K4M9N",
+  "event_type": "authentication.succeeded",
+  "occurred_at": "2026-10-24T09:00:00Z",
+  "correlation_id": "919b04ec-2e51-46c0-b693-3f4e67129ac2",
+  "actor": {
+    "type": "owner",
+    "id": "owner"
+  },
+  "target": {
+    "type": "session",
+    "id": "session-redacted"
+  },
+  "outcome": "success",
+  "reason_code": "PASSKEY_VERIFIED",
+  "network_context": {
+    "source_class": "private_overlay",
+    "ip_address_hmac": "8d969eef6ecad3c29a3a629280e686cff8ca6a55fdf78e6c4c6c32103214c6db"
+  },
+  "metadata": {
+    "credential_kind": "passkey",
+    "user_verification": true,
+    "session_rotated": true
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": "nexora-deployment-profiles-v1",
+  "decision_id": "NEX-P0-04",
+  "profiles": [
+    {
+      "id": "local_development",
+      "allowed": true,
+      "network_exposure": "loopback_only",
+      "tls": "optional_on_loopback",
+      "secret_source": "untracked_local_environment_file",
+      "database_exposure": "loopback_only",
+      "debug": true,
+      "production_data": false
+    },
+    {
+      "id": "private_single_host",
+      "allowed": true,
+      "network_exposure": "authenticated_private_overlay_network",
+      "tls": "required_minimum_1.3",
+      "secret_source": "read_only_mounted_secret_files",
+      "database_exposure": "container_network_only",
+      "debug": false,
+      "production_data": true
+    },
+    {
+      "id": "public_internet",
+      "allowed": false,
+      "network_exposure": "forbidden_in_v0.1",
+      "tls": "not_applicable",
+      "secret_source": "not_applicable",
+      "database_exposure": "forbidden",
+      "debug": false,
+      "production_data": false
+    }
+  ],
+  "private_single_host_topology": {
+    "ingress": [
+      "private_overlay",
+      "reverse_proxy",
+      "same_origin_web_api"
+    ],
+    "internal_services": [
+      "nexora_web",
+      "nexora_api",
+      "nexora_worker",
+      "nexora_postgresql"
+    ],
+    "only_exposed_port": 443,
+    "postgresql_host_binding": false,
+    "worker_host_binding": false,
+    "health_endpoints_private": true,
+    "admin_endpoints_owner_authenticated": true
+  }
+}

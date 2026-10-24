@@ -1,0 +1,164 @@
+{
+  "schema_version": "nexora-threat-model-v1",
+  "decision_id": "NEX-P0-04",
+  "system": "Nexora v0.1 personal private deployment",
+  "assets": [
+    "owner_identity",
+    "financial_and_portfolio_data",
+    "trd_bot_source_evidence",
+    "export_artifacts",
+    "session_tokens",
+    "service_credentials",
+    "encrypted_backups"
+  ],
+  "trust_boundaries": [
+    "owner_browser_to_reverse_proxy",
+    "reverse_proxy_to_web_and_api",
+    "api_and_worker_to_postgresql",
+    "nexora_server_to_trd_bot",
+    "runtime_host_to_offline_backup_recipient"
+  ],
+  "threats": [
+    {
+      "id": "NEX-THREAT-001",
+      "category": "spoofing",
+      "scenario": "An unauthorized person attempts to impersonate the owner",
+      "risk": "high",
+      "controls": [
+        "webauthn_user_verification",
+        "private_network_ingress",
+        "authentication_rate_limit",
+        "generic_authentication_errors"
+      ],
+      "residual_risk": "low"
+    },
+    {
+      "id": "NEX-THREAT-002",
+      "category": "spoofing",
+      "scenario": "A stolen browser session is replayed",
+      "risk": "high",
+      "controls": [
+        "opaque_server_side_session",
+        "secure_http_only_cookie",
+        "session_rotation",
+        "idle_and_absolute_timeout",
+        "owner_revoke_all"
+      ],
+      "residual_risk": "medium"
+    },
+    {
+      "id": "NEX-THREAT-003",
+      "category": "tampering",
+      "scenario": "A cross-site request changes portfolio or security state",
+      "risk": "high",
+      "controls": [
+        "strict_same_site_cookie",
+        "synchronizer_csrf_token",
+        "exact_origin_check",
+        "json_only_mutations"
+      ],
+      "residual_risk": "low"
+    },
+    {
+      "id": "NEX-THREAT-004",
+      "category": "information_disclosure",
+      "scenario": "A secret leaks through source control, logs, browser assets, or exports",
+      "risk": "critical",
+      "controls": [
+        "mounted_secret_files",
+        "ci_secret_scan",
+        "structured_log_redaction",
+        "export_secret_denylist",
+        "no_browser_service_token"
+      ],
+      "residual_risk": "medium"
+    },
+    {
+      "id": "NEX-THREAT-005",
+      "category": "elevation_of_privilege",
+      "scenario": "A worker or integration credential invokes owner or live-execution actions",
+      "risk": "critical",
+      "controls": [
+        "deny_by_default_scopes",
+        "separate_service_principals",
+        "paper_shadow_only_scope",
+        "no_live_execution_scope"
+      ],
+      "residual_risk": "low"
+    },
+    {
+      "id": "NEX-THREAT-006",
+      "category": "tampering",
+      "scenario": "A compromised or incompatible TRD Bot response corrupts Nexora projections",
+      "risk": "high",
+      "controls": [
+        "contract_capability_negotiation",
+        "source_checksums",
+        "schema_fail_closed",
+        "event_gap_backfill",
+        "immutable_source_evidence"
+      ],
+      "residual_risk": "medium"
+    },
+    {
+      "id": "NEX-THREAT-007",
+      "category": "information_disclosure",
+      "scenario": "PostgreSQL or worker ports are reachable outside the container network",
+      "risk": "critical",
+      "controls": [
+        "reverse_proxy_only_ingress",
+        "no_database_host_port",
+        "no_worker_host_port",
+        "private_overlay_network"
+      ],
+      "residual_risk": "low"
+    },
+    {
+      "id": "NEX-THREAT-008",
+      "category": "repudiation",
+      "scenario": "A security-sensitive action cannot be attributed or investigated",
+      "risk": "high",
+      "controls": [
+        "append_only_security_audit",
+        "actor_and_correlation_id",
+        "reason_code",
+        "utc_timestamp"
+      ],
+      "residual_risk": "low"
+    },
+    {
+      "id": "NEX-THREAT-009",
+      "category": "denial_of_service",
+      "scenario": "Repeated authentication or recovery attempts exhaust resources or lock out the owner",
+      "risk": "medium",
+      "controls": [
+        "bounded_rate_limits",
+        "progressive_backoff",
+        "no_permanent_lockout",
+        "local_operator_recovery"
+      ],
+      "residual_risk": "medium"
+    },
+    {
+      "id": "NEX-THREAT-010",
+      "category": "information_disclosure",
+      "scenario": "An unencrypted or incomplete backup exposes or loses financial evidence",
+      "risk": "high",
+      "controls": [
+        "age_encrypted_backup",
+        "offline_recipient_key",
+        "manifest_checksums",
+        "restore_drill",
+        "post_restore_revocation"
+      ],
+      "residual_risk": "low"
+    }
+  ],
+  "explicit_non_goals": [
+    "protect_against_a_fully_compromised_owner_endpoint",
+    "protect_against_root_compromise_of_the_runtime_host",
+    "public_internet_ddos_absorption",
+    "multi_tenant_isolation",
+    "live_trading_security"
+  ]
+}

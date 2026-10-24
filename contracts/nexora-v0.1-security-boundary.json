@@ -1,0 +1,314 @@
+{
+  "schema_version": "nexora-security-boundary-v1",
+  "decision_id": "NEX-P0-04",
+  "decision_date": "2026-10-24",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "release_line": "0.1.x",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "assurance_model": {
+    "target": "private_single_owner_financial_application",
+    "verification_baseline": "owasp_asvs_5.0.0_level_2_selected_controls",
+    "identity_guidance": "nist_sp_800_63b_4",
+    "default_decision": "deny",
+    "runtime_delivered": false
+  },
+  "artifacts": {
+    "threat_model": "contracts/security/v1/threat-model.json",
+    "deployment_profiles": "contracts/security/v1/deployment-profiles.json",
+    "security_headers": "contracts/security/v1/security-headers.json",
+    "audit_event_schema": "contracts/security/v1/audit-event.schema.json",
+    "audit_event_fixture": "contracts/security/v1/fixtures/security-audit-event.json"
+  },
+  "identity": {
+    "human_principals": [
+      "owner"
+    ],
+    "service_principals": [
+      "nexora_worker",
+      "trd_bot_integration"
+    ],
+    "self_registration": false,
+    "invitations": false,
+    "multi_user": false,
+    "anonymous_application_access": false,
+    "identity_provider_dependency": false,
+    "owner_account_count": 1
+  },
+  "owner_authentication": {
+    "primary_method": "webauthn_passkey",
+    "web_password_authentication": false,
+    "minimum_registered_passkeys": 1,
+    "second_passkey_recommended": true,
+    "user_verification": "required",
+    "resident_key": "preferred",
+    "attestation": "none",
+    "allowed_algorithms": [
+      "ES256",
+      "EdDSA"
+    ],
+    "rp_id_from_canonical_origin": true,
+    "origin_exact_match": true,
+    "challenge_entropy_bits": 256,
+    "challenge_ttl_seconds": 300,
+    "challenge_single_use": true,
+    "credential_counter_checked_when_supported": true,
+    "credential_material_stored": [
+      "credential_id",
+      "public_key",
+      "sign_count",
+      "transports",
+      "created_at",
+      "last_used_at"
+    ],
+    "credential_private_key_storage": "authenticator_only"
+  },
+  "bootstrap_and_recovery": {
+    "initial_owner_bootstrap": "local_cli_one_time_token",
+    "bootstrap_token_entropy_bits": 256,
+    "bootstrap_token_ttl_seconds": 600,
+    "bootstrap_token_single_use": true,
+    "bootstrap_network_scope": "loopback_or_private_network_only",
+    "bootstrap_disabled_after_first_passkey": true,
+    "recovery_methods": [
+      "single_use_recovery_codes",
+      "local_operator_cli_reset"
+    ],
+    "recovery_code_count": 10,
+    "recovery_code_entropy_bits": 128,
+    "recovery_codes_stored_as_digests": true,
+    "recovery_codes_displayed_once": true,
+    "recovery_requires_new_passkey_enrollment": true,
+    "email_password_reset": false,
+    "security_questions": false
+  },
+  "authorization": {
+    "model": "deny_by_default_role_and_scope",
+    "roles": {
+      "owner": [
+        "portfolio.read",
+        "portfolio.write",
+        "decision.review",
+        "export.create",
+        "export.read",
+        "security.manage",
+        "backup.manage"
+      ],
+      "nexora_worker": [
+        "job.claim",
+        "job.execute",
+        "projection.write",
+        "outbox.publish"
+      ],
+      "trd_bot_integration": [
+        "source.snapshot.read",
+        "source.event.read",
+        "source.export.create",
+        "source.export.read",
+        "decision_review.write_paper_shadow"
+      ]
+    },
+    "owner_only_actions": [
+      "credential_enroll",
+      "credential_revoke",
+      "recovery_code_rotate",
+      "service_token_rotate",
+      "backup_create",
+      "backup_restore",
+      "security_audit_export"
+    ],
+    "recent_reauthentication_window_seconds": 300,
+    "live_execution_scope_exists": false
+  },
+  "session": {
+    "model": "opaque_server_side",
+    "token_entropy_bits": 256,
+    "token_storage": "sha256_digest_only",
+    "cookie": {
+      "name": "__Host-nexora_session",
+      "secure": true,
+      "http_only": true,
+      "same_site": "Strict",
+      "path": "/",
+      "domain_attribute": false
+    },
+    "idle_timeout_seconds": 1800,
+    "absolute_timeout_seconds": 43200,
+    "rotation_interval_seconds": 900,
+    "rotation_grace_seconds": 30,
+    "rotate_after_authentication": true,
+    "rotate_after_privilege_change": true,
+    "maximum_concurrent_sessions": 5,
+    "revoke_on_credential_recovery": true,
+    "revoke_all_supported": true,
+    "logout_invalidates_server_state": true,
+    "script_accessible_browser_storage": "none"
+  },
+  "request_protection": {
+    "same_origin_web": true,
+    "cors_allowed_origins": [],
+    "csrf_strategy": "synchronizer_token",
+    "csrf_required_for_unsafe_methods": true,
+    "origin_header_exact_match_for_unsafe_methods": true,
+    "content_types_for_mutations": [
+      "application/json"
+    ],
+    "request_body_size_limit_bytes": 1048576,
+    "authenticated_response_cache_control": "no-store",
+    "security_headers_policy": "contracts/security/v1/security-headers.json"
+  },
+  "trd_bot_service_authentication": {
+    "transport": "tls_over_private_network",
+    "credential_type": "scoped_bearer_token",
+    "token_entropy_bits": 256,
+    "token_sent_from_browser": false,
+    "token_storage_nexora": "mounted_secret_file",
+    "token_storage_trd_bot": "hmac_sha256_digest_with_server_pepper",
+    "constant_time_verification": true,
+    "contract_capability_negotiation_required": true,
+    "scopes": [
+      "source.snapshot.read",
+      "source.event.read",
+      "source.export.create",
+      "source.export.read",
+      "decision_review.write_paper_shadow"
+    ],
+    "maximum_token_age_days": 90,
+    "rotation_overlap_hours": 24,
+    "revoke_supported": true,
+    "per_request_correlation_id": true,
+    "live_order_scope_exists": false,
+    "wallet_scope_exists": false,
+    "exchange_credential_scope_exists": false
+  },
+  "abuse_protection": {
+    "authentication_failures_per_window": 5,
+    "authentication_window_seconds": 900,
+    "progressive_backoff": true,
+    "permanent_account_lockout": false,
+    "bootstrap_attempts_per_window": 3,
+    "bootstrap_window_seconds": 600,
+    "recovery_attempts_per_window": 3,
+    "recovery_window_seconds": 3600,
+    "generic_authentication_errors": true,
+    "security_event_on_limit": true
+  },
+  "private_deployment": {
+    "production_profile": "private_single_host",
+    "public_internet_profile_supported": false,
+    "remote_access": "authenticated_private_overlay_network",
+    "ingress": "reverse_proxy_https_only",
+    "exposed_production_ports": [
+      443
+    ],
+    "web_api_origin": "same_origin",
+    "database_host_port_exposed": false,
+    "worker_host_port_exposed": false,
+    "container_network_segmentation": true,
+    "tls_minimum_version": "1.3",
+    "canonical_origin_allowlist_required": true,
+    "outbound_default": "deny_except_declared_dependencies",
+    "trd_bot_endpoint_allowlisted": true,
+    "host_or_provider_disk_encryption_required": true,
+    "production_debug_mode": false,
+    "production_source_maps_public": false
+  },
+  "secrets": {
+    "production_injection": "read_only_mounted_secret_files",
+    "development_injection": "untracked_local_environment_file",
+    "committed_secrets": false,
+    "secrets_in_container_images": false,
+    "secrets_in_database": false,
+    "secrets_in_logs": false,
+    "secrets_in_exports": false,
+    "secrets_in_browser_bundle": false,
+    "minimum_random_secret_bits": 256,
+    "file_mode": "0400",
+    "rotation_inventory_required": true,
+    "ci_secret_scan_required": true,
+    "redaction_required": true
+  },
+  "audit": {
+    "schema_version": "nexora-security-audit-event-v1",
+    "append_only": true,
+    "timestamps": "UTC",
+    "correlation_id_required": true,
+    "actor_required": true,
+    "outcome_required": true,
+    "reason_code_required": true,
+    "sensitive_values_forbidden": true,
+    "event_types": [
+      "identity.bootstrap.started",
+      "identity.bootstrap.completed",
+      "authentication.succeeded",
+      "authentication.failed",
+      "session.created",
+      "session.rotated",
+      "session.revoked",
+      "credential.enrolled",
+      "credential.revoked",
+      "recovery.used",
+      "service_token.rotated",
+      "authorization.denied",
+      "security.rate_limited",
+      "backup.created",
+      "backup.restored"
+    ]
+  },
+  "backup_and_restore": {
+    "database_backup_encrypted": true,
+    "artifact_backup_encrypted": true,
+    "encryption_profile": "age_x25519_offline_recipient",
+    "private_key_online_storage": false,
+    "backup_manifest_checksums": "sha256",
+    "restore_requires_owner_presence": true,
+    "restore_requires_recent_reauthentication": true,
+    "service_tokens_rotated_after_restore": true,
+    "sessions_revoked_after_restore": true,
+    "restore_drill_required_before_release": true,
+    "exports_are_backups": false
+  },
+  "forbidden": [
+    "public_self_registration",
+    "multi_tenant_identity",
+    "password_web_login",
+    "email_password_reset",
+    "browser_stored_bearer_token",
+    "local_storage_session_token",
+    "wildcard_cors",
+    "public_database_port",
+    "public_worker_port",
+    "plaintext_service_token_storage",
+    "secret_in_log_or_export",
+    "public_internet_production_profile",
+    "live_order_authorization",
+    "wallet_authorization",
+    "exchange_credential_authorization",
+    "runtime_security_claim_before_implementation"
+  ],
+  "deferred": [
+    "runtime_identity_implementation",
+    "runtime_reverse_proxy_configuration",
+    "runtime_secret_provisioning",
+    "runtime_backup_automation",
+    "saas_federated_identity",
+    "multi_user_rbac",
+    "public_internet_hardening",
+    "hardware_security_module",
+    "automated_certificate_authority_selection"
+  ],
+  "reference_snapshot": {
+    "checked_on": "2026-10-24",
+    "sources": [
+      "https://asvs.owasp.org/",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html",
+      "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html",
+      "https://pages.nist.gov/800-63-4/sp800-63b.html"
+    ]
+  },
+  "next_allowed_stage": "NEX-P0-04-FREEZE"
+}

@@ -1,0 +1,174 @@
+{
+  "schema_version": "nexora-phase-zero-acceptance-v1",
+  "decision_id": "NEX-P0-05",
+  "decision_date": "2026-10-24",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "phase": {
+    "id": "phase_zero",
+    "purpose": "freeze_product_architecture_integration_security_and_operational_boundaries_before_runtime_bootstrap",
+    "runtime_delivered": false,
+    "production_readiness_claimed": false
+  },
+  "artifacts": {
+    "traceability_matrix": "contracts/acceptance/v1/phase-zero-traceability.json",
+    "acceptance_document": "docs/v0.1/04-phase-zero-acceptance-matrix.md",
+    "transition_adr": "docs/adr/0013-evidence-gated-phase-transition.md"
+  },
+  "frozen_prerequisites": [
+    {
+      "decision_id": "NEX-P0-01",
+      "contract_path": "contracts/nexora-v0.1-scope.json",
+      "freeze_record_path": "artifacts/p0-01/scope-freeze.json",
+      "freeze_commit_sha": "3327d9b4daa816eb271fa241247ad4ce21c708a3",
+      "contract_checksum": "9ca6c10fb916861bab9a3e8facf7f24e5a84855e97a1f689a48954625377217c",
+      "frozen": true
+    },
+    {
+      "decision_id": "NEX-P0-02",
+      "contract_path": "contracts/nexora-v0.1-technical-baseline.json",
+      "freeze_record_path": "artifacts/p0-02/technical-baseline-freeze.json",
+      "freeze_commit_sha": "386526c1324ffbf42e081dda0c362b5e92e21fce",
+      "contract_checksum": "fba77f5f95c0dcaa59db9d5ed0b0e95290066a90a50d79f97a102375ddde69d3",
+      "frozen": true
+    },
+    {
+      "decision_id": "NEX-P0-03",
+      "contract_path": "contracts/integration/v1/integration-contract.json",
+      "freeze_record_path": "artifacts/p0-03/integration-contract-freeze.json",
+      "freeze_commit_sha": "6243f0f28c6e7970d1323bad164e54b06bf2e173",
+      "contract_checksum": "435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52c6d78c88",
+      "frozen": true
+    },
+    {
+      "decision_id": "NEX-P0-04",
+      "contract_path": "contracts/nexora-v0.1-security-boundary.json",
+      "freeze_record_path": "artifacts/p0-04/security-boundary-freeze.json",
+      "freeze_commit_sha": "53e87e875d874f79def32468ece5dae43d8ddccf",
+      "contract_checksum": "42120711a6884797b9dbf8db0304d4d24b69743a9ad1077bd0bf23ab488464ca",
+      "frozen": true
+    }
+  ],
+  "supplemental_evidence": [
+    {
+      "id": "NEX-P0-EVIDENCE-OPERATIONS",
+      "path": "contracts/operations/v1/private-runtime-budget.json",
+      "schema_version": "nexora-private-operations-policy-v1",
+      "checksum": "59f43b15ba53bb37b86897a6207b35ebdc9962b5a209720fb1c49671daee70bd"
+    }
+  ],
+  "acceptance_summary": {
+    "matrix_schema_version": "nexora-phase-zero-traceability-v1",
+    "required_requirement_count": 12,
+    "required_status": "pass",
+    "all_decisions_require_owner": true,
+    "all_requirements_require_evidence": true,
+    "all_requirements_require_automated_verifier": true,
+    "unresolved_phase_zero_blockers": 0
+  },
+  "debt_disposition": [
+    {
+      "debt_id": "NEX-DEBT-P0-02-001",
+      "disposition": "transferred",
+      "owner": "NEX-P1-01",
+      "due_stage": "NEX-P1-01",
+      "blocking_phase_zero_freeze": false,
+      "rationale": "Exact pins and lockfiles can only be produced with the runtime bootstrap; release lines remain frozen until then."
+    },
+    {
+      "debt_id": "NEX-DEBT-P0-02-002",
+      "disposition": "closed",
+      "owner": "NEX-P0-03",
+      "due_stage": "NEX-P0-03",
+      "blocking_phase_zero_freeze": false,
+      "rationale": "Versioned endpoint, event, export, fixture, and compatibility contracts are frozen."
+    },
+    {
+      "debt_id": "NEX-DEBT-P0-02-003",
+      "disposition": "closed",
+      "owner": "NEX-P0-04",
+      "due_stage": "NEX-P0-04",
+      "blocking_phase_zero_freeze": false,
+      "rationale": "Identity, session, service authentication, and private deployment boundaries are frozen."
+    },
+    {
+      "debt_id": "NEX-DEBT-P0-02-004",
+      "disposition": "closed",
+      "owner": "NEX-P0-04",
+      "due_stage": "NEX-P0-04",
+      "blocking_phase_zero_freeze": false,
+      "rationale": "Measurable SLO, capacity, overload, retention, backup, restore, and storage targets are frozen."
+    },
+    {
+      "debt_id": "NEX-DEBT-P0-02-005",
+      "disposition": "closed",
+      "owner": "NEX-P0-05",
+      "due_stage": "NEX-P0-05",
+      "blocking_phase_zero_freeze": false,
+      "rationale": "The machine-readable acceptance matrix and fail-closed Phase 0 runner are defined."
+    }
+  ],
+  "deferred_decisions": [
+    {
+      "id": "NEX-DEFER-P1-RUNTIME",
+      "owner": "NEX-P1-01",
+      "decision": "exact_dependency_versions_lockfiles_and_runtime_scaffold",
+      "phase_zero_boundary": "no_runtime_dependency_or_deployment_claim"
+    },
+    {
+      "id": "NEX-DEFER-P1-DATA",
+      "owner": "NEX-P1",
+      "decision": "database_schema_migrations_and_durable_runtime_jobs",
+      "phase_zero_boundary": "contract_only_no_application_tables"
+    },
+    {
+      "id": "NEX-DEFER-P1-TRD",
+      "owner": "NEX-P1",
+      "decision": "runtime_trd_bot_adapter_after_capability_negotiation",
+      "phase_zero_boundary": "no_direct_database_access_and_no_unversioned_integration"
+    },
+    {
+      "id": "NEX-DEFER-FUTURE-SAAS",
+      "owner": "future_product_phase",
+      "decision": "multi_user_tenancy_billing_and_federated_identity",
+      "phase_zero_boundary": "personal_single_owner_only"
+    },
+    {
+      "id": "NEX-DEFER-FUTURE-ML",
+      "owner": "future_ai_ml_phase",
+      "decision": "model_selection_training_serving_and_monitoring",
+      "phase_zero_boundary": "export_first_ai_safe_data_without_autonomous_execution"
+    }
+  ],
+  "security_boundary": {
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "direct_trd_bot_database_access": false,
+    "autonomous_ai_execution": false,
+    "public_internet_production_profile": false,
+    "multi_tenant_identity": false
+  },
+  "release_gates": [
+    "frozen_scope_verifier",
+    "frozen_technical_baseline_verifier",
+    "frozen_integration_contract_verifier",
+    "frozen_security_boundary_verifier",
+    "phase_zero_traceability_verifier",
+    "all_contract_tests",
+    "candidate_sha_bound_to_successful_github_actions_run",
+    "final_freeze_record_committed_separately"
+  ],
+  "transition": {
+    "ready_for_phase_zero_freeze": true,
+    "runtime_bootstrap_authorized": false,
+    "authorization_condition": "immutable_NEX-P0-05_freeze_record_bound_to_candidate_SHA_and_successful_CI",
+    "next_allowed_stage": "NEX-P0-05-FREEZE",
+    "post_freeze_stage": "NEX-P1-01"
+  }
+}

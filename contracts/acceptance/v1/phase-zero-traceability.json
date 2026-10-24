@@ -1,0 +1,165 @@
+{
+  "schema_version": "nexora-phase-zero-traceability-v1",
+  "decision_id": "NEX-P0-05",
+  "status": "candidate",
+  "requirements": [
+    {
+      "id": "NEX-P0-REQ-001",
+      "title": "Product scope and system boundary are frozen",
+      "owner": "product_architecture",
+      "source_decisions": ["NEX-P0-01"],
+      "evidence": [
+        "contracts/nexora-v0.1-scope.json",
+        "artifacts/p0-01/scope-freeze.json",
+        "docs/v0.1/00-scope-and-system-boundary.md"
+      ],
+      "verifiers": ["verify_scope_contract"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-002",
+      "title": "Architecture, stack, repository, and data ownership are frozen",
+      "owner": "architecture",
+      "source_decisions": ["NEX-P0-02"],
+      "evidence": [
+        "contracts/nexora-v0.1-technical-baseline.json",
+        "artifacts/p0-02/technical-baseline-freeze.json",
+        "docs/v0.1/01-technical-baseline-and-repository-architecture.md"
+      ],
+      "verifiers": ["verify_technical_baseline"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-003",
+      "title": "TRD Bot API, event, export, and compatibility contracts are frozen",
+      "owner": "integration",
+      "source_decisions": ["NEX-P0-03"],
+      "evidence": [
+        "contracts/integration/v1/integration-contract.json",
+        "contracts/integration/v1/compatibility-matrix.json",
+        "artifacts/p0-03/integration-contract-freeze.json"
+      ],
+      "verifiers": ["verify_integration_contracts"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-004",
+      "title": "Owner identity, session, recovery, and authorization policies are frozen",
+      "owner": "security",
+      "source_decisions": ["NEX-P0-04"],
+      "evidence": [
+        "contracts/nexora-v0.1-security-boundary.json",
+        "contracts/security/v1/security-headers.json",
+        "artifacts/p0-04/security-boundary-freeze.json"
+      ],
+      "verifiers": ["verify_security_boundary"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-005",
+      "title": "Private deployment, secret, and audit boundaries are frozen",
+      "owner": "security_operations",
+      "source_decisions": ["NEX-P0-04"],
+      "evidence": [
+        "contracts/security/v1/deployment-profiles.json",
+        "contracts/security/v1/threat-model.json",
+        "contracts/security/v1/audit-event.schema.json"
+      ],
+      "verifiers": ["verify_security_boundary"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-006",
+      "title": "SLO, capacity, overload, retention, storage, and recovery budgets are measurable",
+      "owner": "operations",
+      "source_decisions": ["NEX-P0-04"],
+      "evidence": [
+        "contracts/operations/v1/private-runtime-budget.json",
+        "docs/adr/0012-bounded-local-artifact-storage-and-retention.md"
+      ],
+      "verifiers": ["verify_security_boundary"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-007",
+      "title": "Export-first and AI-safe boundaries preserve evidence and uncertainty",
+      "owner": "data_governance",
+      "source_decisions": ["NEX-P0-01", "NEX-P0-03"],
+      "evidence": [
+        "contracts/nexora-v0.1-scope.json",
+        "contracts/integration/v1/schemas/export-manifest.schema.json",
+        "contracts/integration/v1/fixtures/export-manifest.json"
+      ],
+      "verifiers": ["verify_scope_contract", "verify_integration_contracts"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-008",
+      "title": "Live execution, credentials, wallets, and direct database access remain forbidden",
+      "owner": "security_architecture",
+      "source_decisions": ["NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04"],
+      "evidence": [
+        "contracts/nexora-v0.1-scope.json",
+        "contracts/nexora-v0.1-technical-baseline.json",
+        "contracts/integration/v1/trd-bot-v0.3.0-inventory.json",
+        "contracts/nexora-v0.1-security-boundary.json"
+      ],
+      "verifiers": [
+        "verify_scope_contract",
+        "verify_technical_baseline",
+        "verify_integration_contracts",
+        "verify_security_boundary"
+      ],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-009",
+      "title": "Every Phase 0 decision has an owner and durable evidence",
+      "owner": "release",
+      "source_decisions": ["NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"],
+      "evidence": [
+        "contracts/acceptance/v1/phase-zero-traceability.json",
+        "docs/v0.1/04-phase-zero-acceptance-matrix.md"
+      ],
+      "verifiers": ["verify_phase_zero_acceptance"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-010",
+      "title": "Phase 0 debt is closed or transferred with an explicit owner and due stage",
+      "owner": "release",
+      "source_decisions": ["NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"],
+      "evidence": [
+        "contracts/nexora-v0.1-technical-baseline.json",
+        "contracts/nexora-v0.1-phase-zero-acceptance.json"
+      ],
+      "verifiers": ["verify_phase_zero_acceptance"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-011",
+      "title": "Runtime and production readiness are not claimed by governance artifacts",
+      "owner": "architecture",
+      "source_decisions": ["NEX-P0-02", "NEX-P0-04", "NEX-P0-05"],
+      "evidence": [
+        "contracts/nexora-v0.1-technical-baseline.json",
+        "contracts/nexora-v0.1-security-boundary.json",
+        "contracts/nexora-v0.1-phase-zero-acceptance.json"
+      ],
+      "verifiers": ["verify_phase_zero_acceptance"],
+      "status": "pass"
+    },
+    {
+      "id": "NEX-P0-REQ-012",
+      "title": "Phase 1 remains blocked until candidate SHA and successful CI are frozen",
+      "owner": "release",
+      "source_decisions": ["NEX-P0-05"],
+      "evidence": [
+        "contracts/nexora-v0.1-phase-zero-acceptance.json",
+        "docs/adr/0013-evidence-gated-phase-transition.md"
+      ],
+      "verifiers": ["verify_phase_zero_acceptance"],
+      "status": "pass"
+    }
+  ]
+}

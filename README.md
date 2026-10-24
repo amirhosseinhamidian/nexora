@@ -9,8 +9,10 @@ does not share the TRD Bot database and does not submit live orders in v0.1.0.
 `NEX-P0-01` freezes the initial product scope, Crypto Spot Paper/Shadow target,
 system boundary, export-first policy, and AI/ML safety boundary. `NEX-P0-02` is
 frozen: it selects the technical baseline, lightweight polyglot monorepo,
-modular-monolith boundaries, repository layout, and bootstrap plan. The next
-allowed stage is `NEX-P0-03`.
+modular-monolith boundaries, repository layout, and bootstrap plan.
+`NEX-P0-03` is now a candidate: it defines the versioned TRD Bot API/event/export
+boundary, compatibility matrix, deterministic fixtures, and failure semantics.
+The next allowed stage is `NEX-P0-03-FREEZE`.
 
 The repository currently contains governance and verification assets only. The
 runtime code, database schema, authentication mechanism, and deployment topology
@@ -22,6 +24,7 @@ Phase 0 freeze.
 ```bash
 python3 scripts/verify_scope_contract.py
 python3 scripts/verify_technical_baseline.py
+python3 scripts/verify_integration_contracts.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -32,14 +35,17 @@ NEX_P0_01_SCOPE_CONTRACT=PASS
 NEX_P0_01_FREEZE=PASS
 NEX_P0_02_TECHNICAL_BASELINE=PASS
 NEX_P0_02_FREEZE=PASS
+NEX_P0_03_INTEGRATION_CONTRACT=PASS
 ```
 
 ## Documents
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
+- [`docs/v0.1/02-api-event-export-contracts-and-compatibility.md`](docs/v0.1/02-api-event-export-contracts-and-compatibility.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
+- [`contracts/integration/v1/`](contracts/integration/v1/)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

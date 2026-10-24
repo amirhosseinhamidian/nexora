@@ -1,0 +1,33 @@
+{
+  "schema_version": "trd-integration-event-envelope-v1",
+  "event_id": "evt_decision_01JAX6P4M9Q2T8WZ",
+  "event_type": "decision.evaluation.completed.v1",
+  "occurred_at": "2026-10-22T12:00:00Z",
+  "emitted_at": "2026-10-22T12:00:01Z",
+  "source": {
+    "schema_version": "nexora-source-reference-v1",
+    "source_product": "trd_bot",
+    "source_version": "0.3.1",
+    "resource_type": "decision_evaluation",
+    "resource_id": "decision-20261022-0001",
+    "resource_schema_version": "decision-evaluation-v1",
+    "observed_at": "2026-10-22T12:00:00Z",
+    "checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "aggregate": {
+    "type": "decision_evaluation",
+    "id": "decision-20261022-0001",
+    "version": 1
+  },
+  "correlation_id": "d7d23916-e3d5-41ee-932e-1f1ae08c1825",
+  "causation_id": null,
+  "idempotency_key": "decision-20261022-0001-v1",
+  "payload_schema": "decision-evaluation-completed-v1",
+  "payload": {
+    "decision_id": "decision-20261022-0001",
+    "mode": "shadow",
+    "recommendation": "defer",
+    "uncertainty": "medium"
+  },
+  "payload_checksum": "sha256:36d36d1aff0a0c36d8a286265f2666f8a3e19b67ab2e8a1df735fb9cc419b7de"
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "nexora-trd-compatibility-matrix-v1",
+  "decision_id": "NEX-P0-03",
+  "consumer": "Nexora 0.1.x",
+  "contract": "nexora-trd-integration-v1",
+  "entries": [
+    {
+      "provider_release": "<0.3.0",
+      "status": "unsupported",
+      "reason": "The required Decision Intelligence and Paper/Shadow evidence baseline is absent",
+      "runtime_action": "fail_closed"
+    },
+    {
+      "provider_release": "0.3.0",
+      "status": "legacy_read_only_blocked",
+      "reason": "Useful read endpoints exist, but the versioned envelope, cursor feed, export bundle, and command boundary are missing",
+      "runtime_action": "show_incompatible_and_do_not_sync"
+    },
+    {
+      "provider_release": ">=0.3.1,<0.4.0",
+      "status": "compatible_if_capabilities_match",
+      "reason": "The additive Nexora integration boundary may implement contract v1",
+      "runtime_action": "negotiate_capabilities_then_sync"
+    },
+    {
+      "provider_release": ">=0.4.0",
+      "status": "unknown",
+      "reason": "A new TRD Bot release line requires an explicit compatibility record",
+      "runtime_action": "fail_closed"
+    }
+  ],
+  "required_capabilities": {
+    "contract_versions": [
+      "nexora-trd-integration-v1"
+    ],
+    "event_envelopes": [
+      "trd-integration-event-envelope-v1"
+    ],
+    "export_manifests": [
+      "nexora-export-manifest-v1"
+    ],
+    "source_references": [
+      "nexora-source-reference-v1"
+    ],
+    "commands": [
+      "decision_review.accept.v1",
+      "decision_review.reject.v1",
+      "decision_review.defer.v1"
+    ]
+  },
+  "negotiation": {
+    "endpoint": "/api/v1/integration/nexora/capabilities",
+    "cache_ttl_seconds": 300,
+    "recheck_on_412": true,
+    "missing_capability_behavior": "fail_closed",
+    "unknown_schema_behavior": "fail_closed"
+  }
+}

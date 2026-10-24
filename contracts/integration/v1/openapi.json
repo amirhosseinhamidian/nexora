@@ -1,0 +1,740 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "TRD Bot Nexora Integration API",
+    "version": "1.0.0",
+    "description": "Additive, versioned integration boundary for Nexora 0.1.x and TRD Bot 0.3.1+."
+  },
+  "servers": [
+    {
+      "url": "/api/v1/integration/nexora"
+    }
+  ],
+  "x-nexora-contract": "nexora-trd-integration-v1",
+  "x-nexora-security-decision": "NEX-P0-04",
+  "paths": {
+    "/api/v1/integration/nexora/capabilities": {
+      "get": {
+        "operationId": "getNexoraIntegrationCapabilities",
+        "summary": "Negotiate supported integration capabilities",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supported versions and capabilities",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/snapshots/{resource_type}": {
+      "get": {
+        "operationId": "listNexoraSourceSnapshots",
+        "summary": "Read a stable page of versioned source snapshots",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "name": "resource_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ResourceType"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Snapshot page",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnapshotPage"
+                }
+              }
+            }
+          },
+          "410": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "412": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/events": {
+      "get": {
+        "operationId": "listNexoraIntegrationEvents",
+        "summary": "Poll the at-least-once integration event feed",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ordered event page",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPage"
+                }
+              }
+            }
+          },
+          "410": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "412": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "503": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/events/{event_id}": {
+      "get": {
+        "operationId": "getNexoraIntegrationEvent",
+        "summary": "Read one immutable integration event",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event envelope",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "schemas/event-envelope.schema.json"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/commands/decision-reviews": {
+      "post": {
+        "operationId": "submitNexoraDecisionReview",
+        "summary": "Submit an idempotent Paper/Shadow decision review",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionReviewCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Command durably accepted",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandReceipt"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "412": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "422": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/exports": {
+      "post": {
+        "operationId": "createNexoraSourceExport",
+        "summary": "Request a deterministic source export",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Export job accepted",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportStatus"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "422": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/exports/{export_id}": {
+      "get": {
+        "operationId": "getNexoraSourceExport",
+        "summary": "Read export job status",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/ExportId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export status",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    },
+    "/api/v1/integration/nexora/exports/{export_id}/manifest": {
+      "get": {
+        "operationId": "getNexoraSourceExportManifest",
+        "summary": "Read the manifest for a complete export",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CorrelationId"
+          },
+          {
+            "$ref": "#/components/parameters/ExportId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complete export manifest",
+            "headers": {
+              "X-Correlation-ID": {
+                "$ref": "#/components/headers/CorrelationId"
+              },
+              "X-TRD-Bot-Version": {
+                "$ref": "#/components/headers/ProviderVersion"
+              },
+              "X-Contract-Version": {
+                "$ref": "#/components/headers/ContractVersion"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "schemas/export-manifest.schema.json"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/IntegrationError"
+          },
+          "409": {
+            "$ref": "#/components/responses/IntegrationError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "CorrelationId": {
+        "name": "X-Correlation-ID",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 160
+        }
+      },
+      "Cursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "Limit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        }
+      },
+      "ExportId": {
+        "name": "export_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^exp_[A-Za-z0-9_-]{16,64}$"
+        }
+      }
+    },
+    "headers": {
+      "CorrelationId": {
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ProviderVersion": {
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ContractVersion": {
+        "required": true,
+        "schema": {
+          "const": "nexora-trd-integration-v1"
+        }
+      }
+    },
+    "responses": {
+      "IntegrationError": {
+        "description": "Versioned integration failure",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "schemas/error-envelope.schema.json"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ResourceType": {
+        "type": "string",
+        "enum": [
+          "market_context",
+          "decision_evaluation",
+          "candidate",
+          "risk_gate",
+          "portfolio_intelligence",
+          "alert",
+          "alert_outcome",
+          "paper_shadow_portfolio",
+          "paper_shadow_position",
+          "simulation_outcome"
+        ]
+      },
+      "CapabilitiesResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "provider",
+          "provider_version",
+          "contract_versions",
+          "event_envelopes",
+          "export_manifests",
+          "source_references",
+          "commands",
+          "generated_at"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-integration-capabilities-v1"
+          },
+          "provider": {
+            "const": "trd_bot"
+          },
+          "provider_version": {
+            "type": "string"
+          },
+          "contract_versions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "event_envelopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "export_manifests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source_references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "commands": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SnapshotPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "items", "next_cursor", "has_more"],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-source-snapshot-page-v1"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "next_cursor": {
+            "type": ["string", "null"]
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EventPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "events", "next_cursor", "has_more"],
+        "properties": {
+          "schema_version": {
+            "const": "trd-integration-event-page-v1"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "schemas/event-envelope.schema.json"
+            }
+          },
+          "next_cursor": {
+            "type": ["string", "null"]
+          },
+          "has_more": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DecisionReviewCommand": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "command_type",
+          "decision_id",
+          "portfolio_mode",
+          "reviewed_at",
+          "reason",
+          "evidence"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-decision-review-command-v1"
+          },
+          "command_type": {
+            "enum": [
+              "decision_review.accept.v1",
+              "decision_review.reject.v1",
+              "decision_review.defer.v1"
+            ]
+          },
+          "decision_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "portfolio_mode": {
+            "enum": ["paper", "shadow"]
+          },
+          "reviewed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "evidence": {
+            "$ref": "schemas/source-reference.schema.json"
+          }
+        }
+      },
+      "CommandReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "command_id",
+          "command_type",
+          "status",
+          "idempotency_key",
+          "correlation_id",
+          "accepted_at"
+        ],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-command-receipt-v1"
+          },
+          "command_id": {
+            "type": "string"
+          },
+          "command_type": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["accepted", "duplicate"]
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accepted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ExportRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "mode", "formats", "profile", "scope", "filters"],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-export-request-v1"
+          },
+          "mode": {
+            "enum": ["full", "incremental", "selected"]
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "enum": ["json", "jsonl", "csv", "parquet", "zip_bundle"]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "profile": {
+            "enum": ["private", "ai_safe"]
+          },
+          "scope": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceType"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "filters": {
+            "type": "object"
+          }
+        }
+      },
+      "ExportStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schema_version", "export_id", "status", "requested_at"],
+        "properties": {
+          "schema_version": {
+            "const": "nexora-export-status-v1"
+          },
+          "export_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": ["accepted", "running", "complete", "failed"]
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

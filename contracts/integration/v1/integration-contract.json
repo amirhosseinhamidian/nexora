@@ -1,0 +1,262 @@
+{
+  "schema_version": "nexora-trd-integration-contract-v1",
+  "decision_id": "NEX-P0-03",
+  "decision_date": "2026-10-22",
+  "status": "candidate",
+  "provider": {
+    "product": "TRD Bot",
+    "release_line": "0.3.x",
+    "minimum_contract_release": "0.3.1"
+  },
+  "consumer": {
+    "product": "Nexora",
+    "release_line": "0.1.x",
+    "edition": "personal"
+  },
+  "contract": {
+    "name": "nexora-trd-integration-v1",
+    "api_namespace": "/api/v1/integration/nexora",
+    "openapi_version": "3.1.0",
+    "json_schema_dialect": "https://json-schema.org/draft/2020-12/schema",
+    "canonical_timezone": "UTC",
+    "delivery_semantics": "at_least_once",
+    "ordering_scope": "per_aggregate",
+    "unknown_schema_behavior": "fail_closed"
+  },
+  "artifacts": {
+    "openapi": "contracts/integration/v1/openapi.json",
+    "event_schema": "contracts/integration/v1/schemas/event-envelope.schema.json",
+    "export_schema": "contracts/integration/v1/schemas/export-manifest.schema.json",
+    "source_reference_schema": "contracts/integration/v1/schemas/source-reference.schema.json",
+    "error_schema": "contracts/integration/v1/schemas/error-envelope.schema.json",
+    "compatibility_matrix": "contracts/integration/v1/compatibility-matrix.json",
+    "provider_inventory": "contracts/integration/v1/trd-bot-v0.3.0-inventory.json"
+  },
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/capabilities",
+      "operation_id": "getNexoraIntegrationCapabilities",
+      "kind": "query",
+      "retry_class": "safe"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/snapshots/{resource_type}",
+      "operation_id": "listNexoraSourceSnapshots",
+      "kind": "query",
+      "retry_class": "safe"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/events",
+      "operation_id": "listNexoraIntegrationEvents",
+      "kind": "event_feed",
+      "retry_class": "safe"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/events/{event_id}",
+      "operation_id": "getNexoraIntegrationEvent",
+      "kind": "event_lookup",
+      "retry_class": "safe"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/integration/nexora/commands/decision-reviews",
+      "operation_id": "submitNexoraDecisionReview",
+      "kind": "paper_shadow_command",
+      "retry_class": "idempotent_command"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/integration/nexora/exports",
+      "operation_id": "createNexoraSourceExport",
+      "kind": "export_command",
+      "retry_class": "idempotent_command"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/exports/{export_id}",
+      "operation_id": "getNexoraSourceExport",
+      "kind": "query",
+      "retry_class": "safe"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/integration/nexora/exports/{export_id}/manifest",
+      "operation_id": "getNexoraSourceExportManifest",
+      "kind": "query",
+      "retry_class": "safe"
+    }
+  ],
+  "required_request_headers": {
+    "all_requests": [
+      "Accept",
+      "X-Correlation-ID"
+    ],
+    "commands": [
+      "Content-Type",
+      "Idempotency-Key"
+    ]
+  },
+  "required_response_headers": [
+    "Content-Type",
+    "X-Correlation-ID",
+    "X-TRD-Bot-Version",
+    "X-Contract-Version"
+  ],
+  "source_resources": [
+    "market_context",
+    "decision_evaluation",
+    "candidate",
+    "risk_gate",
+    "portfolio_intelligence",
+    "alert",
+    "alert_outcome",
+    "paper_shadow_portfolio",
+    "paper_shadow_position",
+    "simulation_outcome"
+  ],
+  "event_types": [
+    "market_context.assessed.v1",
+    "decision.evaluation.completed.v1",
+    "candidate.state.changed.v1",
+    "risk_gate.completed.v1",
+    "portfolio_intelligence.completed.v1",
+    "alert.published.v1",
+    "alert.lifecycle.changed.v1",
+    "simulation.position.opened.v1",
+    "simulation.position.updated.v1",
+    "simulation.position.closed.v1",
+    "outcome.recorded.v1"
+  ],
+  "command_types": [
+    "decision_review.accept.v1",
+    "decision_review.reject.v1",
+    "decision_review.defer.v1"
+  ],
+  "event_feed": {
+    "cursor": "opaque_stable_cursor",
+    "default_limit": 100,
+    "maximum_limit": 500,
+    "long_polling": false,
+    "cursor_expiry_status": 410,
+    "cursor_expiry_action": "full_snapshot_resync",
+    "deduplication_keys": [
+      "event_id",
+      "idempotency_key"
+    ],
+    "gap_detection": "aggregate_version",
+    "acknowledgement_required": false
+  },
+  "retry_policy": {
+    "maximum_attempts": 4,
+    "base_delay_ms": 250,
+    "maximum_delay_ms": 4000,
+    "jitter": "full",
+    "retryable_statuses": [
+      429,
+      502,
+      503,
+      504
+    ],
+    "non_retryable_statuses": [
+      400,
+      401,
+      403,
+      404,
+      409,
+      410,
+      412,
+      422
+    ],
+    "post_retry_requires_idempotency_key": true,
+    "respect_retry_after": true
+  },
+  "failure_semantics": {
+    "unknown_contract_version": "incompatible_fail_closed",
+    "unknown_payload_schema": "quarantine_and_degrade",
+    "checksum_mismatch": "reject_and_alert",
+    "event_gap": "pause_projection_and_backfill",
+    "cursor_expired": "full_snapshot_resync",
+    "source_unavailable": "serve_last_verified_snapshot_as_stale",
+    "partial_export": "reject_as_unsuccessful",
+    "idempotency_conflict": "reject_without_replay",
+    "timeout_after_command": "lookup_by_idempotency_key_before_retry"
+  },
+  "export": {
+    "modes": [
+      "full",
+      "incremental",
+      "selected"
+    ],
+    "formats": [
+      "json",
+      "jsonl",
+      "csv",
+      "parquet",
+      "zip_bundle"
+    ],
+    "profiles": [
+      "private",
+      "ai_safe"
+    ],
+    "accepted_completion_status": "complete",
+    "checksum_algorithm": "sha256",
+    "canonical_json": "rfc8785",
+    "secret_fields_forbidden": true
+  },
+  "security_boundary": {
+    "authentication_mechanism_decision": "NEX-P0-04",
+    "transport_security_decision": "NEX-P0-04",
+    "direct_database_access": false,
+    "exchange_credentials": false,
+    "live_order_capability": false,
+    "wallet_capability": false,
+    "allowed_command_scope": "paper_shadow_only"
+  },
+  "provider_gaps": [
+    {
+      "id": "TRD-NEX-GAP-001",
+      "release": "0.3.0",
+      "gap": "No dedicated Nexora capabilities endpoint or common versioned envelope",
+      "required_release": "0.3.1",
+      "blocking": true
+    },
+    {
+      "id": "TRD-NEX-GAP-002",
+      "release": "0.3.0",
+      "gap": "No external cursor-based event feed",
+      "required_release": "0.3.1",
+      "blocking": true
+    },
+    {
+      "id": "TRD-NEX-GAP-003",
+      "release": "0.3.0",
+      "gap": "Only narrow CSV reports exist; no versioned source export bundle",
+      "required_release": "0.3.1",
+      "blocking": true
+    },
+    {
+      "id": "TRD-NEX-GAP-004",
+      "release": "0.3.0",
+      "gap": "No dedicated idempotent Paper/Shadow decision-review command boundary",
+      "required_release": "0.3.1",
+      "blocking": true
+    }
+  ],
+  "forbidden": [
+    "direct_trd_bot_database_access",
+    "unversioned_payload_acceptance",
+    "silent_cursor_reset",
+    "exactly_once_delivery_claim",
+    "retry_post_without_idempotency_key",
+    "accept_partial_export",
+    "export_secret_fields",
+    "live_order_command",
+    "wallet_command",
+    "exchange_credential_command"
+  ],
+  "next_allowed_stage": "NEX-P0-03-FREEZE"
+}

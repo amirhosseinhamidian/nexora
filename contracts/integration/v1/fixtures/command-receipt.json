@@ -1,0 +1,9 @@
+{
+  "schema_version": "nexora-command-receipt-v1",
+  "command_id": "cmd_review_01JAX6V8K4Q7N2YH",
+  "command_type": "decision_review.accept.v1",
+  "status": "accepted",
+  "idempotency_key": "nexora-review-decision-20261022-0001",
+  "correlation_id": "d7d23916-e3d5-41ee-932e-1f1ae08c1825",
+  "accepted_at": "2026-10-22T12:05:01Z"
+}

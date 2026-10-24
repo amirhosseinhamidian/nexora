@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexora.local/contracts/integration/v1/schemas/source-reference.schema.json",
+  "title": "Nexora TRD Bot source reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_product",
+    "source_version",
+    "resource_type",
+    "resource_id",
+    "resource_schema_version",
+    "observed_at",
+    "checksum"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "nexora-source-reference-v1"
+    },
+    "source_product": {
+      "const": "trd_bot"
+    },
+    "source_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "resource_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "resource_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "resource_schema_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "checksum": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

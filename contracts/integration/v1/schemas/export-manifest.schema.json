@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexora.local/contracts/integration/v1/schemas/export-manifest.schema.json",
+  "title": "Nexora source export manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "export_id",
+    "generated_at",
+    "mode",
+    "profile",
+    "source_versions",
+    "scope",
+    "filters",
+    "timezone",
+    "currency_unit_context",
+    "lineage_references",
+    "files",
+    "redaction_profile",
+    "completion_status"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "nexora-export-manifest-v1"
+    },
+    "export_id": {
+      "type": "string",
+      "pattern": "^exp_[A-Za-z0-9_-]{16,64}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mode": {
+      "enum": ["full", "incremental", "selected"]
+    },
+    "profile": {
+      "enum": ["private", "ai_safe"]
+    },
+    "source_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minProperties": 1
+    },
+    "scope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "filters": {
+      "type": "object"
+    },
+    "timezone": {
+      "const": "UTC"
+    },
+    "currency_unit_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_currency", "quantity_units_explicit"],
+      "properties": {
+        "base_currency": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{2,12}$"
+        },
+        "quantity_units_explicit": {
+          "const": true
+        }
+      }
+    },
+    "lineage_references": {
+      "type": "array",
+      "items": {
+        "$ref": "source-reference.schema.json"
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "media_type",
+          "row_count",
+          "size_bytes",
+          "sha256",
+          "schema_version"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "media_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "row_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "schema_version": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "redaction_profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "completion_status": {
+      "const": "complete"
+    }
+  }
+}

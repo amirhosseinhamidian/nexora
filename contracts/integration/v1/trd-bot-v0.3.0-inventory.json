@@ -1,0 +1,51 @@
+{
+  "schema_version": "trd-bot-nexora-source-inventory-v1",
+  "provider": "TRD Bot",
+  "provider_version": "0.3.0",
+  "inspected_on": "2026-10-22",
+  "api_prefix": "/api/v1",
+  "read_endpoints": [
+    "/api/v1/health",
+    "/api/v1/research/overview",
+    "/api/v1/research/overview/activity",
+    "/api/v1/market-context",
+    "/api/v1/market-context/{assessment_id}",
+    "/api/v1/decision-intelligence/evaluations",
+    "/api/v1/decision-intelligence/evaluations/latest",
+    "/api/v1/decision-intelligence/evaluations/{evaluation_id}",
+    "/api/v1/research/candidates",
+    "/api/v1/research/candidates/{candidate_id}",
+    "/api/v1/research/candidates/{candidate_id}/lineage",
+    "/api/v1/research/risk",
+    "/api/v1/research/portfolios",
+    "/api/v1/research/portfolios/{portfolio_id}",
+    "/api/v1/research/portfolios/{portfolio_id}/analytics",
+    "/api/v1/research/portfolios/{portfolio_id}/positions",
+    "/api/v1/research/portfolios/{portfolio_id}/timeline",
+    "/api/v1/alerts",
+    "/api/v1/alerts/summary",
+    "/api/v1/alerts/outcomes",
+    "/api/v1/alerts/outcomes/{outcome_id}",
+    "/api/v1/monitoring/summary"
+  ],
+  "available_evidence": [
+    "health_and_version",
+    "market_context",
+    "decision_evaluation",
+    "candidate_projection_and_lineage",
+    "risk_dashboard",
+    "paper_shadow_portfolio_and_positions",
+    "alerts_and_outcomes",
+    "monitoring_summary"
+  ],
+  "observed_limitations": [
+    "No dedicated /integration/nexora namespace",
+    "No common response envelope across all resources",
+    "Not every response exposes an integration schema_version",
+    "No external cursor-based event feed",
+    "No general JSON/JSONL/Parquet/ZIP source export bundle",
+    "No dedicated idempotent Nexora decision-review command"
+  ],
+  "assessment": "legacy_read_only_blocked",
+  "direct_database_fallback_allowed": false
+}

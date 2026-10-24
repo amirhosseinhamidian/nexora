@@ -1,0 +1,46 @@
+{
+  "schema_version": "nexora-export-manifest-v1",
+  "export_id": "exp_bundle_01JAX72D8C5F3K9M",
+  "generated_at": "2026-10-22T12:10:00Z",
+  "mode": "incremental",
+  "profile": "ai_safe",
+  "source_versions": {
+    "trd_bot": "0.3.1",
+    "integration_contract": "nexora-trd-integration-v1"
+  },
+  "scope": ["decision_evaluation", "portfolio_intelligence"],
+  "filters": {
+    "from": "2026-10-01T00:00:00Z",
+    "through": "2026-10-22T12:00:00Z",
+    "portfolio_mode": "shadow"
+  },
+  "timezone": "UTC",
+  "currency_unit_context": {
+    "base_currency": "USDT",
+    "quantity_units_explicit": true
+  },
+  "lineage_references": [
+    {
+      "schema_version": "nexora-source-reference-v1",
+      "source_product": "trd_bot",
+      "source_version": "0.3.1",
+      "resource_type": "decision_evaluation",
+      "resource_id": "decision-20261022-0001",
+      "resource_schema_version": "decision-evaluation-v1",
+      "observed_at": "2026-10-22T12:00:00Z",
+      "checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "files": [
+    {
+      "path": "data/decision-evaluations.jsonl",
+      "media_type": "application/x-ndjson",
+      "row_count": 1,
+      "size_bytes": 512,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "schema_version": "decision-evaluation-export-v1"
+    }
+  ],
+  "redaction_profile": "ai-safe-v1",
+  "completion_status": "complete"
+}

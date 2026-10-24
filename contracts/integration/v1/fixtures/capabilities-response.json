@@ -1,0 +1,15 @@
+{
+  "schema_version": "nexora-integration-capabilities-v1",
+  "provider": "trd_bot",
+  "provider_version": "0.3.1",
+  "contract_versions": ["nexora-trd-integration-v1"],
+  "event_envelopes": ["trd-integration-event-envelope-v1"],
+  "export_manifests": ["nexora-export-manifest-v1"],
+  "source_references": ["nexora-source-reference-v1"],
+  "commands": [
+    "decision_review.accept.v1",
+    "decision_review.reject.v1",
+    "decision_review.defer.v1"
+  ],
+  "generated_at": "2026-10-22T12:00:00Z"
+}

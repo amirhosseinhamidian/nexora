@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexora.local/contracts/integration/v1/schemas/event-envelope.schema.json",
+  "title": "TRD Bot Nexora integration event envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "emitted_at",
+    "source",
+    "aggregate",
+    "correlation_id",
+    "causation_id",
+    "idempotency_key",
+    "payload_schema",
+    "payload",
+    "payload_checksum"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "trd-integration-event-envelope-v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[A-Za-z0-9_-]{16,64}$"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "market_context.assessed.v1",
+        "decision.evaluation.completed.v1",
+        "candidate.state.changed.v1",
+        "risk_gate.completed.v1",
+        "portfolio_intelligence.completed.v1",
+        "alert.published.v1",
+        "alert.lifecycle.changed.v1",
+        "simulation.position.opened.v1",
+        "simulation.position.updated.v1",
+        "simulation.position.closed.v1",
+        "outcome.recorded.v1"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "emitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "$ref": "source-reference.schema.json"
+    },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "version"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "correlation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "causation_id": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 160
+    },
+    "payload_schema": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "payload": {
+      "type": "object"
+    },
+    "payload_checksum": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

@@ -18,12 +18,14 @@ HEADERS_PATH = SECURITY_BASE / "security-headers.json"
 THREAT_MODEL_PATH = SECURITY_BASE / "threat-model.json"
 AUDIT_SCHEMA_PATH = SECURITY_BASE / "audit-event.schema.json"
 AUDIT_FIXTURE_PATH = SECURITY_BASE / "fixtures" / "security-audit-event.json"
+OPERATIONAL_POLICY_PATH = ROOT / "contracts" / "operations" / "v1" / "private-runtime-budget.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "03-security-identity-and-private-deployment-boundary.md"
 ADR_PATHS = (
     ROOT / "docs" / "adr" / "0008-passkey-first-single-owner-identity.md",
     ROOT / "docs" / "adr" / "0009-opaque-server-side-sessions.md",
     ROOT / "docs" / "adr" / "0010-private-network-deployment-and-service-auth.md",
     ROOT / "docs" / "adr" / "0011-secret-and-encrypted-backup-boundary.md",
+    ROOT / "docs" / "adr" / "0012-bounded-local-artifact-storage-and-retention.md",
 )
 INTEGRATION_VERIFIER_PATH = ROOT / "scripts" / "verify_integration_contracts.py"
 
@@ -112,6 +114,10 @@ def load_audit_fixture(path: Path = AUDIT_FIXTURE_PATH) -> dict[str, Any]:
     return _load_json(path)
 
 
+def load_operational_policy(path: Path = OPERATIONAL_POLICY_PATH) -> dict[str, Any]:
+    return _load_json(path)
+
+
 def canonical_checksum(payload: dict[str, Any]) -> str:
     encoded = json.dumps(
         payload,
@@ -183,6 +189,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "security_headers": "contracts/security/v1/security-headers.json",
         "audit_event_schema": "contracts/security/v1/audit-event.schema.json",
         "audit_event_fixture": "contracts/security/v1/fixtures/security-audit-event.json",
+        "operational_policy": "contracts/operations/v1/private-runtime-budget.json",
     }
     _require(artifacts == expected_artifacts, "security artifact inventory does not match")
     for relative in artifacts.values():
@@ -344,6 +351,22 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(backup.get("backup_manifest_checksums") == "sha256", "backup manifests require SHA-256")
     _require(backup.get("exports_are_backups") is False, "exports cannot be treated as backups")
 
+    operations = contract.get("operational_boundary")
+    _require(isinstance(operations, dict), "operational_boundary must be an object")
+    expected_operations = {
+        "policy_schema_version": "nexora-private-operations-policy-v1",
+        "service_level_class": "internal_release_target_not_external_sla",
+        "capacity_profile": "single_owner_reference_host",
+        "retention_enforcement": "daily_idempotent_job",
+        "production_artifact_storage": "versioned_local_filesystem_adapter",
+        "object_storage_network_access": "api_only_not_public",
+        "over_capacity_behavior": "degrade_with_backpressure_without_evidence_loss",
+        "rpo_hours": 24,
+        "rto_hours": 4,
+        "runtime_measurement_delivered": False,
+    }
+    _require(operations == expected_operations, "operational boundary does not match")
+
     required_forbidden = {
         "public_self_registration",
         "multi_tenant_identity",
@@ -361,6 +384,11 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "wallet_authorization",
         "exchange_credential_authorization",
         "runtime_security_claim_before_implementation",
+        "unbounded_storage_growth",
+        "silent_retention_deletion",
+        "public_artifact_bucket",
+        "drop_immutable_evidence_on_overload",
+        "external_sla_claim_in_v0.1",
     }
     _require(required_forbidden <= set(contract.get("forbidden", [])), "forbidden security inventory is incomplete")
     _require(len(contract.get("deferred", [])) == 9, "deferred security inventory is incomplete")
@@ -447,6 +475,134 @@ def validate_threat_model(payload: dict[str, Any]) -> None:
     _require("live_trading_security" in non_goals, "live trading must remain outside the threat model")
 
 
+def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(payload.get("schema_version") == "nexora-private-operations-policy-v1", "invalid operational policy schema")
+    _require(payload.get("decision_id") == "NEX-P0-04", "invalid operational policy decision")
+    _require(payload.get("decision_date") == "2026-10-24", "invalid operational policy date")
+    _require(payload.get("status") == "candidate", "operational policy must remain a candidate")
+    _require(payload.get("schema_version") == contract["operational_boundary"]["policy_schema_version"], "operational policy and boundary disagree")
+
+    levels = payload.get("service_levels")
+    _require(isinstance(levels, dict), "service_levels must be an object")
+    _require(levels.get("classification") == "internal_release_target_not_external_sla", "service levels cannot claim an external SLA")
+    _require(levels.get("measurement_window") == "rolling_30_days", "invalid SLO measurement window")
+    _require(levels.get("availability_percent") == "99.5", "availability target has drifted")
+    _require(levels.get("maximum_planned_maintenance_minutes_per_month") == 240, "maintenance budget has drifted")
+    _require(levels.get("successful_request_ratio_percent") == "99.0", "request success target has drifted")
+    _require(levels.get("non_export_api_latency") == {"p95_ms": 300, "p99_ms": 1000}, "API latency target has drifted")
+    freshness = levels.get("event_sync_freshness")
+    _require(isinstance(freshness, dict), "event sync freshness must be an object")
+    _require(freshness.get("p95_seconds") == 300 and freshness.get("p99_seconds") == 900, "event sync freshness target has drifted")
+    _require(freshness.get("condition") == "both_nexora_and_trd_bot_healthy", "event freshness health condition is required")
+    _require(levels.get("event_projection_latency") == {"p95_seconds": 60}, "projection latency target has drifted")
+    _require(levels.get("durable_job_start_latency") == {"p95_seconds": 60}, "job start target has drifted")
+    export = levels.get("reference_export_completion")
+    _require(isinstance(export, dict), "reference export target must be an object")
+    _require(export == {"maximum_rows": 100000, "maximum_uncompressed_bytes": 1073741824, "p95_seconds": 300}, "reference export target has drifted")
+    _require(levels.get("recovery_point_objective_hours") == contract["operational_boundary"]["rpo_hours"] == 24, "RPO must remain 24 hours")
+    _require(levels.get("recovery_time_objective_hours") == contract["operational_boundary"]["rto_hours"] == 4, "RTO must remain four hours")
+    _require(levels.get("single_host_failure_tolerance") is False, "single-host failure tolerance cannot be claimed")
+
+    capacity = payload.get("capacity_budget")
+    _require(isinstance(capacity, dict), "capacity_budget must be an object")
+    _require(capacity.get("reference_host") == {"cpu_cores": 4, "memory_gib": 8, "encrypted_storage_gib": 200}, "reference host has drifted")
+    _require(capacity.get("owner_accounts") == 1, "capacity profile must remain single-owner")
+    _require(capacity.get("maximum_concurrent_sessions") == 5, "session capacity has drifted")
+    _require(capacity.get("interactive_requests_per_second") == {"sustained": 10, "burst": 25, "burst_seconds": 60}, "interactive capacity has drifted")
+    _require(capacity.get("source_events_per_second") == {"sustained": 50, "burst": 100, "burst_seconds": 60}, "event capacity has drifted")
+    _require(capacity.get("backlog_recovery") == {"events": 100000, "maximum_seconds": 3600}, "backlog recovery budget has drifted")
+    _require(capacity.get("database_soft_limit_gib") == 20, "database soft limit has drifted")
+    _require(capacity.get("artifact_store_soft_limit_gib") == 100, "artifact soft limit has drifted")
+    _require(capacity.get("minimum_free_storage_percent") == 20, "free storage reserve has drifted")
+    _require(capacity.get("benchmark_required_before_release") is True, "capacity benchmark is required")
+
+    overload = payload.get("overload_policy")
+    _require(isinstance(overload, dict), "overload_policy must be an object")
+    _require(overload.get("interactive_rate_limit_status") == 429, "overload must use HTTP 429")
+    for key in ("retry_after_required", "durable_work_queued", "bounded_worker_concurrency", "backpressure_before_rejection", "noncritical_exports_paused_first", "last_verified_snapshot_may_be_served_stale", "health_reports_degraded"):
+        _require(overload.get(key) is True, f"overload policy requires {key}")
+    for key in ("immutable_evidence_dropped", "accepted_command_lost", "silent_partial_export"):
+        _require(overload.get(key) is False, f"overload policy forbids {key}")
+
+    retention = payload.get("retention")
+    _require(isinstance(retention, list) and len(retention) == 10, "ten retention classes are required")
+    by_class = {entry.get("data_class"): entry for entry in retention}
+    expected_classes = {
+        "immutable_source_evidence",
+        "portfolio_and_financial_records",
+        "security_audit_events",
+        "application_logs",
+        "operational_metrics",
+        "terminal_background_jobs",
+        "published_outbox_events",
+        "unpinned_export_artifacts",
+        "expired_session_records",
+        "webauthn_challenges",
+    }
+    _require(set(by_class) == expected_classes, "retention class inventory does not match")
+    _require(by_class["immutable_source_evidence"].get("duration") == "indefinite", "immutable evidence retention must be indefinite")
+    _require(by_class["immutable_source_evidence"].get("disposition") == "no_automatic_deletion_in_v0.1", "immutable evidence cannot be automatically deleted")
+    _require(by_class["portfolio_and_financial_records"].get("duration") == "indefinite", "financial record retention must be indefinite")
+    expected_days = {
+        "security_audit_events": 400,
+        "application_logs": 30,
+        "operational_metrics": 90,
+        "terminal_background_jobs": 90,
+        "published_outbox_events": 30,
+        "unpinned_export_artifacts": 30,
+        "expired_session_records": 7,
+    }
+    for data_class, days in expected_days.items():
+        _require(by_class[data_class].get("duration_days") == days, f"retention window has drifted: {data_class}")
+    _require(by_class["webauthn_challenges"].get("duration_hours") == 24, "WebAuthn challenge retention has drifted")
+
+    backup = payload.get("backup_retention")
+    _require(isinstance(backup, dict), "backup_retention must be an object")
+    _require(backup.get("daily") == 14 and backup.get("weekly") == 8 and backup.get("monthly") == 12, "backup retention tiers have drifted")
+    _require(backup.get("minimum_geographic_copies") == 1, "one off-host backup copy is required")
+    _require(backup.get("runtime_host_copy_counts_as_geographic_copy") is False, "runtime-host backup cannot count as off-host")
+    _require(backup.get("encryption") == "age_x25519_offline_recipient", "backup encryption has drifted")
+    _require(backup.get("manifest_checksum") == "sha256", "backup manifest checksum has drifted")
+
+    storage = payload.get("artifact_storage")
+    _require(isinstance(storage, dict), "artifact_storage must be an object")
+    _require(storage.get("adapter") == "versioned_local_filesystem_adapter", "invalid production artifact adapter")
+    _require(storage.get("root") == "dedicated_encrypted_host_volume", "artifact root must be encrypted and dedicated")
+    _require(storage.get("public_network_access") is False, "public artifact access is forbidden")
+    _require(storage.get("download_access") == "authenticated_api_only", "artifact downloads must use the authenticated API")
+    _require(storage.get("path_strategy") == "owner_type_artifact_id_version", "artifact path strategy has drifted")
+    _require(storage.get("content_checksum") == "sha256", "artifact checksum must use SHA-256")
+    _require(storage.get("atomic_publish") == "write_fsync_rename", "artifact publication must be atomic")
+    _require(storage.get("manifest_required") is True, "artifact manifest is required")
+    _require(storage.get("immutable_after_publish") is True, "published artifacts must be immutable")
+    _require(storage.get("soft_quota_gib") == 100, "artifact quota has drifted")
+    _require(storage.get("minimum_free_storage_percent") == 20, "artifact free-space reserve has drifted")
+    _require(storage.get("s3_compatible_adapter") == "deferred_until_multi_host_or_capacity_trigger", "S3 decision has drifted")
+
+    alerts = payload.get("storage_alerts")
+    _require(isinstance(alerts, list) and alerts == [
+        {"used_percent": 70, "severity": "warning"},
+        {"used_percent": 85, "severity": "critical"},
+        {"used_percent": 95, "severity": "write_protect_noncritical_artifacts"},
+    ], "storage alert thresholds have drifted")
+
+    execution = payload.get("retention_execution")
+    _require(isinstance(execution, dict), "retention_execution must be an object")
+    _require(execution.get("schedule") == "daily", "retention must run daily")
+    for key in ("idempotent", "dry_run_supported", "manifest_before_delete", "security_audit_event_required", "partial_failure_retriable", "immutable_evidence_excluded"):
+        _require(execution.get(key) is True, f"retention execution requires {key}")
+
+    evidence = payload.get("acceptance_evidence")
+    _require(set(evidence or []) == {
+        "capacity_benchmark_report",
+        "overload_and_backpressure_test",
+        "retention_dry_run_report",
+        "backup_restore_drill",
+        "artifact_checksum_and_atomicity_test",
+        "slo_measurement_smoke_test",
+    }, "operational acceptance evidence is incomplete")
+
+
 def _timestamp(value: Any, label: str) -> None:
     _require(isinstance(value, str) and value.endswith("Z"), f"{label} must be a UTC timestamp")
     try:
@@ -521,6 +677,12 @@ def validate_documents() -> None:
         "private_single_host",
         "public_internet",
         "age X25519",
+        "availability",
+        "Capacity budget",
+        "immutable source evidence",
+        "versioned_local_filesystem_adapter",
+        "RPO",
+        "RTO",
         "OWASP ASVS `5.0.0`",
         "NIST SP 800-63B-4",
         "NEX-P0-04-FREEZE",
@@ -543,6 +705,7 @@ def main() -> int:
     validate_deployment_profiles(load_deployment_profiles())
     validate_security_headers(load_security_headers())
     validate_threat_model(load_threat_model())
+    validate_operational_policy(load_operational_policy(), contract)
     validate_audit_contract(load_audit_schema(), load_audit_fixture(), contract)
     validate_documents()
     print(f"schema_version={contract['schema_version']}")

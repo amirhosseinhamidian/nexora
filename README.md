@@ -14,7 +14,8 @@ modular-monolith boundaries, repository layout, and bootstrap plan.
 boundary, compatibility matrix, deterministic fixtures, and failure semantics.
 `NEX-P0-04` is now a candidate: it defines passkey-first single-owner identity,
 server-side sessions, scoped TRD Bot service authentication, secret handling,
-encrypted recovery, and the private-only production topology. The next allowed
+encrypted recovery, the private-only production topology, measurable SLO and
+capacity budgets, retention, and bounded artifact storage. The next allowed
 stage is `NEX-P0-04-FREEZE`.
 
 The repository currently contains governance and verification assets only. The

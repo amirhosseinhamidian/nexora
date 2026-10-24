@@ -25,6 +25,7 @@ class SecurityBoundaryTests(unittest.TestCase):
         self.threat_model = MODULE.load_threat_model()
         self.audit_schema = MODULE.load_audit_schema()
         self.audit_fixture = MODULE.load_audit_fixture()
+        self.operational_policy = MODULE.load_operational_policy()
 
     def test_frozen_p0_03_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_integration_contract()
@@ -35,6 +36,7 @@ class SecurityBoundaryTests(unittest.TestCase):
         MODULE.validate_security_headers(self.headers)
         MODULE.validate_threat_model(self.threat_model)
         MODULE.validate_audit_contract(self.audit_schema, self.audit_fixture, self.contract)
+        MODULE.validate_operational_policy(self.operational_policy, self.contract)
         MODULE.validate_documents()
 
     def test_contract_checksum_is_deterministic(self) -> None:
@@ -169,6 +171,54 @@ class SecurityBoundaryTests(unittest.TestCase):
         changed["next_allowed_stage"] = "NEX-P1-01"
         with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "P0-04-FREEZE"):
             MODULE.validate_contract(changed)
+
+    def test_operational_boundary_cannot_claim_runtime_measurement(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["operational_boundary"]["runtime_measurement_delivered"] = True
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "operational boundary"):
+            MODULE.validate_contract(changed)
+
+    def test_internal_target_cannot_become_external_sla(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["service_levels"]["classification"] = "external_sla"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "external SLA"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_rpo_cannot_silently_be_relaxed(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["service_levels"]["recovery_point_objective_hours"] = 48
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "RPO"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_immutable_evidence_cannot_be_dropped_on_overload(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["overload_policy"]["immutable_evidence_dropped"] = True
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "immutable_evidence_dropped"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_immutable_evidence_cannot_receive_automatic_deletion(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["retention"][0]["duration"] = "365_days"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "retention must be indefinite"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_public_artifact_access_cannot_be_enabled(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["artifact_storage"]["public_network_access"] = True
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "public artifact access"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_artifact_atomic_publish_cannot_be_weakened(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["artifact_storage"]["atomic_publish"] = "direct_write"
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "publication must be atomic"):
+            MODULE.validate_operational_policy(changed, self.contract)
+
+    def test_runtime_host_backup_cannot_count_as_off_host(self) -> None:
+        changed = copy.deepcopy(self.operational_policy)
+        changed["backup_retention"]["runtime_host_copy_counts_as_geographic_copy"] = True
+        with self.assertRaisesRegex(MODULE.SecurityBoundaryError, "cannot count as off-host"):
+            MODULE.validate_operational_policy(changed, self.contract)
 
 
 if __name__ == "__main__":

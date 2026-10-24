@@ -1,0 +1,182 @@
+{
+  "schema_version": "nexora-private-operations-policy-v1",
+  "decision_id": "NEX-P0-04",
+  "decision_date": "2026-10-24",
+  "status": "candidate",
+  "service_levels": {
+    "classification": "internal_release_target_not_external_sla",
+    "measurement_window": "rolling_30_days",
+    "availability_percent": "99.5",
+    "maximum_planned_maintenance_minutes_per_month": 240,
+    "successful_request_ratio_percent": "99.0",
+    "non_export_api_latency": {
+      "p95_ms": 300,
+      "p99_ms": 1000
+    },
+    "event_sync_freshness": {
+      "p95_seconds": 300,
+      "p99_seconds": 900,
+      "condition": "both_nexora_and_trd_bot_healthy"
+    },
+    "event_projection_latency": {
+      "p95_seconds": 60
+    },
+    "durable_job_start_latency": {
+      "p95_seconds": 60
+    },
+    "reference_export_completion": {
+      "maximum_rows": 100000,
+      "maximum_uncompressed_bytes": 1073741824,
+      "p95_seconds": 300
+    },
+    "recovery_point_objective_hours": 24,
+    "recovery_time_objective_hours": 4,
+    "single_host_failure_tolerance": false
+  },
+  "capacity_budget": {
+    "reference_host": {
+      "cpu_cores": 4,
+      "memory_gib": 8,
+      "encrypted_storage_gib": 200
+    },
+    "owner_accounts": 1,
+    "maximum_concurrent_sessions": 5,
+    "interactive_requests_per_second": {
+      "sustained": 10,
+      "burst": 25,
+      "burst_seconds": 60
+    },
+    "source_events_per_second": {
+      "sustained": 50,
+      "burst": 100,
+      "burst_seconds": 60
+    },
+    "backlog_recovery": {
+      "events": 100000,
+      "maximum_seconds": 3600
+    },
+    "database_soft_limit_gib": 20,
+    "artifact_store_soft_limit_gib": 100,
+    "minimum_free_storage_percent": 20,
+    "benchmark_required_before_release": true
+  },
+  "overload_policy": {
+    "interactive_rate_limit_status": 429,
+    "retry_after_required": true,
+    "durable_work_queued": true,
+    "bounded_worker_concurrency": true,
+    "backpressure_before_rejection": true,
+    "noncritical_exports_paused_first": true,
+    "last_verified_snapshot_may_be_served_stale": true,
+    "health_reports_degraded": true,
+    "immutable_evidence_dropped": false,
+    "accepted_command_lost": false,
+    "silent_partial_export": false
+  },
+  "retention": [
+    {
+      "data_class": "immutable_source_evidence",
+      "duration": "indefinite",
+      "disposition": "no_automatic_deletion_in_v0.1"
+    },
+    {
+      "data_class": "portfolio_and_financial_records",
+      "duration": "indefinite",
+      "disposition": "owner_audited_export_then_future_explicit_policy"
+    },
+    {
+      "data_class": "security_audit_events",
+      "duration_days": 400,
+      "disposition": "encrypted_archive_or_delete_with_audit"
+    },
+    {
+      "data_class": "application_logs",
+      "duration_days": 30,
+      "disposition": "delete"
+    },
+    {
+      "data_class": "operational_metrics",
+      "duration_days": 90,
+      "disposition": "delete"
+    },
+    {
+      "data_class": "terminal_background_jobs",
+      "duration_days": 90,
+      "disposition": "delete_payload_then_metadata"
+    },
+    {
+      "data_class": "published_outbox_events",
+      "duration_days": 30,
+      "disposition": "delete_after_projection_checkpoint"
+    },
+    {
+      "data_class": "unpinned_export_artifacts",
+      "duration_days": 30,
+      "disposition": "delete_after_manifest_audit"
+    },
+    {
+      "data_class": "expired_session_records",
+      "duration_days": 7,
+      "disposition": "delete_token_digest_keep_security_event"
+    },
+    {
+      "data_class": "webauthn_challenges",
+      "duration_hours": 24,
+      "disposition": "delete"
+    }
+  ],
+  "backup_retention": {
+    "daily": 14,
+    "weekly": 8,
+    "monthly": 12,
+    "minimum_geographic_copies": 1,
+    "runtime_host_copy_counts_as_geographic_copy": false,
+    "encryption": "age_x25519_offline_recipient",
+    "manifest_checksum": "sha256"
+  },
+  "artifact_storage": {
+    "adapter": "versioned_local_filesystem_adapter",
+    "root": "dedicated_encrypted_host_volume",
+    "public_network_access": false,
+    "download_access": "authenticated_api_only",
+    "path_strategy": "owner_type_artifact_id_version",
+    "content_checksum": "sha256",
+    "atomic_publish": "write_fsync_rename",
+    "manifest_required": true,
+    "immutable_after_publish": true,
+    "soft_quota_gib": 100,
+    "minimum_free_storage_percent": 20,
+    "s3_compatible_adapter": "deferred_until_multi_host_or_capacity_trigger"
+  },
+  "storage_alerts": [
+    {
+      "used_percent": 70,
+      "severity": "warning"
+    },
+    {
+      "used_percent": 85,
+      "severity": "critical"
+    },
+    {
+      "used_percent": 95,
+      "severity": "write_protect_noncritical_artifacts"
+    }
+  ],
+  "retention_execution": {
+    "schedule": "daily",
+    "idempotent": true,
+    "dry_run_supported": true,
+    "manifest_before_delete": true,
+    "security_audit_event_required": true,
+    "partial_failure_retriable": true,
+    "immutable_evidence_excluded": true
+  },
+  "acceptance_evidence": [
+    "capacity_benchmark_report",
+    "overload_and_backpressure_test",
+    "retention_dry_run_report",
+    "backup_restore_drill",
+    "artifact_checksum_and_atomicity_test",
+    "slo_measurement_smoke_test"
+  ]
+}

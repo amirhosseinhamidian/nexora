@@ -167,6 +167,81 @@ restore فقط با حضور مالک و reauthentication تازه انجام م
 تمام sessionها revoke و service tokenها rotate می‌شوند. پیش از release نهایی،
 restore drill واقعی باید ثبت شود.
 
+## SLO و اهداف بازیابی
+
+این اهداف SLA تجاری نیستند؛ معیار داخلی release برای نسخه شخصی هستند و روی
+پنجره rolling سی‌روزه اندازه‌گیری می‌شوند:
+
+| شاخص | هدف |
+| --- | --- |
+| availability | `99.5%` با حداکثر ۲۴۰ دقیقه maintenance برنامه‌ریزی‌شده در ماه |
+| successful request ratio | حداقل `99.0%` |
+| non-export API latency | `p95 ≤ 300ms` و `p99 ≤ 1000ms` |
+| event sync freshness | `p95 ≤ 300s` و `p99 ≤ 900s` هنگام سلامت هر دو سیستم |
+| event projection latency | `p95 ≤ 60s` |
+| durable job start | `p95 ≤ 60s` |
+| export مرجع | حداکثر ۱۰۰٬۰۰۰ ردیف/۱ GiB در `p95 ≤ 300s` |
+| RPO | حداکثر ۲۴ ساعت |
+| RTO | حداکثر ۴ ساعت |
+
+single-host بودن یعنی failure همان host تحمل‌پذیر نیست؛ recovery بر backup
+رمزشده و restore drill متکی است. این محدودیت باید در UI عملیات و گزارش
+readiness صریح باشد.
+
+## Capacity budget و overload
+
+reference host دارای ۴ هسته CPU، حافظه ۸ GiB و فضای رمز‌شده ۲۰۰ GiB است. بودجه
+نسخه اول:
+
+- یک owner و حداکثر پنج session هم‌زمان؛
+- interactive workload برابر ۱۰ request/s پایدار و burst برابر ۲۵ request/s؛
+- ingestion برابر ۵۰ event/s پایدار و burst برابر ۱۰۰ event/s؛
+- بازیابی backlog صد هزار event در حداکثر یک ساعت؛
+- database soft limit برابر ۲۰ GiB؛
+- artifact soft limit برابر ۱۰۰ GiB؛
+- حداقل ۲۰٪ فضای دیسک آزاد.
+
+در overload ابتدا backpressure و worker concurrency محدود اعمال می‌شود؛ export
+غیرضروری pause می‌شود و request اضافی `429` همراه `Retry-After` دریافت می‌کند.
+آخرین snapshot معتبر می‌تواند با برچسب stale نمایش داده شود. command پذیرفته‌شده
+یا immutable evidence هرگز بی‌صدا حذف نمی‌شود و partial export موفق اعلام
+نخواهد شد.
+
+## Retention
+
+Retention job روزانه، idempotent و دارای dry-run است. پیش از حذف manifest و
+security audit event ثبت می‌شود و failure جزئی قابل retry است.
+
+| داده | نگهداری |
+| --- | --- |
+| immutable source evidence | نامحدود؛ بدون حذف خودکار در v0.1 |
+| portfolio و financial records | نامحدود تا تعریف policy صریح آینده |
+| security audit | ۴۰۰ روز |
+| application logs | ۳۰ روز |
+| operational metrics | ۹۰ روز |
+| terminal jobs | ۹۰ روز |
+| published outbox | ۳۰ روز پس از checkpoint |
+| unpinned exports | ۳۰ روز |
+| expired sessions | ۷ روز؛ audit باقی می‌ماند |
+| WebAuthn challenges | حداکثر ۲۴ ساعت |
+
+Backup retention شامل ۱۴ نسخه روزانه، ۸ نسخه هفتگی و ۱۲ نسخه ماهانه است. حداقل
+یک کپی خارج از host runtime نگهداری می‌شود و کپی روی همان host به‌عنوان off-host
+محاسبه نمی‌شود.
+
+## تصمیم object storage
+
+برای production نسخه شخصی، adapter انتخاب‌شده
+`versioned_local_filesystem_adapter` روی volume اختصاصی و رمز‌شده است. مسیر فایل
+از owner/type/artifact-id/version ساخته می‌شود؛ publish با write، fsync و atomic
+rename انجام می‌شود و هر artifact manifest و SHA-256 checksum دارد. فایل منتشرشده
+immutable است و فقط از API احراز هویت‌شده دانلود می‌شود؛ public directory یا
+public bucket وجود ندارد.
+
+مصرف storage در ۷۰٪ warning، در ۸۵٪ critical و در ۹۵٪ write protection برای
+artifactهای غیرضروری ایجاد می‌کند. مهاجرت به S3-compatible adapter فقط پس از
+multi-host شدن یا عبور مستند از ظرفیت محلی بررسی خواهد شد.
+
 ## Audit امنیتی
 
 رویدادهای امنیتی append-only، UTC و دارای actor، target، correlation ID، outcome
@@ -219,6 +294,8 @@ snapshot تصمیم بر پایه منابع رسمی زیر در تاریخ `20
 - public internet hardening؛
 - HSM؛
 - امنیت live trading.
+- object storage خارجی پیش از capacity trigger؛
+- SLA تجاری یا high-availability چندگرهی.
 
 ## معیار پذیرش NEX-P0-04
 
@@ -232,6 +309,10 @@ snapshot تصمیم بر پایه منابع رسمی زیر در تاریخ `20
 - public deployment، public DB و public worker رد شوند؛
 - secret در Git/log/export/browser/database رد شود؛
 - encrypted backup، checksum و restore drill تعریف شوند؛
+- SLO، RPO، RTO و reference capacity قابل‌اندازه‌گیری باشند؛
+- رفتار overload هیچ evidence یا command پذیرفته‌شده‌ای را از دست ندهد؛
+- retention تمام داده‌های موقت را پوشش دهد و immutable evidence را حذف نکند؛
+- object storage production خصوصی، atomic، checksum-backed و محدود باشد؛
 - threat model، audit schema و fixture بدون secret معتبر باشند؛
 - همه verifierها و تست‌ها سبز باشند.
 

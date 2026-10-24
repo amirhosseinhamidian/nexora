@@ -21,7 +21,8 @@
     "deployment_profiles": "contracts/security/v1/deployment-profiles.json",
     "security_headers": "contracts/security/v1/security-headers.json",
     "audit_event_schema": "contracts/security/v1/audit-event.schema.json",
-    "audit_event_fixture": "contracts/security/v1/fixtures/security-audit-event.json"
+    "audit_event_fixture": "contracts/security/v1/fixtures/security-audit-event.json",
+    "operational_policy": "contracts/operations/v1/private-runtime-budget.json"
   },
   "identity": {
     "human_principals": [
@@ -271,6 +272,18 @@
     "restore_drill_required_before_release": true,
     "exports_are_backups": false
   },
+  "operational_boundary": {
+    "policy_schema_version": "nexora-private-operations-policy-v1",
+    "service_level_class": "internal_release_target_not_external_sla",
+    "capacity_profile": "single_owner_reference_host",
+    "retention_enforcement": "daily_idempotent_job",
+    "production_artifact_storage": "versioned_local_filesystem_adapter",
+    "object_storage_network_access": "api_only_not_public",
+    "over_capacity_behavior": "degrade_with_backpressure_without_evidence_loss",
+    "rpo_hours": 24,
+    "rto_hours": 4,
+    "runtime_measurement_delivered": false
+  },
   "forbidden": [
     "public_self_registration",
     "multi_tenant_identity",
@@ -287,7 +300,12 @@
     "live_order_authorization",
     "wallet_authorization",
     "exchange_credential_authorization",
-    "runtime_security_claim_before_implementation"
+    "runtime_security_claim_before_implementation",
+    "unbounded_storage_growth",
+    "silent_retention_deletion",
+    "public_artifact_bucket",
+    "drop_immutable_evidence_on_overload",
+    "external_sla_claim_in_v0.1"
   ],
   "deferred": [
     "runtime_identity_implementation",

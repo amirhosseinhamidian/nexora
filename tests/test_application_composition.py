@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class ApplicationCompositionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_runtime_foundation_is_valid(self) -> None:
         MODULE.validate_frozen_runtime_foundation()
@@ -27,6 +28,7 @@ class ApplicationCompositionTests(unittest.TestCase):
         MODULE.validate_contract(self.contract)
         MODULE.validate_files(self.contract)
         MODULE.validate_documents()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
@@ -79,6 +81,66 @@ class ApplicationCompositionTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P1-03"
         with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "feat(nexora): wrong candidate"
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "commit message"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_workflow_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "workflow head SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_both_jobs(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["github_actions"]["jobs"]["backend"]
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "both P1-02"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_failed_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["backend"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "was not successful"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_job_id(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["composition_contract"]["job_id"] = 0
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "job ID"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_typecheck_evidence(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["backend"]["typecheck_passed"] = False
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "typecheck_passed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["configuration"]["default_fingerprint"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "contract checksum"):
+            MODULE.validate_freeze_record(self.freeze_record, changed_contract)
+
+    def test_freeze_record_rejects_runtime_foundation_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["runtime_foundation_prerequisite"]["freeze_record_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "runtime foundation freeze record checksum"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p1_03(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-04"
+        with self.assertRaisesRegex(MODULE.ApplicationCompositionError, "post-freeze next stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 # NEX-P1-02 — Application Composition and Typed Runtime Configuration
 
-وضعیت: **Candidate — Ready for Freeze**
+وضعیت: **Frozen**
 تاریخ تصمیم: ۲۰۲۶-۱۰-۲۵
+تاریخ Freeze: ۲۰۲۶-۱۰-۲۵
 
 ## هدف
 
@@ -73,5 +74,30 @@ NEX_P1_01_PREREQUISITE=PASS
 NEX_P1_02_APPLICATION_COMPOSITION=PASS
 ```
 
-مرحله بعد فقط `NEX-P1-02-FREEZE` است؛ پس از Freeze، ورود به
-`NEX-P1-03 — PostgreSQL Schema and Migrations` مجاز می‌شود.
+## Freeze نهایی
+
+Candidate بدون تغییر به commit و اجرای موفق GitHub Actions زیر متصل شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `39dc47a697fbac9910327ee1f2afee1e2554e8f8` |
+| commit message | `feat(nexora): implement P1-02 application composition` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/40184461929` |
+| required jobs | `composition-contract` و `backend` |
+| conclusion | `success` برای هر دو job |
+| Application composition contract checksum | `3be469b0811673d0e985030f22ddb727a9072f159b8da77097239696425c864d` |
+
+رکورد ماشین‌خوان در
+[`artifacts/p1-02/application-composition-freeze.json`](../../artifacts/p1-02/application-composition-freeze.json)
+ثبت شده است. Verifier تطابق SHA، پیام commit، run، jobها، step evidence، checksum
+قرارداد و Freeze پیش‌نیاز P1-01 را fail-closed بررسی می‌کند.
+
+خروجی نهایی شامل marker زیر است:
+
+```text
+NEX_P1_02_FREEZE=PASS
+```
+
+`NEX-P1-02` اکنون Frozen است و گام مجاز بعدی فقط
+`NEX-P1-03 — PostgreSQL Schema and Migrations` است.

@@ -9,6 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-application-composition.json"
+FREEZE_PATH = ROOT / "artifacts/p1-02/application-composition-freeze.json"
 
 EXPECTED_ENVIRONMENT_VARIABLES = [
     "NEXORA_ENVIRONMENT",
@@ -37,6 +38,10 @@ def _json(path: Path) -> dict[str, Any]:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -126,8 +131,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "configuration fingerprint drift",
     )
     _require(
-        configuration.get("default_fingerprint")
-        == "5d4f9f7b6a1b7e1d8ab7af749136afff0b9e4de419d05f34a47497e68818ea04",
+        configuration.get("default_fingerprint") == "5d4f9f7b6a1b7e1d8ab7af749136afff0b9e4de419d05f34a47497e68818ea04",
         "default configuration fingerprint drift",
     )
 
@@ -219,20 +223,109 @@ def validate_files(contract: dict[str, Any]) -> None:
     )
 
 
-def validate_documents() -> None:
-    document = (ROOT / "docs/v0.1/06-application-composition-and-runtime-configuration.md").read_text(
-        encoding="utf-8"
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-application-composition-freeze-v1",
+        "invalid application composition freeze schema",
     )
+    _require(record.get("decision_id") == "NEX-P1-02", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    _require(
+        record.get("candidate_commit_sha") == "39dc47a697fbac9910327ee1f2afee1e2554e8f8",
+        "candidate SHA does not match accepted P1-02 evidence",
+    )
+    _require(
+        record.get("candidate_commit_message") == "feat(nexora): implement P1-02 application composition",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _require(isinstance(actions, dict), "github_actions must be an object")
+    _require(actions.get("run_id") == 40184461929, "invalid GitHub Actions run ID")
+    _require(
+        actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40184461929",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(actions.get("head_sha") == record.get("candidate_commit_sha"), "workflow head SHA mismatch")
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")
+    _require(actions.get("event") == "push", "invalid GitHub Actions event")
+    _require(actions.get("attempt") == 1, "invalid GitHub Actions attempt")
+    _require(actions.get("conclusion") == "success", "workflow was not successful")
+
+    jobs = actions.get("jobs")
+    _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
+    expected_jobs = {
+        "composition_contract": (121142197856, "composition-contract"),
+        "backend": (121142197610, "backend"),
+    }
+    _require(set(jobs) == set(expected_jobs), "freeze requires both P1-02 CI jobs")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {name} job ID")
+        _require(job.get("name") == name, f"invalid {name} job name")
+        _require(job.get("conclusion") == "success", f"{name} job was not successful")
+
+    required_markers = {
+        "composition_contract": (
+            "runtime_foundation_prerequisite_passed",
+            "application_composition_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "tests_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(jobs[job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    contract_evidence = record.get("application_composition_contract")
+    _require(isinstance(contract_evidence, dict), "application composition evidence must be an object")
+    _require(
+        contract_evidence.get("schema_version") == contract.get("schema_version"),
+        "application composition schema mismatch",
+    )
+    _require(
+        contract_evidence.get("checksum") == canonical_checksum(contract),
+        "application composition contract checksum mismatch",
+    )
+
+    prerequisite = record.get("runtime_foundation_prerequisite")
+    _require(isinstance(prerequisite, dict), "runtime foundation prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-01", "invalid runtime foundation prerequisite")
+    _require(prerequisite.get("frozen") is True, "runtime foundation prerequisite is not frozen")
+    prerequisite_record = _json(ROOT / "artifacts/p1-01/runtime-foundation-freeze.json")
+    _require(
+        prerequisite.get("freeze_record_checksum") == canonical_checksum(prerequisite_record),
+        "runtime foundation freeze record checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-25", "invalid freeze record date")
+    _require(record.get("frozen") is True, "application composition is not frozen")
+    _require(record.get("application_composition_complete") is True, "application composition is incomplete")
+    _require(record.get("next_allowed_stage") == "NEX-P1-03", "invalid post-freeze next stage")
+
+
+def validate_documents() -> None:
+    document = (ROOT / "docs/v0.1/06-application-composition-and-runtime-configuration.md").read_text(encoding="utf-8")
     for marker in (
         "NEX-P1-02",
-        "Candidate — Ready for Freeze",
+        "وضعیت: **Frozen**",
         "fail-closed",
         "NEX_P1_02_APPLICATION_COMPOSITION=PASS",
-        "NEX-P1-02-FREEZE",
+        "NEX_P1_02_FREEZE=PASS",
+        "39dc47a697fbac9910327ee1f2afee1e2554e8f8",
+        "40184461929",
+        "NEX-P1-03",
     ):
         _require(marker in document, f"document marker missing: {marker}")
     adr = (ROOT / "docs/adr/0016-fail-closed-runtime-configuration-and-composition.md").read_text(encoding="utf-8")
-    for marker in ("Status: Accepted by NEX-P1-02 candidate", "## Decision", "## Consequences"):
+    for marker in ("Status: Frozen by NEX-P1-02", "## Decision", "## Consequences"):
         _require(marker in adr, f"ADR marker missing: {marker}")
     workflow = (ROOT / ".github/workflows/application-composition.yml").read_text(encoding="utf-8")
     for marker in ("composition-contract:", "backend:", "verify_application_composition.py"):
@@ -245,11 +338,15 @@ def main() -> int:
     validate_contract(contract)
     validate_files(contract)
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P1_01_PREREQUISITE=PASS")
     print("NEX_P1_02_APPLICATION_COMPOSITION=PASS")
+    print("NEX_P1_02_FREEZE=PASS")
     return 0
 
 

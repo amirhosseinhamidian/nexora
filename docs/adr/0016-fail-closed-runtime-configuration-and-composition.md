@@ -1,6 +1,6 @@
 # ADR 0016: Fail-closed runtime configuration and explicit composition
 
-- Status: Accepted by NEX-P1-02 candidate
+- Status: Frozen by NEX-P1-02
 - Date: 2026-10-25
 
 ## Context

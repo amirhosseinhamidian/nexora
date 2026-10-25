@@ -1,0 +1,49 @@
+{
+  "schema_version": "nexora-application-composition-freeze-v1",
+  "decision_id": "NEX-P1-02",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "39dc47a697fbac9910327ee1f2afee1e2554e8f8",
+  "candidate_commit_message": "feat(nexora): implement P1-02 application composition",
+  "github_actions": {
+    "run_id": 40184461929,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40184461929",
+    "head_sha": "39dc47a697fbac9910327ee1f2afee1e2554e8f8",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "composition_contract": {
+        "job_id": 121142197856,
+        "name": "composition-contract",
+        "conclusion": "success",
+        "runtime_foundation_prerequisite_passed": true,
+        "application_composition_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121142197610,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true
+      }
+    }
+  },
+  "application_composition_contract": {
+    "schema_version": "nexora-application-composition-v1",
+    "checksum": "3be469b0811673d0e985030f22ddb727a9072f159b8da77097239696425c864d"
+  },
+  "runtime_foundation_prerequisite": {
+    "decision_id": "NEX-P1-01",
+    "frozen": true,
+    "freeze_record_checksum": "9daa50079de7a0288c877f967ee91c3393e7de157f2bf40f66d9555be237efc0"
+  },
+  "recorded_on": "2026-10-25",
+  "frozen": true,
+  "application_composition_complete": true,
+  "next_allowed_stage": "NEX-P1-03"
+}

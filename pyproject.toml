@@ -27,6 +27,9 @@ packages = ["apps/server/src/nexora"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
 testpaths = ["apps/server/tests", "tests"]
+markers = [
+    "integration: requires a disposable PostgreSQL 17 database at the migrated repository head",
+]
 
 [tool.ruff]
 line-length = 120

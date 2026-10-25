@@ -12,6 +12,7 @@ artifacts/generated/
 Thumbs.db
 
 *.patch
+*.dsn
 
 *.tar.gz
 

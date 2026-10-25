@@ -1,0 +1,29 @@
+name: nexora-postgresql-development
+
+services:
+  postgresql:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexora
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD_FILE: /run/secrets/nexora_database_password
+    secrets:
+      - nexora_database_password
+    ports:
+      - "127.0.0.1:${NEXORA_DEV_DB_PORT:-55432}:5432"
+    volumes:
+      - nexora_postgresql_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+secrets:
+  nexora_database_password:
+    file: ${NEXORA_DEV_DB_PASSWORD_FILE:?set an absolute private password-file path}
+
+volumes:
+  nexora_postgresql_data:

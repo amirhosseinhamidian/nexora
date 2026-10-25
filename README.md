@@ -31,11 +31,17 @@ The accepted candidate is bound to successful CI evidence.
 allowlisted and fail-closed runtime configuration model plus an explicit shared
 composition factory for the API and inert worker. Configuration fingerprints
 are deterministic and contain no secrets. The accepted candidate is bound to
-successful CI evidence, and the next allowed stage is `NEX-P1-03`.
+successful CI evidence.
+
+`NEX-P1-03` is now a candidate ready for freeze. It adds the owner-aware
+PostgreSQL 17 persistence spine, private file-based migration configuration,
+SQLAlchemy 2 models, reversible Alembic migrations, immutable source-evidence
+enforcement, and the complete migration-cycle CI gate. The next allowed stage
+is `NEX-P1-03-FREEZE`.
 
 The repository now contains a runtime scaffold, not a complete application or a
-production deployment. Database schema, authentication, TRD Bot runtime
-integration, durable jobs, and private deployment remain deliberately deferred.
+production deployment. Authentication, TRD Bot runtime integration, durable
+jobs, transactional outbox, and private deployment remain deliberately deferred.
 
 ## Verify the scope contract
 
@@ -47,6 +53,7 @@ python3 scripts/verify_security_boundary.py
 python3 scripts/verify_phase_zero_acceptance.py
 python3 scripts/verify_runtime_foundation.py
 python3 scripts/verify_application_composition.py
+python3 scripts/verify_postgresql_schema.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -70,6 +77,8 @@ NEX_P1_01_FREEZE=PASS
 NEX_P1_01_PREREQUISITE=PASS
 NEX_P1_02_APPLICATION_COMPOSITION=PASS
 NEX_P1_02_FREEZE=PASS
+NEX_P1_02_PREREQUISITE=PASS
+NEX_P1_03_POSTGRESQL_SCHEMA=PASS
 ```
 
 ## Documents
@@ -81,6 +90,7 @@ NEX_P1_02_FREEZE=PASS
 - [`docs/v0.1/04-phase-zero-acceptance-matrix.md`](docs/v0.1/04-phase-zero-acceptance-matrix.md)
 - [`docs/v0.1/05-runtime-and-design-foundation-bootstrap.md`](docs/v0.1/05-runtime-and-design-foundation-bootstrap.md)
 - [`docs/v0.1/06-application-composition-and-runtime-configuration.md`](docs/v0.1/06-application-composition-and-runtime-configuration.md)
+- [`docs/v0.1/07-postgresql-schema-and-migrations.md`](docs/v0.1/07-postgresql-schema-and-migrations.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -90,6 +100,7 @@ NEX_P1_02_FREEZE=PASS
 - [`contracts/nexora-v0.1-phase-zero-acceptance.json`](contracts/nexora-v0.1-phase-zero-acceptance.json)
 - [`contracts/nexora-v0.1-runtime-foundation.json`](contracts/nexora-v0.1-runtime-foundation.json)
 - [`contracts/nexora-v0.1-application-composition.json`](contracts/nexora-v0.1-application-composition.json)
+- [`contracts/nexora-v0.1-postgresql-schema.json`](contracts/nexora-v0.1-postgresql-schema.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

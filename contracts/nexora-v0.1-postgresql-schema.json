@@ -1,0 +1,122 @@
+{
+  "schema_version": "nexora-postgresql-schema-v1",
+  "decision_id": "NEX-P1-03",
+  "decision_date": "2026-10-25",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "application_composition_prerequisite": {
+    "decision_id": "NEX-P1-02",
+    "frozen": true,
+    "freeze_commit_sha": "6ee2db690fa713a94bad016cc19f18eed6729879",
+    "freeze_record_path": "artifacts/p1-02/application-composition-freeze.json",
+    "freeze_record_checksum": "6b39f61195a461d7d647cb735c038e16f8d8c98deed71c21c5af7b56027f1c3f"
+  },
+  "delivery": {
+    "postgresql_adapter_primitives_delivered": true,
+    "alembic_environment_delivered": true,
+    "reversible_initial_migration_delivered": true,
+    "owner_aware_persistence_spine_delivered": true,
+    "immutable_source_evidence_storage_delivered": true,
+    "application_composition_database_registered": false,
+    "production_schema_mutation_on_startup": false,
+    "trd_bot_runtime_integration_delivered": false,
+    "durable_jobs_delivered": false,
+    "transactional_outbox_delivered": false,
+    "identity_runtime_delivered": false
+  },
+  "database_configuration": {
+    "engine": "postgresql",
+    "release_line": "17.x",
+    "driver": "postgresql+psycopg",
+    "dsn_source": "absolute_private_file",
+    "dsn_file_environment_variable": "NEXORA_MIGRATION_DATABASE_DSN_FILE",
+    "direct_dsn_environment_variable": false,
+    "dotenv_auto_load": false,
+    "committed_credentials": false,
+    "symbolic_link_allowed": false,
+    "development_file_maximum_mode": "0600",
+    "production_file_mode": "0400",
+    "timezone": "UTC",
+    "pool_pre_ping": true
+  },
+  "schema": {
+    "namespace": "nexora",
+    "migration_revision": "20261025_0001",
+    "alembic_version_table": "public.alembic_version",
+    "tables": [
+      "owner_profiles",
+      "source_references",
+      "immutable_source_evidence"
+    ],
+    "owner_profile_singleton_key": "primary_owner",
+    "application_tables_require_owner_id": true,
+    "timestamps_are_timezone_aware": true,
+    "canonical_timezone": "UTC",
+    "source_system_allowlist": ["trd_bot"],
+    "source_reference_requires_schema_version": true,
+    "source_reference_requires_source_version": true,
+    "source_reference_requires_correlation_id": true,
+    "source_reference_requires_sha256": true,
+    "source_evidence_payload_type": "jsonb_object",
+    "source_evidence_checksum_matches_reference": true,
+    "source_references_database_immutable": true,
+    "source_evidence_database_immutable": true
+  },
+  "migration_policy": {
+    "tool": "alembic",
+    "upgrade_head_required": true,
+    "downgrade_base_required": true,
+    "rebuild_head_required": true,
+    "autogenerate_drift_check_required": true,
+    "create_all_forbidden": true,
+    "application_startup_migration_forbidden": true,
+    "transaction_per_migration": true
+  },
+  "deferred_tables": [
+    "projection_checkpoints",
+    "background_jobs",
+    "outbox_events",
+    "webauthn_credentials",
+    "sessions",
+    "service_tokens",
+    "portfolio_workspaces",
+    "journal_entries",
+    "export_jobs"
+  ],
+  "security_boundary": {
+    "shared_database_with_trd_bot": false,
+    "direct_trd_bot_database_access": false,
+    "database_host_port_in_private_production": false,
+    "database_secret_logged": false,
+    "database_secret_committed": false,
+    "live_order_table": false,
+    "exchange_credential_table": false,
+    "wallet_table": false,
+    "multi_tenant_identity_table": false
+  },
+  "quality_gates": {
+    "database_contract": [
+      "frozen_application_composition_prerequisite",
+      "postgresql_schema_verifier",
+      "repository_contract_tests"
+    ],
+    "server": ["ruff_format_check", "ruff_check", "mypy_strict", "pytest_without_integration"],
+    "postgresql_17": [
+      "upgrade_head",
+      "integration_tests",
+      "downgrade_base",
+      "rebuild_head",
+      "alembic_check"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-03-FREEZE",
+    "post_freeze_stage": "NEX-P1-04"
+  }
+}

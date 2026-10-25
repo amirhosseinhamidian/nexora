@@ -1,6 +1,6 @@
 # ADR 0015: Bilingual theme and typography foundation
 
-- Status: Accepted by NEX-P1-01 candidate
+- Status: Accepted and frozen by NEX-P1-01
 - Date: 2026-10-24
 
 ## Context
@@ -19,6 +19,11 @@ key structure.
 Theme selection supports `light`, `dark`, and the operating-system preference.
 Reusable semantic tokens live in `packages/ui/src/tokens.css`. The foundation
 includes visible keyboard focus and reduced-motion behavior.
+
+The final freeze binds candidate commit
+`611557dd95241d7c45513772601e58bc055f398f` to successful GitHub Actions run
+`40182361689`. Its immutable evidence is stored in
+`artifacts/p1-01/runtime-foundation-freeze.json`.
 
 ## Consequences
 

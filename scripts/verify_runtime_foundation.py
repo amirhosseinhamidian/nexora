@@ -10,6 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-runtime-foundation.json"
+FREEZE_PATH = ROOT / "artifacts/p1-01/runtime-foundation-freeze.json"
 
 
 class RuntimeFoundationError(ValueError):
@@ -28,6 +29,10 @@ def _json(path: Path) -> dict[str, Any]:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -163,9 +168,116 @@ def validate_files(contract: dict[str, Any]) -> None:
     _require("worker execution is unavailable until NEX-P1-05" in worker, "worker fail-closed marker missing")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-runtime-foundation-freeze-v1",
+        "invalid runtime foundation freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P1-01", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    _require(
+        record.get("candidate_commit_sha") == "611557dd95241d7c45513772601e58bc055f398f",
+        "candidate SHA does not match accepted P1-01 evidence",
+    )
+    _require(
+        record.get("candidate_commit_message")
+        == "feat(nexora): bootstrap P1-01 runtime and design foundation",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _require(isinstance(actions, dict), "github_actions must be an object")
+    _require(actions.get("run_id") == 40182361689, "invalid GitHub Actions run ID")
+    _require(
+        actions.get("run_url")
+        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40182361689",
+        "GitHub Actions URL does not match the accepted run",
+    )
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")
+    _require(actions.get("event") == "push", "invalid GitHub Actions event")
+    _require(actions.get("attempt") == 1, "invalid GitHub Actions attempt")
+    _require(actions.get("conclusion") == "success", "workflow was not successful")
+
+    jobs = actions.get("jobs")
+    _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
+    expected_jobs = {
+        "foundation_contract": (121135890629, "foundation-contract"),
+        "backend": (121135890830, "backend"),
+        "web": (121135890759, "web"),
+    }
+    _require(set(jobs) == set(expected_jobs), "freeze requires all three P1-01 CI jobs")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {name} job ID")
+        _require(job.get("name") == name, f"invalid {name} job name")
+        _require(job.get("conclusion") == "success", f"{name} job was not successful")
+
+    required_markers = {
+        "foundation_contract": (
+            "phase_zero_prerequisite_passed",
+            "runtime_foundation_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "tests_passed",
+        ),
+        "web": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "tests_passed",
+            "production_build_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(jobs[job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    contract_evidence = record.get("runtime_foundation_contract")
+    _require(isinstance(contract_evidence, dict), "runtime foundation evidence must be an object")
+    _require(
+        contract_evidence.get("schema_version") == contract.get("schema_version"),
+        "runtime foundation schema mismatch",
+    )
+    _require(
+        contract_evidence.get("checksum") == canonical_checksum(contract),
+        "runtime foundation contract checksum mismatch",
+    )
+
+    phase_zero = record.get("phase_zero_prerequisite")
+    _require(isinstance(phase_zero, dict), "Phase 0 prerequisite must be an object")
+    _require(phase_zero.get("decision_id") == "NEX-P0-05", "invalid Phase 0 prerequisite")
+    _require(phase_zero.get("frozen") is True, "Phase 0 prerequisite is not frozen")
+    phase_zero_record = _json(ROOT / "artifacts/p0-05/phase-zero-freeze.json")
+    _require(
+        phase_zero.get("freeze_record_checksum") == canonical_checksum(phase_zero_record),
+        "Phase 0 freeze record checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-25", "invalid freeze record date")
+    _require(record.get("frozen") is True, "runtime foundation is not frozen")
+    _require(record.get("runtime_foundation_complete") is True, "runtime foundation completion is not confirmed")
+    _require(record.get("next_allowed_stage") == "NEX-P1-02", "invalid post-freeze next stage")
+
+
 def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/05-runtime-and-design-foundation-bootstrap.md").read_text(encoding="utf-8")
-    for marker in ("NEX-P1-01", "Vazirmatn", "NEX_P1_01_RUNTIME_FOUNDATION=PASS", "NEX-P1-01-FREEZE"):
+    for marker in (
+        "NEX-P1-01",
+        "وضعیت: **Frozen**",
+        "Vazirmatn",
+        "NEX_P1_01_RUNTIME_FOUNDATION=PASS",
+        "NEX_P1_01_FREEZE=PASS",
+        "611557dd95241d7c45513772601e58bc055f398f",
+        "40182361689",
+        "NEX-P1-02",
+    ):
         _require(marker in document, f"document marker missing: {marker}")
     workflow = (ROOT / ".github/workflows/runtime-foundation.yml").read_text(encoding="utf-8")
     for marker in ("foundation-contract:", "backend:", "web:", "verify_runtime_foundation.py"):
@@ -178,11 +290,15 @@ def main() -> int:
     validate_contract(contract)
     validate_files(contract)
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P0_05_PREREQUISITE=PASS")
     print("NEX_P1_01_RUNTIME_FOUNDATION=PASS")
+    print("NEX_P1_01_FREEZE=PASS")
     return 0
 
 

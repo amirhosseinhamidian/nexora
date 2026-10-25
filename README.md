@@ -20,12 +20,13 @@ it adds the Phase 0 acceptance and traceability matrix, resolves or transfers
 every declared debt, verifies the complete P0-01 through P0-04 freeze chain, and
 binds the accepted candidate to successful CI evidence. Phase 0 is complete.
 
-`NEX-P1-01` is now a candidate ready for freeze. It bootstraps exact Node.js,
+`NEX-P1-01` is frozen. It bootstraps exact Node.js,
 pnpm, Python, and uv toolchains; committed JavaScript and Python lockfiles; a
 Next.js web shell; minimal FastAPI and inert worker entry points; pinned
 containers; and a bilingual light/dark design foundation. Persian is RTL with a
 local Vazirmatn variable font, while English is LTR with self-hosted Inter.
-The next allowed stage is `NEX-P1-01-FREEZE`.
+The accepted candidate is bound to successful CI evidence, and the next allowed
+stage is `NEX-P1-02`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Database schema, authentication, TRD Bot runtime
@@ -59,6 +60,7 @@ NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS
 NEX_P0_05_FREEZE=PASS
 NEX_P0_05_PREREQUISITE=PASS
 NEX_P1_01_RUNTIME_FOUNDATION=PASS
+NEX_P1_01_FREEZE=PASS
 ```
 
 ## Documents
@@ -83,3 +85,4 @@ NEX_P1_01_RUNTIME_FOUNDATION=PASS
 - [`artifacts/p0-03/integration-contract-freeze.json`](artifacts/p0-03/integration-contract-freeze.json)
 - [`artifacts/p0-04/security-boundary-freeze.json`](artifacts/p0-04/security-boundary-freeze.json)
 - [`artifacts/p0-05/phase-zero-freeze.json`](artifacts/p0-05/phase-zero-freeze.json)
+- [`artifacts/p1-01/runtime-foundation-freeze.json`](artifacts/p1-01/runtime-foundation-freeze.json)

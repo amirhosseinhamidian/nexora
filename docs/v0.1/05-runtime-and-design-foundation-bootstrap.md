@@ -1,7 +1,8 @@
 # NEX-P1-01 — زیرساخت اجرا و طراحی
 
-وضعیت: **Candidate — Ready for Freeze**
+وضعیت: **Frozen**
 تاریخ تصمیم: ۲۰۲۶-۱۰-۲۴
+تاریخ Freeze: ۲۰۲۶-۱۰-۲۵
 
 ## هدف
 
@@ -65,4 +66,30 @@ NEX_P0_05_PREREQUISITE=PASS
 NEX_P1_01_RUNTIME_FOUNDATION=PASS
 ```
 
-مرحلهٔ بعد فقط `NEX-P1-01-FREEZE` است.
+## Freeze نهایی
+
+Candidate بدون تغییر به commit و اجرای موفق GitHub Actions زیر متصل شد:
+
+| شاهد | مقدار |
+| --- | --- |
+| repository | `amirhosseinhamidian/nexora` |
+| candidate commit | `611557dd95241d7c45513772601e58bc055f398f` |
+| commit message | `feat(nexora): bootstrap P1-01 runtime and design foundation` |
+| GitHub Actions run | `https://github.com/amirhosseinhamidian/nexora/actions/runs/40182361689` |
+| required jobs | `foundation-contract`، `backend` و `web` |
+| conclusion | `success` برای هر سه job |
+| Runtime contract checksum | `3c12939120ca19dc5604d35ad9946122327cb5635dfd7c52949da6dbf1b87be3` |
+
+رکورد ماشین‌خوان در
+[`artifacts/p1-01/runtime-foundation-freeze.json`](../../artifacts/p1-01/runtime-foundation-freeze.json)
+ثبت شده است. Verifier تطابق SHA، پیام commit، run، jobها، step evidence، checksum
+قرارداد و Freeze پیش‌نیاز Phase 0 را fail-closed بررسی می‌کند.
+
+خروجی نهایی شامل marker زیر است:
+
+```text
+NEX_P1_01_FREEZE=PASS
+```
+
+`NEX-P1-01` اکنون Frozen است و گام مجاز بعدی فقط
+`NEX-P1-02 — Application Composition and Typed Runtime Configuration` است.

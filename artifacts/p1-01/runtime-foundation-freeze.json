@@ -1,0 +1,59 @@
+{
+  "schema_version": "nexora-runtime-foundation-freeze-v1",
+  "decision_id": "NEX-P1-01",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "611557dd95241d7c45513772601e58bc055f398f",
+  "candidate_commit_message": "feat(nexora): bootstrap P1-01 runtime and design foundation",
+  "github_actions": {
+    "run_id": 40182361689,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40182361689",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "foundation_contract": {
+        "job_id": 121135890629,
+        "name": "foundation-contract",
+        "conclusion": "success",
+        "phase_zero_prerequisite_passed": true,
+        "runtime_foundation_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121135890830,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true
+      },
+      "web": {
+        "job_id": 121135890759,
+        "name": "web",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true,
+        "production_build_passed": true
+      }
+    }
+  },
+  "runtime_foundation_contract": {
+    "schema_version": "nexora-runtime-foundation-v1",
+    "checksum": "3c12939120ca19dc5604d35ad9946122327cb5635dfd7c52949da6dbf1b87be3"
+  },
+  "phase_zero_prerequisite": {
+    "decision_id": "NEX-P0-05",
+    "frozen": true,
+    "freeze_record_checksum": "5de46860c0ea0a5fd32951976f4e93639de316632a15d5b4c3ef4a9c3c4c476b"
+  },
+  "recorded_on": "2026-10-25",
+  "frozen": true,
+  "runtime_foundation_complete": true,
+  "next_allowed_stage": "NEX-P1-02"
+}

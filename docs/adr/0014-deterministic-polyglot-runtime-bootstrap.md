@@ -1,6 +1,6 @@
 # ADR 0014: Deterministic polyglot runtime bootstrap
 
-- Status: Accepted by NEX-P1-01 candidate
+- Status: Accepted and frozen by NEX-P1-01
 - Date: 2026-10-24
 
 ## Context
@@ -17,6 +17,11 @@ containing separate FastAPI API and worker composition roots. Node.js 24.22.1,
 pnpm 10.34.8, Python 3.13.16, uv 0.13.4, direct dependencies, lockfiles, and base
 container images are exact. CI installs from `pnpm-lock.yaml` and `uv.lock` in
 frozen mode.
+
+The final freeze binds candidate commit
+`611557dd95241d7c45513772601e58bc055f398f` to successful GitHub Actions run
+`40182361689`. Its immutable evidence is stored in
+`artifacts/p1-01/runtime-foundation-freeze.json`.
 
 The API exposes only a minimal liveness endpoint. Interactive documentation is
 disabled at bootstrap. The worker supports a side-effect-free `--check` command

@@ -21,7 +21,10 @@ Thumbs.db
 .ruff_cache/
 .coverage
 coverage.xml
+coverage/
 htmlcov/
+playwright-report/
+test-results/
 
 # Packaging
 build/
@@ -43,3 +46,4 @@ env/
 node_modules/
 .next/
 out/
+*.tsbuildinfo

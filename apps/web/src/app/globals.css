@@ -1,0 +1,373 @@
+@import "tailwindcss";
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--nx-bg);
+  color: var(--nx-text);
+  font-family: var(--nx-font-en);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.font-fa {
+  font-family: var(--nx-font-fa);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--nx-radius-sm);
+  background: var(--nx-primary);
+  color: #041612;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.application-shell {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+[dir="rtl"] .application-shell {
+  grid-template-columns: minmax(0, 1fr) 15rem;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  grid-column: 1;
+  grid-row: 1;
+  height: 100vh;
+  padding: 1.35rem 1rem;
+  border-inline-end: 1px solid var(--nx-border);
+  background: var(--nx-sidebar);
+}
+
+[dir="rtl"] .sidebar {
+  grid-column: 2;
+  border-inline-end: 0;
+  border-inline-start: 1px solid var(--nx-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.6rem 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.brand-mark {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: var(--nx-primary);
+  color: #041612;
+}
+
+.navigation-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navigation-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--nx-radius-md);
+  color: var(--nx-text-muted);
+}
+
+.navigation-link:hover,
+.navigation-link.active {
+  background: var(--nx-primary-soft);
+  color: var(--nx-primary-strong);
+}
+
+.workspace {
+  min-width: 0;
+  grid-column: 2;
+}
+
+[dir="rtl"] .workspace {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.topbar {
+  display: flex;
+  min-height: 4.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 2rem;
+  border-bottom: 1px solid var(--nx-border);
+  background: color-mix(in srgb, var(--nx-surface) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.environment-pill,
+.mode-pill,
+.ready-badge,
+.control-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--nx-border);
+  border-radius: 999px;
+  background: var(--nx-surface);
+  color: var(--nx-text-muted);
+  font-size: 0.82rem;
+}
+
+.environment-pill,
+.mode-pill,
+.ready-badge {
+  padding: 0.45rem 0.75rem;
+}
+
+.status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--nx-primary);
+  box-shadow: 0 0 0 4px var(--nx-primary-soft);
+}
+
+.topbar-actions,
+.foundation-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.control-button {
+  min-height: 2.35rem;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+
+.control-button:hover {
+  border-color: var(--nx-primary);
+  color: var(--nx-primary-strong);
+}
+
+.control-button.icon-only {
+  width: 2.35rem;
+  justify-content: center;
+  padding: 0;
+}
+
+.main-content {
+  width: min(74rem, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3.5rem 0;
+}
+
+.page-heading,
+.boundary-heading,
+.metric-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.page-heading h1,
+.boundary-heading h2 {
+  margin: 0;
+  letter-spacing: -0.035em;
+}
+
+.page-heading h1 {
+  font-size: clamp(2rem, 4vw, 3.35rem);
+}
+
+.page-heading > div > p:last-child {
+  max-width: 44rem;
+  margin: 0.8rem 0 0;
+  color: var(--nx-text-muted);
+  line-height: 1.8;
+}
+
+.eyebrow {
+  margin: 0 0 0.55rem;
+  color: var(--nx-primary-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.ready-badge {
+  flex: 0 0 auto;
+  border-color: color-mix(in srgb, var(--nx-primary) 45%, var(--nx-border));
+  background: var(--nx-primary-soft);
+  color: var(--nx-primary-strong);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+
+.metric-card,
+.boundary-card {
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-lg);
+  background: var(--nx-surface);
+  box-shadow: var(--nx-shadow);
+}
+
+.metric-card {
+  padding: 1.25rem;
+}
+
+.metric-card-heading {
+  color: var(--nx-text-muted);
+  font-size: 0.86rem;
+}
+
+.metric-card-heading svg {
+  color: var(--nx-primary);
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 1.5rem;
+  font-size: 1.65rem;
+}
+
+.metric-card p {
+  margin: 0.4rem 0 0;
+  color: var(--nx-text-muted);
+  font-size: 0.88rem;
+}
+
+.boundary-card {
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+
+.boundary-heading svg {
+  color: var(--nx-primary);
+}
+
+.boundary-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boundary-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface-raised);
+}
+
+.boundary-list svg {
+  flex: 0 0 auto;
+  color: var(--nx-primary);
+}
+
+.next-stage {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--nx-border);
+  color: var(--nx-text-muted);
+}
+
+@media (max-width: 900px) {
+  .application-shell,
+  [dir="rtl"] .application-shell {
+    display: block;
+  }
+
+  .sidebar {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--nx-border);
+  }
+
+  .brand {
+    padding-bottom: 1rem;
+  }
+
+  .navigation-list {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .navigation-link {
+    white-space: nowrap;
+  }
+
+  .topbar {
+    padding: 0.8rem 1rem;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .mode-pill {
+    display: none;
+  }
+
+  .main-content {
+    width: min(100% - 2rem, 74rem);
+    padding: 2rem 0;
+  }
+
+  .page-heading {
+    display: grid;
+  }
+
+  .ready-badge {
+    width: fit-content;
+  }
+
+  .boundary-list {
+    grid-template-columns: 1fr;
+  }
+}

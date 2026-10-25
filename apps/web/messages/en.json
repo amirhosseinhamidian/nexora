@@ -1,0 +1,48 @@
+{
+  "brand": "NEXORA",
+  "skipToContent": "Skip to content",
+  "navigation": {
+    "overview": "Overview",
+    "portfolio": "Portfolio",
+    "decisions": "Decisions",
+    "alerts": "Alerts",
+    "journal": "Journal",
+    "exports": "Exports",
+    "settings": "Settings"
+  },
+  "header": {
+    "environment": "Foundation workspace",
+    "mode": "RESEARCH MODE · PAPER / SHADOW",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "page": {
+    "eyebrow": "NEX-P1-01",
+    "title": "Runtime & Design Foundation",
+    "description": "The secure bilingual foundation for portfolio intelligence, evidence, and future decision workflows.",
+    "status": "Bootstrap status",
+    "ready": "Foundation ready",
+    "cards": {
+      "webTitle": "Web runtime",
+      "webValue": "Next.js 16",
+      "webDetail": "React 19 · strict TypeScript",
+      "apiTitle": "Server runtime",
+      "apiValue": "FastAPI",
+      "apiDetail": "Python 3.13 · health boundary",
+      "designTitle": "Design system",
+      "designValue": "Light + Dark",
+      "designDetail": "English LTR · Persian RTL"
+    },
+    "boundaryTitle": "Foundation boundaries",
+    "boundaries": {
+      "runtime": "Deterministic dependency locks",
+      "database": "Independent Nexora data ownership",
+      "integration": "Versioned TRD Bot contracts only",
+      "security": "No live execution or exchange credentials"
+    },
+    "next": "Next: application composition and typed configuration"
+  }
+}

@@ -18,13 +18,18 @@ encrypted recovery, the private-only production topology, measurable SLO and
 capacity budgets, retention, and bounded artifact storage. `NEX-P0-05` is frozen:
 it adds the Phase 0 acceptance and traceability matrix, resolves or transfers
 every declared debt, verifies the complete P0-01 through P0-04 freeze chain, and
-binds the accepted candidate to successful CI evidence. Phase 0 is complete and
-the next allowed stage is `NEX-P1-01`.
+binds the accepted candidate to successful CI evidence. Phase 0 is complete.
 
-The repository currently contains governance and verification assets only. The
-runtime code, database schema, authentication mechanism, and deployment topology
-remain deliberately deferred. The final Phase 0 freeze now authorizes runtime
-bootstrap; it does not claim that the runtime or production deployment exists.
+`NEX-P1-01` is now a candidate ready for freeze. It bootstraps exact Node.js,
+pnpm, Python, and uv toolchains; committed JavaScript and Python lockfiles; a
+Next.js web shell; minimal FastAPI and inert worker entry points; pinned
+containers; and a bilingual light/dark design foundation. Persian is RTL with a
+local Vazirmatn variable font, while English is LTR with self-hosted Inter.
+The next allowed stage is `NEX-P1-01-FREEZE`.
+
+The repository now contains a runtime scaffold, not a complete application or a
+production deployment. Database schema, authentication, TRD Bot runtime
+integration, durable jobs, and private deployment remain deliberately deferred.
 
 ## Verify the scope contract
 
@@ -34,6 +39,7 @@ python3 scripts/verify_technical_baseline.py
 python3 scripts/verify_integration_contracts.py
 python3 scripts/verify_security_boundary.py
 python3 scripts/verify_phase_zero_acceptance.py
+python3 scripts/verify_runtime_foundation.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -51,6 +57,8 @@ NEX_P0_04_FREEZE=PASS
 NEX_P0_04_PREREQUISITE=PASS
 NEX_P0_05_PHASE_ZERO_ACCEPTANCE=PASS
 NEX_P0_05_FREEZE=PASS
+NEX_P0_05_PREREQUISITE=PASS
+NEX_P1_01_RUNTIME_FOUNDATION=PASS
 ```
 
 ## Documents
@@ -60,6 +68,7 @@ NEX_P0_05_FREEZE=PASS
 - [`docs/v0.1/02-api-event-export-contracts-and-compatibility.md`](docs/v0.1/02-api-event-export-contracts-and-compatibility.md)
 - [`docs/v0.1/03-security-identity-and-private-deployment-boundary.md`](docs/v0.1/03-security-identity-and-private-deployment-boundary.md)
 - [`docs/v0.1/04-phase-zero-acceptance-matrix.md`](docs/v0.1/04-phase-zero-acceptance-matrix.md)
+- [`docs/v0.1/05-runtime-and-design-foundation-bootstrap.md`](docs/v0.1/05-runtime-and-design-foundation-bootstrap.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -67,6 +76,7 @@ NEX_P0_05_FREEZE=PASS
 - [`contracts/nexora-v0.1-security-boundary.json`](contracts/nexora-v0.1-security-boundary.json)
 - [`contracts/security/v1/`](contracts/security/v1/)
 - [`contracts/nexora-v0.1-phase-zero-acceptance.json`](contracts/nexora-v0.1-phase-zero-acceptance.json)
+- [`contracts/nexora-v0.1-runtime-foundation.json`](contracts/nexora-v0.1-runtime-foundation.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

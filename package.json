@@ -1,0 +1,20 @@
+{
+  "name": "nexora",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.34.8",
+  "engines": {
+    "node": "24.22.1",
+    "pnpm": "10.34.8"
+  },
+  "scripts": {
+    "build": "pnpm --filter @nexora/web build",
+    "dev": "pnpm --filter @nexora/web dev",
+    "format": "pnpm --filter @nexora/web format",
+    "format:check": "pnpm --filter @nexora/web format:check",
+    "lint": "pnpm --filter @nexora/web lint",
+    "test": "pnpm --filter @nexora/web test",
+    "test:e2e": "pnpm --filter @nexora/web test:e2e",
+    "typecheck": "pnpm --filter @nexora/web typecheck"
+  }
+}

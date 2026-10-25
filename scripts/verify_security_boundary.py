@@ -70,9 +70,7 @@ SECRET_KEYS = {
     "raw_exchange_credential",
 }
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
-UUID = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
-)
+UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 
 
 class SecurityBoundaryError(ValueError):
@@ -183,18 +181,15 @@ def validate_freeze_record(
         "candidate SHA does not match accepted P0-04 evidence",
     )
     _require(
-        record.get("candidate_commit_message")
-        == "docs(nexora): complete P0-04 operational boundary",
+        record.get("candidate_commit_message") == "docs(nexora): complete P0-04 operational boundary",
         "candidate commit message does not match accepted evidence",
     )
     _require(
-        record.get("candidate_parent_commit_sha")
-        == "1b23de9752794314ef71f590d1045c8b4be7bc56",
+        record.get("candidate_parent_commit_sha") == "1b23de9752794314ef71f590d1045c8b4be7bc56",
         "candidate parent SHA does not match the security-boundary commit",
     )
     _require(
-        record.get("candidate_parent_commit_message")
-        == "docs(nexora): establish P0-04 security boundary",
+        record.get("candidate_parent_commit_message") == "docs(nexora): establish P0-04 security boundary",
         "candidate parent message does not match accepted evidence",
     )
 
@@ -202,8 +197,7 @@ def validate_freeze_record(
     _require(isinstance(actions, dict), "github_actions must be an object")
     _require(actions.get("run_id") == 40079759760, "invalid GitHub Actions run ID")
     _require(
-        actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40079759760",
+        actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40079759760",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions head branch")
@@ -214,8 +208,7 @@ def validate_freeze_record(
     jobs = actions.get("jobs")
     _require(isinstance(jobs, dict), "GitHub Actions jobs must be an object")
     _require(
-        set(jobs)
-        == {"scope_contract", "technical_baseline", "integration_contract", "security_boundary"},
+        set(jobs) == {"scope_contract", "technical_baseline", "integration_contract", "security_boundary"},
         "freeze requires all four CI jobs",
     )
     expected_jobs = {
@@ -232,25 +225,54 @@ def validate_freeze_record(
         _require(job.get("conclusion") == "success", f"{name} job was not successful")
         _require(job.get("contract_tests_passed") is True, f"{name} contract tests not confirmed")
     _require(jobs["scope_contract"].get("scope_verifier_passed") is True, "scope verifier was not confirmed")
-    _require(jobs["technical_baseline"].get("scope_prerequisite_passed") is True, "baseline scope prerequisite was not confirmed")
+    _require(
+        jobs["technical_baseline"].get("scope_prerequisite_passed") is True,
+        "baseline scope prerequisite was not confirmed",
+    )
     _require(jobs["technical_baseline"].get("baseline_verifier_passed") is True, "baseline verifier was not confirmed")
-    _require(jobs["integration_contract"].get("scope_prerequisite_passed") is True, "integration scope prerequisite was not confirmed")
-    _require(jobs["integration_contract"].get("baseline_prerequisite_passed") is True, "integration baseline prerequisite was not confirmed")
-    _require(jobs["integration_contract"].get("integration_verifier_passed") is True, "integration verifier was not confirmed")
-    _require(jobs["security_boundary"].get("scope_prerequisite_passed") is True, "security scope prerequisite was not confirmed")
-    _require(jobs["security_boundary"].get("baseline_prerequisite_passed") is True, "security baseline prerequisite was not confirmed")
-    _require(jobs["security_boundary"].get("integration_prerequisite_passed") is True, "security integration prerequisite was not confirmed")
+    _require(
+        jobs["integration_contract"].get("scope_prerequisite_passed") is True,
+        "integration scope prerequisite was not confirmed",
+    )
+    _require(
+        jobs["integration_contract"].get("baseline_prerequisite_passed") is True,
+        "integration baseline prerequisite was not confirmed",
+    )
+    _require(
+        jobs["integration_contract"].get("integration_verifier_passed") is True,
+        "integration verifier was not confirmed",
+    )
+    _require(
+        jobs["security_boundary"].get("scope_prerequisite_passed") is True,
+        "security scope prerequisite was not confirmed",
+    )
+    _require(
+        jobs["security_boundary"].get("baseline_prerequisite_passed") is True,
+        "security baseline prerequisite was not confirmed",
+    )
+    _require(
+        jobs["security_boundary"].get("integration_prerequisite_passed") is True,
+        "security integration prerequisite was not confirmed",
+    )
     _require(jobs["security_boundary"].get("security_verifier_passed") is True, "security verifier was not confirmed")
 
     security_evidence = record.get("security_boundary_contract")
     _require(isinstance(security_evidence, dict), "security boundary evidence must be an object")
-    _require(security_evidence.get("schema_version") == contract.get("schema_version"), "security boundary schema mismatch")
+    _require(
+        security_evidence.get("schema_version") == contract.get("schema_version"), "security boundary schema mismatch"
+    )
     _require(security_evidence.get("checksum") == canonical_checksum(contract), "security boundary checksum mismatch")
 
     operational_evidence = record.get("operational_policy")
     _require(isinstance(operational_evidence, dict), "operational policy evidence must be an object")
-    _require(operational_evidence.get("schema_version") == operational_policy.get("schema_version"), "operational policy schema mismatch")
-    _require(operational_evidence.get("checksum") == canonical_checksum(operational_policy), "operational policy checksum mismatch")
+    _require(
+        operational_evidence.get("schema_version") == operational_policy.get("schema_version"),
+        "operational policy schema mismatch",
+    )
+    _require(
+        operational_evidence.get("checksum") == canonical_checksum(operational_policy),
+        "operational policy checksum mismatch",
+    )
 
     integration_module = _load_integration_verifier()
     integration_contract = integration_module.load_contract()
@@ -271,8 +293,7 @@ def validate_freeze_record(
     _require(baseline_prerequisite.get("decision_id") == "NEX-P0-02", "invalid technical baseline prerequisite")
     _require(baseline_prerequisite.get("frozen") is True, "technical baseline prerequisite is not frozen")
     _require(
-        baseline_prerequisite.get("contract_checksum")
-        == baseline_module.canonical_checksum(baseline_contract),
+        baseline_prerequisite.get("contract_checksum") == baseline_module.canonical_checksum(baseline_contract),
         "technical baseline prerequisite checksum mismatch",
     )
 
@@ -283,8 +304,7 @@ def validate_freeze_record(
     _require(scope_prerequisite.get("decision_id") == "NEX-P0-01", "invalid scope prerequisite")
     _require(scope_prerequisite.get("frozen") is True, "scope prerequisite is not frozen")
     _require(
-        scope_prerequisite.get("contract_checksum")
-        == scope_module.canonical_checksum(scope_contract),
+        scope_prerequisite.get("contract_checksum") == scope_module.canonical_checksum(scope_contract),
         "scope prerequisite checksum mismatch",
     )
 
@@ -315,7 +335,9 @@ def validate_contract(contract: dict[str, Any]) -> None:
     assurance = contract.get("assurance_model")
     _require(isinstance(assurance, dict), "assurance_model must be an object")
     _require(assurance.get("target") == "private_single_owner_financial_application", "invalid assurance target")
-    _require(assurance.get("verification_baseline") == "owasp_asvs_5.0.0_level_2_selected_controls", "invalid ASVS baseline")
+    _require(
+        assurance.get("verification_baseline") == "owasp_asvs_5.0.0_level_2_selected_controls", "invalid ASVS baseline"
+    )
     _require(assurance.get("identity_guidance") == "nist_sp_800_63b_4", "invalid identity guidance")
     _require(assurance.get("default_decision") == "deny", "security decisions must deny by default")
     _require(assurance.get("runtime_delivered") is False, "P0-04 cannot claim runtime security delivery")
@@ -338,7 +360,13 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(isinstance(identity, dict), "identity must be an object")
     _exact_set(identity, "human_principals", {"owner"})
     _exact_set(identity, "service_principals", {"nexora_worker", "trd_bot_integration"})
-    for key in ("self_registration", "invitations", "multi_user", "anonymous_application_access", "identity_provider_dependency"):
+    for key in (
+        "self_registration",
+        "invitations",
+        "multi_user",
+        "anonymous_application_access",
+        "identity_provider_dependency",
+    ):
         _require(identity.get(key) is False, f"identity boundary forbids {key}")
     _require(identity.get("owner_account_count") == 1, "exactly one owner account is allowed")
 
@@ -352,22 +380,44 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(auth.get("resident_key") == "preferred", "resident key preference has drifted")
     _require(auth.get("attestation") == "none", "attestation must remain privacy-preserving")
     _require(set(auth.get("allowed_algorithms", [])) == {"ES256", "EdDSA"}, "WebAuthn algorithms are invalid")
-    for key in ("rp_id_from_canonical_origin", "origin_exact_match", "challenge_single_use", "credential_counter_checked_when_supported"):
+    for key in (
+        "rp_id_from_canonical_origin",
+        "origin_exact_match",
+        "challenge_single_use",
+        "credential_counter_checked_when_supported",
+    ):
         _require(auth.get(key) is True, f"owner authentication requires {key}")
     _require(auth.get("challenge_entropy_bits") == 256, "challenge requires 256 bits of entropy")
     _require(auth.get("challenge_ttl_seconds") == 300, "challenge TTL must remain five minutes")
-    _require(auth.get("credential_private_key_storage") == "authenticator_only", "credential private keys must remain in authenticators")
-    _require("private_key" not in set(auth.get("credential_material_stored", [])), "private keys cannot be stored by Nexora")
+    _require(
+        auth.get("credential_private_key_storage") == "authenticator_only",
+        "credential private keys must remain in authenticators",
+    )
+    _require(
+        "private_key" not in set(auth.get("credential_material_stored", [])), "private keys cannot be stored by Nexora"
+    )
 
     recovery = contract.get("bootstrap_and_recovery")
     _require(isinstance(recovery, dict), "bootstrap_and_recovery must be an object")
     _require(recovery.get("initial_owner_bootstrap") == "local_cli_one_time_token", "invalid owner bootstrap")
     _require(recovery.get("bootstrap_token_entropy_bits") == 256, "bootstrap token requires 256 bits")
     _require(recovery.get("bootstrap_token_ttl_seconds") == 600, "bootstrap token TTL must remain ten minutes")
-    for key in ("bootstrap_token_single_use", "bootstrap_disabled_after_first_passkey", "recovery_codes_stored_as_digests", "recovery_codes_displayed_once", "recovery_requires_new_passkey_enrollment"):
+    for key in (
+        "bootstrap_token_single_use",
+        "bootstrap_disabled_after_first_passkey",
+        "recovery_codes_stored_as_digests",
+        "recovery_codes_displayed_once",
+        "recovery_requires_new_passkey_enrollment",
+    ):
         _require(recovery.get(key) is True, f"bootstrap and recovery requires {key}")
-    _require(recovery.get("bootstrap_network_scope") == "loopback_or_private_network_only", "bootstrap network scope is too broad")
-    _require(set(recovery.get("recovery_methods", [])) == {"single_use_recovery_codes", "local_operator_cli_reset"}, "recovery methods have drifted")
+    _require(
+        recovery.get("bootstrap_network_scope") == "loopback_or_private_network_only",
+        "bootstrap network scope is too broad",
+    )
+    _require(
+        set(recovery.get("recovery_methods", [])) == {"single_use_recovery_codes", "local_operator_cli_reset"},
+        "recovery methods have drifted",
+    )
     _require(recovery.get("recovery_code_count") == 10, "ten recovery codes are required")
     _require(recovery.get("recovery_code_entropy_bits") == 128, "recovery code entropy is insufficient")
     _require(recovery.get("email_password_reset") is False, "email password reset is forbidden")
@@ -377,10 +427,18 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(isinstance(authorization, dict), "authorization must be an object")
     _require(authorization.get("model") == "deny_by_default_role_and_scope", "authorization must deny by default")
     roles = authorization.get("roles")
-    _require(isinstance(roles, dict) and set(roles) == {"owner", "nexora_worker", "trd_bot_integration"}, "authorization roles do not match")
+    _require(
+        isinstance(roles, dict) and set(roles) == {"owner", "nexora_worker", "trd_bot_integration"},
+        "authorization roles do not match",
+    )
     _require(set(roles["trd_bot_integration"]) == EXPECTED_SERVICE_SCOPES, "TRD Bot integration scopes do not match")
-    _require(not any("live" in scope or "wallet" in scope for scopes in roles.values() for scope in scopes), "live or wallet authorization is forbidden")
-    _require(authorization.get("recent_reauthentication_window_seconds") == 300, "recent reauthentication window is invalid")
+    _require(
+        not any("live" in scope or "wallet" in scope for scopes in roles.values() for scope in scopes),
+        "live or wallet authorization is forbidden",
+    )
+    _require(
+        authorization.get("recent_reauthentication_window_seconds") == 300, "recent reauthentication window is invalid"
+    )
     _require(authorization.get("live_execution_scope_exists") is False, "live execution scope is forbidden")
 
     session = contract.get("session")
@@ -405,7 +463,13 @@ def validate_contract(contract: dict[str, Any]) -> None:
     }
     for key, expected in expected_session_values.items():
         _require(session.get(key) == expected, f"invalid session policy: {key}")
-    for key in ("rotate_after_authentication", "rotate_after_privilege_change", "revoke_on_credential_recovery", "revoke_all_supported", "logout_invalidates_server_state"):
+    for key in (
+        "rotate_after_authentication",
+        "rotate_after_privilege_change",
+        "revoke_on_credential_recovery",
+        "revoke_all_supported",
+        "logout_invalidates_server_state",
+    ):
         _require(session.get(key) is True, f"session policy requires {key}")
     _require(
         session.get("script_accessible_browser_storage") == "none",
@@ -418,10 +482,15 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(request.get("cors_allowed_origins") == [], "cross-origin CORS is forbidden")
     _require(request.get("csrf_strategy") == "synchronizer_token", "invalid CSRF strategy")
     _require(request.get("csrf_required_for_unsafe_methods") is True, "unsafe methods require CSRF protection")
-    _require(request.get("origin_header_exact_match_for_unsafe_methods") is True, "unsafe methods require exact Origin checks")
+    _require(
+        request.get("origin_header_exact_match_for_unsafe_methods") is True,
+        "unsafe methods require exact Origin checks",
+    )
     _require(request.get("content_types_for_mutations") == ["application/json"], "mutations must remain JSON-only")
     _require(request.get("request_body_size_limit_bytes") == 1048576, "request size limit has drifted")
-    _require(request.get("authenticated_response_cache_control") == "no-store", "authenticated responses must not be cached")
+    _require(
+        request.get("authenticated_response_cache_control") == "no-store", "authenticated responses must not be cached"
+    )
 
     service = contract.get("trd_bot_service_authentication")
     _require(isinstance(service, dict), "trd_bot_service_authentication must be an object")
@@ -429,9 +498,19 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(service.get("credential_type") == "scoped_bearer_token", "invalid TRD Bot credential type")
     _require(service.get("token_entropy_bits") == 256, "service tokens require 256 bits")
     _require(service.get("token_sent_from_browser") is False, "service token cannot reach the browser")
-    _require(service.get("token_storage_nexora") == "mounted_secret_file", "Nexora service token must use a mounted secret")
-    _require(service.get("token_storage_trd_bot") == "hmac_sha256_digest_with_server_pepper", "TRD Bot must not store plaintext service tokens")
-    for key in ("constant_time_verification", "contract_capability_negotiation_required", "revoke_supported", "per_request_correlation_id"):
+    _require(
+        service.get("token_storage_nexora") == "mounted_secret_file", "Nexora service token must use a mounted secret"
+    )
+    _require(
+        service.get("token_storage_trd_bot") == "hmac_sha256_digest_with_server_pepper",
+        "TRD Bot must not store plaintext service tokens",
+    )
+    for key in (
+        "constant_time_verification",
+        "contract_capability_negotiation_required",
+        "revoke_supported",
+        "per_request_correlation_id",
+    ):
         _require(service.get(key) is True, f"service authentication requires {key}")
     _require(set(service.get("scopes", [])) == EXPECTED_SERVICE_SCOPES, "service token scopes do not match")
     _require(service.get("maximum_token_age_days") == 90, "service token age is invalid")
@@ -452,21 +531,49 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(isinstance(deployment, dict), "private_deployment must be an object")
     _require(deployment.get("production_profile") == "private_single_host", "invalid production profile")
     _require(deployment.get("public_internet_profile_supported") is False, "public internet deployment is forbidden")
-    _require(deployment.get("remote_access") == "authenticated_private_overlay_network", "production requires private overlay access")
+    _require(
+        deployment.get("remote_access") == "authenticated_private_overlay_network",
+        "production requires private overlay access",
+    )
     _require(deployment.get("ingress") == "reverse_proxy_https_only", "production ingress must be HTTPS-only")
     _require(deployment.get("exposed_production_ports") == [443], "only port 443 may be exposed")
-    for key in ("database_host_port_exposed", "worker_host_port_exposed", "production_debug_mode", "production_source_maps_public"):
+    for key in (
+        "database_host_port_exposed",
+        "worker_host_port_exposed",
+        "production_debug_mode",
+        "production_source_maps_public",
+    ):
         _require(deployment.get(key) is False, f"private deployment forbids {key}")
-    for key in ("container_network_segmentation", "canonical_origin_allowlist_required", "trd_bot_endpoint_allowlisted", "host_or_provider_disk_encryption_required"):
+    for key in (
+        "container_network_segmentation",
+        "canonical_origin_allowlist_required",
+        "trd_bot_endpoint_allowlisted",
+        "host_or_provider_disk_encryption_required",
+    ):
         _require(deployment.get(key) is True, f"private deployment requires {key}")
     _require(deployment.get("tls_minimum_version") == "1.3", "TLS 1.3 minimum is required")
-    _require(deployment.get("outbound_default") == "deny_except_declared_dependencies", "outbound network must deny by default")
+    _require(
+        deployment.get("outbound_default") == "deny_except_declared_dependencies",
+        "outbound network must deny by default",
+    )
 
     secrets = contract.get("secrets")
     _require(isinstance(secrets, dict), "secrets must be an object")
-    _require(secrets.get("production_injection") == "read_only_mounted_secret_files", "invalid production secret injection")
-    _require(secrets.get("development_injection") == "untracked_local_environment_file", "invalid development secret injection")
-    for key in ("committed_secrets", "secrets_in_container_images", "secrets_in_database", "secrets_in_logs", "secrets_in_exports", "secrets_in_browser_bundle"):
+    _require(
+        secrets.get("production_injection") == "read_only_mounted_secret_files", "invalid production secret injection"
+    )
+    _require(
+        secrets.get("development_injection") == "untracked_local_environment_file",
+        "invalid development secret injection",
+    )
+    for key in (
+        "committed_secrets",
+        "secrets_in_container_images",
+        "secrets_in_database",
+        "secrets_in_logs",
+        "secrets_in_exports",
+        "secrets_in_browser_bundle",
+    ):
         _require(secrets.get(key) is False, f"secret boundary forbids {key}")
     _require(secrets.get("minimum_random_secret_bits") == 256, "random secrets require 256 bits")
     _require(secrets.get("file_mode") == "0400", "secret file mode must remain 0400")
@@ -477,13 +584,28 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(isinstance(audit, dict), "audit must be an object")
     _require(audit.get("schema_version") == "nexora-security-audit-event-v1", "invalid audit schema version")
     _exact_set(audit, "event_types", EXPECTED_AUDIT_EVENTS)
-    for key in ("append_only", "correlation_id_required", "actor_required", "outcome_required", "reason_code_required", "sensitive_values_forbidden"):
+    for key in (
+        "append_only",
+        "correlation_id_required",
+        "actor_required",
+        "outcome_required",
+        "reason_code_required",
+        "sensitive_values_forbidden",
+    ):
         _require(audit.get(key) is True, f"audit policy requires {key}")
     _require(audit.get("timestamps") == "UTC", "audit timestamps must use UTC")
 
     backup = contract.get("backup_and_restore")
     _require(isinstance(backup, dict), "backup_and_restore must be an object")
-    for key in ("database_backup_encrypted", "artifact_backup_encrypted", "restore_requires_owner_presence", "restore_requires_recent_reauthentication", "service_tokens_rotated_after_restore", "sessions_revoked_after_restore", "restore_drill_required_before_release"):
+    for key in (
+        "database_backup_encrypted",
+        "artifact_backup_encrypted",
+        "restore_requires_owner_presence",
+        "restore_requires_recent_reauthentication",
+        "service_tokens_rotated_after_restore",
+        "sessions_revoked_after_restore",
+        "restore_drill_required_before_release",
+    ):
         _require(backup.get(key) is True, f"backup policy requires {key}")
     _require(backup.get("encryption_profile") == "age_x25519_offline_recipient", "invalid backup encryption profile")
     _require(backup.get("private_key_online_storage") is False, "backup private key cannot be stored online")
@@ -537,7 +659,15 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(snapshot.get("checked_on") == "2026-10-24", "invalid reference snapshot date")
     sources = snapshot.get("sources")
     _require(isinstance(sources, list) and len(sources) == 5, "five official security references are required")
-    _require(all(source.startswith(("https://asvs.owasp.org/", "https://cheatsheetseries.owasp.org/", "https://pages.nist.gov/")) for source in sources), "security references must use official sources")
+    _require(
+        all(
+            source.startswith(
+                ("https://asvs.owasp.org/", "https://cheatsheetseries.owasp.org/", "https://pages.nist.gov/")
+            )
+            for source in sources
+        ),
+        "security references must use official sources",
+    )
     _require(contract.get("next_allowed_stage") == "NEX-P0-04-FREEZE", "next stage must be NEX-P0-04-FREEZE")
 
 
@@ -547,12 +677,18 @@ def validate_deployment_profiles(payload: dict[str, Any]) -> None:
     profiles = payload.get("profiles")
     _require(isinstance(profiles, list) and len(profiles) == 3, "three deployment profiles are required")
     by_id = {profile.get("id"): profile for profile in profiles}
-    _require(set(by_id) == {"local_development", "private_single_host", "public_internet"}, "deployment profile IDs do not match")
+    _require(
+        set(by_id) == {"local_development", "private_single_host", "public_internet"},
+        "deployment profile IDs do not match",
+    )
     _require(by_id["local_development"].get("allowed") is True, "local development profile must be allowed")
     _require(by_id["local_development"].get("production_data") is False, "local development cannot use production data")
     _require(by_id["private_single_host"].get("allowed") is True, "private single-host profile must be allowed")
     _require(by_id["private_single_host"].get("tls") == "required_minimum_1.3", "private production requires TLS 1.3")
-    _require(by_id["private_single_host"].get("database_exposure") == "container_network_only", "production database must remain internal")
+    _require(
+        by_id["private_single_host"].get("database_exposure") == "container_network_only",
+        "production database must remain internal",
+    )
     _require(by_id["public_internet"].get("allowed") is False, "public-internet profile is forbidden")
     topology = payload.get("private_single_host_topology")
     _require(isinstance(topology, dict), "private topology must be an object")
@@ -585,7 +721,10 @@ def validate_security_headers(payload: dict[str, Any]) -> None:
     _require("'unsafe-eval'" not in csp, "CSP cannot allow unsafe-eval")
     _require(headers["Strict-Transport-Security"] == "max-age=31536000", "invalid HSTS policy")
     _require(headers["Cache-Control"] == "no-store", "authenticated responses must use no-store")
-    _require(set(payload.get("remove_response_headers", [])) == {"Server", "X-Powered-By"}, "response header removal list is invalid")
+    _require(
+        set(payload.get("remove_response_headers", [])) == {"Server", "X-Powered-By"},
+        "response header removal list is invalid",
+    )
     _require(payload.get("csp_runtime_nonce_required") is True, "runtime CSP nonce is required")
     _require(payload.get("unsafe_inline_allowed") is False, "unsafe-inline must remain forbidden")
     _require(payload.get("unsafe_eval_allowed") is False, "unsafe-eval must remain forbidden")
@@ -598,16 +737,33 @@ def validate_threat_model(payload: dict[str, Any]) -> None:
     assets = payload.get("assets")
     boundaries = payload.get("trust_boundaries")
     _require(isinstance(assets, list) and len(assets) == 7 and len(set(assets)) == 7, "threat assets are incomplete")
-    _require(isinstance(boundaries, list) and len(boundaries) == 5 and len(set(boundaries)) == 5, "trust boundaries are incomplete")
+    _require(
+        isinstance(boundaries, list) and len(boundaries) == 5 and len(set(boundaries)) == 5,
+        "trust boundaries are incomplete",
+    )
     threats = payload.get("threats")
     _require(isinstance(threats, list) and len(threats) == 10, "ten threat scenarios are required")
     expected_ids = {f"NEX-THREAT-{index:03d}" for index in range(1, 11)}
     _require({threat.get("id") for threat in threats} == expected_ids, "threat IDs do not match")
     for threat in threats:
-        _require(threat.get("category") in {"spoofing", "tampering", "repudiation", "information_disclosure", "denial_of_service", "elevation_of_privilege"}, "invalid threat category")
+        _require(
+            threat.get("category")
+            in {
+                "spoofing",
+                "tampering",
+                "repudiation",
+                "information_disclosure",
+                "denial_of_service",
+                "elevation_of_privilege",
+            },
+            "invalid threat category",
+        )
         _require(threat.get("risk") in {"medium", "high", "critical"}, "invalid threat risk")
         _require(threat.get("residual_risk") in {"low", "medium"}, "invalid residual risk")
-        _require(isinstance(threat.get("controls"), list) and len(threat["controls"]) >= 4, "each threat requires at least four controls")
+        _require(
+            isinstance(threat.get("controls"), list) and len(threat["controls"]) >= 4,
+            "each threat requires at least four controls",
+        )
         _require(bool(threat.get("scenario")), "each threat requires a scenario")
     non_goals = payload.get("explicit_non_goals")
     _require(isinstance(non_goals, list) and len(non_goals) == 5, "threat-model non-goals are incomplete")
@@ -615,15 +771,23 @@ def validate_threat_model(payload: dict[str, Any]) -> None:
 
 
 def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any]) -> None:
-    _require(payload.get("schema_version") == "nexora-private-operations-policy-v1", "invalid operational policy schema")
+    _require(
+        payload.get("schema_version") == "nexora-private-operations-policy-v1", "invalid operational policy schema"
+    )
     _require(payload.get("decision_id") == "NEX-P0-04", "invalid operational policy decision")
     _require(payload.get("decision_date") == "2026-10-24", "invalid operational policy date")
     _require(payload.get("status") == "candidate", "operational policy must remain a candidate")
-    _require(payload.get("schema_version") == contract["operational_boundary"]["policy_schema_version"], "operational policy and boundary disagree")
+    _require(
+        payload.get("schema_version") == contract["operational_boundary"]["policy_schema_version"],
+        "operational policy and boundary disagree",
+    )
 
     levels = payload.get("service_levels")
     _require(isinstance(levels, dict), "service_levels must be an object")
-    _require(levels.get("classification") == "internal_release_target_not_external_sla", "service levels cannot claim an external SLA")
+    _require(
+        levels.get("classification") == "internal_release_target_not_external_sla",
+        "service levels cannot claim an external SLA",
+    )
     _require(levels.get("measurement_window") == "rolling_30_days", "invalid SLO measurement window")
     _require(levels.get("availability_percent") == "99.5", "availability target has drifted")
     _require(levels.get("maximum_planned_maintenance_minutes_per_month") == 240, "maintenance budget has drifted")
@@ -631,25 +795,51 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
     _require(levels.get("non_export_api_latency") == {"p95_ms": 300, "p99_ms": 1000}, "API latency target has drifted")
     freshness = levels.get("event_sync_freshness")
     _require(isinstance(freshness, dict), "event sync freshness must be an object")
-    _require(freshness.get("p95_seconds") == 300 and freshness.get("p99_seconds") == 900, "event sync freshness target has drifted")
-    _require(freshness.get("condition") == "both_nexora_and_trd_bot_healthy", "event freshness health condition is required")
+    _require(
+        freshness.get("p95_seconds") == 300 and freshness.get("p99_seconds") == 900,
+        "event sync freshness target has drifted",
+    )
+    _require(
+        freshness.get("condition") == "both_nexora_and_trd_bot_healthy", "event freshness health condition is required"
+    )
     _require(levels.get("event_projection_latency") == {"p95_seconds": 60}, "projection latency target has drifted")
     _require(levels.get("durable_job_start_latency") == {"p95_seconds": 60}, "job start target has drifted")
     export = levels.get("reference_export_completion")
     _require(isinstance(export, dict), "reference export target must be an object")
-    _require(export == {"maximum_rows": 100000, "maximum_uncompressed_bytes": 1073741824, "p95_seconds": 300}, "reference export target has drifted")
-    _require(levels.get("recovery_point_objective_hours") == contract["operational_boundary"]["rpo_hours"] == 24, "RPO must remain 24 hours")
-    _require(levels.get("recovery_time_objective_hours") == contract["operational_boundary"]["rto_hours"] == 4, "RTO must remain four hours")
+    _require(
+        export == {"maximum_rows": 100000, "maximum_uncompressed_bytes": 1073741824, "p95_seconds": 300},
+        "reference export target has drifted",
+    )
+    _require(
+        levels.get("recovery_point_objective_hours") == contract["operational_boundary"]["rpo_hours"] == 24,
+        "RPO must remain 24 hours",
+    )
+    _require(
+        levels.get("recovery_time_objective_hours") == contract["operational_boundary"]["rto_hours"] == 4,
+        "RTO must remain four hours",
+    )
     _require(levels.get("single_host_failure_tolerance") is False, "single-host failure tolerance cannot be claimed")
 
     capacity = payload.get("capacity_budget")
     _require(isinstance(capacity, dict), "capacity_budget must be an object")
-    _require(capacity.get("reference_host") == {"cpu_cores": 4, "memory_gib": 8, "encrypted_storage_gib": 200}, "reference host has drifted")
+    _require(
+        capacity.get("reference_host") == {"cpu_cores": 4, "memory_gib": 8, "encrypted_storage_gib": 200},
+        "reference host has drifted",
+    )
     _require(capacity.get("owner_accounts") == 1, "capacity profile must remain single-owner")
     _require(capacity.get("maximum_concurrent_sessions") == 5, "session capacity has drifted")
-    _require(capacity.get("interactive_requests_per_second") == {"sustained": 10, "burst": 25, "burst_seconds": 60}, "interactive capacity has drifted")
-    _require(capacity.get("source_events_per_second") == {"sustained": 50, "burst": 100, "burst_seconds": 60}, "event capacity has drifted")
-    _require(capacity.get("backlog_recovery") == {"events": 100000, "maximum_seconds": 3600}, "backlog recovery budget has drifted")
+    _require(
+        capacity.get("interactive_requests_per_second") == {"sustained": 10, "burst": 25, "burst_seconds": 60},
+        "interactive capacity has drifted",
+    )
+    _require(
+        capacity.get("source_events_per_second") == {"sustained": 50, "burst": 100, "burst_seconds": 60},
+        "event capacity has drifted",
+    )
+    _require(
+        capacity.get("backlog_recovery") == {"events": 100000, "maximum_seconds": 3600},
+        "backlog recovery budget has drifted",
+    )
     _require(capacity.get("database_soft_limit_gib") == 20, "database soft limit has drifted")
     _require(capacity.get("artifact_store_soft_limit_gib") == 100, "artifact soft limit has drifted")
     _require(capacity.get("minimum_free_storage_percent") == 20, "free storage reserve has drifted")
@@ -658,7 +848,15 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
     overload = payload.get("overload_policy")
     _require(isinstance(overload, dict), "overload_policy must be an object")
     _require(overload.get("interactive_rate_limit_status") == 429, "overload must use HTTP 429")
-    for key in ("retry_after_required", "durable_work_queued", "bounded_worker_concurrency", "backpressure_before_rejection", "noncritical_exports_paused_first", "last_verified_snapshot_may_be_served_stale", "health_reports_degraded"):
+    for key in (
+        "retry_after_required",
+        "durable_work_queued",
+        "bounded_worker_concurrency",
+        "backpressure_before_rejection",
+        "noncritical_exports_paused_first",
+        "last_verified_snapshot_may_be_served_stale",
+        "health_reports_degraded",
+    ):
         _require(overload.get(key) is True, f"overload policy requires {key}")
     for key in ("immutable_evidence_dropped", "accepted_command_lost", "silent_partial_export"):
         _require(overload.get(key) is False, f"overload policy forbids {key}")
@@ -679,9 +877,18 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
         "webauthn_challenges",
     }
     _require(set(by_class) == expected_classes, "retention class inventory does not match")
-    _require(by_class["immutable_source_evidence"].get("duration") == "indefinite", "immutable evidence retention must be indefinite")
-    _require(by_class["immutable_source_evidence"].get("disposition") == "no_automatic_deletion_in_v0.1", "immutable evidence cannot be automatically deleted")
-    _require(by_class["portfolio_and_financial_records"].get("duration") == "indefinite", "financial record retention must be indefinite")
+    _require(
+        by_class["immutable_source_evidence"].get("duration") == "indefinite",
+        "immutable evidence retention must be indefinite",
+    )
+    _require(
+        by_class["immutable_source_evidence"].get("disposition") == "no_automatic_deletion_in_v0.1",
+        "immutable evidence cannot be automatically deleted",
+    )
+    _require(
+        by_class["portfolio_and_financial_records"].get("duration") == "indefinite",
+        "financial record retention must be indefinite",
+    )
     expected_days = {
         "security_audit_events": 400,
         "application_logs": 30,
@@ -697,9 +904,15 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
 
     backup = payload.get("backup_retention")
     _require(isinstance(backup, dict), "backup_retention must be an object")
-    _require(backup.get("daily") == 14 and backup.get("weekly") == 8 and backup.get("monthly") == 12, "backup retention tiers have drifted")
+    _require(
+        backup.get("daily") == 14 and backup.get("weekly") == 8 and backup.get("monthly") == 12,
+        "backup retention tiers have drifted",
+    )
     _require(backup.get("minimum_geographic_copies") == 1, "one off-host backup copy is required")
-    _require(backup.get("runtime_host_copy_counts_as_geographic_copy") is False, "runtime-host backup cannot count as off-host")
+    _require(
+        backup.get("runtime_host_copy_counts_as_geographic_copy") is False,
+        "runtime-host backup cannot count as off-host",
+    )
     _require(backup.get("encryption") == "age_x25519_offline_recipient", "backup encryption has drifted")
     _require(backup.get("manifest_checksum") == "sha256", "backup manifest checksum has drifted")
 
@@ -708,7 +921,9 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
     _require(storage.get("adapter") == "versioned_local_filesystem_adapter", "invalid production artifact adapter")
     _require(storage.get("root") == "dedicated_encrypted_host_volume", "artifact root must be encrypted and dedicated")
     _require(storage.get("public_network_access") is False, "public artifact access is forbidden")
-    _require(storage.get("download_access") == "authenticated_api_only", "artifact downloads must use the authenticated API")
+    _require(
+        storage.get("download_access") == "authenticated_api_only", "artifact downloads must use the authenticated API"
+    )
     _require(storage.get("path_strategy") == "owner_type_artifact_id_version", "artifact path strategy has drifted")
     _require(storage.get("content_checksum") == "sha256", "artifact checksum must use SHA-256")
     _require(storage.get("atomic_publish") == "write_fsync_rename", "artifact publication must be atomic")
@@ -716,30 +931,49 @@ def validate_operational_policy(payload: dict[str, Any], contract: dict[str, Any
     _require(storage.get("immutable_after_publish") is True, "published artifacts must be immutable")
     _require(storage.get("soft_quota_gib") == 100, "artifact quota has drifted")
     _require(storage.get("minimum_free_storage_percent") == 20, "artifact free-space reserve has drifted")
-    _require(storage.get("s3_compatible_adapter") == "deferred_until_multi_host_or_capacity_trigger", "S3 decision has drifted")
+    _require(
+        storage.get("s3_compatible_adapter") == "deferred_until_multi_host_or_capacity_trigger",
+        "S3 decision has drifted",
+    )
 
     alerts = payload.get("storage_alerts")
-    _require(isinstance(alerts, list) and alerts == [
-        {"used_percent": 70, "severity": "warning"},
-        {"used_percent": 85, "severity": "critical"},
-        {"used_percent": 95, "severity": "write_protect_noncritical_artifacts"},
-    ], "storage alert thresholds have drifted")
+    _require(
+        isinstance(alerts, list)
+        and alerts
+        == [
+            {"used_percent": 70, "severity": "warning"},
+            {"used_percent": 85, "severity": "critical"},
+            {"used_percent": 95, "severity": "write_protect_noncritical_artifacts"},
+        ],
+        "storage alert thresholds have drifted",
+    )
 
     execution = payload.get("retention_execution")
     _require(isinstance(execution, dict), "retention_execution must be an object")
     _require(execution.get("schedule") == "daily", "retention must run daily")
-    for key in ("idempotent", "dry_run_supported", "manifest_before_delete", "security_audit_event_required", "partial_failure_retriable", "immutable_evidence_excluded"):
+    for key in (
+        "idempotent",
+        "dry_run_supported",
+        "manifest_before_delete",
+        "security_audit_event_required",
+        "partial_failure_retriable",
+        "immutable_evidence_excluded",
+    ):
         _require(execution.get(key) is True, f"retention execution requires {key}")
 
     evidence = payload.get("acceptance_evidence")
-    _require(set(evidence or []) == {
-        "capacity_benchmark_report",
-        "overload_and_backpressure_test",
-        "retention_dry_run_report",
-        "backup_restore_drill",
-        "artifact_checksum_and_atomicity_test",
-        "slo_measurement_smoke_test",
-    }, "operational acceptance evidence is incomplete")
+    _require(
+        set(evidence or [])
+        == {
+            "capacity_benchmark_report",
+            "overload_and_backpressure_test",
+            "retention_dry_run_report",
+            "backup_restore_drill",
+            "artifact_checksum_and_atomicity_test",
+            "slo_measurement_smoke_test",
+        },
+        "operational acceptance evidence is incomplete",
+    )
 
 
 def _timestamp(value: Any, label: str) -> None:
@@ -761,7 +995,9 @@ def _reject_secrets(value: Any, path: str = "audit fixture") -> None:
 
 
 def validate_audit_contract(schema: dict[str, Any], fixture: dict[str, Any], contract: dict[str, Any]) -> None:
-    _require(schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", "invalid audit JSON Schema dialect")
+    _require(
+        schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", "invalid audit JSON Schema dialect"
+    )
     _require(schema.get("type") == "object", "audit schema root must be an object")
     _require(schema.get("additionalProperties") is False, "audit schema root must be closed")
     required = schema.get("required")
@@ -787,21 +1023,36 @@ def validate_audit_contract(schema: dict[str, Any], fixture: dict[str, Any], con
     _require(set(fixture) == expected_fields, "audit fixture fields do not match")
     _require(fixture.get("schema_version") == "nexora-security-audit-event-v1", "invalid audit fixture schema")
     _require(fixture.get("event_type") in EXPECTED_AUDIT_EVENTS, "invalid audit fixture event type")
-    _require(isinstance(fixture.get("event_id"), str) and fixture["event_id"].startswith("sec_"), "invalid audit event ID")
+    _require(
+        isinstance(fixture.get("event_id"), str) and fixture["event_id"].startswith("sec_"), "invalid audit event ID"
+    )
     _timestamp(fixture.get("occurred_at"), "audit occurred_at")
-    _require(isinstance(fixture.get("correlation_id"), str) and UUID.fullmatch(fixture["correlation_id"]) is not None, "invalid audit correlation ID")
+    _require(
+        isinstance(fixture.get("correlation_id"), str) and UUID.fullmatch(fixture["correlation_id"]) is not None,
+        "invalid audit correlation ID",
+    )
     actor = fixture.get("actor")
     _require(isinstance(actor, dict) and set(actor) == {"type", "id"}, "invalid audit actor")
     _require(actor.get("type") in {"owner", "service", "system", "unknown"}, "invalid audit actor type")
     target = fixture.get("target")
     _require(isinstance(target, dict) and set(target) == {"type", "id"}, "invalid audit target")
     _require(fixture.get("outcome") in {"success", "failure", "denied"}, "invalid audit outcome")
-    _require(re.fullmatch(r"^[A-Z][A-Z0-9_]{2,79}$", fixture.get("reason_code", "")) is not None, "invalid audit reason code")
+    _require(
+        re.fullmatch(r"^[A-Z][A-Z0-9_]{2,79}$", fixture.get("reason_code", "")) is not None, "invalid audit reason code"
+    )
     network = fixture.get("network_context")
-    _require(isinstance(network, dict) and set(network) == {"source_class", "ip_address_hmac"}, "invalid audit network context")
-    _require(network.get("source_class") in {"loopback", "private_overlay", "internal_service", "unknown"}, "invalid audit source class")
+    _require(
+        isinstance(network, dict) and set(network) == {"source_class", "ip_address_hmac"},
+        "invalid audit network context",
+    )
+    _require(
+        network.get("source_class") in {"loopback", "private_overlay", "internal_service", "unknown"},
+        "invalid audit source class",
+    )
     digest = network.get("ip_address_hmac")
-    _require(digest is None or (isinstance(digest, str) and SHA256.fullmatch(digest) is not None), "invalid IP address HMAC")
+    _require(
+        digest is None or (isinstance(digest, str) and SHA256.fullmatch(digest) is not None), "invalid IP address HMAC"
+    )
 
 
 def validate_documents() -> None:

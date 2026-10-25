@@ -1,0 +1,10 @@
+.git
+.github
+.venv
+**/__pycache__
+**/.next
+**/node_modules
+artifacts/generated
+coverage
+playwright-report
+test-results

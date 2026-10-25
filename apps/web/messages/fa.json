@@ -1,0 +1,48 @@
+{
+  "brand": "NEXORA",
+  "skipToContent": "رفتن به محتوای اصلی",
+  "navigation": {
+    "overview": "نمای کلی",
+    "portfolio": "پورتفولیو",
+    "decisions": "تصمیم‌ها",
+    "alerts": "هشدارها",
+    "journal": "ژورنال",
+    "exports": "خروجی‌ها",
+    "settings": "تنظیمات"
+  },
+  "header": {
+    "environment": "محیط زیرساخت اولیه",
+    "mode": "حالت پژوهش · PAPER / SHADOW",
+    "language": "زبان",
+    "theme": "پوسته",
+    "light": "روشن",
+    "dark": "تیره",
+    "system": "سیستم"
+  },
+  "page": {
+    "eyebrow": "NEX-P1-01",
+    "title": "زیرساخت اجرا و طراحی",
+    "description": "پایه امن و دوزبانه برای هوشمندی پورتفولیو، شواهد و جریان‌های تصمیم‌گیری آینده.",
+    "status": "وضعیت راه‌اندازی",
+    "ready": "زیرساخت آماده است",
+    "cards": {
+      "webTitle": "اجرای وب",
+      "webValue": "Next.js 16",
+      "webDetail": "React 19 · TypeScript سخت‌گیرانه",
+      "apiTitle": "اجرای سرور",
+      "apiValue": "FastAPI",
+      "apiDetail": "Python 3.13 · مرز سلامت سرویس",
+      "designTitle": "سیستم طراحی",
+      "designValue": "روشن + تیره",
+      "designDetail": "انگلیسی LTR · فارسی RTL"
+    },
+    "boundaryTitle": "مرزهای زیرساخت",
+    "boundaries": {
+      "runtime": "قفل قطعی وابستگی‌ها",
+      "database": "مالکیت مستقل داده‌های Nexora",
+      "integration": "فقط قراردادهای نسخه‌دار TRD Bot",
+      "security": "بدون اجرای زنده یا اعتبارنامه صرافی"
+    },
+    "next": "مرحله بعد: ساختار برنامه و تنظیمات type-safe"
+  }
+}

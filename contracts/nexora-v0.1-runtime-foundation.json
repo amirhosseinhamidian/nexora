@@ -1,0 +1,126 @@
+{
+  "schema_version": "nexora-runtime-foundation-v1",
+  "decision_id": "NEX-P1-01",
+  "decision_date": "2026-10-24",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "phase_zero_prerequisite": {
+    "decision_id": "NEX-P0-05",
+    "frozen": true,
+    "freeze_commit_sha": "d75436eb859c8a2c31d93db740f0378314f89d92",
+    "freeze_record_path": "artifacts/p0-05/phase-zero-freeze.json",
+    "freeze_record_checksum": "5de46860c0ea0a5fd32951976f4e93639de316632a15d5b4c3ef4a9c3c4c476b",
+    "runtime_bootstrap_authorized": true
+  },
+  "delivery": {
+    "repository_model": "lightweight_polyglot_monorepo",
+    "runtime_scaffold_delivered": true,
+    "production_readiness_claimed": false,
+    "database_runtime_delivered": false,
+    "authentication_runtime_delivered": false,
+    "trd_bot_runtime_integration_delivered": false,
+    "durable_worker_delivered": false
+  },
+  "toolchain": {
+    "python": "3.13.16",
+    "uv": "0.13.4",
+    "node": "24.22.1",
+    "pnpm": "10.34.8"
+  },
+  "lockfiles": {
+    "python": "uv.lock",
+    "javascript": "pnpm-lock.yaml",
+    "exact_direct_dependencies": true,
+    "frozen_install_required": true
+  },
+  "server_runtime": {
+    "package": "nexora-server",
+    "source": "apps/server/src/nexora",
+    "api_entrypoint": "nexora.api:app",
+    "worker_entrypoint": "nexora.worker:main",
+    "liveness_endpoint": "/health/live",
+    "interactive_api_docs_exposed": false,
+    "worker_execution_enabled": false,
+    "worker_enablement_stage": "NEX-P1-05"
+  },
+  "web_runtime": {
+    "package": "@nexora/web",
+    "source": "apps/web",
+    "framework": "nextjs_app_router",
+    "typescript_strict": true,
+    "static_locales": ["fa", "en"],
+    "default_locale": "fa"
+  },
+  "design_foundation": {
+    "reference": "owner_supplied_dark_financial_dashboard",
+    "themes": ["light", "dark", "system"],
+    "theme_attribute": "data-theme",
+    "semantic_tokens_path": "packages/ui/src/tokens.css",
+    "locales": {
+      "fa": {
+        "direction": "rtl",
+        "font_family": "Vazirmatn",
+        "font_source": "local_owner_asset",
+        "font_path": "apps/web/src/assets/fonts/vazirmatn/Vazirmatn-Variable.ttf",
+        "font_sha256": "696249a2c74b39ffdef55de4df2809c5b639d3ff80d618d8160a095d2fd49dca"
+      },
+      "en": {
+        "direction": "ltr",
+        "font_family": "Inter Variable",
+        "font_source": "@fontsource-variable/inter@5.3.0"
+      }
+    },
+    "translation_catalogs": ["apps/web/messages/fa.json", "apps/web/messages/en.json"],
+    "reduced_motion_supported": true,
+    "visible_keyboard_focus": true
+  },
+  "workspace_layout": [
+    "apps/web",
+    "apps/server",
+    "packages/contracts",
+    "packages/ui",
+    "packages/config",
+    "infra/compose"
+  ],
+  "resolved_debt": {
+    "id": "NEX-DEBT-P0-02-001",
+    "owner": "NEX-P1-01",
+    "resolution": "exact_dependency_pins_and_committed_lockfiles_delivered",
+    "closed": true
+  },
+  "security_boundary": {
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "direct_trd_bot_database_access": false,
+    "autonomous_ai_execution": false,
+    "public_internet_production_profile": false,
+    "multi_tenant_identity": false
+  },
+  "quality_gates": {
+    "foundation_contract": [
+      "frozen_phase_zero_prerequisite",
+      "runtime_foundation_verifier",
+      "repository_contract_tests"
+    ],
+    "server": ["ruff_format_check", "ruff_check", "mypy_strict", "pytest"],
+    "web": ["prettier_check", "eslint", "typescript_no_emit", "vitest", "next_build"]
+  },
+  "deferred": [
+    {"stage": "NEX-P1-02", "capability": "application_composition_and_typed_runtime_configuration"},
+    {"stage": "NEX-P1-03", "capability": "postgresql_schema_and_migrations"},
+    {"stage": "NEX-P1-04", "capability": "versioned_trd_bot_adapter"},
+    {"stage": "NEX-P1-05", "capability": "durable_jobs_outbox_and_worker_execution"},
+    {"stage": "NEX-P1-06", "capability": "single_owner_identity_session_and_private_runtime"}
+  ],
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-01-FREEZE",
+    "post_freeze_stage": "NEX-P1-02"
+  }
+}

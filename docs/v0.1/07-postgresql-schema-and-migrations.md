@@ -1,6 +1,6 @@
 # NEX-P1-03 — PostgreSQL Schema and Migrations
 
-وضعیت: **Candidate — Ready for Freeze**
+وضعیت: **Frozen**
 تاریخ تصمیم: ۲۰۲۶-۱۰-۲۵
 
 ## هدف
@@ -93,5 +93,20 @@ NEX_P1_02_PREREQUISITE=PASS
 NEX_P1_03_POSTGRESQL_SCHEMA=PASS
 ```
 
-مرحله بعد فقط `NEX-P1-03-FREEZE` است؛ پس از Freeze، ورود به
-`NEX-P1-04 — Versioned TRD Bot Adapter` مجاز می‌شود.
+## شواهد Freeze
+
+Candidate نهایی با SHA
+`a448c996acdbee33bba88e788d7f768a6a96b5f9` و پیام commit
+`fix(nexora): isolate PostgreSQL integration tests in CI` پذیرفته شد. Workflow
+اصلی PostgreSQL با run `40204544416` هر سه job قرارداد، backend و PostgreSQL 17
+را سبز کرد. runهای رگرسیون `40204544421`، `40204544423` و `40204544462` نیز
+Runtime Foundation، قراردادهای Phase 0 و Application Composition را روی همان
+SHA تأیید کردند.
+
+```text
+NEX_P1_02_PREREQUISITE=PASS
+NEX_P1_03_POSTGRESQL_SCHEMA=PASS
+NEX_P1_03_FREEZE=PASS
+```
+
+مرحله مجاز بعدی `NEX-P1-04 — Versioned TRD Bot Adapter` است.

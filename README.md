@@ -33,11 +33,12 @@ composition factory for the API and inert worker. Configuration fingerprints
 are deterministic and contain no secrets. The accepted candidate is bound to
 successful CI evidence.
 
-`NEX-P1-03` is now a candidate ready for freeze. It adds the owner-aware
+`NEX-P1-03` is frozen. It adds the owner-aware
 PostgreSQL 17 persistence spine, private file-based migration configuration,
 SQLAlchemy 2 models, reversible Alembic migrations, immutable source-evidence
-enforcement, and the complete migration-cycle CI gate. The next allowed stage
-is `NEX-P1-03-FREEZE`.
+enforcement, and the complete migration-cycle CI gate. The accepted candidate
+is bound to successful database and regression CI evidence. The next allowed
+stage is `NEX-P1-04`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Authentication, TRD Bot runtime integration, durable
@@ -79,6 +80,7 @@ NEX_P1_02_APPLICATION_COMPOSITION=PASS
 NEX_P1_02_FREEZE=PASS
 NEX_P1_02_PREREQUISITE=PASS
 NEX_P1_03_POSTGRESQL_SCHEMA=PASS
+NEX_P1_03_FREEZE=PASS
 ```
 
 ## Documents
@@ -109,3 +111,4 @@ NEX_P1_03_POSTGRESQL_SCHEMA=PASS
 - [`artifacts/p0-05/phase-zero-freeze.json`](artifacts/p0-05/phase-zero-freeze.json)
 - [`artifacts/p1-01/runtime-foundation-freeze.json`](artifacts/p1-01/runtime-foundation-freeze.json)
 - [`artifacts/p1-02/application-composition-freeze.json`](artifacts/p1-02/application-composition-freeze.json)
+- [`artifacts/p1-03/postgresql-schema-freeze.json`](artifacts/p1-03/postgresql-schema-freeze.json)

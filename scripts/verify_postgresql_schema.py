@@ -9,6 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-postgresql-schema.json"
+FREEZE_PATH = ROOT / "artifacts/p1-03/postgresql-schema-freeze.json"
 
 EXPECTED_TABLES = [
     "owner_profiles",
@@ -44,6 +45,10 @@ def _json(path: Path) -> dict[str, Any]:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -283,19 +288,161 @@ def validate_files(contract: dict[str, Any]) -> None:
         )
 
 
+def _validate_workflow(
+    workflow: Any,
+    *,
+    label: str,
+    run_id: int,
+    expected_jobs: dict[str, tuple[int, str]],
+    candidate_sha: str,
+) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"invalid {label} workflow run ID")
+    _require(
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"invalid {label} workflow URL",
+    )
+    _require(workflow.get("head_sha") == candidate_sha, f"{label} workflow head SHA mismatch")
+    _require(workflow.get("event") == "push", f"invalid {label} workflow event")
+    _require(workflow.get("attempt") == 1, f"invalid {label} workflow attempt")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow was not successful")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), f"{label} jobs must be an object")
+    _require(set(jobs) == set(expected_jobs), f"{label} job inventory mismatch")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{label} {name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {label} {name} job ID")
+        _require(job.get("name") == name, f"invalid {label} {name} job name")
+        _require(job.get("conclusion") == "success", f"{label} {name} job was not successful")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-postgresql-schema-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P1-03", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    candidate_sha = "a448c996acdbee33bba88e788d7f768a6a96b5f9"
+    _require(record.get("candidate_commit_sha") == candidate_sha, "candidate SHA does not match accepted evidence")
+    _require(
+        record.get("candidate_commit_message") == "fix(nexora): isolate PostgreSQL integration tests in CI",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _validate_workflow(
+        actions,
+        label="PostgreSQL schema",
+        run_id=40204544416,
+        expected_jobs={
+            "database_contract": (121202571041, "database-contract"),
+            "backend": (121202571309, "backend"),
+            "postgresql_17": (121202571375, "postgresql-17"),
+        },
+        candidate_sha=candidate_sha,
+    )
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")
+    required_markers = {
+        "database_contract": (
+            "application_composition_prerequisite_passed",
+            "postgresql_schema_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "non_integration_tests_passed",
+        ),
+        "postgresql_17": (
+            "private_dsn_fixture_created",
+            "upgrade_head_passed",
+            "integration_tests_passed",
+            "downgrade_base_passed",
+            "rebuild_head_passed",
+            "migration_drift_check_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(actions["jobs"][job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    regression = record.get("regression_workflows")
+    _require(isinstance(regression, dict), "regression workflow evidence must be an object")
+    expected_regression = {
+        "runtime_foundation": (
+            40204544421,
+            {
+                "foundation_contract": (121202570449, "foundation-contract"),
+                "web": (121202570533, "web"),
+                "backend": (121202570659, "backend"),
+            },
+        ),
+        "contracts": (
+            40204544423,
+            {
+                "technical_baseline": (121202571446, "technical-baseline"),
+                "phase_zero_acceptance": (121202571489, "phase-zero-acceptance"),
+                "integration_contract": (121202571573, "integration-contract"),
+                "scope_contract": (121202571619, "scope-contract"),
+                "security_boundary": (121202571973, "security-boundary"),
+            },
+        ),
+        "application_composition": (
+            40204544462,
+            {
+                "composition_contract": (121202570636, "composition-contract"),
+                "backend": (121202570750, "backend"),
+            },
+        ),
+    }
+    _require(set(regression) == set(expected_regression), "regression workflow inventory mismatch")
+    for label, (run_id, jobs) in expected_regression.items():
+        _validate_workflow(
+            regression[label],
+            label=label,
+            run_id=run_id,
+            expected_jobs=jobs,
+            candidate_sha=candidate_sha,
+        )
+
+    contract_evidence = record.get("postgresql_schema_contract")
+    _require(isinstance(contract_evidence, dict), "PostgreSQL schema evidence must be an object")
+    _require(contract_evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(contract_evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("application_composition_prerequisite")
+    _require(isinstance(prerequisite, dict), "application composition prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-02", "invalid application composition prerequisite")
+    _require(prerequisite.get("frozen") is True, "application composition prerequisite is not frozen")
+    prerequisite_record = _json(ROOT / "artifacts/p1-02/application-composition-freeze.json")
+    _require(
+        prerequisite.get("freeze_record_checksum") == canonical_checksum(prerequisite_record),
+        "application composition freeze record checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-25", "invalid freeze record date")
+    _require(record.get("frozen") is True, "PostgreSQL schema is not frozen")
+    _require(record.get("postgresql_schema_complete") is True, "PostgreSQL schema stage is incomplete")
+    _require(record.get("next_allowed_stage") == "NEX-P1-04", "invalid post-freeze next stage")
+
+
 def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/07-postgresql-schema-and-migrations.md").read_text(encoding="utf-8")
     for marker in (
         "NEX-P1-03",
-        "Candidate — Ready for Freeze",
+        "وضعیت: **Frozen**",
         "PostgreSQL 17",
         "20261025_0001",
         "NEX_P1_03_POSTGRESQL_SCHEMA=PASS",
-        "NEX-P1-03-FREEZE",
+        "NEX_P1_03_FREEZE=PASS",
+        "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+        "40204544416",
+        "NEX-P1-04",
     ):
         _require(marker in document, f"document marker missing: {marker}")
     adr = (ROOT / "docs/adr/0017-owner-aware-postgresql-persistence-spine.md").read_text(encoding="utf-8")
-    for marker in ("Status: Accepted by NEX-P1-03 candidate", "## Decision", "## Consequences"):
+    for marker in ("Status: Frozen by NEX-P1-03", "## Decision", "## Consequences"):
         _require(marker in adr, f"ADR marker missing: {marker}")
 
 
@@ -305,11 +452,15 @@ def main() -> int:
     validate_contract(contract)
     validate_files(contract)
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P1_02_PREREQUISITE=PASS")
     print("NEX_P1_03_POSTGRESQL_SCHEMA=PASS")
+    print("NEX_P1_03_FREEZE=PASS")
     return 0
 
 

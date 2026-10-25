@@ -1,6 +1,6 @@
 # ADR 0017: Owner-aware PostgreSQL persistence spine
 
-- Status: Accepted by NEX-P1-03 candidate
+- Status: Frozen by NEX-P1-03
 - Date: 2026-10-25
 
 ## Context

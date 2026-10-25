@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class PostgreSQLSchemaTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_application_composition_is_valid(self) -> None:
         MODULE.validate_frozen_application_composition()
@@ -27,6 +28,7 @@ class PostgreSQLSchemaTests(unittest.TestCase):
         MODULE.validate_contract(self.contract)
         MODULE.validate_files(self.contract)
         MODULE.validate_documents()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_non_postgresql_workflows_exclude_integration_tests(self) -> None:
         for relative in (
@@ -105,6 +107,60 @@ class PostgreSQLSchemaTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P1-04"
         with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "feat(nexora): wrong candidate"
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "commit message"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_postgresql_jobs(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["github_actions"]["jobs"]["postgresql_17"]
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "job inventory"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_failed_migration_drift_check(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["postgresql_17"]["migration_drift_check_passed"] = False
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "migration_drift_check_passed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_regression_workflows(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["regression_workflows"]["runtime_foundation"]
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "regression workflow inventory"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "workflow head SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["schema"]["migration_revision"] = "wrong"
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "contract checksum"):
+            MODULE.validate_freeze_record(self.freeze_record, changed_contract)
+
+    def test_freeze_record_rejects_application_composition_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["application_composition_prerequisite"]["freeze_record_checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "freeze record checksum"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p1_04(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-05"
+        with self.assertRaisesRegex(MODULE.PostgreSQLSchemaError, "post-freeze next stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

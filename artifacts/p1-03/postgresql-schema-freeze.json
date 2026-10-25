@@ -1,0 +1,142 @@
+{
+  "schema_version": "nexora-postgresql-schema-freeze-v1",
+  "decision_id": "NEX-P1-03",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+  "candidate_commit_message": "fix(nexora): isolate PostgreSQL integration tests in CI",
+  "github_actions": {
+    "run_id": 40204544416,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40204544416",
+    "head_sha": "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "database_contract": {
+        "job_id": 121202571041,
+        "name": "database-contract",
+        "conclusion": "success",
+        "application_composition_prerequisite_passed": true,
+        "postgresql_schema_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121202571309,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "non_integration_tests_passed": true
+      },
+      "postgresql_17": {
+        "job_id": 121202571375,
+        "name": "postgresql-17",
+        "conclusion": "success",
+        "private_dsn_fixture_created": true,
+        "upgrade_head_passed": true,
+        "integration_tests_passed": true,
+        "downgrade_base_passed": true,
+        "rebuild_head_passed": true,
+        "migration_drift_check_passed": true
+      }
+    }
+  },
+  "regression_workflows": {
+    "runtime_foundation": {
+      "run_id": 40204544421,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40204544421",
+      "head_sha": "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "foundation_contract": {
+          "job_id": 121202570449,
+          "name": "foundation-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 121202570533,
+          "name": "web",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 121202570659,
+          "name": "backend",
+          "conclusion": "success"
+        }
+      }
+    },
+    "contracts": {
+      "run_id": 40204544423,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40204544423",
+      "head_sha": "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "technical_baseline": {
+          "job_id": 121202571446,
+          "name": "technical-baseline",
+          "conclusion": "success"
+        },
+        "phase_zero_acceptance": {
+          "job_id": 121202571489,
+          "name": "phase-zero-acceptance",
+          "conclusion": "success"
+        },
+        "integration_contract": {
+          "job_id": 121202571573,
+          "name": "integration-contract",
+          "conclusion": "success"
+        },
+        "scope_contract": {
+          "job_id": 121202571619,
+          "name": "scope-contract",
+          "conclusion": "success"
+        },
+        "security_boundary": {
+          "job_id": 121202571973,
+          "name": "security-boundary",
+          "conclusion": "success"
+        }
+      }
+    },
+    "application_composition": {
+      "run_id": 40204544462,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40204544462",
+      "head_sha": "a448c996acdbee33bba88e788d7f768a6a96b5f9",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "composition_contract": {
+          "job_id": 121202570636,
+          "name": "composition-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 121202570750,
+          "name": "backend",
+          "conclusion": "success"
+        }
+      }
+    }
+  },
+  "postgresql_schema_contract": {
+    "schema_version": "nexora-postgresql-schema-v1",
+    "checksum": "1cdb17727bfad09c6dc4d68adaa0cc82c300b0af4d90902b821c14d4936637fa"
+  },
+  "application_composition_prerequisite": {
+    "decision_id": "NEX-P1-02",
+    "frozen": true,
+    "freeze_record_checksum": "6b39f61195a461d7d647cb735c038e16f8d8c98deed71c21c5af7b56027f1c3f"
+  },
+  "recorded_on": "2026-10-25",
+  "frozen": true,
+  "postgresql_schema_complete": true,
+  "next_allowed_stage": "NEX-P1-04"
+}

@@ -272,6 +272,16 @@ def validate_files(contract: dict[str, Any]) -> None:
     quality = contract["quality_gates"]["postgresql_17"]
     _require(len(quality) == 5, "PostgreSQL quality gate inventory drift")
 
+    for relative in (
+        ".github/workflows/runtime-foundation.yml",
+        ".github/workflows/application-composition.yml",
+    ):
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        _require(
+            'uv run pytest -m "not integration" -q' in source,
+            f"non-PostgreSQL workflow must exclude integration tests: {relative}",
+        )
+
 
 def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/07-postgresql-schema-and-migrations.md").read_text(encoding="utf-8")

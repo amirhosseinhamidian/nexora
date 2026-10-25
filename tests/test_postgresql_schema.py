@@ -28,6 +28,14 @@ class PostgreSQLSchemaTests(unittest.TestCase):
         MODULE.validate_files(self.contract)
         MODULE.validate_documents()
 
+    def test_non_postgresql_workflows_exclude_integration_tests(self) -> None:
+        for relative in (
+            ".github/workflows/runtime-foundation.yml",
+            ".github/workflows/application-composition.yml",
+        ):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn('uv run pytest -m "not integration" -q', source)
+
     def test_checksum_is_deterministic(self) -> None:
         reversed_contract = dict(reversed(list(self.contract.items())))
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.canonical_checksum(reversed_contract))

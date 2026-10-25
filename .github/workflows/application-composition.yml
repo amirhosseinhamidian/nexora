@@ -44,4 +44,4 @@ jobs:
       - name: Typecheck backend
         run: uv run mypy
       - name: Test backend and repository contracts
-        run: uv run pytest -q
+        run: uv run pytest -m "not integration" -q

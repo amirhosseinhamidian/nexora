@@ -3,8 +3,10 @@
 The server package contains a minimal FastAPI liveness boundary, an inert worker,
 typed non-secret runtime settings, one explicit composition factory shared by
 both entry points, and an unregistered PostgreSQL persistence adapter used by
-explicit Alembic operations. Authentication, TRD Bot runtime integration,
-durable jobs, and production readiness are intentionally deferred.
+explicit Alembic operations. It also contains an unregistered, typed TRD Bot
+client adapter whose network behavior is exercised only through mock transports
+in P1-04. Authentication, durable synchronization, and production readiness are
+intentionally deferred.
 
 ```bash
 uv run nexora-api
@@ -19,3 +21,10 @@ Database migrations use a separate operator-only configuration path. Set
 `NEXORA_MIGRATION_DATABASE_DSN_FILE` to an absolute private file containing one
 `postgresql+psycopg` DSN, then invoke Alembic explicitly. Application startup
 does not connect to PostgreSQL or mutate schema in NEX-P1-03.
+
+The TRD Bot adapter reads its base URL and bearer token from absolute private
+files named by `NEXORA_TRD_BOT_BASE_URL_FILE` and
+`NEXORA_TRD_BOT_TOKEN_FILE`. These adapter-only settings are not part of the
+runtime composition allowlist yet, so API and Worker startup remain side-effect
+free. A caller must explicitly load the files, construct the adapter and
+negotiate exact v1 capabilities before any data operation.

@@ -37,8 +37,14 @@ successful CI evidence.
 PostgreSQL 17 persistence spine, private file-based migration configuration,
 SQLAlchemy 2 models, reversible Alembic migrations, immutable source-evidence
 enforcement, and the complete migration-cycle CI gate. The accepted candidate
-is bound to successful database and regression CI evidence. The next allowed
-stage is `NEX-P1-04`.
+is bound to successful database and regression CI evidence.
+
+`NEX-P1-04` is a candidate. It implements the typed, fail-closed TRD Bot HTTP
+adapter, exact capability negotiation, strict schema validation, private
+file-based endpoint/token configuration and bounded retry semantics for all
+eight frozen integration operations. TRD Bot 0.3.0 remains incompatible. The
+adapter is deliberately not registered in runtime composition; durable sync
+execution belongs to P1-05. The next allowed stage is `NEX-P1-04-FREEZE`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Authentication, TRD Bot runtime integration, durable
@@ -55,6 +61,7 @@ python3 scripts/verify_phase_zero_acceptance.py
 python3 scripts/verify_runtime_foundation.py
 python3 scripts/verify_application_composition.py
 python3 scripts/verify_postgresql_schema.py
+python3 scripts/verify_trd_bot_adapter.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -81,6 +88,8 @@ NEX_P1_02_FREEZE=PASS
 NEX_P1_02_PREREQUISITE=PASS
 NEX_P1_03_POSTGRESQL_SCHEMA=PASS
 NEX_P1_03_FREEZE=PASS
+NEX_P1_03_PREREQUISITE=PASS
+NEX_P1_04_TRD_BOT_ADAPTER=PASS
 ```
 
 ## Documents
@@ -93,6 +102,7 @@ NEX_P1_03_FREEZE=PASS
 - [`docs/v0.1/05-runtime-and-design-foundation-bootstrap.md`](docs/v0.1/05-runtime-and-design-foundation-bootstrap.md)
 - [`docs/v0.1/06-application-composition-and-runtime-configuration.md`](docs/v0.1/06-application-composition-and-runtime-configuration.md)
 - [`docs/v0.1/07-postgresql-schema-and-migrations.md`](docs/v0.1/07-postgresql-schema-and-migrations.md)
+- [`docs/v0.1/08-versioned-trd-bot-adapter.md`](docs/v0.1/08-versioned-trd-bot-adapter.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -103,6 +113,7 @@ NEX_P1_03_FREEZE=PASS
 - [`contracts/nexora-v0.1-runtime-foundation.json`](contracts/nexora-v0.1-runtime-foundation.json)
 - [`contracts/nexora-v0.1-application-composition.json`](contracts/nexora-v0.1-application-composition.json)
 - [`contracts/nexora-v0.1-postgresql-schema.json`](contracts/nexora-v0.1-postgresql-schema.json)
+- [`contracts/nexora-v0.1-trd-bot-adapter.json`](contracts/nexora-v0.1-trd-bot-adapter.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

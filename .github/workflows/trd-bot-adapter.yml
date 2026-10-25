@@ -1,0 +1,47 @@
+name: TRD Bot adapter
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  adapter-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-03 prerequisite
+        run: python3 scripts/verify_postgresql_schema.py
+      - name: Verify P1-04 TRD Bot adapter
+        run: python3 scripts/verify_trd_bot_adapter.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend format
+        run: uv run ruff format --check apps/server
+      - name: Lint backend
+        run: uv run ruff check apps/server
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test adapter without external network
+        run: uv run pytest -m "not integration" -q

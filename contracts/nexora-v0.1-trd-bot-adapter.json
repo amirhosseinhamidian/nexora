@@ -1,0 +1,129 @@
+{
+  "schema_version": "nexora-trd-bot-adapter-v1",
+  "decision_id": "NEX-P1-04",
+  "decision_date": "2026-10-25",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "postgresql_schema_prerequisite": {
+    "decision_id": "NEX-P1-03",
+    "frozen": true,
+    "freeze_commit_sha": "519c193d911ff8b0e609c3b9be244a8034231c84",
+    "freeze_record_path": "artifacts/p1-03/postgresql-schema-freeze.json",
+    "freeze_record_checksum": "0ef07cebdf42eea58f8014ad19ade51cd998d61e7dd1e2ba7d04330962eb3256"
+  },
+  "delivery": {
+    "typed_sync_client_delivered": true,
+    "secure_file_configuration_delivered": true,
+    "capability_negotiation_delivered": true,
+    "strict_response_validation_delivered": true,
+    "bounded_retry_policy_delivered": true,
+    "all_eight_contract_operations_delivered": true,
+    "runtime_composition_registered": false,
+    "durable_polling_delivered": false,
+    "projection_persistence_delivered": false,
+    "live_provider_smoke_claimed": false
+  },
+  "interface": {
+    "transport": "https_json",
+    "api_namespace": "/api/v1/integration/nexora",
+    "operations": [
+      "GET /capabilities",
+      "GET /snapshots/{resource_type}",
+      "GET /events",
+      "GET /events/{event_id}",
+      "POST /commands/decision-reviews",
+      "POST /exports",
+      "GET /exports/{export_id}",
+      "GET /exports/{export_id}/manifest"
+    ],
+    "page_limit_minimum": 1,
+    "page_limit_maximum": 500,
+    "redirects_followed": false,
+    "response_content_type": "application/json",
+    "correlation_header": "X-Correlation-ID",
+    "contract_header": "X-Contract-Version",
+    "provider_version_header": "X-TRD-Bot-Version"
+  },
+  "compatibility": {
+    "consumer_release": "Nexora 0.1.x",
+    "provider_release_range": ">=0.3.1,<0.4.0",
+    "provider_0_3_0_status": "legacy_read_only_blocked",
+    "contract_versions": ["nexora-trd-integration-v1"],
+    "event_envelopes": ["trd-integration-event-envelope-v1"],
+    "export_manifests": ["nexora-export-manifest-v1"],
+    "source_references": ["nexora-source-reference-v1"],
+    "commands": [
+      "decision_review.accept.v1",
+      "decision_review.reject.v1",
+      "decision_review.defer.v1"
+    ],
+    "missing_or_unknown_capability_behavior": "fail_closed",
+    "provider_version_change_behavior": "invalidate_negotiation_and_fail_closed",
+    "precondition_failed_behavior": "renegotiate_before_next_operation",
+    "expired_cursor_behavior": "full_snapshot_resync_required"
+  },
+  "retry_policy": {
+    "maximum_attempts": 4,
+    "base_delay_ms": 250,
+    "maximum_delay_ms": 4000,
+    "jitter": "full",
+    "retryable_statuses": [429, 502, 503, 504],
+    "post_retry_requires_idempotency_key": true,
+    "respect_retry_after": true,
+    "event_delivery": "at_least_once"
+  },
+  "configuration": {
+    "base_url_source": "absolute_private_file",
+    "base_url_file_environment_variable": "NEXORA_TRD_BOT_BASE_URL_FILE",
+    "token_source": "absolute_private_file",
+    "token_file_environment_variable": "NEXORA_TRD_BOT_TOKEN_FILE",
+    "symbolic_link_allowed": false,
+    "development_file_maximum_mode": "0600",
+    "production_file_mode": "0400",
+    "production_transport": "https",
+    "development_http_scope": "loopback_only",
+    "credentials_logged": false,
+    "credentials_exported": false,
+    "credentials_sent_to_browser": false
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "exchange_credentials": false,
+    "live_order_capability": false,
+    "wallet_capability": false,
+    "browser_service_token": false,
+    "autonomous_ai_execution": false,
+    "exactly_once_delivery_claim": false
+  },
+  "quality_gates": {
+    "contract": [
+      "frozen_postgresql_schema_prerequisite",
+      "adapter_verifier",
+      "repository_contract_tests"
+    ],
+    "backend": [
+      "locked_dependencies",
+      "ruff_format_check",
+      "ruff_check",
+      "mypy_strict",
+      "pytest_without_integration"
+    ],
+    "transport_tests": [
+      "mock_transport_only",
+      "no_real_credentials",
+      "no_external_network",
+      "schema_and_failure_semantics"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-04-FREEZE",
+    "post_freeze_stage": "NEX-P1-05"
+  }
+}

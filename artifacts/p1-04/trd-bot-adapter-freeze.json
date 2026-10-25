@@ -1,0 +1,159 @@
+{
+  "schema_version": "nexora-trd-bot-adapter-freeze-v1",
+  "decision_id": "NEX-P1-04",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "56448b830daced62e5602113108694895524d5ce",
+  "candidate_commit_message": "feat(nexora): implement P1-04 versioned TRD Bot adapter",
+  "github_actions": {
+    "run_id": 40215162078,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40215162078",
+    "head_sha": "56448b830daced62e5602113108694895524d5ce",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "adapter_contract": {
+        "job_id": 121234608933,
+        "name": "adapter-contract",
+        "conclusion": "success",
+        "postgresql_schema_prerequisite_passed": true,
+        "adapter_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121234609140,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "mock_transport_tests_passed": true,
+        "external_network_used": false,
+        "real_credentials_used": false
+      }
+    }
+  },
+  "regression_workflows": {
+    "runtime_foundation": {
+      "run_id": 40215162052,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40215162052",
+      "head_sha": "56448b830daced62e5602113108694895524d5ce",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 121234609574,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 121234609695,
+          "name": "web",
+          "conclusion": "success"
+        },
+        "foundation_contract": {
+          "job_id": 121234609982,
+          "name": "foundation-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "contracts": {
+      "run_id": 40215162056,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40215162056",
+      "head_sha": "56448b830daced62e5602113108694895524d5ce",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "phase_zero_acceptance": {
+          "job_id": 121234608803,
+          "name": "phase-zero-acceptance",
+          "conclusion": "success"
+        },
+        "scope_contract": {
+          "job_id": 121234608946,
+          "name": "scope-contract",
+          "conclusion": "success"
+        },
+        "security_boundary": {
+          "job_id": 121234608954,
+          "name": "security-boundary",
+          "conclusion": "success"
+        },
+        "technical_baseline": {
+          "job_id": 121234608968,
+          "name": "technical-baseline",
+          "conclusion": "success"
+        },
+        "integration_contract": {
+          "job_id": 121234608987,
+          "name": "integration-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "application_composition": {
+      "run_id": 40215162061,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40215162061",
+      "head_sha": "56448b830daced62e5602113108694895524d5ce",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 121234608934,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "composition_contract": {
+          "job_id": 121234609051,
+          "name": "composition-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "postgresql_schema": {
+      "run_id": 40215162075,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40215162075",
+      "head_sha": "56448b830daced62e5602113108694895524d5ce",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "postgresql_17": {
+          "job_id": 121234608762,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "database_contract": {
+          "job_id": 121234608926,
+          "name": "database-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 121234608967,
+          "name": "backend",
+          "conclusion": "success"
+        }
+      }
+    }
+  },
+  "trd_bot_adapter_contract": {
+    "schema_version": "nexora-trd-bot-adapter-v1",
+    "checksum": "971957189cbbaa4d4b27c95421cedf380f8468ac8232d948f25c7438e01e67dd"
+  },
+  "postgresql_schema_prerequisite": {
+    "decision_id": "NEX-P1-03",
+    "frozen": true,
+    "freeze_record_checksum": "0ef07cebdf42eea58f8014ad19ade51cd998d61e7dd1e2ba7d04330962eb3256"
+  },
+  "recorded_on": "2026-10-25",
+  "frozen": true,
+  "trd_bot_adapter_complete": true,
+  "live_provider_smoke_claimed": false,
+  "next_allowed_stage": "NEX-P1-05"
+}

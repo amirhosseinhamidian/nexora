@@ -9,6 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-trd-bot-adapter.json"
+FREEZE_PATH = ROOT / "artifacts/p1-04/trd-bot-adapter-freeze.json"
 
 EXPECTED_OPERATIONS = [
     "GET /capabilities",
@@ -53,6 +54,10 @@ def _json(path: Path) -> dict[str, Any]:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -259,17 +264,160 @@ def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/08-versioned-trd-bot-adapter.md").read_text(encoding="utf-8")
     for marker in (
         "NEX-P1-04",
-        "وضعیت: **Candidate**",
+        "وضعیت: **Frozen**",
         "legacy_read_only_blocked",
         ">=0.3.1,<0.4.0",
         "NEX_P1_04_TRD_BOT_ADAPTER=PASS",
-        "NEX-P1-04-FREEZE",
+        "NEX_P1_04_FREEZE=PASS",
+        "56448b830daced62e5602113108694895524d5ce",
+        "40215162078",
         "NEX-P1-05",
     ):
         _require(marker in document, f"document marker missing: {marker}")
     adr = (ROOT / "docs/adr/0018-fail-closed-versioned-trd-bot-adapter.md").read_text(encoding="utf-8")
-    for marker in ("Status: Candidate for NEX-P1-04", "## Decision", "## Consequences"):
+    for marker in ("Status: Frozen by NEX-P1-04", "## Decision", "## Consequences"):
         _require(marker in adr, f"ADR marker missing: {marker}")
+
+
+def _validate_workflow(
+    workflow: Any,
+    *,
+    label: str,
+    run_id: int,
+    expected_jobs: dict[str, tuple[int, str]],
+    candidate_sha: str,
+) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"invalid {label} workflow run ID")
+    _require(
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"invalid {label} workflow URL",
+    )
+    _require(workflow.get("head_sha") == candidate_sha, f"{label} workflow head SHA mismatch")
+    _require(workflow.get("event") == "push", f"invalid {label} workflow event")
+    _require(workflow.get("attempt") == 1, f"invalid {label} workflow attempt")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow was not successful")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), f"{label} jobs must be an object")
+    _require(set(jobs) == set(expected_jobs), f"{label} job inventory mismatch")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs.get(key)
+        _require(isinstance(job, dict), f"{label} {name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"invalid {label} {name} job ID")
+        _require(job.get("name") == name, f"invalid {label} {name} job name")
+        _require(job.get("conclusion") == "success", f"{label} {name} job was not successful")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-trd-bot-adapter-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P1-04", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
+    candidate_sha = "56448b830daced62e5602113108694895524d5ce"
+    _require(record.get("candidate_commit_sha") == candidate_sha, "candidate SHA does not match accepted evidence")
+    _require(
+        record.get("candidate_commit_message") == "feat(nexora): implement P1-04 versioned TRD Bot adapter",
+        "candidate commit message does not match accepted evidence",
+    )
+
+    actions = record.get("github_actions")
+    _validate_workflow(
+        actions,
+        label="TRD Bot adapter",
+        run_id=40215162078,
+        expected_jobs={
+            "adapter_contract": (121234608933, "adapter-contract"),
+            "backend": (121234609140, "backend"),
+        },
+        candidate_sha=candidate_sha,
+    )
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")
+    required_markers = {
+        "adapter_contract": (
+            "postgresql_schema_prerequisite_passed",
+            "adapter_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "mock_transport_tests_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(actions["jobs"][job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+    _require(actions["jobs"]["backend"].get("external_network_used") is False, "external network was used")
+    _require(actions["jobs"]["backend"].get("real_credentials_used") is False, "real credentials were used")
+
+    regression = record.get("regression_workflows")
+    _require(isinstance(regression, dict), "regression workflow evidence must be an object")
+    expected_regression = {
+        "runtime_foundation": (
+            40215162052,
+            {
+                "backend": (121234609574, "backend"),
+                "web": (121234609695, "web"),
+                "foundation_contract": (121234609982, "foundation-contract"),
+            },
+        ),
+        "contracts": (
+            40215162056,
+            {
+                "phase_zero_acceptance": (121234608803, "phase-zero-acceptance"),
+                "scope_contract": (121234608946, "scope-contract"),
+                "security_boundary": (121234608954, "security-boundary"),
+                "technical_baseline": (121234608968, "technical-baseline"),
+                "integration_contract": (121234608987, "integration-contract"),
+            },
+        ),
+        "application_composition": (
+            40215162061,
+            {
+                "backend": (121234608934, "backend"),
+                "composition_contract": (121234609051, "composition-contract"),
+            },
+        ),
+        "postgresql_schema": (
+            40215162075,
+            {
+                "postgresql_17": (121234608762, "postgresql-17"),
+                "database_contract": (121234608926, "database-contract"),
+                "backend": (121234608967, "backend"),
+            },
+        ),
+    }
+    _require(set(regression) == set(expected_regression), "regression workflow inventory mismatch")
+    for label, (run_id, jobs) in expected_regression.items():
+        _validate_workflow(
+            regression[label],
+            label=label,
+            run_id=run_id,
+            expected_jobs=jobs,
+            candidate_sha=candidate_sha,
+        )
+
+    contract_evidence = record.get("trd_bot_adapter_contract")
+    _require(isinstance(contract_evidence, dict), "TRD Bot adapter evidence must be an object")
+    _require(contract_evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(contract_evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("postgresql_schema_prerequisite")
+    _require(isinstance(prerequisite, dict), "PostgreSQL prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-03", "invalid PostgreSQL prerequisite")
+    _require(prerequisite.get("frozen") is True, "PostgreSQL prerequisite is not frozen")
+    prerequisite_record = _json(ROOT / "artifacts/p1-03/postgresql-schema-freeze.json")
+    _require(
+        prerequisite.get("freeze_record_checksum") == canonical_checksum(prerequisite_record),
+        "PostgreSQL freeze record checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-25", "invalid freeze record date")
+    _require(record.get("frozen") is True, "TRD Bot adapter is not frozen")
+    _require(record.get("trd_bot_adapter_complete") is True, "TRD Bot adapter stage is incomplete")
+    _require(record.get("live_provider_smoke_claimed") is False, "live-provider smoke cannot be claimed")
+    _require(record.get("next_allowed_stage") == "NEX-P1-05", "invalid post-freeze next stage")
 
 
 def main() -> int:
@@ -278,11 +426,14 @@ def main() -> int:
     validate_contract(contract)
     validate_files()
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
     print("NEX_P1_03_PREREQUISITE=PASS")
     print("NEX_P1_04_TRD_BOT_ADAPTER=PASS")
+    print("NEX_P1_04_FREEZE=PASS")
     return 0
 
 

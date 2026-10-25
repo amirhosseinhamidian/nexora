@@ -1,6 +1,6 @@
 # ADR 0018: Fail-closed versioned TRD Bot adapter
 
-- Status: Candidate for NEX-P1-04
+- Status: Frozen by NEX-P1-04
 - Date: 2026-10-25
 
 ## Context

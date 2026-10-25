@@ -1,6 +1,6 @@
 # NEX-P1-04 — Versioned TRD Bot Adapter
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 تاریخ تصمیم: ۲۰۲۶-۱۰-۲۵
 
 ## هدف
@@ -72,7 +72,25 @@ uv run pytest -m "not integration" -q
 ```text
 NEX_P1_03_PREREQUISITE=PASS
 NEX_P1_04_TRD_BOT_ADAPTER=PASS
+NEX_P1_04_FREEZE=PASS
 ```
 
-مرحله مجاز بعدی فقط `NEX-P1-04-FREEZE` است و پس از Freeze،
-`NEX-P1-05 — Durable Jobs, Checkpoints and Transactional Outbox` باز می‌شود.
+## شواهد Freeze
+
+Candidate نهایی با SHA
+`56448b830daced62e5602113108694895524d5ce` و پیام commit
+`feat(nexora): implement P1-04 versioned TRD Bot adapter` پذیرفته شد. Workflow
+اصلی adapter با run `40215162078` هر دو job قرارداد و backend را سبز کرد. تمام
+تست‌های transport بدون شبکه خارجی و credential واقعی اجرا شدند. runهای رگرسیون
+`40215162052`، `40215162056`، `40215162061` و `40215162075` نیز Runtime
+Foundation، قراردادهای Phase 0، Application Composition و چرخه کامل PostgreSQL
+17 را روی همان SHA تأیید کردند.
+
+```text
+NEX_P1_03_PREREQUISITE=PASS
+NEX_P1_04_TRD_BOT_ADAPTER=PASS
+NEX_P1_04_FREEZE=PASS
+```
+
+مرحله مجاز بعدی `NEX-P1-05 — Durable Jobs, Checkpoints and Transactional
+Outbox` است.

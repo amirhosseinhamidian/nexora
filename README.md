@@ -39,12 +39,14 @@ SQLAlchemy 2 models, reversible Alembic migrations, immutable source-evidence
 enforcement, and the complete migration-cycle CI gate. The accepted candidate
 is bound to successful database and regression CI evidence.
 
-`NEX-P1-04` is a candidate. It implements the typed, fail-closed TRD Bot HTTP
+`NEX-P1-04` is frozen. It implements the typed, fail-closed TRD Bot HTTP
 adapter, exact capability negotiation, strict schema validation, private
 file-based endpoint/token configuration and bounded retry semantics for all
 eight frozen integration operations. TRD Bot 0.3.0 remains incompatible. The
 adapter is deliberately not registered in runtime composition; durable sync
-execution belongs to P1-05. The next allowed stage is `NEX-P1-04-FREEZE`.
+execution belongs to P1-05. The accepted candidate is bound to successful
+adapter, backend, web, contract and PostgreSQL CI evidence. The next allowed
+stage is `NEX-P1-05`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Authentication, TRD Bot runtime integration, durable
@@ -90,6 +92,7 @@ NEX_P1_03_POSTGRESQL_SCHEMA=PASS
 NEX_P1_03_FREEZE=PASS
 NEX_P1_03_PREREQUISITE=PASS
 NEX_P1_04_TRD_BOT_ADAPTER=PASS
+NEX_P1_04_FREEZE=PASS
 ```
 
 ## Documents
@@ -123,3 +126,4 @@ NEX_P1_04_TRD_BOT_ADAPTER=PASS
 - [`artifacts/p1-01/runtime-foundation-freeze.json`](artifacts/p1-01/runtime-foundation-freeze.json)
 - [`artifacts/p1-02/application-composition-freeze.json`](artifacts/p1-02/application-composition-freeze.json)
 - [`artifacts/p1-03/postgresql-schema-freeze.json`](artifacts/p1-03/postgresql-schema-freeze.json)
+- [`artifacts/p1-04/trd-bot-adapter-freeze.json`](artifacts/p1-04/trd-bot-adapter-freeze.json)

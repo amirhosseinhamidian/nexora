@@ -1,12 +1,20 @@
 import pytest
+from nexora.config import ConfigurationError
 from nexora.worker import main
 
 
 def test_worker_check_does_not_claim_runtime_work(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["--check"]) == 0
-    assert "ready for P1-05" in capsys.readouterr().out
+    assert main(["--check"], {}) == 0
+    output = capsys.readouterr().out
+    assert "configuration" in output
+    assert "ready for P1-05" in output
 
 
 def test_worker_refuses_to_run_before_durable_jobs_exist() -> None:
     with pytest.raises(SystemExit, match="unavailable until NEX-P1-05"):
-        main([])
+        main([], {})
+
+
+def test_worker_check_fails_closed_on_unknown_configuration() -> None:
+    with pytest.raises(ConfigurationError, match="NEXORA_DATABASE_URL"):
+        main(["--check"], {"NEXORA_DATABASE_URL": "not-enabled"})

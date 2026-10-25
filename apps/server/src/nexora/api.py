@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from nexora import __version__
+from nexora.composition import compose_application
+from nexora.config import RuntimeSettings, load_settings
 
 
 class LivenessResponse(BaseModel):
@@ -13,13 +15,15 @@ class LivenessResponse(BaseModel):
     version: str
 
 
-def create_app() -> FastAPI:
+def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
+    container = compose_application(settings)
     application = FastAPI(
         docs_url=None,
         redoc_url=None,
         title="Nexora API",
         version=__version__,
     )
+    application.state.container = container
 
     @application.get("/health/live", response_model=LivenessResponse)
     def liveness() -> LivenessResponse:
@@ -32,4 +36,10 @@ app = create_app()
 
 
 def run() -> None:
-    uvicorn.run("nexora.api:app", host="127.0.0.1", port=8000, reload=False)
+    settings = load_settings()
+    uvicorn.run(
+        create_app(settings),
+        host=settings.api_host,
+        port=settings.api_port,
+        reload=False,
+    )

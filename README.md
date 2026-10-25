@@ -25,8 +25,13 @@ pnpm, Python, and uv toolchains; committed JavaScript and Python lockfiles; a
 Next.js web shell; minimal FastAPI and inert worker entry points; pinned
 containers; and a bilingual light/dark design foundation. Persian is RTL with a
 local Vazirmatn variable font, while English is LTR with self-hosted Inter.
-The accepted candidate is bound to successful CI evidence, and the next allowed
-stage is `NEX-P1-02`.
+The accepted candidate is bound to successful CI evidence.
+
+`NEX-P1-02` is now a candidate ready for freeze. It adds one immutable,
+allowlisted and fail-closed runtime configuration model plus an explicit shared
+composition factory for the API and inert worker. Configuration fingerprints
+are deterministic and contain no secrets. The next allowed stage is
+`NEX-P1-02-FREEZE`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Database schema, authentication, TRD Bot runtime
@@ -41,6 +46,7 @@ python3 scripts/verify_integration_contracts.py
 python3 scripts/verify_security_boundary.py
 python3 scripts/verify_phase_zero_acceptance.py
 python3 scripts/verify_runtime_foundation.py
+python3 scripts/verify_application_composition.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -61,6 +67,8 @@ NEX_P0_05_FREEZE=PASS
 NEX_P0_05_PREREQUISITE=PASS
 NEX_P1_01_RUNTIME_FOUNDATION=PASS
 NEX_P1_01_FREEZE=PASS
+NEX_P1_01_PREREQUISITE=PASS
+NEX_P1_02_APPLICATION_COMPOSITION=PASS
 ```
 
 ## Documents
@@ -71,6 +79,7 @@ NEX_P1_01_FREEZE=PASS
 - [`docs/v0.1/03-security-identity-and-private-deployment-boundary.md`](docs/v0.1/03-security-identity-and-private-deployment-boundary.md)
 - [`docs/v0.1/04-phase-zero-acceptance-matrix.md`](docs/v0.1/04-phase-zero-acceptance-matrix.md)
 - [`docs/v0.1/05-runtime-and-design-foundation-bootstrap.md`](docs/v0.1/05-runtime-and-design-foundation-bootstrap.md)
+- [`docs/v0.1/06-application-composition-and-runtime-configuration.md`](docs/v0.1/06-application-composition-and-runtime-configuration.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -79,6 +88,7 @@ NEX_P1_01_FREEZE=PASS
 - [`contracts/security/v1/`](contracts/security/v1/)
 - [`contracts/nexora-v0.1-phase-zero-acceptance.json`](contracts/nexora-v0.1-phase-zero-acceptance.json)
 - [`contracts/nexora-v0.1-runtime-foundation.json`](contracts/nexora-v0.1-runtime-foundation.json)
+- [`contracts/nexora-v0.1-application-composition.json`](contracts/nexora-v0.1-application-composition.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

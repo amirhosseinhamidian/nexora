@@ -1,0 +1,124 @@
+{
+  "schema_version": "nexora-application-composition-v1",
+  "decision_id": "NEX-P1-02",
+  "decision_date": "2026-10-25",
+  "status": "candidate",
+  "product": {
+    "name": "Nexora",
+    "version": "0.1.0",
+    "edition": "personal",
+    "operating_model": "single_owner"
+  },
+  "runtime_foundation_prerequisite": {
+    "decision_id": "NEX-P1-01",
+    "frozen": true,
+    "freeze_commit_sha": "618907b0bc9c5f57e2e72f8d2c666a7f5b6b3266",
+    "freeze_record_path": "artifacts/p1-01/runtime-foundation-freeze.json",
+    "freeze_record_checksum": "9daa50079de7a0288c877f967ee91c3393e7de157f2bf40f66d9555be237efc0"
+  },
+  "delivery": {
+    "typed_runtime_configuration_delivered": true,
+    "explicit_application_composition_delivered": true,
+    "shared_api_worker_configuration_delivered": true,
+    "configuration_fingerprint_delivered": true,
+    "production_readiness_claimed": false,
+    "database_runtime_delivered": false,
+    "authentication_runtime_delivered": false,
+    "trd_bot_runtime_integration_delivered": false,
+    "durable_worker_delivered": false
+  },
+  "configuration": {
+    "schema_version": "nexora-runtime-configuration-v1",
+    "source": "process_environment",
+    "dotenv_auto_load": false,
+    "immutable_after_load": true,
+    "unknown_prefixed_variables_rejected": true,
+    "empty_values_rejected": true,
+    "fingerprint_algorithm": "sha256_canonical_json",
+    "default_fingerprint": "5d4f9f7b6a1b7e1d8ab7af749136afff0b9e4de419d05f34a47497e68818ea04",
+    "secret_values_accepted": false,
+    "allowed_environment_variables": [
+      "NEXORA_ENVIRONMENT",
+      "NEXORA_DEPLOYMENT_PROFILE",
+      "NEXORA_LOG_LEVEL",
+      "NEXORA_DEFAULT_LOCALE",
+      "NEXORA_DEFAULT_THEME",
+      "NEXORA_API_HOST",
+      "NEXORA_API_PORT"
+    ],
+    "defaults": {
+      "environment": "development",
+      "deployment_profile": "local_development",
+      "log_level": "INFO",
+      "default_locale": "fa",
+      "default_theme": "system",
+      "api_host": "127.0.0.1",
+      "api_port": 8000
+    },
+    "allowed_environments": ["development", "test", "production"],
+    "allowed_deployment_profiles": ["local_development", "private_single_host"],
+    "forbidden_deployment_profile": "public_internet",
+    "profile_constraints": {
+      "development_and_test": {
+        "deployment_profile": "local_development",
+        "api_host": "127.0.0.1"
+      },
+      "production": {
+        "deployment_profile": "private_single_host",
+        "api_hosts": ["0.0.0.0", "127.0.0.1"],
+        "debug_log_level_allowed": false
+      }
+    }
+  },
+  "composition": {
+    "container_type": "immutable_explicit_container",
+    "container_path": "apps/server/src/nexora/composition.py",
+    "configuration_path": "apps/server/src/nexora/config.py",
+    "api_entrypoint": "nexora.api:app",
+    "worker_entrypoint": "nexora.worker:main",
+    "api_and_worker_share_loader": true,
+    "api_uses_injected_container": true,
+    "worker_check_is_side_effect_free": true,
+    "global_service_locator": false,
+    "database_adapter_registered": false,
+    "authentication_adapter_registered": false,
+    "trd_bot_adapter_registered": false,
+    "durable_job_adapter_registered": false
+  },
+  "observability_boundary": {
+    "liveness_endpoint": "/health/live",
+    "liveness_response_unchanged": true,
+    "configuration_checksum_may_be_logged": true,
+    "configuration_values_logged": false,
+    "secret_values_logged": false,
+    "production_readiness_endpoint_claimed": false
+  },
+  "security_boundary": {
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "direct_trd_bot_database_access": false,
+    "autonomous_ai_execution": false,
+    "public_internet_production_profile": false,
+    "multi_tenant_identity": false
+  },
+  "quality_gates": {
+    "composition_contract": [
+      "frozen_runtime_foundation_prerequisite",
+      "application_composition_verifier",
+      "repository_contract_tests"
+    ],
+    "server": ["ruff_format_check", "ruff_check", "mypy_strict", "pytest"]
+  },
+  "deferred": [
+    {"stage": "NEX-P1-03", "capability": "postgresql_schema_and_migrations"},
+    {"stage": "NEX-P1-04", "capability": "versioned_trd_bot_adapter"},
+    {"stage": "NEX-P1-05", "capability": "durable_jobs_outbox_and_worker_execution"},
+    {"stage": "NEX-P1-06", "capability": "single_owner_identity_session_and_private_runtime"}
+  ],
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-02-FREEZE",
+    "post_freeze_stage": "NEX-P1-03"
+  }
+}

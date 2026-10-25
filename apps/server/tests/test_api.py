@@ -1,6 +1,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 from nexora.api import create_app
+from nexora.composition import ApplicationContainer
+from nexora.config import load_settings
 
 
 @pytest.fixture
@@ -32,3 +34,12 @@ async def test_interactive_documentation_is_not_exposed_by_bootstrap() -> None:
     ) as client:
         assert (await client.get("/docs")).status_code == 404
         assert (await client.get("/redoc")).status_code == 404
+
+
+def test_app_uses_an_explicit_immutable_composition_container() -> None:
+    settings = load_settings({"NEXORA_DEFAULT_LOCALE": "en"})
+    application = create_app(settings)
+
+    assert isinstance(application.state.container, ApplicationContainer)
+    assert application.state.container.settings is settings
+    assert application.state.container.identity.configuration_checksum == settings.checksum()

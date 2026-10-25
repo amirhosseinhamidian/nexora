@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from nexora import __version__
+from nexora.composition import compose_application
+from nexora.config import load_settings
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -16,10 +18,14 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
     if arguments.check:
-        print(f"nexora-worker {__version__}: ready for P1-05 durable-job implementation")
+        container = compose_application(load_settings(environ))
+        print(
+            f"nexora-worker {__version__}: configuration "
+            f"{container.identity.configuration_checksum}; ready for P1-05 durable-job implementation"
+        )
         return 0
     raise SystemExit("worker execution is unavailable until NEX-P1-05")
 

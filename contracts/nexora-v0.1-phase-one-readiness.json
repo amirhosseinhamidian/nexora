@@ -1,0 +1,141 @@
+{
+  "schema_version": "nexora-phase-one-readiness-v1",
+  "decision_id": "NEX-P1-ACCEPTANCE",
+  "decision_date": "2026-10-26",
+  "status": "candidate",
+  "p1_06_prerequisite": {
+    "decision_id": "NEX-P1-06",
+    "frozen": true,
+    "freeze_commit_sha": "ce0c1504a520236fa7660749f13eabf475c82db9",
+    "freeze_record_path": "artifacts/p1-06/single-owner-identity-runtime-freeze.json",
+    "freeze_record_checksum": "f561b6b0a7c5834cfbb91c9e215e8f3e038199e25646fa1ed90db3059f329ce0"
+  },
+  "assessment": {
+    "original_roadmap_stage_count": 12,
+    "frozen_delivery_milestone_count": 6,
+    "phase_one_ready": false,
+    "final_acceptance_deferred": true,
+    "roadmap_reconciliation_required": true,
+    "production_readiness_claimed": false
+  },
+  "stage_matrix": [
+    {"stage": "P1-01", "status": "complete", "actual_delivery": "runtime_and_design_foundation"},
+    {"stage": "P1-02", "status": "partial", "actual_delivery": "application_composition_and_typed_configuration"},
+    {"stage": "P1-03", "status": "complete", "actual_delivery": "postgresql_and_migration_foundation"},
+    {"stage": "P1-04", "status": "partial", "actual_delivery": "versioned_trd_bot_adapter"},
+    {"stage": "P1-05", "status": "complete", "actual_delivery": "durable_jobs_checkpoints_and_outbox"},
+    {"stage": "P1-06", "status": "partial", "actual_delivery": "identity_session_audit_and_private_topology_core"},
+    {"stage": "P1-07", "status": "partial", "actual_delivery": "append_only_security_audit_only"},
+    {"stage": "P1-08", "status": "partial", "actual_delivery": "adapter_without_registered_sync_runtime"},
+    {"stage": "P1-09", "status": "missing", "actual_delivery": "none"},
+    {"stage": "P1-10", "status": "partial", "actual_delivery": "unauthenticated_bilingual_design_foundation"},
+    {"stage": "P1-11", "status": "partial", "actual_delivery": "private_compose_and_tls_boundary_only"},
+    {"stage": "P1-12", "status": "missing", "actual_delivery": "none"}
+  ],
+  "gaps": [
+    {
+      "gap_id": "NEX-P1-GAP-001",
+      "owner_stage": "NEX-P1-07",
+      "capability": "runtime_api_metadata_error_envelope_and_correlation",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-002",
+      "owner_stage": "NEX-P1-07",
+      "capability": "deterministic_python_typescript_contract_toolchain",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-003",
+      "owner_stage": "NEX-P1-07",
+      "capability": "http_passkey_session_and_recent_reauthentication_lifecycle",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-004",
+      "owner_stage": "NEX-P1-08",
+      "capability": "structured_observability_metrics_redaction_and_rotation",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-005",
+      "owner_stage": "NEX-P1-09",
+      "capability": "registered_durable_trd_bot_sync_runtime",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-006",
+      "owner_stage": "NEX-P1-10",
+      "capability": "versioned_atomic_artifact_and_export_storage",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-007",
+      "owner_stage": "NEX-P1-11",
+      "capability": "authenticated_accessible_web_application_shell",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-008",
+      "owner_stage": "NEX-P1-12",
+      "capability": "encrypted_backup_restore_retention_and_capacity_operations",
+      "blocking": true
+    },
+    {
+      "gap_id": "NEX-P1-GAP-009",
+      "owner_stage": "NEX-P1-13",
+      "capability": "full_phase_one_acceptance_hardening_and_freeze",
+      "blocking": true
+    }
+  ],
+  "revised_roadmap": [
+    {
+      "stage": "NEX-P1-07",
+      "title": "Runtime API, Authentication Lifecycle and Contract Toolchain",
+      "closes": ["NEX-P1-GAP-001", "NEX-P1-GAP-002", "NEX-P1-GAP-003"]
+    },
+    {
+      "stage": "NEX-P1-08",
+      "title": "Audit and Observability Foundation",
+      "closes": ["NEX-P1-GAP-004"]
+    },
+    {
+      "stage": "NEX-P1-09",
+      "title": "TRD Bot Sync Runtime",
+      "closes": ["NEX-P1-GAP-005"]
+    },
+    {
+      "stage": "NEX-P1-10",
+      "title": "Artifact and Export Storage",
+      "closes": ["NEX-P1-GAP-006"]
+    },
+    {
+      "stage": "NEX-P1-11",
+      "title": "Authenticated Web Application Shell",
+      "closes": ["NEX-P1-GAP-007"]
+    },
+    {
+      "stage": "NEX-P1-12",
+      "title": "Private Deployment and Operations",
+      "closes": ["NEX-P1-GAP-008"]
+    },
+    {
+      "stage": "NEX-P1-13",
+      "title": "Final Acceptance, Hardening and Freeze",
+      "closes": ["NEX-P1-GAP-009"]
+    }
+  ],
+  "security_boundary": {
+    "live_execution_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "autonomous_ai_execution": false,
+    "public_internet_production_profile": false,
+    "multi_user_identity": false
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-ACCEPTANCE-FREEZE",
+    "post_freeze_stage": "NEX-P1-07"
+  }
+}

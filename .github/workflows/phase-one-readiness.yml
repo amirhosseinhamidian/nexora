@@ -1,0 +1,72 @@
+name: Phase 1 roadmap reconciliation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-06 prerequisite
+        run: python3 scripts/verify_single_owner_identity_runtime.py
+      - name: Verify Phase 1 roadmap reconciliation
+        run: python3 scripts/verify_phase_one_readiness.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend format
+        run: uv run ruff format --check apps/server alembic
+      - name: Lint backend
+        run: uv run ruff check apps/server alembic
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.8
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+          cache: pnpm
+      - name: Install locked web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check web format
+        run: pnpm format:check
+      - name: Lint web
+        run: pnpm lint
+      - name: Typecheck web
+        run: pnpm typecheck
+      - name: Test web
+        run: pnpm test
+      - name: Build web
+        run: pnpm build

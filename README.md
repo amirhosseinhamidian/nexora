@@ -66,6 +66,13 @@ identity, PostgreSQL, private-topology, backend and regression CI evidence on
 the same commit. The next allowed stage is `NEX-P1-ACCEPTANCE`; production
 readiness remains unclaimed until that acceptance succeeds.
 
+`NEX-P1-ACCEPTANCE` is now a roadmap-reconciliation candidate, not a final
+acceptance claim. It compares the six frozen delivery milestones with the
+original twelve-stage Phase 1 roadmap, keeps nine missing or partial capability
+groups blocking, and records an owned continuation from `NEX-P1-07` through
+`NEX-P1-13`. Its next allowed stage is
+`NEX-P1-ACCEPTANCE-FREEZE`; Phase 1 remains incomplete.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
 features and final production acceptance remain deliberately deferred.
@@ -84,6 +91,7 @@ python3 scripts/verify_postgresql_schema.py
 python3 scripts/verify_trd_bot_adapter.py
 python3 scripts/verify_durable_jobs_outbox.py
 python3 scripts/verify_single_owner_identity_runtime.py
+python3 scripts/verify_phase_one_readiness.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -119,6 +127,8 @@ NEX_P1_05_FREEZE=PASS
 NEX_P1_05_PREREQUISITE=PASS
 NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS
 NEX_P1_06_FREEZE=PASS
+NEX_P1_06_PREREQUISITE=PASS
+NEX_P1_ACCEPTANCE_RECONCILIATION=PASS
 ```
 
 ## Documents
@@ -134,6 +144,7 @@ NEX_P1_06_FREEZE=PASS
 - [`docs/v0.1/08-versioned-trd-bot-adapter.md`](docs/v0.1/08-versioned-trd-bot-adapter.md)
 - [`docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md`](docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md)
 - [`docs/v0.1/10-single-owner-identity-session-private-runtime.md`](docs/v0.1/10-single-owner-identity-session-private-runtime.md)
+- [`docs/v0.1/11-phase-one-roadmap-reconciliation.md`](docs/v0.1/11-phase-one-roadmap-reconciliation.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -147,6 +158,7 @@ NEX_P1_06_FREEZE=PASS
 - [`contracts/nexora-v0.1-trd-bot-adapter.json`](contracts/nexora-v0.1-trd-bot-adapter.json)
 - [`contracts/nexora-v0.1-durable-jobs-outbox.json`](contracts/nexora-v0.1-durable-jobs-outbox.json)
 - [`contracts/nexora-v0.1-single-owner-identity-runtime.json`](contracts/nexora-v0.1-single-owner-identity-runtime.json)
+- [`contracts/nexora-v0.1-phase-one-readiness.json`](contracts/nexora-v0.1-phase-one-readiness.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

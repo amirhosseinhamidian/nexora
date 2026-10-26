@@ -26,16 +26,16 @@ def upgrade() -> None:
     op.execute("UPDATE nexora.sessions SET reauthenticated_at = created_at WHERE reauthenticated_at IS NULL")
     op.alter_column("sessions", "reauthenticated_at", nullable=False, schema="nexora")
     op.create_check_constraint(
-        op.f("ck_sessions_reauthenticated_ordered"),
+        op.f("ck_sessions_reauthenticated_before_absolute_expiry"),
         "sessions",
-        "reauthenticated_at >= created_at",
+        "reauthenticated_at < absolute_expires_at",
         schema="nexora",
     )
 
 
 def downgrade() -> None:
     op.drop_constraint(
-        op.f("ck_sessions_reauthenticated_ordered"),
+        op.f("ck_sessions_reauthenticated_before_absolute_expiry"),
         "sessions",
         type_="check",
         schema="nexora",

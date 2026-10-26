@@ -78,7 +78,7 @@ def test_browser_sessions_persist_recent_reauthentication_evidence() -> None:
     assert "reauthenticated_at" in sessions.c
     assert sessions.c.reauthenticated_at.nullable is False
     rendered = str(CreateTable(sessions).compile(dialect=postgresql.dialect()))  # type: ignore[no-untyped-call]
-    assert "ck_sessions_reauthenticated_ordered" in rendered
+    assert "ck_sessions_reauthenticated_before_absolute_expiry" in rendered
 
 
 def test_durable_tables_have_owner_idempotency_and_lease_fields() -> None:

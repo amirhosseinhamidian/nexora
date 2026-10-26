@@ -7,8 +7,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from nexora.api import create_app
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-runtime-api-auth-contract.json"
 EXPECTED_FREEZE_SHA = "57346f95e5fe79160767f49c67b83718ec8a3768"
@@ -140,16 +138,16 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 
 def validate_generated_contracts() -> None:
-    generator_path = ROOT / "scripts/generate_runtime_contracts.py"
-    spec = importlib.util.spec_from_file_location("generate_runtime_contracts", generator_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeApiAuthContractError("unable to load runtime contract generator")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    module.write_or_check(check=True)
-    schemas = module.build_schemas()
+    schema_paths = sorted((ROOT / "contracts/runtime/v1/schemas").glob("*.schema.json"))
+    schemas: dict[str, dict[str, Any]] = {}
+    for path in schema_paths:
+        schema = _json(path)
+        title = schema.get("title")
+        _require(isinstance(title, str) and title, f"runtime schema title missing: {path.name}")
+        _require(title not in schemas, f"duplicate runtime schema title: {title}")
+        schemas[title] = schema
     _require(len(schemas) == 16, "generated runtime model count drift")
-    _require(module._canonical_checksum(schemas) == EXPECTED_RUNTIME_CHECKSUM, "generated checksum drift")
+    _require(canonical_checksum(schemas) == EXPECTED_RUNTIME_CHECKSUM, "generated checksum drift")
 
     manifest_path = ROOT / "apps/server/src/nexora/generated/runtime_contract_manifest.py"
     manifest_spec = importlib.util.spec_from_file_location("runtime_contract_manifest", manifest_path)
@@ -160,9 +158,27 @@ def validate_generated_contracts() -> None:
     _require(manifest.RUNTIME_CONTRACT_CHECKSUM == EXPECTED_RUNTIME_CHECKSUM, "Python manifest checksum drift")
     _require(tuple(schemas) == manifest.RUNTIME_CONTRACT_MODELS, "Python manifest inventory drift")
 
+    typescript = (ROOT / "packages/contracts/src/generated/runtime-api.ts").read_text(encoding="utf-8")
+    _require(
+        f'export const runtimeContractChecksum = "{EXPECTED_RUNTIME_CHECKSUM}" as const;' in typescript,
+        "TypeScript contract checksum drift",
+    )
+
+    fixtures = ROOT / "contracts/runtime/v1/fixtures"
+    fixture_manifest = _json(fixtures / "manifest.json")
+    _require(fixture_manifest.get("schema_version") == "nexora-runtime-fixtures-v1", "fixture schema drift")
+    entries = fixture_manifest.get("fixtures")
+    _require(isinstance(entries, list) and entries, "runtime fixture inventory missing")
+    for entry in entries:
+        _require(isinstance(entry, dict), "runtime fixture entry must be an object")
+        _require(entry.get("model") in schemas, "runtime fixture references an unknown model")
+        fixture_path = fixtures / str(entry.get("path"))
+        _require(fixture_path.is_file(), f"runtime fixture missing: {fixture_path.name}")
+        _json(fixture_path)
+
 
 def validate_openapi() -> None:
-    document = create_app().openapi()
+    document = _json(ROOT / "contracts/runtime/v1/openapi.json")
     operations = {
         f"{method.upper()} {path}"
         for path, path_item in document["paths"].items()

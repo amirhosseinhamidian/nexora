@@ -137,7 +137,7 @@ class BrowserSession(Base):
         CheckConstraint("idle_expires_at <= absolute_expires_at", name="idle_before_absolute_expiry"),
         CheckConstraint("last_seen_at >= created_at", name="last_seen_ordered"),
         CheckConstraint("rotated_at >= created_at", name="rotated_ordered"),
-        CheckConstraint("reauthenticated_at >= created_at", name="reauthenticated_ordered"),
+        CheckConstraint("reauthenticated_at < absolute_expires_at", name="reauthenticated_before_absolute_expiry"),
         CheckConstraint("revoked_at IS NULL OR revoked_at >= created_at", name="revoked_ordered"),
         CheckConstraint("replaced_at IS NULL OR replaced_at >= created_at", name="replaced_ordered"),
         CheckConstraint(

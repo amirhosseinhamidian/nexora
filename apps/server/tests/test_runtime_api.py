@@ -51,7 +51,8 @@ def _container() -> tuple[object, Mock, Mock]:
 
 @pytest.mark.anyio
 async def test_version_and_error_envelope_carry_the_same_correlation_id() -> None:
-    async with AsyncClient(transport=ASGITransport(app=create_app()), base_url="http://test") as client:
+    application = create_app(load_settings({}))
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as client:
         version = await client.get("/version", headers={CORRELATION_HEADER: CORRELATION_ID})
         missing = await client.get("/missing", headers={CORRELATION_HEADER: CORRELATION_ID})
 

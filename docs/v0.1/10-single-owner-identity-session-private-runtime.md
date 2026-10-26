@@ -1,6 +1,6 @@
 # NEX-P1-06 — Single-owner identity, session and private runtime
 
-وضعیت: **Candidate — آماده‌ی Freeze پس از CI و تست PostgreSQL**
+وضعیت: **Frozen**
 
 این مرحله مرز امنیتی فریز‌شده‌ی P0-04 را به runtime واقعی تبدیل می‌کند. هویت
 Nexora همچنان دقیقاً یک owner دارد و هیچ password، self-registration، invitation
@@ -71,5 +71,12 @@ uv run python -m unittest discover -s tests -v
 docker compose -f infra/compose/private-single-host.yml config --quiet
 ```
 
-گام بعد فقط `NEX-P1-06-FREEZE` است؛ پس از آن acceptance نهایی Phase 1 باید
-candidate SHA و CI همان SHA را ثبت کند.
+## شواهد Freeze
+
+- Candidate SHA: `e7ea5484aaac6a9b2a60e25282044ad4c9649e20`
+- قرارداد: `003936dfdde1bcfdc46075d698e41e550d1ce99d6b51e32b0aa2d0fa7dc940e2`
+- اجرای اصلی CI: `40322981155`
+- شش workflow رگرسیون نیز روی همان Candidate SHA با نتیجه `success` ثبت شدند.
+
+گام بعد فقط `NEX-P1-ACCEPTANCE` است. این Freeze هنوز ادعای آمادگی production،
+public-internet deployment، live execution، wallet یا autonomous AI ندارد.

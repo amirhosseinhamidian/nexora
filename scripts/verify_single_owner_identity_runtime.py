@@ -9,6 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-single-owner-identity-runtime.json"
+FREEZE_PATH = ROOT / "artifacts/p1-06/single-owner-identity-runtime-freeze.json"
 
 
 class IdentityRuntimeContractError(ValueError):
@@ -33,6 +34,35 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def _validate_workflow(
+    workflow: object,
+    *,
+    label: str,
+    run_id: int,
+    expected_jobs: dict[str, tuple[int, str]],
+    candidate_sha: str,
+) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"{label} run ID drift")
+    _require(workflow.get("head_sha") == candidate_sha, f"{label} workflow head SHA drift")
+    _require(workflow.get("event") == "push", f"{label} workflow must be a push run")
+    _require(workflow.get("attempt") == 1, f"{label} workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), f"{label} jobs must be an object")
+    _require(set(jobs) == set(expected_jobs), f"{label} job inventory mismatch")
+    for job_name, (job_id, displayed_name) in expected_jobs.items():
+        job = jobs[job_name]
+        _require(isinstance(job, dict), f"{label}/{job_name} must be an object")
+        _require(job.get("job_id") == job_id, f"{label}/{job_name} job ID drift")
+        _require(job.get("name") == displayed_name, f"{label}/{job_name} name drift")
+        _require(job.get("conclusion") == "success", f"{label}/{job_name} did not succeed")
 
 
 def validate_frozen_durable_jobs() -> None:
@@ -129,6 +159,7 @@ def validate_files() -> None:
         "apps/server/src/nexora/adapters/postgresql/identity.py",
         "apps/server/tests/test_identity.py",
         "apps/server/tests/test_identity_integration.py",
+        "artifacts/p1-06/single-owner-identity-runtime-freeze.json",
         "infra/compose/private-single-host.yml",
         "infra/caddy/Caddyfile",
         "docs/adr/0020-passkey-session-and-private-runtime.md",
@@ -184,11 +215,172 @@ def validate_files() -> None:
 
 def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/10-single-owner-identity-session-private-runtime.md").read_text(encoding="utf-8")
-    for marker in ("NEX-P1-06", "Candidate", "20261026_0003", "WebAuthn", "NEX-P1-06-FREEZE"):
+    for marker in (
+        "NEX-P1-06",
+        "وضعیت: **Frozen**",
+        "20261026_0003",
+        "WebAuthn",
+        "e7ea5484aaac6a9b2a60e25282044ad4c9649e20",
+        "40322981155",
+        "NEX-P1-ACCEPTANCE",
+    ):
         _require(marker in document, f"document marker missing: {marker}")
     adr = (ROOT / "docs/adr/0020-passkey-session-and-private-runtime.md").read_text(encoding="utf-8")
-    for marker in ("Status: **Candidate for NEX-P1-06**", "## Decision", "## Consequences"):
+    for marker in ("Status: **Frozen by NEX-P1-06**", "## Decision", "## Consequences"):
         _require(marker in adr, f"ADR marker missing: {marker}")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-single-owner-identity-runtime-freeze-v1",
+        "invalid freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P1-06", "invalid freeze decision")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid freeze repository")
+    candidate_sha = record.get("candidate_commit_sha")
+    _require(candidate_sha == "e7ea5484aaac6a9b2a60e25282044ad4c9649e20", "candidate SHA drift")
+    _require(
+        record.get("candidate_commit_message") == "feat(nexora): implement P1-06 single-owner identity runtime",
+        "candidate commit message drift",
+    )
+
+    actions = record.get("github_actions")
+    _validate_workflow(
+        actions,
+        label="single-owner identity runtime",
+        run_id=40322981155,
+        expected_jobs={
+            "identity_contract": (121572380968, "identity-contract"),
+            "backend": (121572380612, "backend"),
+            "postgresql_17": (121572380849, "postgresql-17"),
+            "private_topology": (121572381078, "private-topology"),
+        },
+        candidate_sha=candidate_sha,
+    )
+    _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")
+    required_markers = {
+        "identity_contract": (
+            "p1_05_prerequisite_passed",
+            "identity_runtime_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "non_integration_tests_passed",
+        ),
+        "postgresql_17": (
+            "private_dsn_fixture_created",
+            "upgrade_head_passed",
+            "identity_integration_tests_passed",
+            "downgrade_base_passed",
+            "rebuild_head_passed",
+            "migration_drift_check_passed",
+        ),
+        "private_topology": ("compose_configuration_passed",),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(actions["jobs"][job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    regression = record.get("regression_workflows")
+    _require(isinstance(regression, dict), "regression workflow evidence must be an object")
+    expected_regression = {
+        "postgresql_schema": (
+            40322981040,
+            {
+                "backend": (121572380183, "backend"),
+                "database_contract": (121572380780, "database-contract"),
+                "postgresql_17": (121572380799, "postgresql-17"),
+            },
+        ),
+        "durable_jobs_outbox": (
+            40322981125,
+            {
+                "postgresql_17": (121572380712, "postgresql-17"),
+                "backend": (121572380950, "backend"),
+                "durable_contract": (121572380978, "durable-contract"),
+            },
+        ),
+        "contracts": (
+            40322981168,
+            {
+                "security_boundary": (121572380883, "security-boundary"),
+                "technical_baseline": (121572381342, "technical-baseline"),
+                "phase_zero_acceptance": (121572381343, "phase-zero-acceptance"),
+                "scope_contract": (121572381380, "scope-contract"),
+                "integration_contract": (121572381685, "integration-contract"),
+            },
+        ),
+        "runtime_foundation": (
+            40322981197,
+            {
+                "backend": (121572380611, "backend"),
+                "foundation_contract": (121572380923, "foundation-contract"),
+                "web": (121572381221, "web"),
+            },
+        ),
+        "trd_bot_adapter": (
+            40322981241,
+            {
+                "adapter_contract": (121572380650, "adapter-contract"),
+                "backend": (121572381437, "backend"),
+            },
+        ),
+        "application_composition": (
+            40322981384,
+            {
+                "composition_contract": (121572381413, "composition-contract"),
+                "backend": (121572381958, "backend"),
+            },
+        ),
+    }
+    _require(set(regression) == set(expected_regression), "regression workflow inventory mismatch")
+    for label, (run_id, jobs) in expected_regression.items():
+        _validate_workflow(
+            regression[label],
+            label=label,
+            run_id=run_id,
+            expected_jobs=jobs,
+            candidate_sha=candidate_sha,
+        )
+
+    contract_evidence = record.get("single_owner_identity_runtime_contract")
+    _require(isinstance(contract_evidence, dict), "identity contract evidence must be an object")
+    _require(contract_evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(contract_evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("durable_jobs_prerequisite")
+    _require(isinstance(prerequisite, dict), "P1-05 freeze prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-05", "invalid P1-05 freeze prerequisite")
+    _require(prerequisite.get("frozen") is True, "P1-05 freeze prerequisite is not frozen")
+    p1_05_record = _json(ROOT / "artifacts/p1-05/durable-jobs-outbox-freeze.json")
+    _require(
+        prerequisite.get("freeze_record_checksum") == canonical_checksum(p1_05_record),
+        "P1-05 freeze record checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-26", "invalid freeze record date")
+    _require(record.get("frozen") is True, "P1-06 is not frozen")
+    _require(
+        record.get("single_owner_identity_runtime_complete") is True,
+        "single-owner identity runtime is incomplete",
+    )
+    _require(
+        record.get("private_single_host_topology_validated") is True,
+        "private topology validation is missing",
+    )
+    for key in (
+        "production_readiness_claimed",
+        "public_internet_profile",
+        "live_execution_capability",
+        "wallet_capability",
+        "autonomous_ai_execution",
+    ):
+        _require(record.get(key) is False, f"freeze record cannot enable {key}")
+    _require(record.get("next_allowed_stage") == "NEX-P1-ACCEPTANCE", "invalid post-freeze next stage")
 
 
 def main() -> int:
@@ -197,11 +389,15 @@ def main() -> int:
     validate_contract(contract)
     validate_files()
     validate_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P1_05_PREREQUISITE=PASS")
     print("NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS")
+    print("NEX_P1_06_FREEZE=PASS")
     return 0
 
 

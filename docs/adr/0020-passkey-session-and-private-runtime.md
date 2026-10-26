@@ -1,6 +1,6 @@
 # ADR 0020: Passkey, opaque session and private runtime implementation
 
-Status: **Candidate for NEX-P1-06**
+Status: **Frozen by NEX-P1-06**
 
 ## Context
 

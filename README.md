@@ -57,13 +57,14 @@ or live-order capability is registered. The accepted candidate is bound to
 successful durable-work, PostgreSQL, backend and regression CI evidence. The
 next allowed stage is `NEX-P1-06`.
 
-`NEX-P1-06` is a candidate. It adds the single-owner passkey identity runtime,
+`NEX-P1-06` is frozen. It adds the single-owner passkey identity runtime,
 cryptographic WebAuthn verification restricted to ES256/EdDSA, single-use
 bootstrap and recovery, opaque server-side sessions, scoped service-token
 metadata, immutable security audit evidence, and a private single-host Compose
-topology that exposes only HTTPS 443. It is ready for candidate CI and then the
-dedicated `NEX-P1-06-FREEZE`; production readiness is not claimed before that
-acceptance evidence exists.
+topology that exposes only HTTPS 443. The accepted candidate is bound to the
+identity, PostgreSQL, private-topology, backend and regression CI evidence on
+the same commit. The next allowed stage is `NEX-P1-ACCEPTANCE`; production
+readiness remains unclaimed until that acceptance succeeds.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
@@ -117,6 +118,7 @@ NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS
 NEX_P1_05_FREEZE=PASS
 NEX_P1_05_PREREQUISITE=PASS
 NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS
+NEX_P1_06_FREEZE=PASS
 ```
 
 ## Documents
@@ -156,3 +158,4 @@ NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS
 - [`artifacts/p1-03/postgresql-schema-freeze.json`](artifacts/p1-03/postgresql-schema-freeze.json)
 - [`artifacts/p1-04/trd-bot-adapter-freeze.json`](artifacts/p1-04/trd-bot-adapter-freeze.json)
 - [`artifacts/p1-05/durable-jobs-outbox-freeze.json`](artifacts/p1-05/durable-jobs-outbox-freeze.json)
+- [`artifacts/p1-06/single-owner-identity-runtime-freeze.json`](artifacts/p1-06/single-owner-identity-runtime-freeze.json)

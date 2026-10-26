@@ -1,0 +1,156 @@
+{
+  "schema_version": "nexora-durable-jobs-outbox-freeze-v1",
+  "decision_id": "NEX-P1-05",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+  "candidate_commit_message": "feat(nexora): implement P1-05 durable jobs and outbox",
+  "github_actions": {
+    "run_id": 40286578346,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40286578346",
+    "head_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "durable_contract": {
+        "job_id": 121451549870,
+        "name": "durable-contract",
+        "conclusion": "success",
+        "p1_04_prerequisite_passed": true,
+        "durable_work_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121451549919,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "non_integration_tests_passed": true
+      },
+      "postgresql_17": {
+        "job_id": 121451549706,
+        "name": "postgresql-17",
+        "conclusion": "success",
+        "private_dsn_fixture_created": true,
+        "upgrade_head_passed": true,
+        "durable_integration_tests_passed": true,
+        "downgrade_base_passed": true,
+        "rebuild_head_passed": true,
+        "migration_drift_check_passed": true
+      }
+    }
+  },
+  "regression_workflows": {
+    "application_composition": {
+      "run_id": 40286578173,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40286578173",
+      "head_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 121451548737,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "composition_contract": {
+          "job_id": 121451549140,
+          "name": "composition-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "runtime_foundation": {
+      "run_id": 40286578180,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40286578180",
+      "head_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 121451548455,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "foundation_contract": {
+          "job_id": 121451548703,
+          "name": "foundation-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 121451548793,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "trd_bot_adapter": {
+      "run_id": 40286578257,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40286578257",
+      "head_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "adapter_contract": {
+          "job_id": 121451548734,
+          "name": "adapter-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 121451549117,
+          "name": "backend",
+          "conclusion": "success"
+        }
+      }
+    },
+    "postgresql_schema": {
+      "run_id": 40286578330,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40286578330",
+      "head_sha": "c89df00ca7c70744ee655b94811b41ec73fc367a",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 121451549057,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "database_contract": {
+          "job_id": 121451549221,
+          "name": "database-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 121451549246,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    }
+  },
+  "durable_jobs_outbox_contract": {
+    "schema_version": "nexora-durable-jobs-outbox-v1",
+    "checksum": "bda5946e66b831e75770eff148e30d3312a829cfcbb79bde5c1833005b8a4ff1"
+  },
+  "trd_bot_adapter_prerequisite": {
+    "decision_id": "NEX-P1-04",
+    "frozen": true,
+    "freeze_record_checksum": "0281915eb084f5fa0ac44365660e9af56a1e6bdb5f0a8b988178db7ed5d58d3f"
+  },
+  "recorded_on": "2026-10-26",
+  "frozen": true,
+  "durable_jobs_outbox_complete": true,
+  "at_least_once_delivery": true,
+  "exactly_once_delivery_claimed": false,
+  "external_provider_smoke_claimed": false,
+  "live_execution_capability": false,
+  "next_allowed_stage": "NEX-P1-06"
+}

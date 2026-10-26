@@ -1,6 +1,6 @@
 # ADR 0019: PostgreSQL durable work coordination
 
-- Status: Candidate for NEX-P1-05
+- Status: Frozen by NEX-P1-05
 - Date: 2026-10-25
 
 ## Context

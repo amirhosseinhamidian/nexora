@@ -48,13 +48,14 @@ execution belongs to P1-05. The accepted candidate is bound to successful
 adapter, backend, web, contract and PostgreSQL CI evidence. The next allowed
 stage is `NEX-P1-05`.
 
-`NEX-P1-05` is implemented as a freeze candidate. It adds PostgreSQL-backed
+`NEX-P1-05` is frozen. It adds PostgreSQL-backed
 durable jobs, optimistic projection checkpoints, and a transactional outbox;
 bounded `SKIP LOCKED` claims; expiring leases and restart reclaim; deterministic
 retry/dead-letter behavior; and an explicit handler-based worker engine. The
 delivery model is at-least-once. No live provider handler, exchange credential,
-or live-order capability is registered. The next allowed action is
-`NEX-P1-05-FREEZE` after the candidate CI is green.
+or live-order capability is registered. The accepted candidate is bound to
+successful durable-work, PostgreSQL, backend and regression CI evidence. The
+next allowed stage is `NEX-P1-06`.
 
 The repository now contains a runtime scaffold, not a complete application or a
 production deployment. Authentication, scheduled TRD Bot synchronization,
@@ -104,6 +105,7 @@ NEX_P1_04_TRD_BOT_ADAPTER=PASS
 NEX_P1_04_FREEZE=PASS
 NEX_P1_04_PREREQUISITE=PASS
 NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS
+NEX_P1_05_FREEZE=PASS
 ```
 
 ## Documents
@@ -140,3 +142,4 @@ NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS
 - [`artifacts/p1-02/application-composition-freeze.json`](artifacts/p1-02/application-composition-freeze.json)
 - [`artifacts/p1-03/postgresql-schema-freeze.json`](artifacts/p1-03/postgresql-schema-freeze.json)
 - [`artifacts/p1-04/trd-bot-adapter-freeze.json`](artifacts/p1-04/trd-bot-adapter-freeze.json)
+- [`artifacts/p1-05/durable-jobs-outbox-freeze.json`](artifacts/p1-05/durable-jobs-outbox-freeze.json)

@@ -1,6 +1,10 @@
 # NEX-P1-05 — Durable jobs, checkpoints and transactional outbox
 
-وضعیت: **Candidate — آماده‌ی Freeze پس از CI سبز**
+وضعیت: **Frozen**
+
+کاندید پذیرفته‌شده `c89df00ca7c70744ee655b94811b41ec73fc367a`
+است. اجرای اصلی GitHub Actions با شناسه `40286578346` و چهار workflow
+رگرسیون روی همین SHA با موفقیت کامل شدند.
 
 این مرحله لایه‌ی اجرای قابل‌بازیابی Nexora را روی PostgreSQL 17 پیاده می‌کند.
 سه جدول `background_jobs`، `projection_checkpoints` و `outbox_events` در migration
@@ -36,5 +40,6 @@ uv run alembic upgrade head
 uv run alembic check
 ```
 
-خروجی verifier باید شامل `NEX_P1_04_PREREQUISITE=PASS` و
-`NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS` باشد. مرحله بعد از Freeze، `NEX-P1-06` است.
+خروجی verifier باید شامل `NEX_P1_04_PREREQUISITE=PASS`،
+`NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS` و `NEX_P1_05_FREEZE=PASS` باشد.
+مرحله بعدی `NEX-P1-06` است.

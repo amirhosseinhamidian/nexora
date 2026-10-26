@@ -19,6 +19,7 @@ SESSION_IDLE_SECONDS: Final = 1800
 SESSION_ABSOLUTE_SECONDS: Final = 43200
 SESSION_ROTATION_SECONDS: Final = 900
 SESSION_ROTATION_GRACE_SECONDS: Final = 30
+RECENT_REAUTHENTICATION_SECONDS: Final = 300
 MAXIMUM_CONCURRENT_SESSIONS: Final = 5
 CHALLENGE_TTL_SECONDS: Final = 300
 BOOTSTRAP_TTL_SECONDS: Final = 600
@@ -192,6 +193,7 @@ class AuthenticatedSession:
     session_id: UUID
     owner_id: UUID
     rotation_required: bool
+    recently_reauthenticated: bool
 
 
 def random_token(*, bytes_count: int = 32) -> str:

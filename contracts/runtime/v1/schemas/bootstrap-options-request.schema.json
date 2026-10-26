@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "bootstrap_token": {
+      "maxLength": 256,
+      "minLength": 32,
+      "title": "Bootstrap Token",
+      "type": "string"
+    }
+  },
+  "required": [
+    "bootstrap_token"
+  ],
+  "title": "BootstrapOptionsRequest",
+  "type": "object"
+}

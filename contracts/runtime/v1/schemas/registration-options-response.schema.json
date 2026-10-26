@@ -1,0 +1,79 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "algorithms": {
+      "items": {
+        "enum": [
+          "ES256",
+          "EdDSA"
+        ],
+        "type": "string"
+      },
+      "title": "Algorithms",
+      "type": "array"
+    },
+    "challenge": {
+      "title": "Challenge",
+      "type": "string"
+    },
+    "owner_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Owner Id"
+    },
+    "resident_key": {
+      "const": "required",
+      "default": "required",
+      "title": "Resident Key",
+      "type": "string"
+    },
+    "rp_id": {
+      "title": "Rp Id",
+      "type": "string"
+    },
+    "rp_name": {
+      "const": "Nexora",
+      "default": "Nexora",
+      "title": "Rp Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nexora-runtime-api-v1",
+      "default": "nexora-runtime-api-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "timeout_ms": {
+      "const": 300000,
+      "default": 300000,
+      "title": "Timeout Ms",
+      "type": "integer"
+    },
+    "user_name": {
+      "const": "primary_owner",
+      "default": "primary_owner",
+      "title": "User Name",
+      "type": "string"
+    },
+    "user_verification": {
+      "const": "required",
+      "default": "required",
+      "title": "User Verification",
+      "type": "string"
+    }
+  },
+  "required": [
+    "challenge",
+    "rp_id"
+  ],
+  "title": "RegistrationOptionsResponse",
+  "type": "object"
+}

@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "challenge": {
+      "maxLength": 256,
+      "minLength": 32,
+      "title": "Challenge",
+      "type": "string"
+    },
+    "owner_id": {
+      "format": "uuid",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "response_json": {
+      "maxLength": 131072,
+      "minLength": 2,
+      "title": "Response Json",
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner_id",
+    "challenge",
+    "response_json"
+  ],
+  "title": "RecoveryCompleteRequest",
+  "type": "object"
+}

@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "bootstrap_token": {
+      "maxLength": 256,
+      "minLength": 32,
+      "title": "Bootstrap Token",
+      "type": "string"
+    },
+    "response_json": {
+      "maxLength": 131072,
+      "minLength": 2,
+      "title": "Response Json",
+      "type": "string"
+    }
+  },
+  "required": [
+    "bootstrap_token",
+    "response_json"
+  ],
+  "title": "BootstrapCompleteRequest",
+  "type": "object"
+}

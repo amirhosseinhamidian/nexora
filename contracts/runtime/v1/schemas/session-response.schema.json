@@ -1,0 +1,69 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "absolute_expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Absolute Expires At"
+    },
+    "csrf_token": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Csrf Token"
+    },
+    "idle_expires_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Idle Expires At"
+    },
+    "owner_id": {
+      "format": "uuid",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "recently_reauthenticated": {
+      "title": "Recently Reauthenticated",
+      "type": "boolean"
+    },
+    "rotation_required": {
+      "title": "Rotation Required",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "nexora-runtime-api-v1",
+      "default": "nexora-runtime-api-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner_id",
+    "rotation_required",
+    "recently_reauthenticated"
+  ],
+  "title": "SessionResponse",
+  "type": "object"
+}

@@ -73,6 +73,14 @@ def test_security_sensitive_tables_are_explicit_without_live_capabilities() -> N
     assert forbidden.isdisjoint(table.name for table in Base.metadata.sorted_tables)
 
 
+def test_browser_sessions_persist_recent_reauthentication_evidence() -> None:
+    sessions = Base.metadata.tables["nexora.sessions"]
+    assert "reauthenticated_at" in sessions.c
+    assert sessions.c.reauthenticated_at.nullable is False
+    rendered = str(CreateTable(sessions).compile(dialect=postgresql.dialect()))  # type: ignore[no-untyped-call]
+    assert "ck_sessions_reauthenticated_ordered" in rendered
+
+
 def test_durable_tables_have_owner_idempotency_and_lease_fields() -> None:
     jobs = Base.metadata.tables["nexora.background_jobs"]
     outbox = Base.metadata.tables["nexora.outbox_events"]

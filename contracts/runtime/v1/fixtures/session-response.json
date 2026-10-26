@@ -1,0 +1,9 @@
+{
+  "schema_version": "nexora-runtime-api-v1",
+  "owner_id": "113f777b-f75b-46e5-91da-91d9601c03ea",
+  "csrf_token": null,
+  "idle_expires_at": null,
+  "absolute_expires_at": null,
+  "rotation_required": false,
+  "recently_reauthenticated": true
+}

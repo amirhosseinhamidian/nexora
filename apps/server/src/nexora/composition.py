@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Final
@@ -26,12 +27,21 @@ from nexora.security_config import (
 )
 
 SERVICE_NAME: Final = "nexora-api"
+BUILD_COMMIT_SHA_ENV: Final = "SOURCE_COMMIT_SHA"
+
+
+def _build_commit_sha(environ: Mapping[str, str]) -> str:
+    value = environ.get(BUILD_COMMIT_SHA_ENV, "development")
+    if value != "development" and re.fullmatch(r"[0-9a-f]{40}", value) is None:
+        raise ValueError("build commit SHA is invalid")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
 class RuntimeIdentity:
     service: str
     version: str
+    commit_sha: str
     configuration_schema: str
     configuration_checksum: str
 
@@ -53,6 +63,7 @@ def compose_application(settings: RuntimeSettings | None = None) -> ApplicationC
     identity = RuntimeIdentity(
         service=SERVICE_NAME,
         version=__version__,
+        commit_sha="development",
         configuration_schema=CONFIG_SCHEMA_VERSION,
         configuration_checksum=resolved.checksum(),
     )
@@ -86,6 +97,7 @@ def compose_private_application(
     identity = RuntimeIdentity(
         service=SERVICE_NAME,
         version=__version__,
+        commit_sha=_build_commit_sha(environ),
         configuration_schema=CONFIG_SCHEMA_VERSION,
         configuration_checksum=settings.checksum(),
     )

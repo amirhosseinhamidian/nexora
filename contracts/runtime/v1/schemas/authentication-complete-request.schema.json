@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "challenge": {
+      "maxLength": 256,
+      "minLength": 32,
+      "title": "Challenge",
+      "type": "string"
+    },
+    "credential_id": {
+      "maxLength": 1024,
+      "minLength": 16,
+      "title": "Credential Id",
+      "type": "string"
+    },
+    "response_json": {
+      "maxLength": 131072,
+      "minLength": 2,
+      "title": "Response Json",
+      "type": "string"
+    }
+  },
+  "required": [
+    "credential_id",
+    "challenge",
+    "response_json"
+  ],
+  "title": "AuthenticationCompleteRequest",
+  "type": "object"
+}

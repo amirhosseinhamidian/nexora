@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "credential_id": {
+      "title": "Credential Id",
+      "type": "string"
+    },
+    "transports": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Transports",
+      "type": "array"
+    }
+  },
+  "required": [
+    "credential_id",
+    "transports"
+  ],
+  "title": "AuthenticatorDescriptor",
+  "type": "object"
+}

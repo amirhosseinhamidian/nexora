@@ -65,6 +65,7 @@ def test_bootstrap_session_recovery_and_audit_are_fail_closed(engine: Engine) ->
         now=now + timedelta(seconds=3),
     )
     assert authenticated.owner_id == owner_id
+    assert authenticated.recently_reauthenticated is True
     with pytest.raises(AuthenticationDenied, match="CSRF"):
         repository.authenticate_session(
             token=issued.token,
@@ -78,6 +79,29 @@ def test_bootstrap_session_recovery_and_audit_are_fail_closed(engine: Engine) ->
         now=now + timedelta(seconds=903),
     )
     assert due.rotation_required is True
+    assert due.recently_reauthenticated is False
+    with pytest.raises(AuthenticationDenied, match="recent reauthentication"):
+        repository.require_recent_reauthentication(
+            session_id=due.session_id,
+            now=now + timedelta(seconds=903),
+        )
+    repository.mark_session_reauthenticated(
+        token=issued.token,
+        owner_id=owner_id,
+        now=now + timedelta(seconds=903),
+    )
+    assert (
+        repository.authenticate_session(
+            token=issued.token,
+            csrf_token=issued.csrf_token,
+            now=now + timedelta(seconds=904),
+        ).recently_reauthenticated
+        is True
+    )
+    repository.require_recent_reauthentication(
+        session_id=due.session_id,
+        now=now + timedelta(seconds=904),
+    )
     rotated = repository.rotate_session(
         token=issued.token,
         csrf_token=issued.csrf_token,
@@ -97,8 +121,8 @@ def test_bootstrap_session_recovery_and_audit_are_fail_closed(engine: Engine) ->
             token=rotated.token,
             csrf_token=rotated.csrf_token,
             now=now + timedelta(seconds=936),
-        ).owner_id
-        == owner_id
+        ).recently_reauthenticated
+        is True
     )
 
     repository.use_recovery_code(

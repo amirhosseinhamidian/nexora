@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "commit_sha": {
+      "title": "Commit Sha",
+      "type": "string"
+    },
+    "configuration_checksum": {
+      "title": "Configuration Checksum",
+      "type": "string"
+    },
+    "configuration_schema": {
+      "title": "Configuration Schema",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nexora-runtime-api-v1",
+      "default": "nexora-runtime-api-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "service": {
+      "const": "nexora-api",
+      "title": "Service",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "service",
+    "version",
+    "commit_sha",
+    "configuration_schema",
+    "configuration_checksum"
+  ],
+  "title": "VersionResponse",
+  "type": "object"
+}

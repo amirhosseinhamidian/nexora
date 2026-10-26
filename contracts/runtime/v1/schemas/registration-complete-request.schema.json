@@ -1,0 +1,23 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "challenge": {
+      "maxLength": 256,
+      "minLength": 32,
+      "title": "Challenge",
+      "type": "string"
+    },
+    "response_json": {
+      "maxLength": 131072,
+      "minLength": 2,
+      "title": "Response Json",
+      "type": "string"
+    }
+  },
+  "required": [
+    "challenge",
+    "response_json"
+  ],
+  "title": "RegistrationCompleteRequest",
+  "type": "object"
+}

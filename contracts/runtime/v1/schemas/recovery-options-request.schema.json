@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "recovery_code": {
+      "maxLength": 256,
+      "minLength": 16,
+      "title": "Recovery Code",
+      "type": "string"
+    }
+  },
+  "required": [
+    "recovery_code"
+  ],
+  "title": "RecoveryOptionsRequest",
+  "type": "object"
+}

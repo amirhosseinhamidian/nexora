@@ -1,0 +1,104 @@
+{
+  "schema_version": "nexora-runtime-api-auth-contract-v1",
+  "decision_id": "NEX-P1-07",
+  "decision_date": "2026-10-26",
+  "status": "candidate",
+  "phase_one_readiness_prerequisite": {
+    "decision_id": "NEX-P1-ACCEPTANCE-FREEZE",
+    "frozen": true,
+    "freeze_commit_sha": "57346f95e5fe79160767f49c67b83718ec8a3768",
+    "freeze_record_path": "artifacts/p1-acceptance/phase-one-readiness-freeze.json",
+    "freeze_record_checksum": "05794b71952903ed08ed1cb20cc88e3b7ca46630f06f2a77b3c86706d6983680",
+    "phase_one_ready": false
+  },
+  "closed_gaps": [
+    "NEX-P1-GAP-001",
+    "NEX-P1-GAP-002",
+    "NEX-P1-GAP-003"
+  ],
+  "runtime_api": {
+    "schema_version": "nexora-runtime-api-v1",
+    "error_schema_version": "nexora-error-envelope-v1",
+    "metadata_endpoint": "/version",
+    "commit_sha_source": "SOURCE_COMMIT_SHA",
+    "correlation_header": "X-Correlation-ID",
+    "correlation_id_required_on_every_response": true,
+    "canonical_time": "UTC",
+    "request_schema_unknown_fields": "reject",
+    "mutation_content_type": "application/json",
+    "maximum_request_body_bytes": 1048576,
+    "authenticated_cache_control": "no-store"
+  },
+  "authentication_lifecycle": {
+    "single_owner_only": true,
+    "bootstrap_token_transport": "local_operator_cli_to_browser",
+    "webauthn_algorithms": [
+      "ES256",
+      "EdDSA"
+    ],
+    "user_verification": "required",
+    "resident_key": "required",
+    "session_cookie": "__Host-nexora_session",
+    "session_cookie_attributes": [
+      "Path=/",
+      "Secure",
+      "HttpOnly",
+      "SameSite=Strict"
+    ],
+    "csrf_header": "X-CSRF-Token",
+    "session_rotation_supported": true,
+    "single_session_logout_supported": true,
+    "revoke_all_supported": true,
+    "single_use_recovery_supported": true,
+    "recent_reauthentication_seconds": 300,
+    "recent_reauthentication_is_durable": true,
+    "recent_reauthentication_migration": "20261026_0004"
+  },
+  "operations": [
+    "GET /health/live",
+    "GET /version",
+    "POST /v1/auth/bootstrap/options",
+    "POST /v1/auth/bootstrap/complete",
+    "POST /v1/auth/authentication/options",
+    "POST /v1/auth/authentication/complete",
+    "GET /v1/auth/session",
+    "POST /v1/auth/session/rotate",
+    "POST /v1/auth/reauthentication/options",
+    "POST /v1/auth/reauthentication/complete",
+    "POST /v1/auth/registration/options",
+    "POST /v1/auth/registration/complete",
+    "POST /v1/auth/recovery/options",
+    "POST /v1/auth/recovery/complete",
+    "POST /v1/auth/logout",
+    "POST /v1/auth/logout-all"
+  ],
+  "contract_toolchain": {
+    "source": "pydantic_runtime_models",
+    "model_count": 16,
+    "contract_checksum": "4d2abb4eb6b51d847c5a6f16e56c98452719367079095199dca0d1e63e8c6ec5",
+    "openapi_snapshot": "contracts/runtime/v1/openapi.json",
+    "json_schema_directory": "contracts/runtime/v1/schemas",
+    "fixture_manifest": "contracts/runtime/v1/fixtures/manifest.json",
+    "python_models": "apps/server/src/nexora/runtime_contracts.py",
+    "python_generated_manifest": "apps/server/src/nexora/generated/runtime_contract_manifest.py",
+    "typescript_types": "packages/contracts/src/generated/runtime-api.ts",
+    "generator": "scripts/generate_runtime_contracts.py",
+    "deterministic_check": "uv run python scripts/generate_runtime_contracts.py --check",
+    "unknown_schema_policy": "fail_closed"
+  },
+  "security_boundary": {
+    "password_login": false,
+    "self_registration": false,
+    "second_human_account": false,
+    "live_execution_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "public_internet_production_profile": false,
+    "autonomous_ai_execution": false
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-07-FREEZE",
+    "post_freeze_stage": "NEX-P1-08"
+  }
+}

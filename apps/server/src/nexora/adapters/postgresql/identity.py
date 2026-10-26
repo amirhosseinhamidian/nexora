@@ -20,6 +20,7 @@ from nexora.identity import (
     BOOTSTRAP_TTL_SECONDS,
     CHALLENGE_TTL_SECONDS,
     MAXIMUM_CONCURRENT_SESSIONS,
+    RECENT_REAUTHENTICATION_SECONDS,
     RECOVERY_CODE_COUNT,
     SERVICE_TOKEN_MAXIMUM_AGE_DAYS,
     SESSION_ABSOLUTE_SECONDS,
@@ -83,6 +84,34 @@ class PostgreSQLIdentityRepository:
                 now=observed_at,
             )
         return raw
+
+    def get_single_owner_id(self) -> UUID:
+        with self._session_factory() as session:
+            owners = tuple(session.execute(select(OwnerProfile.owner_id).limit(2)).scalars())
+        if len(owners) != 1:
+            raise AuthenticationDenied("single-owner identity is not initialized")
+        return owners[0]
+
+    def list_active_credentials(self, *, owner_id: UUID) -> tuple[VerifiedCredential, ...]:
+        with self._session_factory() as session:
+            rows = session.execute(
+                select(WebAuthnCredential)
+                .where(
+                    WebAuthnCredential.owner_id == owner_id,
+                    WebAuthnCredential.revoked_at.is_(None),
+                )
+                .order_by(WebAuthnCredential.created_at, WebAuthnCredential.credential_id)
+            ).scalars()
+            return tuple(
+                VerifiedCredential(
+                    credential_id=row.credential_id,
+                    public_key=row.public_key,
+                    algorithm=row.algorithm,
+                    sign_count=row.sign_count,
+                    transports=tuple(row.transports),
+                )
+                for row in rows
+            )
 
     def complete_bootstrap(
         self,
@@ -272,6 +301,7 @@ class PostgreSQLIdentityRepository:
                     created_at=observed_at,
                     last_seen_at=observed_at,
                     rotated_at=observed_at,
+                    reauthenticated_at=observed_at,
                     idle_expires_at=idle_expires_at,
                     absolute_expires_at=absolute_expires_at,
                 )
@@ -329,6 +359,8 @@ class PostgreSQLIdentityRepository:
                     row.replaced_at is None
                     and (observed_at - row.rotated_at).total_seconds() >= SESSION_ROTATION_SECONDS
                 ),
+                recently_reauthenticated=(observed_at - row.reauthenticated_at).total_seconds()
+                <= RECENT_REAUTHENTICATION_SECONDS,
             )
 
     def rotate_session(
@@ -370,6 +402,7 @@ class PostgreSQLIdentityRepository:
                     created_at=observed_at,
                     last_seen_at=observed_at,
                     rotated_at=observed_at,
+                    reauthenticated_at=current.reauthenticated_at,
                     idle_expires_at=idle_expires_at,
                     absolute_expires_at=current.absolute_expires_at,
                 )
@@ -391,6 +424,78 @@ class PostgreSQLIdentityRepository:
                 csrf_token=new_csrf,
                 idle_expires_at=idle_expires_at,
                 absolute_expires_at=current.absolute_expires_at,
+            )
+
+    def mark_session_reauthenticated(
+        self,
+        *,
+        token: str,
+        owner_id: UUID,
+        now: datetime | None = None,
+    ) -> None:
+        observed_at = _utc(now)
+        with self._session_factory.begin() as session:
+            row = session.execute(
+                select(BrowserSession).where(BrowserSession.token_digest == token_digest(token)).with_for_update()
+            ).scalar_one_or_none()
+            if (
+                row is None
+                or row.owner_id != owner_id
+                or row.revoked_at is not None
+                or row.replaced_at is not None
+                or row.idle_expires_at <= observed_at
+                or row.absolute_expires_at <= observed_at
+            ):
+                raise AuthenticationDenied("session cannot be reauthenticated")
+            row.reauthenticated_at = observed_at
+            self._audit(
+                session,
+                event_type="session.reauthenticated",
+                actor_type="owner",
+                actor_id=str(owner_id),
+                target_type="session",
+                target_id=str(row.session_id),
+                reason_code="RECENT_REAUTHENTICATION_SUCCEEDED",
+                now=observed_at,
+            )
+
+    def require_recent_reauthentication(
+        self,
+        *,
+        session_id: UUID,
+        now: datetime | None = None,
+    ) -> None:
+        observed_at = _utc(now)
+        with self._session_factory() as session:
+            row = session.get(BrowserSession, session_id)
+            if (
+                row is None
+                or row.revoked_at is not None
+                or row.replaced_at is not None
+                or row.idle_expires_at <= observed_at
+                or row.absolute_expires_at <= observed_at
+                or (observed_at - row.reauthenticated_at).total_seconds() > RECENT_REAUTHENTICATION_SECONDS
+            ):
+                raise AuthenticationDenied("recent reauthentication is required")
+
+    def revoke_session(self, *, token: str, now: datetime | None = None) -> None:
+        observed_at = _utc(now)
+        with self._session_factory.begin() as session:
+            row = session.execute(
+                select(BrowserSession).where(BrowserSession.token_digest == token_digest(token)).with_for_update()
+            ).scalar_one_or_none()
+            if row is None or row.revoked_at is not None:
+                raise AuthenticationDenied("session is invalid")
+            row.revoked_at = observed_at
+            self._audit(
+                session,
+                event_type="session.revoked",
+                actor_type="owner",
+                actor_id=str(row.owner_id),
+                target_type="session",
+                target_id=str(row.session_id),
+                reason_code="SESSION_LOGOUT",
+                now=observed_at,
             )
 
     def revoke_all_sessions(self, *, owner_id: UUID, now: datetime | None = None) -> int:

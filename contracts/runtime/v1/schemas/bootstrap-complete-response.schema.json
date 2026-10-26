@@ -1,0 +1,29 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "owner_id": {
+      "format": "uuid",
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "recovery_codes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Recovery Codes",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "nexora-runtime-api-v1",
+      "default": "nexora-runtime-api-v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner_id",
+    "recovery_codes"
+  ],
+  "title": "BootstrapCompleteResponse",
+  "type": "object"
+}

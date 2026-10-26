@@ -1,0 +1,8 @@
+{
+  "schema_version": "nexora-error-envelope-v1",
+  "correlation_id": "d7d23916-e3d5-41ee-932e-1f1ae08c1825",
+  "error": {
+    "code": "AUTHENTICATION_DENIED",
+    "message": "request denied"
+  }
+}

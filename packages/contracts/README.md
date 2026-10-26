@@ -1,5 +1,8 @@
 # Nexora contracts package
 
-Runtime-generated contract bindings are deferred to NEX-P1-04. Canonical,
-language-neutral Phase 0 contracts remain under the repository `contracts/`
-directory.
+NEX-P1-07 generates runtime API bindings deterministically from the canonical
+Pydantic models. JSON Schema and OpenAPI snapshots live under
+`contracts/runtime/v1`; TypeScript bindings live under `src/generated`.
+
+Run `uv run python scripts/generate_runtime_contracts.py --check` from the
+repository root to reject schema, OpenAPI, Python-manifest or TypeScript drift.

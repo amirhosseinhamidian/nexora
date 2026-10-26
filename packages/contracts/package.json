@@ -1,5 +1,18 @@
 {
   "name": "@nexora/contracts",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "types": "./src/generated/runtime-api.ts",
+  "exports": {
+    ".": {
+      "types": "./src/generated/runtime-api.ts"
+    }
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
 }

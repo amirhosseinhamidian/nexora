@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "AuthenticatorDescriptor": {
+      "additionalProperties": false,
+      "properties": {
+        "credential_id": {
+          "title": "Credential Id",
+          "type": "string"
+        },
+        "transports": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Transports",
+          "type": "array"
+        }
+      },
+      "required": [
+        "credential_id",
+        "transports"
+      ],
+      "title": "AuthenticatorDescriptor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "allow_credentials": {
+      "items": {
+        "$ref": "#/$defs/AuthenticatorDescriptor"
+      },
+      "title": "Allow Credentials",
+      "type": "array"
+    },
+    "challenge": {
+      "title": "Challenge",
+      "type": "string"
+    },
+    "rp_id": {
+      "title": "Rp Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "nexora-runtime-api-v1",
+      "default": "nexora-runtime-api-v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "timeout_ms": {
+      "const": 300000,
+      "default": 300000,
+      "title": "Timeout Ms",
+      "type": "integer"
+    },
+    "user_verification": {
+      "const": "required",
+      "default": "required",
+      "title": "User Verification",
+      "type": "string"
+    }
+  },
+  "required": [
+    "challenge",
+    "rp_id",
+    "allow_credentials"
+  ],
+  "title": "AuthenticationOptionsResponse",
+  "type": "object"
+}

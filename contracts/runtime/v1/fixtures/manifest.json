@@ -1,0 +1,17 @@
+{
+  "schema_version": "nexora-runtime-fixtures-v1",
+  "fixtures": [
+    {
+      "model": "ErrorEnvelope",
+      "path": "error-envelope.json"
+    },
+    {
+      "model": "VersionResponse",
+      "path": "version-response.json"
+    },
+    {
+      "model": "SessionResponse",
+      "path": "session-response.json"
+    }
+  ]
+}

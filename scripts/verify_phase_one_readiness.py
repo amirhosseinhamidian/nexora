@@ -9,6 +9,19 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-one-readiness.json"
+FREEZE_PATH = ROOT / "artifacts/p1-acceptance/phase-one-readiness-freeze.json"
+CANDIDATE_SHA = "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7"
+CANDIDATE_MESSAGE = "chore(nexora): add Phase 1 readiness reconciliation"
+CONTRACT_CHECKSUM = "4a14c450dd6c4f3749a064e1180e548544ea5539d2eea7e07a4a9183c63588fc"
+EXPECTED_REGRESSION_RUNS = {
+    "application_composition": 40353402840,
+    "contracts": 40353402885,
+    "durable_jobs_outbox": 40353402972,
+    "postgresql_schema": 40353402586,
+    "runtime_foundation": 40353402913,
+    "single_owner_identity_runtime": 40353402927,
+    "trd_bot_adapter": 40353402926,
+}
 
 EXPECTED_STAGE_STATUS = {
     "P1-01": "complete",
@@ -58,6 +71,10 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -152,6 +169,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 def validate_files() -> None:
     required = (
+        "artifacts/p1-acceptance/phase-one-readiness-freeze.json",
         "contracts/nexora-v0.1-phase-one-readiness.json",
         "docs/v0.1/11-phase-one-roadmap-reconciliation.md",
         "scripts/verify_phase_one_readiness.py",
@@ -166,8 +184,12 @@ def validate_documents() -> None:
     document = (ROOT / "docs/v0.1/11-phase-one-roadmap-reconciliation.md").read_text(encoding="utf-8")
     for marker in (
         "NEX-P1-ACCEPTANCE",
+        "وضعیت: **Frozen",
         "پذیرش نهایی عمداً Deferred است",
         "ce0c1504a520236fa7660749f13eabf475c82db9",
+        CANDIDATE_SHA,
+        "40353402697",
+        "artifacts/p1-acceptance/phase-one-readiness-freeze.json",
         "phase_one_ready=false",
         "NEX-P1-07",
         "NEX-P1-13",
@@ -176,12 +198,100 @@ def validate_documents() -> None:
         _require(marker in document, f"readiness document marker missing: {marker}")
 
 
+def _validate_successful_run(run: dict[str, Any], run_id: int, label: str) -> None:
+    _require(run.get("run_id") == run_id, f"{label} run ID drift")
+    _require(
+        run.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"{label} run URL drift",
+    )
+    _require(run.get("head_sha") == CANDIDATE_SHA, f"{label} candidate SHA drift")
+    _require(run.get("conclusion") == "success", f"{label} CI must succeed")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-phase-one-readiness-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P1-ACCEPTANCE-FREEZE", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "freeze repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "freeze candidate SHA drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "freeze candidate message drift")
+
+    run = record.get("github_actions")
+    _require(isinstance(run, dict), "primary GitHub Actions evidence must be an object")
+    _validate_successful_run(run, 40353402697, "primary readiness")
+    _require(run.get("head_branch") == "feature/v0.1-foundation", "primary readiness branch drift")
+    _require(run.get("event") == "push", "primary readiness event drift")
+    _require(run.get("attempt") == 1, "primary readiness attempt drift")
+
+    jobs = run.get("jobs")
+    _require(isinstance(jobs, dict), "primary readiness jobs must be an object")
+    expected_jobs = {
+        "readiness_contract": (121679274408, "readiness-contract"),
+        "backend": (121679274631, "backend"),
+        "web": (121679274576, "web"),
+    }
+    _require(set(jobs) == set(expected_jobs), "primary readiness job inventory drift")
+    for key, (job_id, name) in expected_jobs.items():
+        job = jobs[key]
+        _require(isinstance(job, dict), f"primary job must be an object: {key}")
+        _require(job.get("job_id") == job_id, f"primary job ID drift: {key}")
+        _require(job.get("name") == name, f"primary job name drift: {key}")
+        _require(job.get("conclusion") == "success", f"primary job must succeed: {key}")
+        for evidence_key, value in job.items():
+            if evidence_key.endswith("_passed") or evidence_key.endswith("_installed"):
+                _require(value is True, f"primary job evidence must pass: {key}.{evidence_key}")
+
+    regressions = record.get("regression_workflows")
+    _require(isinstance(regressions, dict), "regression workflows must be an object")
+    _require(set(regressions) == set(EXPECTED_REGRESSION_RUNS), "regression workflow inventory drift")
+    for label, run_id in EXPECTED_REGRESSION_RUNS.items():
+        regression = regressions[label]
+        _require(isinstance(regression, dict), f"regression evidence must be an object: {label}")
+        _validate_successful_run(regression, run_id, label)
+
+    readiness = record.get("phase_one_readiness_contract")
+    _require(isinstance(readiness, dict), "readiness contract evidence must be an object")
+    _require(readiness.get("schema_version") == contract.get("schema_version"), "readiness schema drift")
+    _require(readiness.get("checksum") == CONTRACT_CHECKSUM, "recorded readiness checksum drift")
+    _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "Phase 1 readiness contract drift")
+
+    prerequisite = record.get("p1_06_prerequisite")
+    _require(isinstance(prerequisite, dict), "freeze P1-06 prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-06", "freeze prerequisite decision drift")
+    _require(prerequisite.get("frozen") is True, "freeze prerequisite must remain frozen")
+    _require(
+        prerequisite.get("freeze_commit_sha") == contract["p1_06_prerequisite"]["freeze_commit_sha"],
+        "freeze prerequisite SHA drift",
+    )
+    _require(
+        prerequisite.get("freeze_record_checksum") == contract["p1_06_prerequisite"]["freeze_record_checksum"],
+        "freeze prerequisite checksum drift",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-26", "freeze record date drift")
+    for key in ("frozen", "roadmap_reconciliation_frozen"):
+        _require(record.get(key) is True, f"freeze record requires true: {key}")
+    for key in (
+        "phase_one_ready",
+        "production_readiness_claimed",
+        "live_execution_capability",
+        "exchange_credentials",
+        "wallet_or_fund_transfer",
+        "autonomous_ai_execution",
+        "public_internet_production_profile",
+        "multi_user_identity",
+    ):
+        _require(record.get(key) is False, f"freeze record requires false: {key}")
+    _require(record.get("final_acceptance_deferred") is True, "final acceptance must remain deferred")
+    _require(record.get("next_allowed_stage") == "NEX-P1-07", "freeze must open only NEX-P1-07")
+
+
 def main() -> int:
     validate_frozen_p1_06()
     contract = load_contract()
     validate_contract(contract)
     validate_files()
     validate_documents()
+    validate_freeze_record(load_freeze_record(), contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
@@ -189,6 +299,7 @@ def main() -> int:
     print("final_acceptance_deferred=true")
     print("NEX_P1_06_PREREQUISITE=PASS")
     print("NEX_P1_ACCEPTANCE_RECONCILIATION=PASS")
+    print("NEX_P1_ACCEPTANCE_FREEZE=PASS")
     return 0
 
 

@@ -1,6 +1,6 @@
 # NEX-P1-ACCEPTANCE — Phase 1 roadmap reconciliation
 
-وضعیت: **Candidate — پذیرش نهایی عمداً Deferred است**
+وضعیت: **Frozen — پذیرش نهایی عمداً Deferred است**
 
 Freeze مرحله `NEX-P1-06` زنجیره‌ی اجرایی شش‌مرحله‌ای را با commit
 `ce0c1504a520236fa7660749f13eabf475c82db9` کامل کرد، اما مقایسه با رودمپ
@@ -36,6 +36,19 @@ topology تحویل شده‌اند، اما برای پذیرش نهایی کا
 هر Gap دقیقاً یک owner دارد و تا زمان ارائه‌ی evidence و Freeze مرحله‌ی مالک
 بسته تلقی نمی‌شود. گام بعدی این Candidate فقط
 `NEX-P1-ACCEPTANCE-FREEZE` است و پس از آن `NEX-P1-07` باز می‌شود.
+
+## Freeze evidence
+
+تصمیم reconciliation با candidate commit
+`ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7` و پیام
+`chore(nexora): add Phase 1 readiness reconciliation` تثبیت شد. Workflow اصلی
+[Phase 1 roadmap reconciliation](https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402697)
+و هفت workflow رگرسیون روی همان SHA موفق بودند. رکورد immutable در
+`artifacts/p1-acceptance/phase-one-readiness-freeze.json` نگهداری می‌شود.
+
+این Freeze ادعای تکمیل Phase 1 نیست: `phase_one_ready=false` و
+`final_acceptance_deferred=true` باقی می‌مانند. تنها مرحله‌ای که اکنون باز است
+`NEX-P1-07` است.
 
 مرزهای امنیتی بدون تغییر باقی می‌مانند: live execution، exchange credential،
 wallet، autonomous AI، public-internet production و multi-user identity خارج از

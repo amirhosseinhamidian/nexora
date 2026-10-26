@@ -1,0 +1,114 @@
+{
+  "schema_version": "nexora-phase-one-readiness-freeze-v1",
+  "decision_id": "NEX-P1-ACCEPTANCE-FREEZE",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+  "candidate_commit_message": "chore(nexora): add Phase 1 readiness reconciliation",
+  "github_actions": {
+    "run_id": 40353402697,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402697",
+    "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+    "head_branch": "feature/v0.1-foundation",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "readiness_contract": {
+        "job_id": 121679274408,
+        "name": "readiness-contract",
+        "conclusion": "success",
+        "p1_06_prerequisite_passed": true,
+        "readiness_verifier_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "backend": {
+        "job_id": 121679274631,
+        "name": "backend",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "non_integration_tests_passed": true
+      },
+      "web": {
+        "job_id": 121679274576,
+        "name": "web",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true,
+        "build_passed": true
+      }
+    }
+  },
+  "regression_workflows": {
+    "application_composition": {
+      "run_id": 40353402840,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402840",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "contracts": {
+      "run_id": 40353402885,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402885",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "durable_jobs_outbox": {
+      "run_id": 40353402972,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402972",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "postgresql_schema": {
+      "run_id": 40353402586,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402586",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "runtime_foundation": {
+      "run_id": 40353402913,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402913",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "single_owner_identity_runtime": {
+      "run_id": 40353402927,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402927",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    },
+    "trd_bot_adapter": {
+      "run_id": 40353402926,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/40353402926",
+      "head_sha": "ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7",
+      "conclusion": "success"
+    }
+  },
+  "phase_one_readiness_contract": {
+    "schema_version": "nexora-phase-one-readiness-v1",
+    "checksum": "4a14c450dd6c4f3749a064e1180e548544ea5539d2eea7e07a4a9183c63588fc"
+  },
+  "p1_06_prerequisite": {
+    "decision_id": "NEX-P1-06",
+    "frozen": true,
+    "freeze_commit_sha": "ce0c1504a520236fa7660749f13eabf475c82db9",
+    "freeze_record_checksum": "f561b6b0a7c5834cfbb91c9e215e8f3e038199e25646fa1ed90db3059f329ce0"
+  },
+  "recorded_on": "2026-10-26",
+  "frozen": true,
+  "roadmap_reconciliation_frozen": true,
+  "phase_one_ready": false,
+  "final_acceptance_deferred": true,
+  "production_readiness_claimed": false,
+  "live_execution_capability": false,
+  "exchange_credentials": false,
+  "wallet_or_fund_transfer": false,
+  "autonomous_ai_execution": false,
+  "public_internet_production_profile": false,
+  "multi_user_identity": false,
+  "next_allowed_stage": "NEX-P1-07"
+}

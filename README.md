@@ -66,12 +66,13 @@ identity, PostgreSQL, private-topology, backend and regression CI evidence on
 the same commit. The next allowed stage is `NEX-P1-ACCEPTANCE`; production
 readiness remains unclaimed until that acceptance succeeds.
 
-`NEX-P1-ACCEPTANCE` is now a roadmap-reconciliation candidate, not a final
-acceptance claim. It compares the six frozen delivery milestones with the
+`NEX-P1-ACCEPTANCE` roadmap reconciliation is frozen, not a final acceptance
+claim. It compares the six frozen delivery milestones with the
 original twelve-stage Phase 1 roadmap, keeps nine missing or partial capability
 groups blocking, and records an owned continuation from `NEX-P1-07` through
-`NEX-P1-13`. Its next allowed stage is
-`NEX-P1-ACCEPTANCE-FREEZE`; Phase 1 remains incomplete.
+`NEX-P1-13`. The freeze is bound to candidate
+`ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7` and eight successful workflows.
+Its next allowed stage is `NEX-P1-07`; Phase 1 remains incomplete.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
@@ -129,6 +130,7 @@ NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS
 NEX_P1_06_FREEZE=PASS
 NEX_P1_06_PREREQUISITE=PASS
 NEX_P1_ACCEPTANCE_RECONCILIATION=PASS
+NEX_P1_ACCEPTANCE_FREEZE=PASS
 ```
 
 ## Documents
@@ -171,3 +173,4 @@ NEX_P1_ACCEPTANCE_RECONCILIATION=PASS
 - [`artifacts/p1-04/trd-bot-adapter-freeze.json`](artifacts/p1-04/trd-bot-adapter-freeze.json)
 - [`artifacts/p1-05/durable-jobs-outbox-freeze.json`](artifacts/p1-05/durable-jobs-outbox-freeze.json)
 - [`artifacts/p1-06/single-owner-identity-runtime-freeze.json`](artifacts/p1-06/single-owner-identity-runtime-freeze.json)
+- [`artifacts/p1-acceptance/phase-one-readiness-freeze.json`](artifacts/p1-acceptance/phase-one-readiness-freeze.json)

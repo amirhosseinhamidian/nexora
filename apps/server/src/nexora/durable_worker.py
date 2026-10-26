@@ -32,6 +32,10 @@ class DurableJobRepository(Protocol):
     def fail_job(self, *, job_id: UUID, worker_id: str, error_code: str) -> str: ...
 
 
+class WorkerObserver(Protocol):
+    def observe_job_cycle(self, *, claimed: int, succeeded: int, failed: int) -> None: ...
+
+
 def _error_code(error: Exception) -> str:
     name = re.sub(r"(?<!^)(?=[A-Z])", "_", type(error).__name__).upper()
     return f"HANDLER_{name}"[:80]
@@ -55,6 +59,7 @@ class DurableWorker:
         worker_id: str,
         batch_size: int = 10,
         lease_seconds: int = 60,
+        observer: WorkerObserver | None = None,
     ) -> None:
         if not handlers:
             raise ValueError("at least one explicit job handler is required")
@@ -65,6 +70,7 @@ class DurableWorker:
         self._worker_id = worker_id
         self._batch_size = batch_size
         self._lease_seconds = lease_seconds
+        self._observer = observer
 
     def run_once(self) -> WorkerCycleResult:
         claims = self._repository.claim_jobs(
@@ -91,4 +97,11 @@ class DurableWorker:
                     error_code=_error_code(error),
                 )
                 failed += 1
-        return WorkerCycleResult(claimed=len(claims), succeeded=succeeded, failed=failed)
+        result = WorkerCycleResult(claimed=len(claims), succeeded=succeeded, failed=failed)
+        if self._observer is not None:
+            self._observer.observe_job_cycle(
+                claimed=result.claimed,
+                succeeded=result.succeeded,
+                failed=result.failed,
+            )
+        return result

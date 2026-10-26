@@ -19,6 +19,13 @@ from nexora.adapters.trd_bot.config import TRD_BOT_BASE_URL_FILE_ENV, TRD_BOT_TO
 from nexora.config import CONFIG_SCHEMA_VERSION, RuntimeSettings, load_settings
 from nexora.identity import StandardWebAuthnVerifier, WebAuthnCeremonyVerifier
 from nexora.identity_service import OwnerIdentityService
+from nexora.observability import (
+    LOG_FILE_ENV,
+    ObservabilitySettings,
+    RuntimeObservability,
+    create_runtime_observability,
+    load_observability_settings,
+)
 from nexora.security_config import (
     AUTH_PEPPER_FILE_ENV,
     CANONICAL_ORIGIN_FILE_ENV,
@@ -50,6 +57,7 @@ class RuntimeIdentity:
 class ApplicationContainer:
     settings: RuntimeSettings
     identity: RuntimeIdentity
+    observability: RuntimeObservability
     database_engine: Engine | None = None
     identity_repository: PostgreSQLIdentityRepository | None = None
     security: SecuritySettings | None = None
@@ -58,7 +66,11 @@ class ApplicationContainer:
     trd_bot_client: TrdBotClient | None = None
 
 
-def compose_application(settings: RuntimeSettings | None = None) -> ApplicationContainer:
+def compose_application(
+    settings: RuntimeSettings | None = None,
+    *,
+    observability_settings: ObservabilitySettings | None = None,
+) -> ApplicationContainer:
     resolved = load_settings() if settings is None else settings
     identity = RuntimeIdentity(
         service=SERVICE_NAME,
@@ -67,7 +79,11 @@ def compose_application(settings: RuntimeSettings | None = None) -> ApplicationC
         configuration_schema=CONFIG_SCHEMA_VERSION,
         configuration_checksum=resolved.checksum(),
     )
-    return ApplicationContainer(settings=resolved, identity=identity)
+    return ApplicationContainer(
+        settings=resolved,
+        identity=identity,
+        observability=create_runtime_observability(service=SERVICE_NAME, settings=observability_settings),
+    )
 
 
 PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES: Final = frozenset(
@@ -78,6 +94,7 @@ PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES: Final = frozenset(
         TRD_BOT_TOKEN_FILE_ENV,
         CANONICAL_ORIGIN_FILE_ENV,
         AUTH_PEPPER_FILE_ENV,
+        LOG_FILE_ENV,
     }
 )
 
@@ -91,6 +108,10 @@ def compose_private_application(
     database_settings = load_database_settings(environ, variable=RUNTIME_DATABASE_DSN_FILE_ENV)
     security = load_security_settings(environ)
     trd_bot_settings = load_trd_bot_settings(environ)
+    observability_settings = load_observability_settings(
+        environ,
+        production=settings.environment.value == "production",
+    )
     engine = create_database_engine(database_settings)
     repository = PostgreSQLIdentityRepository(create_session_factory(engine))
     verifier = webauthn_verifier or StandardWebAuthnVerifier()
@@ -104,6 +125,7 @@ def compose_private_application(
     return ApplicationContainer(
         settings=settings,
         identity=identity,
+        observability=create_runtime_observability(service=SERVICE_NAME, settings=observability_settings),
         database_engine=engine,
         identity_repository=repository,
         security=security,

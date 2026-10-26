@@ -36,6 +36,7 @@ from nexora.identity import (
     token_digest,
     validate_service_scopes,
 )
+from nexora.security_audit import sanitize_audit_metadata
 
 
 class IdentityStateConflict(AuthenticationDenied):
@@ -664,7 +665,7 @@ class PostgreSQLIdentityRepository:
                 outcome="success",
                 reason_code=reason_code,
                 source_class="unknown",
-                event_metadata={},
+                event_metadata=sanitize_audit_metadata({}),
             )
         )
 

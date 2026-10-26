@@ -81,6 +81,13 @@ reauthentication evidence, JSON Schema/OpenAPI/Python/TypeScript generation and
 drift checks. Candidate `2a40a03e5a7995e6b845b3ce73e62646449da507`
 is bound to nine successful workflows. The next allowed stage is `NEX-P1-08`.
 
+`NEX-P1-08` is a candidate. It closes the audit and observability gap with
+bounded JSON logging, recursive secret redaction, route-template request
+metrics, worker and database-pool metrics, dependency-aware readiness and
+guarded immutable audit metadata. Public metrics and external telemetry export
+remain disabled. The next allowed action after green candidate CI is
+`NEX-P1-08-FREEZE`; the freeze then opens `NEX-P1-09`.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
 features and final production acceptance remain deliberately deferred.
@@ -102,6 +109,7 @@ python3 scripts/verify_single_owner_identity_runtime.py
 python3 scripts/verify_phase_one_readiness.py
 uv run python scripts/generate_runtime_contracts.py --check
 uv run python scripts/verify_runtime_api_auth.py
+uv run python scripts/verify_audit_observability.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -144,6 +152,8 @@ NEX_P1_ACCEPTANCE_FREEZE_PREREQUISITE=PASS
 NEX_P1_07_RUNTIME_CONTRACT_TOOLCHAIN=PASS
 NEX_P1_07_RUNTIME_API_AUTH=PASS
 NEX_P1_07_FREEZE=PASS
+NEX_P1_07_PREREQUISITE=PASS
+NEX_P1_08_AUDIT_OBSERVABILITY=PASS
 ```
 
 ## Documents
@@ -161,6 +171,7 @@ NEX_P1_07_FREEZE=PASS
 - [`docs/v0.1/10-single-owner-identity-session-private-runtime.md`](docs/v0.1/10-single-owner-identity-session-private-runtime.md)
 - [`docs/v0.1/11-phase-one-roadmap-reconciliation.md`](docs/v0.1/11-phase-one-roadmap-reconciliation.md)
 - [`docs/v0.1/12-runtime-api-authentication-contract-toolchain.md`](docs/v0.1/12-runtime-api-authentication-contract-toolchain.md)
+- [`docs/v0.1/13-audit-and-observability-foundation.md`](docs/v0.1/13-audit-and-observability-foundation.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -176,6 +187,7 @@ NEX_P1_07_FREEZE=PASS
 - [`contracts/nexora-v0.1-single-owner-identity-runtime.json`](contracts/nexora-v0.1-single-owner-identity-runtime.json)
 - [`contracts/nexora-v0.1-phase-one-readiness.json`](contracts/nexora-v0.1-phase-one-readiness.json)
 - [`contracts/nexora-v0.1-runtime-api-auth-contract.json`](contracts/nexora-v0.1-runtime-api-auth-contract.json)
+- [`contracts/nexora-v0.1-audit-observability.json`](contracts/nexora-v0.1-audit-observability.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

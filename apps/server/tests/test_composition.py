@@ -15,6 +15,8 @@ def test_composition_is_explicit_and_deterministic() -> None:
     assert first.identity.service == SERVICE_NAME
     assert first.identity.configuration_schema == CONFIG_SCHEMA_VERSION
     assert first.identity.configuration_checksum == settings.checksum()
+    assert first.observability is not second.observability
+    assert first.observability.metrics.snapshot()["schema_version"] == "nexora-runtime-metrics-v1"
 
 
 def test_default_composition_contains_no_side_effecting_runtime_adapters() -> None:
@@ -25,6 +27,7 @@ def test_default_composition_contains_no_side_effecting_runtime_adapters() -> No
     assert container.webauthn_verifier is None
     assert container.owner_identity_service is None
     assert container.trd_bot_client is None
+    assert container.observability.settings.log_file is None
 
 
 def _private_file(path: Path, value: str) -> str:

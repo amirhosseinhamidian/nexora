@@ -69,3 +69,24 @@ def test_worker_converts_handler_failure_to_safe_code() -> None:
     result = worker.run_once()
     assert (result.claimed, result.succeeded, result.failed) == (1, 0, 1)
     assert repository.failed == [(claim.job_id, "HANDLER_TIMEOUT_ERROR")]
+
+
+def test_worker_reports_only_bounded_cycle_metrics() -> None:
+    claim = _claim()
+    repository = FakeRepository((claim,))
+
+    class Observer:
+        observed: tuple[int, int, int] | None = None
+
+        def observe_job_cycle(self, *, claimed: int, succeeded: int, failed: int) -> None:
+            self.observed = (claimed, succeeded, failed)
+
+    observer = Observer()
+    worker = DurableWorker(
+        repository,
+        {"sync": lambda _: JobCompletion()},
+        worker_id="worker-1",
+        observer=observer,
+    )
+    worker.run_once()
+    assert observer.observed == (1, 1, 0)

@@ -4,6 +4,8 @@ import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from time import perf_counter
+from typing import Literal
 from uuid import UUID, uuid4
 
 import uvicorn
@@ -27,6 +29,13 @@ from nexora.identity import (
     verify_exact_origin,
 )
 from nexora.identity_service import OwnerIdentityService
+from nexora.observability import (
+    DependencyReadiness,
+    ReadinessSnapshot,
+    configure_structured_logging,
+    database_pool_values,
+    load_observability_settings,
+)
 from nexora.runtime_contracts import (
     ActionRequest,
     ActionResponse,
@@ -69,6 +78,7 @@ def _correlation_id(request: Request) -> UUID:
 
 def _error_response(request: Request, *, status_code: int, code: str, message: str) -> JSONResponse:
     correlation_id = getattr(request.state, "correlation_id", uuid4())
+    request.state.reason_code = code
     payload = ErrorEnvelope(
         correlation_id=correlation_id,
         error=ErrorDetail(code=code, message=message),
@@ -277,6 +287,28 @@ def create_app(
         response = await call_next(request)
         return _security_headers(response, correlation_id)
 
+    @application.middleware("http")
+    async def observability_boundary(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        started = perf_counter()
+        response = await call_next(request)
+        duration_ms = (perf_counter() - started) * 1_000
+        route_object = request.scope.get("route")
+        route_path = getattr(route_object, "path", "<unmatched>")
+        correlation_id = str(getattr(request.state, "correlation_id", uuid4()))
+        reason_code = getattr(request.state, "reason_code", "REQUEST_COMPLETED")
+        resolved_container.observability.observe_request(
+            method=request.method,
+            route=route_path,
+            status_code=response.status_code,
+            duration_ms=duration_ms,
+            correlation_id=correlation_id,
+            reason_code=reason_code,
+        )
+        return response
+
     def identity_runtime() -> tuple[OwnerIdentityService, PostgreSQLIdentityRepository, SecuritySettings]:
         service = resolved_container.owner_identity_service
         repository = resolved_container.identity_repository
@@ -299,15 +331,57 @@ def create_app(
     @application.get("/health/ready", include_in_schema=False)
     def readiness() -> Response:
         engine = resolved_container.database_engine
-        if engine is None or resolved_container.security is None:
-            return JSONResponse({"status": "not_configured"}, status_code=503)
-        try:
-            available = probe_database(engine)
-        except Exception:
-            return JSONResponse({"status": "unavailable"}, status_code=503)
-        if not available:
-            return JSONResponse({"status": "unavailable"}, status_code=503)
-        return JSONResponse({"status": "ready"})
+        database_ready = False
+        if engine is not None:
+            try:
+                database_ready = probe_database(engine)
+            except Exception:
+                database_ready = False
+            if database_ready:
+                try:
+                    resolved_container.observability.metrics.update_database_pool(database_pool_values(engine))
+                except ValueError:
+                    resolved_container.observability.metrics.update_database_pool(None)
+
+        identity_ready = all(
+            component is not None
+            for component in (
+                resolved_container.identity_repository,
+                resolved_container.owner_identity_service,
+                resolved_container.security,
+            )
+        )
+        trd_ready = resolved_container.trd_bot_client is not None
+        if engine is None:
+            database = DependencyReadiness(status="not_configured", reason_code="DATABASE_NOT_CONFIGURED")
+        elif database_ready:
+            database = DependencyReadiness(status="ready", reason_code="DATABASE_READY")
+        else:
+            database = DependencyReadiness(status="unavailable", reason_code="DATABASE_UNAVAILABLE")
+        identity = DependencyReadiness(
+            status="ready" if identity_ready else "not_configured",
+            reason_code="IDENTITY_RUNTIME_READY" if identity_ready else "IDENTITY_NOT_CONFIGURED",
+        )
+        trd_bot = DependencyReadiness(
+            status="ready" if trd_ready else "not_configured",
+            reason_code="TRD_BOT_ADAPTER_READY" if trd_ready else "TRD_BOT_NOT_CONFIGURED",
+        )
+        overall_status: Literal["ready", "not_configured", "unavailable"] = (
+            "unavailable"
+            if engine is not None and not database_ready
+            else "ready"
+            if database_ready and identity_ready and trd_ready
+            else "not_configured"
+        )
+        snapshot = ReadinessSnapshot(
+            status=overall_status,
+            dependencies={
+                "database": database,
+                "identity": identity,
+                "trd_bot": trd_bot,
+            },
+        )
+        return JSONResponse(snapshot.model_dump(mode="json"), status_code=200 if overall_status == "ready" else 503)
 
     @application.get("/version", response_model=VersionResponse, operation_id="getVersion")
     def version() -> VersionResponse:
@@ -545,6 +619,9 @@ def run() -> None:
         settings = container.settings
         application = create_app(container=container)
     else:
+        observability_settings = load_observability_settings(os.environ, production=False)
         settings = load_settings()
-        application = create_app(settings)
+        container = compose_application(settings, observability_settings=observability_settings)
+        application = create_app(container=container)
+    configure_structured_logging(container.observability, level=settings.log_level.value)
     uvicorn.run(application, host=settings.api_host, port=settings.api_port, reload=False)

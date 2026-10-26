@@ -56,4 +56,24 @@ async def test_readiness_fails_closed_without_private_runtime() -> None:
     ) as client:
         response = await client.get("/health/ready")
     assert response.status_code == 503
-    assert response.json() == {"status": "not_configured"}
+    assert response.json() == {
+        "schema_version": "nexora-readiness-v1",
+        "status": "not_configured",
+        "dependencies": {
+            "database": {"status": "not_configured", "reason_code": "DATABASE_NOT_CONFIGURED"},
+            "identity": {"status": "not_configured", "reason_code": "IDENTITY_NOT_CONFIGURED"},
+            "trd_bot": {"status": "not_configured", "reason_code": "TRD_BOT_NOT_CONFIGURED"},
+        },
+    }
+
+
+@pytest.mark.anyio
+async def test_request_metrics_use_route_templates_and_correlation_without_query_values() -> None:
+    application = create_app(load_settings({}))
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as client:
+        response = await client.get("/version?token=must-not-be-a-metric-label")
+
+    assert response.status_code == 200
+    snapshot = application.state.container.observability.metrics.snapshot()
+    assert snapshot["requests"]["by_route"] == {"GET /version": 1}
+    assert "must-not-be-a-metric-label" not in str(snapshot)

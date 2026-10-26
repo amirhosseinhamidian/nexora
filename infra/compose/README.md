@@ -18,3 +18,8 @@ PostgreSQL, API, web and worker ports remain internal. TLS, database and
 identity secrets are mounted from operator-owned read-only files; Compose does
 not create, migrate, or print them. Run migrations as an explicit release step
 before starting this topology.
+
+API and Worker write structured JSON logs to the private `nexora-logs` volume.
+The volume is not exposed by ingress. Application handlers enforce bounded
+rotation; 30-day retention and archival execution remain an operations task for
+NEX-P1-12.

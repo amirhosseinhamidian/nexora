@@ -93,6 +93,7 @@ def test_known_infrastructure_variables_do_not_enter_runtime_settings() -> None:
         {
             "NEXORA_DEV_DB_PASSWORD_FILE": "/private/dev-password",
             "NEXORA_MIGRATION_DATABASE_DSN_FILE": "/private/migration-dsn",
+            "NEXORA_LOG_FILE": "/private/nexora.jsonl",
         }
     )
 

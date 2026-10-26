@@ -6,8 +6,10 @@ both entry points, and an unregistered PostgreSQL persistence adapter used by
 explicit Alembic operations. It also contains an unregistered, typed TRD Bot
 client adapter whose network behavior is exercised only through mock transports
 in P1-04. P1-05 adds PostgreSQL durable jobs, checkpoints, a transactional
-outbox, and a generic explicit-handler worker engine. Authentication, scheduled
-provider synchronization, and production readiness are intentionally deferred.
+outbox, and a generic explicit-handler worker engine. P1-08 adds bounded JSON
+logging, recursive secret redaction, route-template request metrics, worker and
+database-pool metrics, and dependency-aware readiness. Scheduled provider
+synchronization and production readiness are intentionally deferred.
 
 ```bash
 uv run nexora-api
@@ -17,6 +19,11 @@ uv run nexora-worker --check
 Configuration is read only from the allowlisted `NEXORA_*` process environment
 variables documented in `.env.example`. Unknown prefixed variables and unsafe
 profile combinations fail closed; dotenv files are never loaded automatically.
+
+`NEXORA_LOG_FILE` is optional during local development and required in the
+private production profile. Production writes UTF-8 JSON Lines to an absolute,
+non-symlink path with 10 MiB size rotation and 30 backups. Request query/body,
+raw exception messages and authentication material are never valid log fields.
 
 Database migrations use a separate operator-only configuration path. Set
 `NEXORA_MIGRATION_DATABASE_DSN_FILE` to an absolute private file containing one

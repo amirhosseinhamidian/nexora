@@ -34,6 +34,7 @@ services:
       NEXORA_ENVIRONMENT: production
       NEXORA_DEPLOYMENT_PROFILE: private_single_host
       NEXORA_LOG_LEVEL: INFO
+      NEXORA_LOG_FILE: /var/log/nexora/api.jsonl
       NEXORA_API_HOST: 0.0.0.0
       NEXORA_API_PORT: "8000"
       NEXORA_DATABASE_DSN_FILE: /run/secrets/database.dsn
@@ -47,6 +48,7 @@ services:
       - ${NEXORA_AUTH_PEPPER_FILE:?authentication pepper required}:/run/secrets/auth-pepper:ro
       - ${NEXORA_TRD_BOT_BASE_URL_FILE:?TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
       - ${NEXORA_TRD_BOT_TOKEN_FILE:?TRD Bot token required}:/run/secrets/trd-bot-token:ro
+      - nexora-logs:/var/log/nexora
     networks: [ingress, data]
     expose: ["8000"]
     healthcheck:
@@ -65,6 +67,9 @@ services:
       NEXORA_ENVIRONMENT: production
       NEXORA_DEPLOYMENT_PROFILE: private_single_host
       NEXORA_LOG_LEVEL: INFO
+      NEXORA_LOG_FILE: /var/log/nexora/worker.jsonl
+    volumes:
+      - nexora-logs:/var/log/nexora
     networks: [data]
 
   postgresql:
@@ -92,3 +97,4 @@ networks:
 
 volumes:
   postgresql-data:
+  nexora-logs:

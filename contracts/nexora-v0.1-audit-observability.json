@@ -1,0 +1,102 @@
+{
+  "schema_version": "nexora-audit-observability-v1",
+  "decision_id": "NEX-P1-08",
+  "decision_date": "2026-10-26",
+  "status": "candidate",
+  "p1_07_prerequisite": {
+    "decision_id": "NEX-P1-07",
+    "frozen": true,
+    "freeze_commit_sha": "6ff8e4f185a51fec0fa2c9a7353d35897fef7eec",
+    "freeze_record_path": "artifacts/p1-07/runtime-api-auth-freeze.json",
+    "freeze_record_checksum": "624d4a8f7e502ba549bc4cf0809aa34e26b988f2082f658c85562162450da009"
+  },
+  "closes_gaps": ["NEX-P1-GAP-004"],
+  "structured_logging": {
+    "schema_version": "nexora-observability-event-v1",
+    "encoding": "json_lines_utf8",
+    "canonical_time": "UTC",
+    "correlation_id_propagated": true,
+    "request_duration_ms_recorded": true,
+    "raw_query_string_logged": false,
+    "request_or_response_body_logged": false,
+    "exception_message_logged": false,
+    "secret_redaction_recursive": true,
+    "production_log_file_required": true,
+    "rotation_strategy": "size_bounded_local_file",
+    "rotation_max_bytes": 10485760,
+    "rotation_backup_count": 30,
+    "retention_days": 30
+  },
+  "runtime_metrics": {
+    "schema_version": "nexora-runtime-metrics-v1",
+    "storage": "bounded_in_process_snapshot",
+    "external_collector_required": false,
+    "request_dimensions": ["method", "route_template", "status_class"],
+    "request_duration_buckets_ms": [25, 50, 100, 300, 1000, 5000],
+    "maximum_route_dimensions": 64,
+    "job_metrics": ["cycles", "claimed", "succeeded", "failed"],
+    "database_pool_metrics": ["size", "checked_in", "checked_out", "overflow"],
+    "raw_path_or_query_labels_forbidden": true,
+    "owner_or_session_labels_forbidden": true,
+    "retention_days_when_exported": 90
+  },
+  "readiness": {
+    "schema_version": "nexora-readiness-v1",
+    "endpoint": "/health/ready",
+    "public_openapi_operation": false,
+    "dependencies": ["database", "identity", "trd_bot"],
+    "states": ["ready", "not_configured", "unavailable"],
+    "reason_code_required": true,
+    "fails_closed": true,
+    "does_not_expose_targets_or_credentials": true
+  },
+  "security_audit": {
+    "schema_version": "nexora-security-audit-event-v1",
+    "persistence": "postgresql_append_only",
+    "mutation_trigger_enforced": true,
+    "correlation_id_required": true,
+    "reason_code_required": true,
+    "metadata_scalar_only": true,
+    "metadata_max_bytes": 4096,
+    "secret_bearing_metadata_rejected": true,
+    "retention_days": 400
+  },
+  "worker_observability": {
+    "observer_injected": true,
+    "cycle_aggregate_only": true,
+    "handler_exception_message_logged": false,
+    "failure_reason_code_bounded": true
+  },
+  "security_boundary": {
+    "public_metrics_endpoint": false,
+    "external_telemetry_export": false,
+    "raw_client_ip_logged": false,
+    "authentication_material_logged": false,
+    "live_execution_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "autonomous_ai_execution": false,
+    "public_internet_production_profile": false,
+    "multi_user_identity": false
+  },
+  "quality_gates": {
+    "contract": [
+      "frozen_p1_07_prerequisite",
+      "audit_observability_verifier",
+      "repository_contract_tests"
+    ],
+    "backend": ["ruff_format_check", "ruff_check", "mypy_strict", "pytest_non_integration"],
+    "postgresql": [
+      "upgrade_head",
+      "append_only_audit_integration",
+      "downgrade_base",
+      "rebuild_head",
+      "migration_drift_check"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-08-FREEZE",
+    "post_freeze_stage": "NEX-P1-09"
+  }
+}

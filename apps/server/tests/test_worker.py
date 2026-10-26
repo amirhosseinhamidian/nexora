@@ -7,11 +7,11 @@ def test_worker_check_does_not_claim_runtime_work(capsys: pytest.CaptureFixture[
     assert main(["--check"], {}) == 0
     output = capsys.readouterr().out
     assert "configuration" in output
-    assert "ready for P1-05" in output
+    assert "durable-job engine ready" in output
 
 
-def test_worker_refuses_to_run_before_durable_jobs_exist() -> None:
-    with pytest.raises(SystemExit, match="unavailable until NEX-P1-05"):
+def test_worker_refuses_to_claim_without_registered_handlers() -> None:
+    with pytest.raises(SystemExit, match="no durable job handlers are registered"):
         main([], {})
 
 

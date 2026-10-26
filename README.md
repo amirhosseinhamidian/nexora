@@ -48,9 +48,17 @@ execution belongs to P1-05. The accepted candidate is bound to successful
 adapter, backend, web, contract and PostgreSQL CI evidence. The next allowed
 stage is `NEX-P1-05`.
 
+`NEX-P1-05` is implemented as a freeze candidate. It adds PostgreSQL-backed
+durable jobs, optimistic projection checkpoints, and a transactional outbox;
+bounded `SKIP LOCKED` claims; expiring leases and restart reclaim; deterministic
+retry/dead-letter behavior; and an explicit handler-based worker engine. The
+delivery model is at-least-once. No live provider handler, exchange credential,
+or live-order capability is registered. The next allowed action is
+`NEX-P1-05-FREEZE` after the candidate CI is green.
+
 The repository now contains a runtime scaffold, not a complete application or a
-production deployment. Authentication, TRD Bot runtime integration, durable
-jobs, transactional outbox, and private deployment remain deliberately deferred.
+production deployment. Authentication, scheduled TRD Bot synchronization,
+portfolio-domain features, and private deployment remain deliberately deferred.
 
 ## Verify the scope contract
 
@@ -64,6 +72,7 @@ python3 scripts/verify_runtime_foundation.py
 python3 scripts/verify_application_composition.py
 python3 scripts/verify_postgresql_schema.py
 python3 scripts/verify_trd_bot_adapter.py
+python3 scripts/verify_durable_jobs_outbox.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -93,6 +102,8 @@ NEX_P1_03_FREEZE=PASS
 NEX_P1_03_PREREQUISITE=PASS
 NEX_P1_04_TRD_BOT_ADAPTER=PASS
 NEX_P1_04_FREEZE=PASS
+NEX_P1_04_PREREQUISITE=PASS
+NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS
 ```
 
 ## Documents
@@ -106,6 +117,7 @@ NEX_P1_04_FREEZE=PASS
 - [`docs/v0.1/06-application-composition-and-runtime-configuration.md`](docs/v0.1/06-application-composition-and-runtime-configuration.md)
 - [`docs/v0.1/07-postgresql-schema-and-migrations.md`](docs/v0.1/07-postgresql-schema-and-migrations.md)
 - [`docs/v0.1/08-versioned-trd-bot-adapter.md`](docs/v0.1/08-versioned-trd-bot-adapter.md)
+- [`docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md`](docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -117,6 +129,7 @@ NEX_P1_04_FREEZE=PASS
 - [`contracts/nexora-v0.1-application-composition.json`](contracts/nexora-v0.1-application-composition.json)
 - [`contracts/nexora-v0.1-postgresql-schema.json`](contracts/nexora-v0.1-postgresql-schema.json)
 - [`contracts/nexora-v0.1-trd-bot-adapter.json`](contracts/nexora-v0.1-trd-bot-adapter.json)
+- [`contracts/nexora-v0.1-durable-jobs-outbox.json`](contracts/nexora-v0.1-durable-jobs-outbox.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

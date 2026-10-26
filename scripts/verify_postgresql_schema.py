@@ -217,9 +217,6 @@ def validate_files(contract: dict[str, Any]) -> None:
         _require(f'__tablename__ = "{table}"' in models, f"model table missing: {table}")
     for marker in ("owner_id", "source_schema_version", "source_version", "correlation_id", "payload_sha256", "JSONB"):
         _require(marker in models, f"model invariant missing: {marker}")
-    for forbidden in EXPECTED_DEFERRED_TABLES:
-        _require(f'__tablename__ = "{forbidden}"' not in models, f"deferred table created early: {forbidden}")
-
     migration = (ROOT / "alembic/versions/20261025_0001_initial_persistence_spine.py").read_text(encoding="utf-8")
     for marker in (
         'revision: str = "20261025_0001"',
@@ -233,6 +230,8 @@ def validate_files(contract: dict[str, Any]) -> None:
         _require(marker in migration, f"migration marker missing: {marker}")
     for table in EXPECTED_TABLES:
         _require(f'"{table}"' in migration, f"migration table missing: {table}")
+    for deferred in EXPECTED_DEFERRED_TABLES:
+        _require(f'"{deferred}"' not in migration, f"P1-03 migration created deferred table early: {deferred}")
     for forbidden in ("create_all", "live_orders", "wallets", "exchange_credentials"):
         _require(forbidden not in migration, f"forbidden migration capability present: {forbidden}")
 

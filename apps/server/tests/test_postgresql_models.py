@@ -5,10 +5,13 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateTable
 
 
-def test_initial_schema_contains_only_the_persistence_spine() -> None:
+def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
     assert set(Base.metadata.tables) == {
         "nexora.immutable_source_evidence",
         "nexora.owner_profiles",
+        "nexora.projection_checkpoints",
+        "nexora.background_jobs",
+        "nexora.outbox_events",
         "nexora.source_references",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
@@ -20,7 +23,13 @@ def test_database_namespace_cannot_become_the_implicit_search_path() -> None:
 
 
 def test_application_tables_are_owner_aware() -> None:
-    for table_name in ("source_references", "immutable_source_evidence"):
+    for table_name in (
+        "source_references",
+        "immutable_source_evidence",
+        "projection_checkpoints",
+        "background_jobs",
+        "outbox_events",
+    ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c
         assert table.c.owner_id.nullable is False
@@ -49,10 +58,8 @@ def test_immutable_evidence_uses_postgresql_jsonb() -> None:
     assert "TIMESTAMP WITH TIME ZONE" in rendered
 
 
-def test_deferred_tables_are_not_created_early() -> None:
+def test_security_sensitive_tables_are_not_created_early() -> None:
     forbidden = {
-        "background_jobs",
-        "outbox_events",
         "sessions",
         "webauthn_credentials",
         "service_tokens",
@@ -60,3 +67,15 @@ def test_deferred_tables_are_not_created_early() -> None:
         "wallets",
     }
     assert forbidden.isdisjoint(table.name for table in Base.metadata.sorted_tables)
+
+
+def test_durable_tables_have_owner_idempotency_and_lease_fields() -> None:
+    jobs = Base.metadata.tables["nexora.background_jobs"]
+    outbox = Base.metadata.tables["nexora.outbox_events"]
+    checkpoints = Base.metadata.tables["nexora.projection_checkpoints"]
+    for table in (jobs, outbox):
+        assert {"owner_id", "idempotency_key", "status", "attempt_count", "lease_owner", "lease_expires_at"}.issubset(
+            table.c.keys()
+        )
+        assert isinstance(table.c.payload.type, postgresql.JSONB)
+    assert {"owner_id", "consumer_name", "stream_name", "row_version"}.issubset(checkpoints.c.keys())

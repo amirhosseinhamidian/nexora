@@ -1,0 +1,89 @@
+{
+  "schema_version": "nexora-durable-jobs-outbox-v1",
+  "decision_id": "NEX-P1-05",
+  "decision_date": "2026-10-25",
+  "status": "candidate",
+  "trd_bot_adapter_prerequisite": {
+    "decision_id": "NEX-P1-04",
+    "frozen": true,
+    "freeze_commit_sha": "6b76b07a4d181f232a79c46e242793f8b9cea51e",
+    "freeze_record_path": "artifacts/p1-04/trd-bot-adapter-freeze.json",
+    "freeze_record_checksum": "0281915eb084f5fa0ac44365660e9af56a1e6bdb5f0a8b988178db7ed5d58d3f"
+  },
+  "delivery": {
+    "migration_revision": "20261025_0002",
+    "projection_checkpoints": true,
+    "durable_background_jobs": true,
+    "transactional_outbox": true,
+    "generic_worker_engine": true,
+    "provider_handler_registration": false,
+    "external_provider_smoke_claimed": false
+  },
+  "job_protocol": {
+    "queue_backend": "postgresql_17",
+    "claim_locking": "for_update_skip_locked",
+    "delivery_semantics": "at_least_once",
+    "idempotency_scope": "owner_id_and_idempotency_key",
+    "immutable_payload_sha256": true,
+    "lease_reclaim": true,
+    "lease_renewal": true,
+    "bounded_attempts": true,
+    "retry_schedule": "exponential_1_to_300_seconds",
+    "terminal_state": "dead_letter",
+    "expired_final_attempt_dead_lettered": true,
+    "lost_lease_fails_closed": true,
+    "claim_batch_is_bounded": true
+  },
+  "checkpoint_protocol": {
+    "identity": ["owner_id", "consumer_name", "stream_name"],
+    "optimistic_row_version": true,
+    "cursor_nullable_for_initial_sync": true,
+    "provider_version_required": true,
+    "contract_version_required": true
+  },
+  "outbox_protocol": {
+    "written_in_job_completion_transaction": true,
+    "claim_locking": "for_update_skip_locked",
+    "delivery_semantics": "at_least_once",
+    "idempotency_scope": "owner_id_and_idempotency_key",
+    "immutable_payload_sha256": true,
+    "bounded_attempts": true,
+    "lease_reclaim": true,
+    "published_state_is_terminal": true
+  },
+  "worker_boundary": {
+    "handler_registry": "explicit_dependency_injection",
+    "unknown_job_types_claimed": false,
+    "empty_handler_registry_claims_work": false,
+    "exception_details_persisted": false,
+    "safe_error_code_only": true,
+    "network_access_in_unit_tests": false
+  },
+  "security_boundary": {
+    "redis_required": false,
+    "external_message_broker_required": false,
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "exchange_credentials": false,
+    "live_order_capability": false,
+    "wallet_capability": false,
+    "browser_service_token": false,
+    "exactly_once_delivery_claim": false
+  },
+  "quality_gates": {
+    "contract": ["p1_04_frozen_prerequisite", "durable_work_verifier", "repository_contract_tests"],
+    "backend": ["ruff_format_check", "ruff_check", "mypy_strict", "pytest_without_integration"],
+    "postgresql_17": [
+      "upgrade_head",
+      "durable_integration_tests",
+      "downgrade_base",
+      "rebuild_head",
+      "alembic_check"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-05-FREEZE",
+    "post_freeze_stage": "NEX-P1-06"
+  }
+}

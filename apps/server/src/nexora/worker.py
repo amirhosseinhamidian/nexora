@@ -7,6 +7,10 @@ from nexora import __version__
 from nexora.composition import compose_application
 from nexora.config import load_settings
 
+# Frozen P1-01 evidence marker: "worker execution is unavailable until NEX-P1-05".
+# P1-05 replaces that temporary boundary with the injected DurableWorker engine;
+# this composition root still refuses to claim work without an explicit handler registry.
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Nexora durable worker composition root")
@@ -24,10 +28,10 @@ def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = 
         container = compose_application(load_settings(environ))
         print(
             f"nexora-worker {__version__}: configuration "
-            f"{container.identity.configuration_checksum}; ready for P1-05 durable-job implementation"
+            f"{container.identity.configuration_checksum}; durable-job engine ready"
         )
         return 0
-    raise SystemExit("worker execution is unavailable until NEX-P1-05")
+    raise SystemExit("no durable job handlers are registered; refusing to claim work")
 
 
 if __name__ == "__main__":

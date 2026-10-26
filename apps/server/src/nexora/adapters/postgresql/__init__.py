@@ -9,6 +9,7 @@ from nexora.adapters.postgresql.base import (
 )
 from nexora.adapters.postgresql.config import (
     DATABASE_DSN_FILE_ENV,
+    RUNTIME_DATABASE_DSN_FILE_ENV,
     DatabaseConfigurationError,
     DatabaseSettings,
     load_database_settings,
@@ -28,13 +29,21 @@ from nexora.adapters.postgresql.durable import (
     retry_delay,
 )
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
+from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQLIdentityRepository
 from nexora.adapters.postgresql.models import (
     BackgroundJob,
+    BootstrapToken,
+    BrowserSession,
     ImmutableSourceEvidence,
     OutboxEvent,
     OwnerProfile,
     ProjectionCheckpoint,
+    RecoveryCode,
+    SecurityAuditEvent,
+    ServiceTokenRecord,
     SourceReference,
+    WebAuthnChallenge,
+    WebAuthnCredential,
 )
 
 __all__ = [
@@ -42,9 +51,12 @@ __all__ = [
     "DATABASE_DSN_FILE_ENV",
     "DATABASE_SESSION_OPTIONS",
     "NAMING_CONVENTION",
+    "RUNTIME_DATABASE_DSN_FILE_ENV",
     "SCHEMA_NAME",
     "BackgroundJob",
     "Base",
+    "BootstrapToken",
+    "BrowserSession",
     "CheckpointAdvance",
     "CheckpointConflict",
     "DatabaseConfigurationError",
@@ -52,6 +64,7 @@ __all__ = [
     "DurableWorkError",
     "DurableWorkRepository",
     "IdempotencyConflict",
+    "IdentityStateConflict",
     "ImmutableSourceEvidence",
     "JobClaim",
     "JobCompletion",
@@ -60,8 +73,14 @@ __all__ = [
     "OutboxEvent",
     "OutboxMessage",
     "OwnerProfile",
+    "PostgreSQLIdentityRepository",
     "ProjectionCheckpoint",
+    "RecoveryCode",
+    "SecurityAuditEvent",
+    "ServiceTokenRecord",
     "SourceReference",
+    "WebAuthnChallenge",
+    "WebAuthnCredential",
     "canonical_payload_sha256",
     "create_database_engine",
     "create_session_factory",

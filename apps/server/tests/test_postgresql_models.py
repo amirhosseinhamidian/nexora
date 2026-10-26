@@ -11,8 +11,15 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.owner_profiles",
         "nexora.projection_checkpoints",
         "nexora.background_jobs",
+        "nexora.bootstrap_tokens",
         "nexora.outbox_events",
         "nexora.source_references",
+        "nexora.recovery_codes",
+        "nexora.security_audit_events",
+        "nexora.service_tokens",
+        "nexora.sessions",
+        "nexora.webauthn_challenges",
+        "nexora.webauthn_credentials",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -58,14 +65,11 @@ def test_immutable_evidence_uses_postgresql_jsonb() -> None:
     assert "TIMESTAMP WITH TIME ZONE" in rendered
 
 
-def test_security_sensitive_tables_are_not_created_early() -> None:
-    forbidden = {
-        "sessions",
-        "webauthn_credentials",
-        "service_tokens",
-        "live_orders",
-        "wallets",
-    }
+def test_security_sensitive_tables_are_explicit_without_live_capabilities() -> None:
+    assert {"sessions", "webauthn_credentials", "service_tokens"}.issubset(
+        table.name for table in Base.metadata.sorted_tables
+    )
+    forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(table.name for table in Base.metadata.sorted_tables)
 
 

@@ -257,7 +257,10 @@ def validate_files() -> None:
         _require(forbidden not in workflow, f"adapter workflow has external dependency: {forbidden}")
 
     composition = (ROOT / "apps/server/src/nexora/composition.py").read_text(encoding="utf-8")
-    _require("TrdBotClient" not in composition, "P1-04 cannot register the adapter in runtime composition")
+    default_composition = composition.split("def compose_application", 1)[1].split(
+        "PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES", 1
+    )[0]
+    _require("TrdBotClient" not in default_composition, "P1-04 cannot register the adapter in default composition")
 
 
 def validate_documents() -> None:

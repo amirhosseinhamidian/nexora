@@ -82,6 +82,7 @@ class TrdBotClient:
             timeout=settings.timeout_seconds,
             transport=transport,
             follow_redirects=False,
+            trust_env=False,
         )
         self._capabilities: CapabilitiesResponse | None = None
 

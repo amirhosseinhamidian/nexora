@@ -12,6 +12,7 @@ from sqlalchemy.engine import URL, make_url
 from sqlalchemy.exc import ArgumentError
 
 DATABASE_DSN_FILE_ENV: Final = "NEXORA_MIGRATION_DATABASE_DSN_FILE"
+RUNTIME_DATABASE_DSN_FILE_ENV: Final = "NEXORA_DATABASE_DSN_FILE"
 RUNTIME_ENVIRONMENT_VARIABLE: Final = "NEXORA_ENVIRONMENT"
 MAX_DSN_FILE_BYTES: Final = 4096
 ALLOWED_DRIVER: Final = "postgresql+psycopg"
@@ -74,11 +75,17 @@ def _validate_url(dsn: str) -> URL:
     return url
 
 
-def load_database_settings(environ: Mapping[str, str] | None = None) -> DatabaseSettings:
+def load_database_settings(
+    environ: Mapping[str, str] | None = None,
+    *,
+    variable: str = DATABASE_DSN_FILE_ENV,
+) -> DatabaseSettings:
     source = os.environ if environ is None else environ
-    raw_path = source.get(DATABASE_DSN_FILE_ENV)
+    if variable not in {DATABASE_DSN_FILE_ENV, RUNTIME_DATABASE_DSN_FILE_ENV}:
+        raise DatabaseConfigurationError("database DSN environment variable is invalid")
+    raw_path = source.get(variable)
     if raw_path is None or not raw_path.strip():
-        raise DatabaseConfigurationError(f"{DATABASE_DSN_FILE_ENV} is required")
+        raise DatabaseConfigurationError(f"{variable} is required")
     path = Path(raw_path)
     environment = source.get(RUNTIME_ENVIRONMENT_VARIABLE, "development")
     if environment not in {"development", "test", "production"}:

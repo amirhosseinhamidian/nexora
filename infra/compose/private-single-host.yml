@@ -1,0 +1,94 @@
+name: nexora-private
+
+services:
+  ingress:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports:
+      - "${NEXORA_PRIVATE_BIND_ADDRESS:?private overlay address required}:443:443"
+    volumes:
+      - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${NEXORA_TLS_CERT_FILE:?TLS certificate required}:/run/secrets/tls.crt:ro
+      - ${NEXORA_TLS_KEY_FILE:?TLS private key required}:/run/secrets/tls.key:ro
+    networks: [ingress]
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    networks: [ingress]
+    expose: ["3000"]
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      NEXORA_ENVIRONMENT: production
+      NEXORA_DEPLOYMENT_PROFILE: private_single_host
+      NEXORA_LOG_LEVEL: INFO
+      NEXORA_API_HOST: 0.0.0.0
+      NEXORA_API_PORT: "8000"
+      NEXORA_DATABASE_DSN_FILE: /run/secrets/database.dsn
+      NEXORA_CANONICAL_ORIGIN_FILE: /run/secrets/canonical-origin
+      NEXORA_AUTH_PEPPER_FILE: /run/secrets/auth-pepper
+      NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
+      NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
+    volumes:
+      - ${NEXORA_DATABASE_DSN_FILE:?database DSN required}:/run/secrets/database.dsn:ro
+      - ${NEXORA_CANONICAL_ORIGIN_FILE:?canonical origin required}:/run/secrets/canonical-origin:ro
+      - ${NEXORA_AUTH_PEPPER_FILE:?authentication pepper required}:/run/secrets/auth-pepper:ro
+      - ${NEXORA_TRD_BOT_BASE_URL_FILE:?TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
+      - ${NEXORA_TRD_BOT_TOKEN_FILE:?TRD Bot token required}:/run/secrets/trd-bot-token:ro
+    networks: [ingress, data]
+    expose: ["8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: apps/server/Dockerfile
+    restart: "no"
+    command: ["uv", "run", "--frozen", "nexora-worker", "--check"]
+    environment:
+      NEXORA_ENVIRONMENT: production
+      NEXORA_DEPLOYMENT_PROFILE: private_single_host
+      NEXORA_LOG_LEVEL: INFO
+    networks: [data]
+
+  postgresql:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexora
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgresql-password
+    volumes:
+      - ${NEXORA_POSTGRES_PASSWORD_FILE:?PostgreSQL password required}:/run/secrets/postgresql-password:ro
+      - postgresql-data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+networks:
+  ingress:
+    internal: true
+  data:
+    internal: true
+
+volumes:
+  postgresql-data:

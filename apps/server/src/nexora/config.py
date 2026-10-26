@@ -5,6 +5,7 @@ import json
 import os
 from collections.abc import Mapping
 from enum import StrEnum
+from typing import Final
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -99,6 +100,17 @@ ENVIRONMENT_VARIABLES = {
     "NEXORA_API_PORT": "api_port",
 }
 
+# These exact names belong to local orchestration or the migration process. They
+# share the project prefix but are deliberately not runtime settings for the API
+# or worker. Keeping the allowlist here lets strict typo detection remain enabled
+# while commands can share one shell environment safely.
+INFRASTRUCTURE_ENVIRONMENT_VARIABLES: Final = frozenset(
+    {
+        "NEXORA_DEV_DB_PASSWORD_FILE",
+        "NEXORA_MIGRATION_DATABASE_DSN_FILE",
+    }
+)
+
 
 def _validation_error(error: ValidationError) -> ConfigurationError:
     details = []
@@ -108,10 +120,16 @@ def _validation_error(error: ValidationError) -> ConfigurationError:
     return ConfigurationError(f"invalid runtime configuration: {'; '.join(sorted(details))}")
 
 
-def load_settings(environ: Mapping[str, str] | None = None) -> RuntimeSettings:
+def load_settings(
+    environ: Mapping[str, str] | None = None,
+    *,
+    permitted_external_variables: frozenset[str] = frozenset(),
+) -> RuntimeSettings:
     source = os.environ if environ is None else environ
     scoped = {key: value for key, value in source.items() if key.startswith(ENV_PREFIX)}
-    unknown = sorted(set(scoped) - set(ENVIRONMENT_VARIABLES))
+    unknown = sorted(
+        set(scoped) - set(ENVIRONMENT_VARIABLES) - INFRASTRUCTURE_ENVIRONMENT_VARIABLES - permitted_external_variables
+    )
     if unknown:
         raise ConfigurationError(f"unknown Nexora environment variables: {', '.join(unknown)}")
 

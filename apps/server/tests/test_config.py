@@ -88,6 +88,22 @@ def test_unknown_prefixed_variable_is_rejected() -> None:
         load_settings({"NEXORA_DATABASE_URL": "postgresql://must-not-be-accepted-yet"})
 
 
+def test_known_infrastructure_variables_do_not_enter_runtime_settings() -> None:
+    settings = load_settings(
+        {
+            "NEXORA_DEV_DB_PASSWORD_FILE": "/private/dev-password",
+            "NEXORA_MIGRATION_DATABASE_DSN_FILE": "/private/migration-dsn",
+        }
+    )
+
+    assert settings == load_settings({})
+
+
+def test_infrastructure_variable_typo_is_still_rejected() -> None:
+    with pytest.raises(ConfigurationError, match="NEXORA_MIGRATION_DATABASE_DSN_FIL"):
+        load_settings({"NEXORA_MIGRATION_DATABASE_DSN_FIL": "/private/migration-dsn"})
+
+
 def test_blank_value_is_rejected_without_echoing_it() -> None:
     with pytest.raises(ConfigurationError, match="NEXORA_LOG_LEVEL"):
         load_settings({"NEXORA_LOG_LEVEL": "   "})

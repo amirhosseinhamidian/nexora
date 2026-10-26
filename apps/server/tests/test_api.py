@@ -24,6 +24,9 @@ async def test_liveness_is_minimal_and_versioned() -> None:
         "status": "ok",
         "version": "0.1.0",
     }
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "unsafe-inline" not in response.headers["content-security-policy"]
 
 
 @pytest.mark.anyio
@@ -43,3 +46,14 @@ def test_app_uses_an_explicit_immutable_composition_container() -> None:
     assert isinstance(application.state.container, ApplicationContainer)
     assert application.state.container.settings is settings
     assert application.state.container.identity.configuration_checksum == settings.checksum()
+
+
+@pytest.mark.anyio
+async def test_readiness_fails_closed_without_private_runtime() -> None:
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app()),
+        base_url="http://test",
+    ) as client:
+        response = await client.get("/health/ready")
+    assert response.status_code == 503
+    assert response.json() == {"status": "not_configured"}

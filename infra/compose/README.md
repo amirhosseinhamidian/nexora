@@ -12,5 +12,9 @@ export NEXORA_DEV_DB_PASSWORD_FILE=/absolute/path/to/nexora-postgresql-password
 docker compose -f infra/compose/postgresql.dev.yml up -d
 ```
 
-The production-like private single-host topology remains deferred until the
-runtime services and identity boundary exist.
+`private-single-host.yml` is the P1-06 production topology: only HTTPS 443 is
+bound, and the bind address must be the authenticated private-overlay address.
+PostgreSQL, API, web and worker ports remain internal. TLS, database and
+identity secrets are mounted from operator-owned read-only files; Compose does
+not create, migrate, or print them. Run migrations as an explicit release step
+before starting this topology.

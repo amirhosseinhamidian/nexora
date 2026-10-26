@@ -1,0 +1,110 @@
+name: Single-owner identity runtime
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  identity-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-05 prerequisite
+        run: python3 scripts/verify_durable_jobs_outbox.py
+      - name: Verify P1-06 identity runtime contract
+        run: python3 scripts/verify_single_owner_identity_runtime.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend format
+        run: uv run ruff format --check apps/server alembic
+      - name: Lint backend
+        run: uv run ruff check apps/server alembic
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+
+  postgresql-17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: nexora_test
+          POSTGRES_USER: nexora
+          POSTGRES_PASSWORD: nexora_ci_fixture_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexora -d nexora_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /tmp/nexora-database.dsn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Create private CI fixture DSN file
+        run: |
+          umask 077
+          printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_test' > "$NEXORA_MIGRATION_DATABASE_DSN_FILE"
+      - name: Upgrade to repository head
+        run: uv run alembic upgrade head
+      - name: Run PostgreSQL identity integration tests
+        run: uv run pytest apps/server/tests/test_postgresql_integration.py apps/server/tests/test_identity_integration.py -m integration -q
+      - name: Downgrade to base
+        run: uv run alembic downgrade base
+      - name: Rebuild repository head
+        run: uv run alembic upgrade head
+      - name: Check migration drift
+        run: uv run alembic check
+
+  private-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate private Compose topology
+        env:
+          NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
+          NEXORA_TLS_CERT_FILE: /tmp/tls.crt
+          NEXORA_TLS_KEY_FILE: /tmp/tls.key
+          NEXORA_DATABASE_DSN_FILE: /tmp/database.dsn
+          NEXORA_CANONICAL_ORIGIN_FILE: /tmp/canonical-origin
+          NEXORA_AUTH_PEPPER_FILE: /tmp/auth-pepper
+          NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/trd-bot-base-url
+          NEXORA_TRD_BOT_TOKEN_FILE: /tmp/trd-bot-token
+          NEXORA_POSTGRES_PASSWORD_FILE: /tmp/postgresql-password
+        run: docker compose -f infra/compose/private-single-host.yml config --quiet

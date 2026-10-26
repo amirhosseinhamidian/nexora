@@ -201,8 +201,11 @@ def validate_files(contract: dict[str, Any]) -> None:
     composition_source = (ROOT / "apps/server/src/nexora/composition.py").read_text(encoding="utf-8")
     for marker in ("@dataclass(frozen=True, slots=True)", "class ApplicationContainer", "def compose_application"):
         _require(marker in composition_source, f"composition marker missing: {marker}")
+    default_composition = composition_source.split("def compose_application", 1)[1].split(
+        "PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES", 1
+    )[0]
     for forbidden in ("sqlalchemy", "psycopg", "trd_bot", "redis"):
-        _require(forbidden not in composition_source.lower(), f"premature adapter in composition: {forbidden}")
+        _require(forbidden not in default_composition.lower(), f"premature adapter in default composition: {forbidden}")
 
     api = (ROOT / "apps/server/src/nexora/api.py").read_text(encoding="utf-8")
     worker = (ROOT / "apps/server/src/nexora/worker.py").read_text(encoding="utf-8")

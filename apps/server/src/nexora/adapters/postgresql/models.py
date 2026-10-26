@@ -42,6 +42,180 @@ class OwnerProfile(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class WebAuthnCredential(Base):
+    __tablename__ = "webauthn_credentials"
+    __table_args__ = (
+        CheckConstraint("char_length(credential_id) BETWEEN 16 AND 1024", name="credential_id_length"),
+        CheckConstraint("octet_length(public_key) BETWEEN 32 AND 4096", name="public_key_length"),
+        CheckConstraint("algorithm IN ('ES256', 'EdDSA')", name="algorithm_allowed"),
+        CheckConstraint("sign_count >= 0", name="sign_count_nonnegative"),
+        CheckConstraint("jsonb_typeof(transports) = 'array'", name="transports_array"),
+        CheckConstraint("last_used_at IS NULL OR last_used_at >= created_at", name="last_used_ordered"),
+        CheckConstraint("revoked_at IS NULL OR revoked_at >= created_at", name="revoked_ordered"),
+        UniqueConstraint("credential_id", name="uq_webauthn_credentials_credential_id"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    credential_record_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    credential_id: Mapped[str] = mapped_column(String(1024), nullable=False)
+    public_key: Mapped[bytes] = mapped_column(nullable=False)
+    algorithm: Mapped[str] = mapped_column(String(16), nullable=False)
+    sign_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    transports: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default="[]")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class WebAuthnChallenge(Base):
+    __tablename__ = "webauthn_challenges"
+    __table_args__ = (
+        CheckConstraint("challenge_digest ~ '^[0-9a-f]{64}$'", name="challenge_digest_format"),
+        CheckConstraint("purpose IN ('registration', 'authentication')", name="purpose_allowed"),
+        CheckConstraint("expires_at > created_at", name="expires_after_creation"),
+        CheckConstraint("consumed_at IS NULL OR consumed_at >= created_at", name="consumed_ordered"),
+        UniqueConstraint("challenge_digest", name="uq_webauthn_challenges_digest"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    challenge_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), index=True
+    )
+    challenge_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BootstrapToken(Base):
+    __tablename__ = "bootstrap_tokens"
+    __table_args__ = (
+        CheckConstraint("token_digest ~ '^[0-9a-f]{64}$'", name="token_digest_format"),
+        CheckConstraint("expires_at > created_at", name="expires_after_creation"),
+        CheckConstraint("consumed_at IS NULL OR consumed_at >= created_at", name="consumed_ordered"),
+        UniqueConstraint("token_digest", name="uq_bootstrap_tokens_token_digest"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    bootstrap_token_id: Mapped[UUID] = mapped_column(primary_key=True)
+    token_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RecoveryCode(Base):
+    __tablename__ = "recovery_codes"
+    __table_args__ = (
+        CheckConstraint("code_digest ~ '^[0-9a-f]{64}$'", name="code_digest_format"),
+        CheckConstraint("used_at IS NULL OR used_at >= created_at", name="used_ordered"),
+        UniqueConstraint("owner_id", "code_digest", name="uq_recovery_codes_owner_digest"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    recovery_code_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    code_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class BrowserSession(Base):
+    __tablename__ = "sessions"
+    __table_args__ = (
+        CheckConstraint("token_digest ~ '^[0-9a-f]{64}$'", name="token_digest_format"),
+        CheckConstraint("csrf_digest ~ '^[0-9a-f]{64}$'", name="csrf_digest_format"),
+        CheckConstraint("idle_expires_at > created_at", name="idle_expiry_after_creation"),
+        CheckConstraint("absolute_expires_at > created_at", name="absolute_expiry_after_creation"),
+        CheckConstraint("idle_expires_at <= absolute_expires_at", name="idle_before_absolute_expiry"),
+        CheckConstraint("last_seen_at >= created_at", name="last_seen_ordered"),
+        CheckConstraint("rotated_at >= created_at", name="rotated_ordered"),
+        CheckConstraint("revoked_at IS NULL OR revoked_at >= created_at", name="revoked_ordered"),
+        CheckConstraint("replaced_at IS NULL OR replaced_at >= created_at", name="replaced_ordered"),
+        CheckConstraint(
+            "rotation_grace_expires_at IS NULL OR rotation_grace_expires_at > replaced_at",
+            name="rotation_grace_ordered",
+        ),
+        UniqueConstraint("token_digest", name="uq_sessions_token_digest"),
+        Index("ix_sessions_active", "owner_id", "revoked_at", "idle_expires_at", "absolute_expires_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    session_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    token_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    csrf_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    rotated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    idle_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    absolute_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rotation_grace_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ServiceTokenRecord(Base):
+    __tablename__ = "service_tokens"
+    __table_args__ = (
+        CheckConstraint("principal = 'trd_bot_integration'", name="principal_allowed"),
+        CheckConstraint("token_digest ~ '^[0-9a-f]{64}$'", name="token_digest_format"),
+        CheckConstraint("jsonb_typeof(scopes) = 'array'", name="scopes_array"),
+        CheckConstraint("expires_at > created_at", name="expires_after_creation"),
+        CheckConstraint("revoked_at IS NULL OR revoked_at >= created_at", name="revoked_ordered"),
+        UniqueConstraint("token_digest", name="uq_service_tokens_token_digest"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    service_token_id: Mapped[UUID] = mapped_column(primary_key=True)
+    principal: Mapped[str] = mapped_column(String(32), nullable=False)
+    token_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    scopes: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SecurityAuditEvent(Base):
+    __tablename__ = "security_audit_events"
+    __table_args__ = (
+        CheckConstraint("char_length(event_type) > 0", name="event_type_nonempty"),
+        CheckConstraint("actor_type IN ('owner', 'service', 'system', 'unknown')", name="actor_type_allowed"),
+        CheckConstraint("outcome IN ('success', 'failure', 'denied')", name="outcome_allowed"),
+        CheckConstraint("reason_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="reason_code_format"),
+        CheckConstraint(
+            "source_class IN ('loopback', 'private_overlay', 'internal_service', 'unknown')",
+            name="source_class_allowed",
+        ),
+        CheckConstraint("ip_address_hmac IS NULL OR ip_address_hmac ~ '^[0-9a-f]{64}$'", name="ip_address_hmac_format"),
+        CheckConstraint("jsonb_typeof(metadata) = 'object'", name="metadata_object"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    event_id: Mapped[str] = mapped_column(String(68), primary_key=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    correlation_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    actor_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_class: Mapped[str] = mapped_column(String(24), nullable=False)
+    ip_address_hmac: Mapped[str | None] = mapped_column(String(64))
+    event_metadata: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False, server_default="{}")
+
+
 class SourceReference(Base):
     __tablename__ = "source_references"
     __table_args__ = (

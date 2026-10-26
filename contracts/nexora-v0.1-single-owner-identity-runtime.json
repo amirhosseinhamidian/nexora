@@ -1,0 +1,119 @@
+{
+  "schema_version": "nexora-single-owner-identity-runtime-v1",
+  "decision_id": "NEX-P1-06",
+  "decision_date": "2026-10-26",
+  "status": "candidate",
+  "durable_jobs_prerequisite": {
+    "decision_id": "NEX-P1-05",
+    "frozen": true,
+    "freeze_commit_sha": "aaea7afcc7e6421a17f197f275d0beab853bc03e",
+    "freeze_record_path": "artifacts/p1-05/durable-jobs-outbox-freeze.json",
+    "freeze_record_checksum": "dd3a541531872aecb3a0859ff5f174405b89d792bacb68a7d2096ad142b7e4f6"
+  },
+  "delivery": {
+    "migration_revision": "20261026_0003",
+    "single_owner_identity_store": true,
+    "cryptographic_webauthn_verifier": true,
+    "opaque_server_side_sessions": true,
+    "single_use_bootstrap_and_recovery": true,
+    "scoped_service_token_metadata": true,
+    "append_only_security_audit": true,
+    "private_single_host_topology": true,
+    "production_readiness_claimed": false
+  },
+  "webauthn": {
+    "library": "webauthn",
+    "library_version": "2.7.0",
+    "cbor2_compatibility_version": "5.7.1",
+    "algorithms": ["ES256", "EdDSA"],
+    "user_verification": "required",
+    "origin_match": "exact",
+    "rp_id_source": "canonical_origin",
+    "challenge_entropy_bits": 256,
+    "challenge_ttl_seconds": 300,
+    "challenge_single_use": true,
+    "private_key_persisted": false,
+    "default_unconfigured_behavior": "deny"
+  },
+  "bootstrap_and_recovery": {
+    "operator_command": "nexora-identity create-bootstrap-token",
+    "bootstrap_entropy_bits": 256,
+    "bootstrap_ttl_seconds": 600,
+    "bootstrap_single_use": true,
+    "disabled_after_first_passkey": true,
+    "recovery_code_count": 10,
+    "recovery_code_entropy_bits": 128,
+    "raw_recovery_codes_persisted": false,
+    "recovery_revokes_sessions_and_credentials": true,
+    "new_passkey_required_after_recovery": true
+  },
+  "sessions": {
+    "model": "opaque_server_side",
+    "raw_token_persisted": false,
+    "digest_algorithm": "sha256",
+    "cookie_name": "__Host-nexora_session",
+    "cookie_attributes": ["Secure", "HttpOnly", "SameSite=Strict", "Path=/"],
+    "idle_timeout_seconds": 1800,
+    "absolute_timeout_seconds": 43200,
+    "rotation_interval_seconds": 900,
+    "rotation_grace_seconds": 30,
+    "maximum_concurrent_sessions": 5,
+    "synchronizer_csrf": true,
+    "exact_origin_for_unsafe_requests": true
+  },
+  "service_authentication": {
+    "principal": "trd_bot_integration",
+    "credential_source": "mounted_secret_file",
+    "raw_token_persisted": false,
+    "maximum_age_days": 90,
+    "scopes": [
+      "source.snapshot.read",
+      "source.event.read",
+      "source.export.create",
+      "source.export.read",
+      "decision_review.write_paper_shadow"
+    ],
+    "live_order_scope": false,
+    "wallet_scope": false,
+    "exchange_credential_scope": false
+  },
+  "private_runtime": {
+    "profile": "private_single_host",
+    "only_exposed_port": 443,
+    "tls_minimum_version": "1.3",
+    "private_overlay_bind_required": true,
+    "database_host_port": false,
+    "worker_host_port": false,
+    "secret_injection": "read_only_mounted_files",
+    "base_loader_external_environment_allowlist": [
+      "NEXORA_DEV_DB_PASSWORD_FILE",
+      "NEXORA_MIGRATION_DATABASE_DSN_FILE"
+    ],
+    "schema_mutation_on_startup": false,
+    "public_internet_profile": false
+  },
+  "security_boundary": {
+    "password_login": false,
+    "self_registration": false,
+    "multi_user": false,
+    "browser_bearer_storage": false,
+    "plaintext_secret_database_storage": false,
+    "direct_trd_bot_database_access": false,
+    "live_order_capability": false,
+    "wallet_capability": false,
+    "autonomous_ai_execution": false
+  },
+  "quality_gates": {
+    "repository_contract": true,
+    "backend_format_lint_typecheck": true,
+    "postgresql_17_migration_cycle": true,
+    "identity_integration": true,
+    "compose_configuration_validation": true,
+    "security_regression": true
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-06-FREEZE",
+    "post_freeze_stage": "NEX-P1-ACCEPTANCE"
+  }
+}

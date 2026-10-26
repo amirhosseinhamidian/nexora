@@ -57,9 +57,17 @@ or live-order capability is registered. The accepted candidate is bound to
 successful durable-work, PostgreSQL, backend and regression CI evidence. The
 next allowed stage is `NEX-P1-06`.
 
-The repository now contains a runtime scaffold, not a complete application or a
-production deployment. Authentication, scheduled TRD Bot synchronization,
-portfolio-domain features, and private deployment remain deliberately deferred.
+`NEX-P1-06` is a candidate. It adds the single-owner passkey identity runtime,
+cryptographic WebAuthn verification restricted to ES256/EdDSA, single-use
+bootstrap and recovery, opaque server-side sessions, scoped service-token
+metadata, immutable security audit evidence, and a private single-host Compose
+topology that exposes only HTTPS 443. It is ready for candidate CI and then the
+dedicated `NEX-P1-06-FREEZE`; production readiness is not claimed before that
+acceptance evidence exists.
+
+The repository now contains the Phase 1 runtime foundation, not the complete
+portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
+features and final production acceptance remain deliberately deferred.
 
 ## Verify the scope contract
 
@@ -74,6 +82,7 @@ python3 scripts/verify_application_composition.py
 python3 scripts/verify_postgresql_schema.py
 python3 scripts/verify_trd_bot_adapter.py
 python3 scripts/verify_durable_jobs_outbox.py
+python3 scripts/verify_single_owner_identity_runtime.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -106,6 +115,8 @@ NEX_P1_04_FREEZE=PASS
 NEX_P1_04_PREREQUISITE=PASS
 NEX_P1_05_DURABLE_JOBS_OUTBOX=PASS
 NEX_P1_05_FREEZE=PASS
+NEX_P1_05_PREREQUISITE=PASS
+NEX_P1_06_SINGLE_OWNER_IDENTITY_RUNTIME=PASS
 ```
 
 ## Documents
@@ -120,6 +131,7 @@ NEX_P1_05_FREEZE=PASS
 - [`docs/v0.1/07-postgresql-schema-and-migrations.md`](docs/v0.1/07-postgresql-schema-and-migrations.md)
 - [`docs/v0.1/08-versioned-trd-bot-adapter.md`](docs/v0.1/08-versioned-trd-bot-adapter.md)
 - [`docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md`](docs/v0.1/09-durable-jobs-checkpoints-and-outbox.md)
+- [`docs/v0.1/10-single-owner-identity-session-private-runtime.md`](docs/v0.1/10-single-owner-identity-session-private-runtime.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -132,6 +144,7 @@ NEX_P1_05_FREEZE=PASS
 - [`contracts/nexora-v0.1-postgresql-schema.json`](contracts/nexora-v0.1-postgresql-schema.json)
 - [`contracts/nexora-v0.1-trd-bot-adapter.json`](contracts/nexora-v0.1-trd-bot-adapter.json)
 - [`contracts/nexora-v0.1-durable-jobs-outbox.json`](contracts/nexora-v0.1-durable-jobs-outbox.json)
+- [`contracts/nexora-v0.1-single-owner-identity-runtime.json`](contracts/nexora-v0.1-single-owner-identity-runtime.json)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
 - [`artifacts/p0-02/technical-baseline-freeze.json`](artifacts/p0-02/technical-baseline-freeze.json)

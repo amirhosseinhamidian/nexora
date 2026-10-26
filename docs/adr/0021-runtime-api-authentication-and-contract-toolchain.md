@@ -1,6 +1,6 @@
 # ADR 0021 — Runtime API, authentication lifecycle and contract toolchain
 
-Status: Candidate for NEX-P1-07
+Status: Frozen by NEX-P1-07
 
 ## Context
 

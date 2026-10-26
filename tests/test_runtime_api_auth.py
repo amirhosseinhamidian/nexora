@@ -16,6 +16,7 @@ SPEC.loader.exec_module(MODULE)
 class RuntimeApiAuthContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_phase_one_readiness_is_valid(self) -> None:
         MODULE.validate_frozen_phase_one_readiness()
@@ -25,6 +26,7 @@ class RuntimeApiAuthContractTests(unittest.TestCase):
         MODULE.validate_generated_contracts()
         MODULE.validate_openapi()
         MODULE.validate_files_and_documents()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(
@@ -78,6 +80,60 @@ class RuntimeApiAuthContractTests(unittest.TestCase):
         candidate["transition"]["next_allowed_stage"] = "NEX-P1-08"
         with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "next stage must be freeze"):
             MODULE.validate_contract(candidate)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["candidate_commit_message"] = "fix(nexora): wrong candidate"
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "commit message drift"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_requires_all_primary_jobs(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        del record["github_actions"]["jobs"]["postgresql_17"]
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "job inventory mismatch"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_rejects_failed_contract_drift_check(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["github_actions"]["jobs"]["runtime_contract"]["generated_contract_drift_check_passed"] = False
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "generated_contract_drift_check_passed"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_requires_every_regression_workflow(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        del record["regression_workflows"]["single_owner_identity_runtime"]
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "workflow inventory mismatch"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_rejects_regression_sha_drift(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "workflow head SHA drift"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        contract = copy.deepcopy(self.contract)
+        contract["runtime_api"]["maximum_request_body_bytes"] = 1
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "contract checksum mismatch"):
+            MODULE.validate_freeze_record(self.freeze_record, contract)
+
+    def test_freeze_record_cannot_claim_production_readiness(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "production_readiness_claimed"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_record_opens_only_p1_08(self) -> None:
+        record = copy.deepcopy(self.freeze_record)
+        record["next_allowed_stage"] = "NEX-P1-09"
+        with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "post-freeze stage drift"):
+            MODULE.validate_freeze_record(record, self.contract)
 
 
 if __name__ == "__main__":

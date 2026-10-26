@@ -9,9 +9,13 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-runtime-api-auth-contract.json"
+FREEZE_PATH = ROOT / "artifacts/p1-07/runtime-api-auth-freeze.json"
 EXPECTED_FREEZE_SHA = "57346f95e5fe79160767f49c67b83718ec8a3768"
 EXPECTED_FREEZE_CHECKSUM = "05794b71952903ed08ed1cb20cc88e3b7ca46630f06f2a77b3c86706d6983680"
 EXPECTED_RUNTIME_CHECKSUM = "4d2abb4eb6b51d847c5a6f16e56c98452719367079095199dca0d1e63e8c6ec5"
+CONTRACT_CHECKSUM = "1fae566ea55b14b577860b2785adf851e0c0b2ce3a94b3478ab66b68c1505b3c"
+CANDIDATE_SHA = "2a40a03e5a7995e6b845b3ce73e62646449da507"
+CANDIDATE_MESSAGE = "fix(nexora): repair P1-07 contract and PostgreSQL CI"
 EXPECTED_OPERATIONS = {
     "GET /health/live",
     "GET /version",
@@ -54,6 +58,38 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def _validate_workflow(
+    workflow: object,
+    *,
+    label: str,
+    run_id: int,
+    expected_jobs: dict[str, tuple[int, str]],
+) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"{label} run ID drift")
+    _require(
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"{label} run URL drift",
+    )
+    _require(workflow.get("head_sha") == CANDIDATE_SHA, f"{label} workflow head SHA drift")
+    _require(workflow.get("event") == "push", f"{label} workflow must be a push run")
+    _require(workflow.get("attempt") == 1, f"{label} workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), f"{label} jobs must be an object")
+    _require(set(jobs) == set(expected_jobs), f"{label} job inventory mismatch")
+    for job_name, (job_id, displayed_name) in expected_jobs.items():
+        job = jobs[job_name]
+        _require(isinstance(job, dict), f"{label}/{job_name} must be an object")
+        _require(job.get("job_id") == job_id, f"{label}/{job_name} job ID drift")
+        _require(job.get("name") == displayed_name, f"{label}/{job_name} name drift")
+        _require(job.get("conclusion") == "success", f"{label}/{job_name} did not succeed")
 
 
 def validate_frozen_phase_one_readiness() -> None:
@@ -201,6 +237,7 @@ def validate_openapi() -> None:
 def validate_files_and_documents() -> None:
     required = (
         "alembic/versions/20261026_0004_runtime_authentication_lifecycle.py",
+        "artifacts/p1-07/runtime-api-auth-freeze.json",
         "apps/server/src/nexora/runtime_contracts.py",
         "apps/server/src/nexora/generated/runtime_contract_manifest.py",
         "apps/server/tests/test_runtime_api.py",
@@ -222,8 +259,176 @@ def validate_files_and_documents() -> None:
     ):
         _require(marker in migration, f"migration marker missing: {marker}")
     document = (ROOT / "docs/v0.1/12-runtime-api-authentication-contract-toolchain.md").read_text(encoding="utf-8")
-    for marker in ("NEX-P1-07", "Candidate", "NEX-P1-GAP-001", "NEX-P1-GAP-003", "NEX-P1-07-FREEZE"):
+    for marker in (
+        "NEX-P1-07",
+        "Frozen",
+        "NEX-P1-GAP-001",
+        "NEX-P1-GAP-003",
+        CANDIDATE_SHA,
+        "40372395158",
+        "NEX-P1-08",
+    ):
         _require(marker in document, f"P1-07 document marker missing: {marker}")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-runtime-api-auth-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P1-07", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "freeze repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate commit message drift")
+    _require(
+        record.get("candidate_predecessor_sha") == "96dcabc3ea02acac4dc2f9f3bf8f80fa48302e17",
+        "candidate predecessor SHA drift",
+    )
+
+    primary = record.get("github_actions")
+    _validate_workflow(
+        primary,
+        label="runtime API authentication and contracts",
+        run_id=40372395158,
+        expected_jobs={
+            "cross_language_contract": (121746279114, "cross-language-contract"),
+            "runtime_contract": (121746279339, "runtime-contract"),
+            "backend": (121746279410, "backend"),
+            "postgresql_17": (121746279605, "postgresql-17"),
+        },
+    )
+    _require(primary.get("head_branch") == "feature/v0.1-foundation", "primary workflow branch drift")
+    required_markers = {
+        "cross_language_contract": ("locked_dependencies_installed", "typescript_contract_typecheck_passed"),
+        "runtime_contract": (
+            "readiness_freeze_prerequisite_passed",
+            "generated_contract_drift_check_passed",
+            "runtime_api_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "non_integration_tests_passed",
+        ),
+        "postgresql_17": (
+            "private_dsn_fixture_created",
+            "upgrade_head_passed",
+            "runtime_integration_tests_passed",
+            "downgrade_base_passed",
+            "rebuild_head_passed",
+            "migration_drift_check_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(primary["jobs"][job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    regression = record.get("regression_workflows")
+    _require(isinstance(regression, dict), "regression workflow evidence must be an object")
+    expected_regression = {
+        "contracts": (
+            40372394740,
+            {
+                "security_boundary": (121746277790, "security-boundary"),
+                "scope_contract": (121746278242, "scope-contract"),
+                "technical_baseline": (121746278324, "technical-baseline"),
+                "integration_contract": (121746278409, "integration-contract"),
+                "phase_zero_acceptance": (121746278453, "phase-zero-acceptance"),
+            },
+        ),
+        "application_composition": (
+            40372394809,
+            {
+                "composition_contract": (121746277614, "composition-contract"),
+                "backend": (121746278175, "backend"),
+            },
+        ),
+        "postgresql_schema": (
+            40372394759,
+            {
+                "backend": (121746278077, "backend"),
+                "postgresql_17": (121746278342, "postgresql-17"),
+                "database_contract": (121746278481, "database-contract"),
+            },
+        ),
+        "durable_jobs_outbox": (
+            40372394874,
+            {
+                "durable_contract": (121746278786, "durable-contract"),
+                "postgresql_17": (121746279159, "postgresql-17"),
+                "backend": (121746279364, "backend"),
+            },
+        ),
+        "runtime_foundation": (
+            40372394908,
+            {
+                "web": (121746278070, "web"),
+                "foundation_contract": (121746278552, "foundation-contract"),
+                "backend": (121746278594, "backend"),
+            },
+        ),
+        "trd_bot_adapter": (
+            40372394808,
+            {
+                "adapter_contract": (121746290287, "adapter-contract"),
+                "backend": (121746290785, "backend"),
+            },
+        ),
+        "phase_one_readiness": (
+            40372395066,
+            {
+                "readiness_contract": (121746279352, "readiness-contract"),
+                "web": (121746279764, "web"),
+                "backend": (121746279888, "backend"),
+            },
+        ),
+        "single_owner_identity_runtime": (
+            40372395325,
+            {
+                "private_topology": (121746280201, "private-topology"),
+                "backend": (121746280505, "backend"),
+                "identity_contract": (121746280593, "identity-contract"),
+                "postgresql_17": (121746280863, "postgresql-17"),
+            },
+        ),
+    }
+    _require(set(regression) == set(expected_regression), "regression workflow inventory mismatch")
+    for label, (run_id, jobs) in expected_regression.items():
+        _validate_workflow(regression[label], label=label, run_id=run_id, expected_jobs=jobs)
+
+    evidence = record.get("runtime_api_auth_contract")
+    _require(isinstance(evidence, dict), "runtime API contract evidence must be an object")
+    _require(evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(evidence.get("checksum") == CONTRACT_CHECKSUM, "recorded contract checksum drift")
+    _require(evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+    _require(evidence.get("generated_runtime_checksum") == EXPECTED_RUNTIME_CHECKSUM, "generated checksum drift")
+
+    prerequisite = record.get("phase_one_readiness_prerequisite")
+    _require(isinstance(prerequisite, dict), "readiness prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-ACCEPTANCE-FREEZE", "readiness decision drift")
+    _require(prerequisite.get("frozen") is True, "readiness prerequisite is not frozen")
+    readiness = _json(ROOT / "artifacts/p1-acceptance/phase-one-readiness-freeze.json")
+    _require(
+        prerequisite.get("freeze_record_checksum") == canonical_checksum(readiness) == EXPECTED_FREEZE_CHECKSUM,
+        "readiness freeze checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-26", "invalid freeze record date")
+    _require(record.get("frozen") is True, "P1-07 is not frozen")
+    _require(
+        record.get("closed_gaps") == ["NEX-P1-GAP-001", "NEX-P1-GAP-002", "NEX-P1-GAP-003"],
+        "frozen gap inventory drift",
+    )
+    for key in (
+        "production_readiness_claimed",
+        "public_internet_profile",
+        "live_execution_capability",
+        "exchange_credentials",
+        "wallet_capability",
+        "autonomous_ai_execution",
+    ):
+        _require(record.get(key) is False, f"freeze record cannot enable {key}")
+    _require(record.get("next_allowed_stage") == "NEX-P1-08", "post-freeze stage drift")
 
 
 def main() -> int:
@@ -233,11 +438,15 @@ def main() -> int:
     validate_generated_contracts()
     validate_openapi()
     validate_files_and_documents()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
+    print(f"candidate_commit_sha={freeze_record['candidate_commit_sha']}")
     print("NEX_P1_ACCEPTANCE_FREEZE_PREREQUISITE=PASS")
     print("NEX_P1_07_RUNTIME_API_AUTH=PASS")
+    print("NEX_P1_07_FREEZE=PASS")
     return 0
 
 

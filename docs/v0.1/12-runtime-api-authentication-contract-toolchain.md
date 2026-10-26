@@ -1,6 +1,6 @@
 # NEX-P1-07 — Runtime API, Authentication Lifecycle & Contract Toolchain
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 
 این مرحله سه Gap ثبت‌شده در Freeze رودمپ را می‌بندد:
 
@@ -38,5 +38,12 @@ Cookie همچنان `__Host-nexora_session` با `Secure`، `HttpOnly` و
 uv run python scripts/generate_runtime_contracts.py --check
 ```
 
-پس از سبز شدن candidate CI، فقط `NEX-P1-07-FREEZE` مجاز است و Freeze آن
-`NEX-P1-08` را باز می‌کند.
+## Freeze evidence
+
+Candidate نهایی `2a40a03e5a7995e6b845b3ce73e62646449da507` است. اجرای اصلی
+`40372395158` هر چهار job قرارداد cross-language، قرارداد runtime، backend و
+PostgreSQL 17 را سبز کرد و هشت workflow رگرسیون نیز روی همان SHA موفق شدند.
+رکورد immutable این پذیرش در
+`artifacts/p1-07/runtime-api-auth-freeze.json` قرار دارد.
+
+`NEX-P1-07` اکنون Frozen است و فقط `NEX-P1-08` را باز می‌کند.

@@ -74,12 +74,12 @@ groups blocking, and records an owned continuation from `NEX-P1-07` through
 `ab41a7dba49871fdce5cf0ad72fa0e06a6d927e7` and eight successful workflows.
 Its next allowed stage is `NEX-P1-07`; Phase 1 remains incomplete.
 
-`NEX-P1-07` is a candidate. It closes the runtime metadata/error/correlation,
+`NEX-P1-07` is frozen. It closes the runtime metadata/error/correlation,
 deterministic cross-language contract, and HTTP authentication-lifecycle gaps.
 It adds the versioned `/version` and `/v1/auth/*` API, durable five-minute recent
 reauthentication evidence, JSON Schema/OpenAPI/Python/TypeScript generation and
-drift checks. The next allowed action after green candidate CI is
-`NEX-P1-07-FREEZE`; the freeze then opens `NEX-P1-08`.
+drift checks. Candidate `2a40a03e5a7995e6b845b3ce73e62646449da507`
+is bound to nine successful workflows. The next allowed stage is `NEX-P1-08`.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
@@ -143,6 +143,7 @@ NEX_P1_ACCEPTANCE_FREEZE=PASS
 NEX_P1_ACCEPTANCE_FREEZE_PREREQUISITE=PASS
 NEX_P1_07_RUNTIME_CONTRACT_TOOLCHAIN=PASS
 NEX_P1_07_RUNTIME_API_AUTH=PASS
+NEX_P1_07_FREEZE=PASS
 ```
 
 ## Documents
@@ -189,3 +190,4 @@ NEX_P1_07_RUNTIME_API_AUTH=PASS
 - [`artifacts/p1-05/durable-jobs-outbox-freeze.json`](artifacts/p1-05/durable-jobs-outbox-freeze.json)
 - [`artifacts/p1-06/single-owner-identity-runtime-freeze.json`](artifacts/p1-06/single-owner-identity-runtime-freeze.json)
 - [`artifacts/p1-acceptance/phase-one-readiness-freeze.json`](artifacts/p1-acceptance/phase-one-readiness-freeze.json)
+- [`artifacts/p1-07/runtime-api-auth-freeze.json`](artifacts/p1-07/runtime-api-auth-freeze.json)

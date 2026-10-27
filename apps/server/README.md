@@ -11,6 +11,8 @@ logging, recursive secret redaction, route-template request metrics, worker and
 database-pool metrics, and dependency-aware readiness. Scheduled provider
 synchronization is registered in P1-09 through bounded event and snapshot jobs,
 immutable replay receipts and atomic evidence/checkpoint/outbox completion.
+P1-10 adds owner-scoped immutable artifact storage, deterministic verified
+export bundles, quota enforcement, retention dry-runs and reconciliation.
 Portfolio projections and production readiness remain intentionally deferred.
 
 ```bash
@@ -28,6 +30,11 @@ profile combinations fail closed; dotenv files are never loaded automatically.
 private production profile. Production writes UTF-8 JSON Lines to an absolute,
 non-symlink path with 10 MiB size rotation and 30 backups. Request query/body,
 raw exception messages and authentication material are never valid log fields.
+
+`NEXORA_ARTIFACT_ROOT` is required by private runtime composition and must be
+an absolute path on the dedicated encrypted artifact volume. The adapter does
+not serve that directory directly: content remains owner-scoped, manifest-backed
+and checksum-verified. An authenticated download route is deferred to P1-11.
 
 Database migrations use a separate operator-only configuration path. Set
 `NEXORA_MIGRATION_DATABASE_DSN_FILE` to an absolute private file containing one

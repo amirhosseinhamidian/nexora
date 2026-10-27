@@ -17,7 +17,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from nexora import __version__
 from nexora.adapters.postgresql import RUNTIME_DATABASE_DSN_FILE_ENV, PostgreSQLIdentityRepository, probe_database
-from nexora.composition import ApplicationContainer, compose_application, compose_private_application
+from nexora.composition import (
+    PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES,
+    ApplicationContainer,
+    compose_application,
+    compose_private_application,
+)
 from nexora.config import RuntimeSettings, load_settings
 from nexora.identity import (
     SESSION_COOKIE_NAME,
@@ -610,7 +615,7 @@ def create_app(
     return application
 
 
-app = create_app()
+app = create_app(load_settings(os.environ, permitted_external_variables=PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES))
 
 
 def run() -> None:

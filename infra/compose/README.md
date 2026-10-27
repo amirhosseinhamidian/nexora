@@ -23,3 +23,9 @@ API and Worker write structured JSON logs to the private `nexora-logs` volume.
 The volume is not exposed by ingress. Application handlers enforce bounded
 rotation; 30-day retention and archival execution remain an operations task for
 NEX-P1-12.
+
+The API mounts the dedicated `nexora-artifacts` volume at
+`/var/lib/nexora/artifacts`. Neither ingress nor Web mounts this volume, and it
+is not a public static directory. P1-10 enforces immutable manifests, checksums,
+quota and retention dry-runs inside the adapter; encrypted backup and retention
+execution remain NEX-P1-12 responsibilities.

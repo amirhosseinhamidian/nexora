@@ -1,0 +1,76 @@
+name: Artifact and export storage
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  storage-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Verify frozen P1-09 prerequisite
+        run: uv run python scripts/verify_trd_bot_sync_runtime.py
+      - name: Verify P1-10 artifact storage contract
+        run: uv run python scripts/verify_artifact_export_storage.py
+      - name: Run repository contract tests
+        run: uv run python -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and contract format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/verify_artifact_export_storage.py tests/test_artifact_export_storage.py
+      - name: Lint backend and contracts
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/verify_artifact_export_storage.py tests/test_artifact_export_storage.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+
+  storage-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Verify atomic storage and deterministic export bundle
+        run: uv run pytest apps/server/tests/test_artifact_storage.py -q
+      - name: Verify private topology
+        run: uv run python scripts/verify_artifact_export_storage.py

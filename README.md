@@ -97,6 +97,13 @@ checkpoints, outbox records and continuation jobs. Candidate
 workflow and ten regression workflows on the same SHA. The next allowed stage
 is `NEX-P1-10`, which owns artifact and export storage.
 
+`NEX-P1-10` is implemented as a freeze candidate. It adds the owner-scoped
+versioned local-filesystem adapter, immutable SHA-256 manifests, atomic
+directory publication, deterministic complete export bundles, bounded quota
+enforcement, retention dry-runs and storage reconciliation. No public download
+route or cloud-storage credential is introduced. The next allowed action is
+`NEX-P1-10-FREEZE`; the authenticated Web shell remains `NEX-P1-11`.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.
@@ -120,6 +127,7 @@ uv run python scripts/generate_runtime_contracts.py --check
 uv run python scripts/verify_runtime_api_auth.py
 uv run python scripts/verify_audit_observability.py
 uv run python scripts/verify_trd_bot_sync_runtime.py
+uv run python scripts/verify_artifact_export_storage.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -168,6 +176,8 @@ NEX_P1_08_FREEZE=PASS
 NEX_P1_08_PREREQUISITE=PASS
 NEX_P1_09_TRD_BOT_SYNC_RUNTIME=PASS
 NEX_P1_09_FREEZE=PASS
+NEX_P1_09_PREREQUISITE=PASS
+NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS
 ```
 
 ## Documents
@@ -187,6 +197,7 @@ NEX_P1_09_FREEZE=PASS
 - [`docs/v0.1/12-runtime-api-authentication-contract-toolchain.md`](docs/v0.1/12-runtime-api-authentication-contract-toolchain.md)
 - [`docs/v0.1/13-audit-and-observability-foundation.md`](docs/v0.1/13-audit-and-observability-foundation.md)
 - [`docs/v0.1/14-trd-bot-sync-runtime.md`](docs/v0.1/14-trd-bot-sync-runtime.md)
+- [`docs/v0.1/15-artifact-and-export-storage.md`](docs/v0.1/15-artifact-and-export-storage.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -204,6 +215,7 @@ NEX_P1_09_FREEZE=PASS
 - [`contracts/nexora-v0.1-runtime-api-auth-contract.json`](contracts/nexora-v0.1-runtime-api-auth-contract.json)
 - [`contracts/nexora-v0.1-audit-observability.json`](contracts/nexora-v0.1-audit-observability.json)
 - [`contracts/nexora-v0.1-trd-bot-sync-runtime.json`](contracts/nexora-v0.1-trd-bot-sync-runtime.json)
+- [`contracts/nexora-v0.1-artifact-export-storage.json`](contracts/nexora-v0.1-artifact-export-storage.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

@@ -42,6 +42,7 @@ services:
       NEXORA_AUTH_PEPPER_FILE: /run/secrets/auth-pepper
       NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
       NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
+      NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts
     volumes:
       - ${NEXORA_DATABASE_DSN_FILE:?database DSN required}:/run/secrets/database.dsn:ro
       - ${NEXORA_CANONICAL_ORIGIN_FILE:?canonical origin required}:/run/secrets/canonical-origin:ro
@@ -49,6 +50,7 @@ services:
       - ${NEXORA_TRD_BOT_BASE_URL_FILE:?TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
       - ${NEXORA_TRD_BOT_TOKEN_FILE:?TRD Bot token required}:/run/secrets/trd-bot-token:ro
       - nexora-logs:/var/log/nexora
+      - nexora-artifacts:/var/lib/nexora/artifacts
     networks: [ingress, data]
     expose: ["8000"]
     healthcheck:
@@ -98,3 +100,4 @@ networks:
 volumes:
   postgresql-data:
   nexora-logs:
+  nexora-artifacts:

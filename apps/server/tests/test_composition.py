@@ -28,6 +28,7 @@ def test_default_composition_contains_no_side_effecting_runtime_adapters() -> No
     assert container.webauthn_verifier is None
     assert container.owner_identity_service is None
     assert container.trd_bot_client is None
+    assert container.artifact_storage is None
     assert container.observability.settings.log_file is None
 
 
@@ -47,6 +48,7 @@ def test_private_composition_registers_identity_runtime_explicitly(tmp_path: Pat
         "NEXORA_AUTH_PEPPER_FILE": _private_file(tmp_path / "pepper", "p" * 43),
         "NEXORA_TRD_BOT_BASE_URL_FILE": _private_file(tmp_path / "trd-origin", "http://127.0.0.1:8001"),
         "NEXORA_TRD_BOT_TOKEN_FILE": _private_file(tmp_path / "trd-token", "t" * 43),
+        "NEXORA_ARTIFACT_ROOT": str(tmp_path / "artifacts"),
     }
     container = compose_private_application(environ=environ)
     try:
@@ -58,6 +60,7 @@ def test_private_composition_registers_identity_runtime_explicitly(tmp_path: Pat
         assert container.webauthn_verifier is not None
         assert container.owner_identity_service is not None
         assert container.trd_bot_client is not None
+        assert container.artifact_storage is not None
     finally:
         if container.trd_bot_client is not None:
             container.trd_bot_client.close()

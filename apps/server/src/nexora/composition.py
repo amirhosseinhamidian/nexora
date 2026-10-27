@@ -21,6 +21,12 @@ from nexora.adapters.postgresql.config import (
 )
 from nexora.adapters.trd_bot import TrdBotClient, load_trd_bot_settings
 from nexora.adapters.trd_bot.config import TRD_BOT_BASE_URL_FILE_ENV, TRD_BOT_TOKEN_FILE_ENV
+from nexora.artifact_storage import (
+    ARTIFACT_ROOT_ENV,
+    ArtifactStorage,
+    LocalFilesystemArtifactStorage,
+    load_artifact_storage_settings,
+)
 from nexora.config import CONFIG_SCHEMA_VERSION, RuntimeSettings, load_settings
 from nexora.identity import StandardWebAuthnVerifier, WebAuthnCeremonyVerifier
 from nexora.identity_service import OwnerIdentityService
@@ -70,6 +76,7 @@ class ApplicationContainer:
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
     trd_bot_client: TrdBotClient | None = None
+    artifact_storage: ArtifactStorage | None = None
 
 
 def compose_application(
@@ -100,6 +107,7 @@ PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES: Final = frozenset(
         TRD_BOT_TOKEN_FILE_ENV,
         CANONICAL_ORIGIN_FILE_ENV,
         AUTH_PEPPER_FILE_ENV,
+        ARTIFACT_ROOT_ENV,
         LOG_FILE_ENV,
     }
 )
@@ -114,6 +122,7 @@ def compose_private_application(
     database_settings = load_database_settings(environ, variable=RUNTIME_DATABASE_DSN_FILE_ENV)
     security = load_security_settings(environ)
     trd_bot_settings = load_trd_bot_settings(environ)
+    artifact_storage = LocalFilesystemArtifactStorage(load_artifact_storage_settings(environ))
     observability_settings = load_observability_settings(
         environ,
         production=settings.environment.value == "production",
@@ -140,4 +149,5 @@ def compose_private_application(
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),
         trd_bot_client=TrdBotClient(trd_bot_settings),
+        artifact_storage=artifact_storage,
     )

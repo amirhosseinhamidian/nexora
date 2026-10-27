@@ -1,0 +1,129 @@
+{
+  "schema_version": "nexora-artifact-export-storage-v1",
+  "decision_id": "NEX-P1-10",
+  "decision_date": "2026-10-27",
+  "status": "candidate",
+  "p1_09_prerequisite": {
+    "decision_id": "NEX-P1-09",
+    "frozen": true,
+    "freeze_commit_sha": "e3d724074b8ac276f68ebf5d3e100c86a711f672",
+    "freeze_record_path": "artifacts/p1-09/trd-bot-sync-runtime-freeze.json",
+    "freeze_record_checksum": "5b29d6bc22652acc2576f9027a8eb362c41303f8ecfffaf692ba1bcccdcaec9d"
+  },
+  "closes_gaps": ["NEX-P1-GAP-006"],
+  "adapter": {
+    "name": "versioned_local_filesystem_adapter",
+    "root_environment_variable": "NEXORA_ARTIFACT_ROOT",
+    "root_must_be_absolute": true,
+    "root_must_not_be_symbolic_link": true,
+    "path_strategy": "owner_namespace_type_artifact_id_version",
+    "namespaces": ["source", "export", "backup"],
+    "owner_scoped": true,
+    "published_content_mode": "0440",
+    "published_directory_mode": "0550",
+    "public_network_access": false,
+    "s3_compatible_adapter_implemented": false
+  },
+  "publication": {
+    "atomic_strategy": "same_parent_stage_write_fsync_directory_rename_fsync_parent",
+    "manifest_schema": "nexora-artifact-manifest-v1",
+    "content_checksum": "sha256",
+    "manifest_canonical_json": true,
+    "content_size_recorded": true,
+    "media_type_recorded": true,
+    "content_schema_version_recorded": true,
+    "immutable_after_publish": true,
+    "identical_retry_idempotent": true,
+    "conflicting_retry_rejected": true,
+    "read_verifies_identity_size_and_checksum": true,
+    "partial_publish_visible": false
+  },
+  "export_bundle": {
+    "source_manifest_schema": "nexora-export-manifest-v1",
+    "bundle_schema": "nexora-export-bundle-v1",
+    "bundle_media_type": "application/zip",
+    "supported_embedded_formats": ["json", "jsonl", "csv", "parquet", "zip_bundle"],
+    "profiles": ["private", "ai_safe"],
+    "deterministic_entry_order": true,
+    "deterministic_entry_metadata": true,
+    "exact_file_inventory_required": true,
+    "per_file_size_verified": true,
+    "per_file_checksum_verified": true,
+    "partial_export_accepted": false,
+    "unsafe_relative_paths_accepted": false
+  },
+  "capacity": {
+    "soft_quota_gib": 100,
+    "hard_quota_gib": 160,
+    "minimum_free_storage_percent": 20,
+    "alert_thresholds_percent": [70, 85, 95],
+    "final_threshold_action": "write_protect_noncritical_artifacts",
+    "hard_quota_fails_closed_for_all_writes": true,
+    "free_space_reserve_fails_closed_for_all_writes": true,
+    "critical_retention_classes": ["immutable_source_evidence", "financial_record", "backup"]
+  },
+  "retention": {
+    "dry_run_only_in_p1_10": true,
+    "unpinned_export_days": 30,
+    "immutable_source_evidence_auto_delete": false,
+    "financial_record_auto_delete": false,
+    "pinned_export_auto_delete": false,
+    "backup_deletion_owned_by": "NEX-P1-12",
+    "dry_run_idempotent": true
+  },
+  "reconciliation": {
+    "manifest_inventory": true,
+    "content_integrity_verification": true,
+    "orphan_content_detection": true,
+    "abandoned_staging_detection": true,
+    "automatic_evidence_deletion": false
+  },
+  "runtime": {
+    "private_compose_volume": "nexora-artifacts",
+    "dedicated_runtime_mount": "/var/lib/nexora/artifacts",
+    "public_static_mount": false,
+    "api_container_registration": true,
+    "unauthenticated_download_route": false,
+    "authenticated_download_route_owned_by": "NEX-P1-11",
+    "local_compose_port_is_infrastructure_only": true
+  },
+  "security_boundary": {
+    "public_artifact_bucket": false,
+    "browser_direct_filesystem_access": false,
+    "direct_trd_bot_database_access": false,
+    "cloud_storage_credentials": false,
+    "automatic_immutable_evidence_deletion": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_capability": false,
+    "autonomous_ai_execution": false
+  },
+  "quality_gates": {
+    "contract": [
+      "frozen_p1_09_prerequisite",
+      "artifact_storage_verifier",
+      "repository_contract_tests"
+    ],
+    "backend": [
+      "locked_dependencies",
+      "ruff_format_check",
+      "ruff_check",
+      "mypy_strict",
+      "pytest_without_integration"
+    ],
+    "storage_runtime": [
+      "atomicity_and_idempotency",
+      "integrity_and_path_traversal",
+      "quota_and_free_space",
+      "retention_dry_run",
+      "reconciliation",
+      "deterministic_export_bundle",
+      "private_topology"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-10-FREEZE",
+    "post_freeze_stage": "NEX-P1-11"
+  }
+}

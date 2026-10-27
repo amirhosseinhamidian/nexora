@@ -22,7 +22,7 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await page.goto("/fa");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("فضای کاری مالی");
-  await expect(page.getByText("نشست مالک فعال است")).toBeVisible();
+  await expect(page.locator(".ready-badge")).toHaveText("نشست مالک فعال است");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("navigation")).toBeVisible();

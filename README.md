@@ -89,11 +89,13 @@ remain disabled. Candidate `8aaa4b1fd8a164e325bdc7531aecf72e790df1f3`
 is bound to the successful primary workflow and nine regression workflows on
 the same SHA. The next allowed stage is `NEX-P1-09`.
 
-`NEX-P1-09` is implemented as a freeze candidate. It registers the durable TRD
+`NEX-P1-09` is frozen. It registers the durable TRD
 Bot event and snapshot handlers, persists immutable owner-scoped sync receipts,
 quarantines unknown payload schemas, and atomically advances evidence,
-checkpoints, outbox records and continuation jobs. The next allowed action is
-`NEX-P1-09-FREEZE`; artifact and export storage remains `NEX-P1-10`.
+checkpoints, outbox records and continuation jobs. Candidate
+`53588b3c53a8244f59f1798a06efbe084e7516d5` is bound to the successful primary
+workflow and ten regression workflows on the same SHA. The next allowed stage
+is `NEX-P1-10`, which owns artifact and export storage.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
@@ -165,6 +167,7 @@ NEX_P1_08_AUDIT_OBSERVABILITY=PASS
 NEX_P1_08_FREEZE=PASS
 NEX_P1_08_PREREQUISITE=PASS
 NEX_P1_09_TRD_BOT_SYNC_RUNTIME=PASS
+NEX_P1_09_FREEZE=PASS
 ```
 
 ## Documents
@@ -217,3 +220,4 @@ NEX_P1_09_TRD_BOT_SYNC_RUNTIME=PASS
 - [`artifacts/p1-acceptance/phase-one-readiness-freeze.json`](artifacts/p1-acceptance/phase-one-readiness-freeze.json)
 - [`artifacts/p1-07/runtime-api-auth-freeze.json`](artifacts/p1-07/runtime-api-auth-freeze.json)
 - [`artifacts/p1-08/audit-observability-freeze.json`](artifacts/p1-08/audit-observability-freeze.json)
+- [`artifacts/p1-09/trd-bot-sync-runtime-freeze.json`](artifacts/p1-09/trd-bot-sync-runtime-freeze.json)

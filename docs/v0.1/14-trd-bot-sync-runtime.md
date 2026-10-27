@@ -45,5 +45,14 @@ negotiation, schema validation, lease ownership or checkpoint version changes.
 - portfolio application pages and analytics (Phase 2);
 - live trading, exchange credentials, wallets and autonomous AI execution.
 
-The only allowed next step after a green candidate is `NEX-P1-09-FREEZE`; after
-that freeze, work may move to `NEX-P1-10`.
+## Freeze evidence
+
+Candidate `53588b3c53a8244f59f1798a06efbe084e7516d5` with commit message
+`feat(nexora): implement P1-09 TRD Bot sync runtime` passed the primary
+[TRD Bot sync runtime workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/40464364305)
+and all ten regression workflows on the same SHA. The evidence records the
+contract, backend, PostgreSQL 17 atomicity, migration-cycle and drift gates.
+
+`NEX-P1-09` is therefore frozen. The next allowed stage is `NEX-P1-10`, which
+owns artifact and export storage; this freeze does not claim production
+readiness, external-provider smoke coverage or any live-trading capability.

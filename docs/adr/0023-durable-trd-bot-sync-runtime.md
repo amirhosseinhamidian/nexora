@@ -1,6 +1,6 @@
 # ADR 0023 — Durable TRD Bot sync runtime
 
-Status: Candidate for NEX-P1-09
+Status: Frozen by NEX-P1-09
 Date: 2026-10-27
 
 ## Decision

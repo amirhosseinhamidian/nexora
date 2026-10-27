@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -9,7 +10,15 @@ from uuid import UUID
 import pytest
 from httpx import ASGITransport, AsyncClient
 from nexora.api import CORRELATION_HEADER, CSRF_HEADER, create_app
-from nexora.composition import compose_application
+from nexora.artifact_storage import (
+    ArtifactKey,
+    ArtifactManifest,
+    ArtifactNamespace,
+    ArtifactNotFound,
+    RetentionClass,
+    StoredArtifact,
+)
+from nexora.composition import ApplicationContainer, compose_application
 from nexora.config import load_settings
 from nexora.identity import AuthenticatedSession, IssuedSession, VerifiedCredential
 from nexora.security_config import SecuritySettings
@@ -36,7 +45,7 @@ def _security() -> SecuritySettings:
     )
 
 
-def _container() -> tuple[object, Mock, Mock]:
+def _container() -> tuple[ApplicationContainer, Mock, Mock]:
     repository = Mock()
     service = Mock()
     base = compose_application(load_settings({}))
@@ -78,7 +87,7 @@ async def test_version_and_error_envelope_carry_the_same_correlation_id() -> Non
 @pytest.mark.anyio
 async def test_invalid_correlation_and_origin_fail_closed_without_reflecting_input() -> None:
     container, _, _ = _container()
-    application = create_app(container=container)  # type: ignore[arg-type]
+    application = create_app(container=container)
     async with AsyncClient(transport=ASGITransport(app=application), base_url=ORIGIN) as client:
         malformed = await client.get("/version", headers={CORRELATION_HEADER: "not-a-uuid"})
         denied = await client.post(
@@ -128,7 +137,7 @@ async def test_authentication_session_rotation_and_logout_use_host_cookie_and_cs
     service.complete_authentication.return_value = issued
     repository.authenticate_session.return_value = authenticated
     repository.rotate_session.return_value = issued
-    application = create_app(container=container)  # type: ignore[arg-type]
+    application = create_app(container=container)
     common_headers = {"origin": ORIGIN, "content-type": "application/json"}
 
     async with AsyncClient(transport=ASGITransport(app=application), base_url=ORIGIN) as client:
@@ -157,10 +166,12 @@ async def test_authentication_session_rotation_and_logout_use_host_cookie_and_cs
     assert options.status_code == 200
     assert options.json()["allow_credentials"] == [{"credential_id": "credential-id-1234", "transports": ["internal"]}]
     assert completed.status_code == 200
-    set_cookie = completed.headers["set-cookie"]
-    assert "__Host-nexora_session=" in set_cookie
-    assert "Secure" in set_cookie and "HttpOnly" in set_cookie and "SameSite=strict" in set_cookie
-    assert "Domain=" not in set_cookie
+    set_cookies = completed.headers.get_list("set-cookie")
+    session_cookie = next(cookie for cookie in set_cookies if cookie.startswith("__Host-nexora_session="))
+    csrf_cookie = next(cookie for cookie in set_cookies if cookie.startswith("__Host-nexora_csrf="))
+    assert "Secure" in session_cookie and "HttpOnly" in session_cookie and "SameSite=strict" in session_cookie
+    assert "Secure" in csrf_cookie and "HttpOnly" not in csrf_cookie and "SameSite=strict" in csrf_cookie
+    assert all("Domain=" not in cookie for cookie in set_cookies)
     assert completed.json()["csrf_token"] == issued.csrf_token
     assert session.json()["recently_reauthenticated"] is True
     assert rotated.status_code == 200
@@ -178,7 +189,7 @@ async def test_authenticated_mutation_requires_csrf_and_logout_all_requires_rece
         recently_reauthenticated=True,
     )
     repository.authenticate_session.return_value = session
-    application = create_app(container=container)  # type: ignore[arg-type]
+    application = create_app(container=container)
     headers = {"origin": ORIGIN, "content-type": "application/json"}
 
     async with AsyncClient(transport=ASGITransport(app=application), base_url=ORIGIN) as client:
@@ -196,3 +207,73 @@ async def test_authenticated_mutation_requires_csrf_and_logout_all_requires_rece
     repository.require_recent_reauthentication.assert_called_once_with(session_id=SESSION_ID)
     repository.revoke_all_sessions.assert_called_once_with(owner_id=OWNER_ID)
     service.begin_registration.assert_not_called()
+
+
+@pytest.mark.anyio
+async def test_authenticated_export_download_is_owner_scoped_and_integrity_labelled() -> None:
+    container, repository, _ = _container()
+    session = AuthenticatedSession(
+        session_id=SESSION_ID,
+        owner_id=OWNER_ID,
+        rotation_required=False,
+        recently_reauthenticated=True,
+    )
+    repository.authenticate_session.return_value = session
+    content = b"deterministic-export"
+    key = ArtifactKey(
+        owner_id=OWNER_ID,
+        namespace=ArtifactNamespace.EXPORT,
+        artifact_type="portfolio-export",
+        artifact_id="export-01",
+        version="v1",
+    )
+    manifest = ArtifactManifest(
+        key=key,
+        file_name='portfolio export".zip',
+        media_type="application/zip",
+        content_schema_version="nexora-export-bundle-v1",
+        size_bytes=len(content),
+        sha256=hashlib.sha256(content).hexdigest(),
+        retention_class=RetentionClass.PINNED_EXPORT,
+        published_at=datetime(2026, 10, 27, tzinfo=UTC),
+    )
+    storage = Mock()
+    storage.read.return_value = StoredArtifact(manifest=manifest, content=content)
+    application = create_app(container=replace(container, artifact_storage=storage))
+
+    async with AsyncClient(transport=ASGITransport(app=application), base_url=ORIGIN) as client:
+        client.cookies.set("__Host-nexora_session", "s" * 43, domain="nexora.private", path="/")
+        response = await client.get("/v1/exports/portfolio-export/export-01/versions/v1/download")
+
+    assert response.status_code == 200
+    assert response.content == content
+    assert response.headers["content-type"] == "application/zip"
+    assert response.headers["content-length"] == str(len(content))
+    assert response.headers["x-artifact-sha256"] == manifest.sha256
+    assert response.headers["content-disposition"].startswith('attachment; filename="portfolio_export_.zip"')
+    assert "filename*=UTF-8''portfolio%20export%22.zip" in response.headers["content-disposition"]
+    storage.read.assert_called_once_with(key)
+
+
+@pytest.mark.anyio
+async def test_export_download_requires_session_and_hides_missing_artifact() -> None:
+    container, repository, _ = _container()
+    repository.authenticate_session.return_value = AuthenticatedSession(
+        session_id=SESSION_ID,
+        owner_id=OWNER_ID,
+        rotation_required=False,
+        recently_reauthenticated=True,
+    )
+    storage = Mock()
+    storage.read.side_effect = ArtifactNotFound("not found")
+    application = create_app(container=replace(container, artifact_storage=storage))
+
+    async with AsyncClient(transport=ASGITransport(app=application), base_url=ORIGIN) as client:
+        denied = await client.get("/v1/exports/portfolio-export/export-01/versions/v1/download")
+        client.cookies.set("__Host-nexora_session", "s" * 43, domain="nexora.private", path="/")
+        missing = await client.get("/v1/exports/portfolio-export/export-01/versions/v1/download")
+
+    assert denied.status_code == 401
+    assert denied.json()["error"]["code"] == "AUTHENTICATION_DENIED"
+    assert missing.status_code == 404
+    assert missing.json()["error"] == {"code": "ARTIFACT_NOT_FOUND", "message": "artifact is unavailable"}

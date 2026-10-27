@@ -11,7 +11,7 @@
     "settings": "تنظیمات"
   },
   "header": {
-    "environment": "محیط زیرساخت اولیه",
+    "environment": "فضای کاری خصوصی",
     "mode": "حالت پژوهش · PAPER / SHADOW",
     "language": "زبان",
     "theme": "پوسته",
@@ -19,30 +19,60 @@
     "dark": "تیره",
     "system": "سیستم"
   },
-  "page": {
-    "eyebrow": "NEX-P1-01",
-    "title": "زیرساخت اجرا و طراحی",
-    "description": "پایه امن و دوزبانه برای هوشمندی پورتفولیو، شواهد و جریان‌های تصمیم‌گیری آینده.",
-    "status": "وضعیت راه‌اندازی",
-    "ready": "زیرساخت آماده است",
-    "cards": {
-      "webTitle": "اجرای وب",
-      "webValue": "Next.js 16",
-      "webDetail": "React 19 · TypeScript سخت‌گیرانه",
-      "apiTitle": "اجرای سرور",
-      "apiValue": "FastAPI",
-      "apiDetail": "Python 3.13 · مرز سلامت سرویس",
-      "designTitle": "سیستم طراحی",
-      "designValue": "روشن + تیره",
-      "designDetail": "انگلیسی LTR · فارسی RTL"
-    },
-    "boundaryTitle": "مرزهای زیرساخت",
-    "boundaries": {
-      "runtime": "قفل قطعی وابستگی‌ها",
-      "database": "مالکیت مستقل داده‌های Nexora",
-      "integration": "فقط قراردادهای نسخه‌دار TRD Bot",
-      "security": "بدون اجرای زنده یا اعتبارنامه صرافی"
-    },
-    "next": "مرحله بعد: ساختار برنامه و تنظیمات type-safe"
+  "auth": {
+    "eyebrow": "دسترسی خصوصی تک‌مالک",
+    "loginTitle": "ورود با Passkey",
+    "loginDescription": "Nexora فقط از Passkey متصل به دستگاه استفاده می‌کند؛ رمز عبور یا اعتبارنامه صرافی پذیرفته نمی‌شود.",
+    "loginAction": "ورود امن با Passkey",
+    "bootstrapTitle": "راه‌اندازی امن مالک",
+    "bootstrapDescription": "توکن یک‌بارمصرف ساخته‌شده در محیط محلی را وارد و اولین Passkey را ثبت کنید.",
+    "bootstrapToken": "توکن یک‌بارمصرف راه‌اندازی",
+    "bootstrapAction": "ثبت Passkey مالک",
+    "bootstrapLink": "راه‌اندازی برای اولین‌بار",
+    "loginLink": "بازگشت به ورود",
+    "working": "در انتظار تأیید امن دستگاه…",
+    "recoveryTitle": "کدهای بازیابی را همین حالا ذخیره کنید",
+    "recoveryDescription": "این کدهای یک‌بارمصرف فقط یک‌بار نمایش داده می‌شوند. پیش از ادامه آن‌ها را خارج از مرورگر نگهداری کنید.",
+    "recoverySaved": "کدهای بازیابی را ذخیره کردم",
+    "unavailable": "Passkey به مرورگر پشتیبانی‌شده و مبدأ خصوصی امن نیاز دارد.",
+    "denied": "درخواست احراز هویت امن تکمیل نشد.",
+    "failed": "احراز هویت تکمیل نشد و هیچ اعتبارنامه‌ای در مرورگر ذخیره نشد."
+  },
+  "shell": {
+    "eyebrow": "NEX-P1-11",
+    "title": "فضای کاری مالی خصوصی",
+    "description": "دسترسی احراز‌شده به سلامت سرویس، خروجی‌های امن و فضای کاری آینده پورتفولیو.",
+    "authenticated": "نشست مالک فعال است",
+    "owner": "مالک",
+    "logout": "خروج امن",
+    "serviceStatus": "وضعیت سرویس‌ها",
+    "api": "API",
+    "identity": "هویت",
+    "artifacts": "ذخیره‌سازی فایل",
+    "ready": "آماده",
+    "limited": "در دسترس نیست",
+    "phaseTwo": "از فاز دوم فعال می‌شود",
+    "emptyTitle": "فضای پورتفولیو عمداً خالی است",
+    "emptyDescription": "پورتفولیو، دارایی‌ها، تراکنش‌ها و تحلیل‌ها از فاز دوم آغاز می‌شوند. این Shell فعلاً فقط دسترسی امن و وضعیت Runtime را اثبات می‌کند.",
+    "securityTitle": "مرز امنیتی فعلی",
+    "securityItems": {
+      "private": "استقرار خصوصی تک‌مالک",
+      "passkey": "Passkey و نشست سمت سرور",
+      "paper": "فقط پژوهش، Paper و Shadow",
+      "forbidden": "بدون معامله زنده، کیف پول یا اعتبارنامه صرافی"
+    }
+  },
+  "states": {
+    "loadingTitle": "بازیابی نشست امن",
+    "loadingDescription": "Runtime خصوصی بدون نمایش اطلاعات نشست بررسی می‌شود.",
+    "offlineTitle": "Nexora آفلاین است",
+    "offlineDescription": "Shell نتوانست به API خصوصی متصل شود و هیچ داده‌ای تغییر نکرد.",
+    "retry": "تلاش دوباره",
+    "expiredTitle": "نشست منقضی شده است",
+    "expiredDescription": "نشست سمت سرور دیگر معتبر نیست. دوباره با Passkey وارد شوید.",
+    "signIn": "رفتن به صفحه ورود",
+    "errorTitle": "فضای کاری بارگذاری نشد",
+    "errorDescription": "یک خطای محدود Runtime رخ داد. برای تلاش امن دوباره صفحه را بارگذاری کنید.",
+    "reload": "بارگذاری دوباره"
   }
 }

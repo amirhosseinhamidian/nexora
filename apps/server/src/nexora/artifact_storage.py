@@ -46,6 +46,10 @@ class ArtifactIntegrityError(ArtifactStorageError):
     pass
 
 
+class ArtifactNotFound(ArtifactStorageError):
+    pass
+
+
 class ArtifactCapacityExceeded(ArtifactStorageError):
     pass
 
@@ -605,6 +609,8 @@ class LocalFilesystemArtifactStorage:
         directory = self._path(key)
         try:
             status = directory.lstat()
+        except FileNotFoundError as error:
+            raise ArtifactNotFound("artifact version is unavailable") from error
         except OSError as error:
             raise ArtifactIntegrityError("artifact version is unavailable") from error
         if stat.S_ISLNK(status.st_mode) or not stat.S_ISDIR(status.st_mode):

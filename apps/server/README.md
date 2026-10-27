@@ -13,6 +13,9 @@ synchronization is registered in P1-09 through bounded event and snapshot jobs,
 immutable replay receipts and atomic evidence/checkpoint/outbox completion.
 P1-10 adds owner-scoped immutable artifact storage, deterministic verified
 export bundles, quota enforcement, retention dry-runs and reconciliation.
+P1-11 adds an authenticated, owner-scoped download route fixed to the `export`
+namespace; it verifies immutable artifact identity and integrity before bytes
+leave the API and never serves the storage root as static content.
 Portfolio projections and production readiness remain intentionally deferred.
 
 ```bash
@@ -34,7 +37,8 @@ raw exception messages and authentication material are never valid log fields.
 `NEXORA_ARTIFACT_ROOT` is required by private runtime composition and must be
 an absolute path on the dedicated encrypted artifact volume. The adapter does
 not serve that directory directly: content remains owner-scoped, manifest-backed
-and checksum-verified. An authenticated download route is deferred to P1-11.
+and checksum-verified. The P1-11 route exposes only an authenticated owner's
+verified `export` artifacts; source evidence and backups remain inaccessible.
 
 Database migrations use a separate operator-only configuration path. Set
 `NEXORA_MIGRATION_DATABASE_DSN_FILE` to an absolute private file containing one

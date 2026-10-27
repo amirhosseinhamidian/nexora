@@ -11,7 +11,7 @@
     "settings": "Settings"
   },
   "header": {
-    "environment": "Foundation workspace",
+    "environment": "Private workspace",
     "mode": "RESEARCH MODE · PAPER / SHADOW",
     "language": "Language",
     "theme": "Theme",
@@ -19,30 +19,60 @@
     "dark": "Dark",
     "system": "System"
   },
-  "page": {
-    "eyebrow": "NEX-P1-01",
-    "title": "Runtime & Design Foundation",
-    "description": "The secure bilingual foundation for portfolio intelligence, evidence, and future decision workflows.",
-    "status": "Bootstrap status",
-    "ready": "Foundation ready",
-    "cards": {
-      "webTitle": "Web runtime",
-      "webValue": "Next.js 16",
-      "webDetail": "React 19 · strict TypeScript",
-      "apiTitle": "Server runtime",
-      "apiValue": "FastAPI",
-      "apiDetail": "Python 3.13 · health boundary",
-      "designTitle": "Design system",
-      "designValue": "Light + Dark",
-      "designDetail": "English LTR · Persian RTL"
-    },
-    "boundaryTitle": "Foundation boundaries",
-    "boundaries": {
-      "runtime": "Deterministic dependency locks",
-      "database": "Independent Nexora data ownership",
-      "integration": "Versioned TRD Bot contracts only",
-      "security": "No live execution or exchange credentials"
-    },
-    "next": "Next: application composition and typed configuration"
+  "auth": {
+    "eyebrow": "PRIVATE SINGLE-OWNER ACCESS",
+    "loginTitle": "Continue with your passkey",
+    "loginDescription": "Nexora uses a device-bound passkey. No password or exchange credential is accepted.",
+    "loginAction": "Sign in with passkey",
+    "bootstrapTitle": "Secure owner bootstrap",
+    "bootstrapDescription": "Use the one-time token created locally, then register the first passkey.",
+    "bootstrapToken": "One-time bootstrap token",
+    "bootstrapAction": "Register owner passkey",
+    "bootstrapLink": "First-time setup",
+    "loginLink": "Return to sign in",
+    "working": "Waiting for secure device confirmation…",
+    "recoveryTitle": "Save recovery codes now",
+    "recoveryDescription": "These single-use codes are shown once. Store them outside this browser before continuing.",
+    "recoverySaved": "I saved the recovery codes",
+    "unavailable": "Passkeys require a supported browser in a secure private origin.",
+    "denied": "The secure authentication request was not completed.",
+    "failed": "Authentication could not be completed. No credential was stored in the browser."
+  },
+  "shell": {
+    "eyebrow": "NEX-P1-11",
+    "title": "Private financial workspace",
+    "description": "Authenticated access to service health, secure exports and the future portfolio workspace.",
+    "authenticated": "Owner session active",
+    "owner": "Owner",
+    "logout": "Sign out",
+    "serviceStatus": "Service status",
+    "api": "API",
+    "identity": "Identity",
+    "artifacts": "Artifact storage",
+    "ready": "Ready",
+    "limited": "Unavailable",
+    "phaseTwo": "Available from Phase 2",
+    "emptyTitle": "Portfolio workspace is intentionally empty",
+    "emptyDescription": "Portfolio, holdings, transaction and analytics features begin in Phase 2. This shell currently proves secure access and runtime state only.",
+    "securityTitle": "Current security boundary",
+    "securityItems": {
+      "private": "Private single-owner deployment",
+      "passkey": "Passkey and server-side session",
+      "paper": "Research, Paper and Shadow only",
+      "forbidden": "No live trading, wallet or exchange credentials"
+    }
+  },
+  "states": {
+    "loadingTitle": "Restoring secure session",
+    "loadingDescription": "Checking the private runtime without exposing session material.",
+    "offlineTitle": "Nexora is offline",
+    "offlineDescription": "The shell could not reach the private API. Data was not changed.",
+    "retry": "Try again",
+    "expiredTitle": "Session expired",
+    "expiredDescription": "Your server-side session is no longer valid. Sign in again with your passkey.",
+    "signIn": "Go to sign in",
+    "errorTitle": "The workspace could not load",
+    "errorDescription": "A bounded runtime error occurred. Reload to retry safely.",
+    "reload": "Reload"
   }
 }

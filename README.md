@@ -106,6 +106,14 @@ route or cloud-storage credential is introduced. Candidate
 workflow and eleven regression workflows on the same SHA. The next allowed
 stage is `NEX-P1-11`, the authenticated Web shell.
 
+`NEX-P1-11` is a freeze candidate. It adds bilingual passkey bootstrap and
+login, the authenticated responsive application shell, explicit lifecycle
+states, a nonce-bound production CSP, a same-origin CSRF-aware browser client,
+and owner-scoped integrity-checked export downloads. Portfolio-domain pages
+remain disabled until Phase 2. The only next stage currently open is
+`NEX-P1-11-FREEZE`; after that freeze, private deployment and operations move to
+`NEX-P1-12`.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.
@@ -130,6 +138,7 @@ uv run python scripts/verify_runtime_api_auth.py
 uv run python scripts/verify_audit_observability.py
 uv run python scripts/verify_trd_bot_sync_runtime.py
 uv run python scripts/verify_artifact_export_storage.py
+uv run python scripts/verify_authenticated_web_shell.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -181,6 +190,9 @@ NEX_P1_09_FREEZE=PASS
 NEX_P1_09_PREREQUISITE=PASS
 NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS
 NEX_P1_10_FREEZE=PASS
+NEX_P1_10_PREREQUISITE=PASS
+NEX_P1_11_AUTHENTICATED_WEB_SHELL=PASS
+NEX_P1_11_READY_FOR_FREEZE=PASS
 ```
 
 ## Documents
@@ -201,6 +213,7 @@ NEX_P1_10_FREEZE=PASS
 - [`docs/v0.1/13-audit-and-observability-foundation.md`](docs/v0.1/13-audit-and-observability-foundation.md)
 - [`docs/v0.1/14-trd-bot-sync-runtime.md`](docs/v0.1/14-trd-bot-sync-runtime.md)
 - [`docs/v0.1/15-artifact-and-export-storage.md`](docs/v0.1/15-artifact-and-export-storage.md)
+- [`docs/v0.1/16-authenticated-web-application-shell.md`](docs/v0.1/16-authenticated-web-application-shell.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -219,6 +232,7 @@ NEX_P1_10_FREEZE=PASS
 - [`contracts/nexora-v0.1-audit-observability.json`](contracts/nexora-v0.1-audit-observability.json)
 - [`contracts/nexora-v0.1-trd-bot-sync-runtime.json`](contracts/nexora-v0.1-trd-bot-sync-runtime.json)
 - [`contracts/nexora-v0.1-artifact-export-storage.json`](contracts/nexora-v0.1-artifact-export-storage.json)
+- [`contracts/nexora-v0.1-authenticated-web-shell.json`](contracts/nexora-v0.1-authenticated-web-shell.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

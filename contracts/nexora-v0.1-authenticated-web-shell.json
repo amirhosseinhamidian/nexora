@@ -1,0 +1,103 @@
+{
+  "schema_version": "nexora-authenticated-web-shell-v1",
+  "decision_id": "NEX-P1-11",
+  "decision_date": "2026-10-27",
+  "status": "candidate",
+  "p1_10_prerequisite": {
+    "decision_id": "NEX-P1-10",
+    "frozen": true,
+    "freeze_commit_sha": "c0a8662a760032d1b9f82777bf3e11f9f2614375",
+    "freeze_record_path": "artifacts/p1-10/artifact-export-storage-freeze.json",
+    "freeze_record_checksum": "5a91f196a0872aafe9dfdd9ddd023a17375ece08799e6bc19abb9a0cc2273775"
+  },
+  "closes_gaps": ["NEX-P1-GAP-007"],
+  "routes": {
+    "locales": ["fa", "en"],
+    "default_locale": "fa",
+    "authenticated_shell": "/{locale}",
+    "login": "/{locale}/login",
+    "bootstrap": "/{locale}/bootstrap",
+    "invalid_locale_behavior": "redirect_to_default_locale",
+    "portfolio_domain_routes_enabled": false
+  },
+  "identity_experience": {
+    "authentication_method": "webauthn_passkey",
+    "bootstrap_requires_one_time_token": true,
+    "recovery_codes_displayed_once": true,
+    "password_login": false,
+    "self_registration": false,
+    "multi_user": false,
+    "browser_session_token_storage": false,
+    "session_cookie": "__Host-nexora_session",
+    "session_cookie_http_only": true,
+    "csrf_cookie": "__Host-nexora_csrf",
+    "csrf_cookie_http_only": false,
+    "cookies_secure": true,
+    "cookies_same_site": "strict",
+    "unsafe_requests_require_csrf": true
+  },
+  "application_shell": {
+    "desktop_navigation": true,
+    "mobile_layout": true,
+    "rtl_persian": true,
+    "ltr_english": true,
+    "themes": ["dark", "light", "system"],
+    "persian_font": "Vazirmatn Variable",
+    "english_font": "Inter Variable",
+    "states": ["loading", "authenticated", "empty", "offline", "error", "session_expired"],
+    "deferred_navigation_is_disabled": true,
+    "accessibility_baseline": ["skip_link", "semantic_landmarks", "keyboard_controls", "localized_direction"]
+  },
+  "browser_transport": {
+    "api_prefix": "/api",
+    "same_origin_only": true,
+    "credentials_mode": "same-origin",
+    "cache_mode": "no-store",
+    "session_expiry_event": "nexora:session-expired",
+    "external_api_target_allowed": false,
+    "direct_trd_bot_access": false
+  },
+  "content_security": {
+    "runtime_nonce": true,
+    "production_unsafe_inline": false,
+    "production_unsafe_eval": false,
+    "frame_ancestors": "none",
+    "object_source": "none",
+    "base_uri": "none",
+    "connect_source": "self",
+    "authenticated_cache_control": "no-store"
+  },
+  "authenticated_export_download": {
+    "route": "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",
+    "namespace": "export",
+    "owner_scoped": true,
+    "authentication_required": true,
+    "integrity_verified_before_response": true,
+    "content_disposition": "attachment_with_utf8_filename",
+    "source_namespace_download": false,
+    "backup_namespace_download": false,
+    "public_static_access": false
+  },
+  "security_boundary": {
+    "public_internet_profile": false,
+    "public_artifact_access": false,
+    "password_authentication": false,
+    "session_token_in_browser_storage": false,
+    "direct_trd_bot_database_access": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_capability": false,
+    "autonomous_ai_execution": false
+  },
+  "quality_gates": {
+    "contract": ["frozen_p1_10_prerequisite", "web_shell_verifier", "repository_contract_tests"],
+    "web": ["locked_dependencies", "format", "lint", "typecheck", "vitest", "production_build"],
+    "browser": ["persian_rtl_shell", "english_passkey_login", "session_expiry_recovery"],
+    "backend": ["authenticated_export_download", "owner_isolation", "integrity_failure", "no_openapi_drift"]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-11-FREEZE",
+    "post_freeze_stage": "NEX-P1-12"
+  }
+}

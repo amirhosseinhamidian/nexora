@@ -4,6 +4,7 @@ import "../globals.css";
 
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
@@ -22,6 +23,8 @@ export const metadata: Metadata = {
   title: "Nexora",
 };
 
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
@@ -37,6 +40,7 @@ export default async function LocaleLayout({
   if (!isLocale(locale)) {
     notFound();
   }
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -46,7 +50,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className={locale === "fa" ? "font-fa" : "font-en"}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider nonce={nonce}>{children}</ThemeProvider>
       </body>
     </html>
   );

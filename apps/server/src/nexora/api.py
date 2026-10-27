@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from time import perf_counter
 from typing import Literal
+from urllib.parse import quote
 from uuid import UUID, uuid4
 
 import uvicorn
@@ -17,6 +18,14 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from nexora import __version__
 from nexora.adapters.postgresql import RUNTIME_DATABASE_DSN_FILE_ENV, PostgreSQLIdentityRepository, probe_database
+from nexora.artifact_storage import (
+    ArtifactIntegrityError,
+    ArtifactKey,
+    ArtifactNamespace,
+    ArtifactNotFound,
+    ArtifactStorageError,
+    ArtifactValidationError,
+)
 from nexora.composition import (
     PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES,
     ApplicationContainer,
@@ -63,6 +72,7 @@ from nexora.security_config import SecuritySettings
 
 CORRELATION_HEADER = "X-Correlation-ID"
 CSRF_HEADER = "X-CSRF-Token"
+CSRF_COOKIE_NAME = "__Host-nexora_csrf"
 
 
 class LivenessResponse(BaseModel):
@@ -115,7 +125,7 @@ def _security_headers(response: Response, correlation_id: UUID) -> Response:
     return response
 
 
-def _set_session_cookie(response: Response, issued: IssuedSession) -> None:
+def _set_session_cookies(response: Response, issued: IssuedSession) -> None:
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=issued.token,
@@ -124,9 +134,17 @@ def _set_session_cookie(response: Response, issued: IssuedSession) -> None:
         httponly=True,
         samesite="strict",
     )
+    response.set_cookie(
+        key=CSRF_COOKIE_NAME,
+        value=issued.csrf_token,
+        path="/",
+        secure=True,
+        httponly=False,
+        samesite="strict",
+    )
 
 
-def _clear_session_cookie(response: Response) -> None:
+def _clear_session_cookies(response: Response) -> None:
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
         path="/",
@@ -134,6 +152,23 @@ def _clear_session_cookie(response: Response) -> None:
         httponly=True,
         samesite="strict",
     )
+    response.delete_cookie(
+        key=CSRF_COOKIE_NAME,
+        path="/",
+        secure=True,
+        httponly=False,
+        samesite="strict",
+    )
+
+
+def _download_disposition(file_name: str) -> str:
+    ascii_name = "".join(
+        character if character.isascii() and (character.isalnum() or character in "._-") else "_"
+        for character in file_name
+    )
+    if not ascii_name or ascii_name in {".", ".."}:
+        ascii_name = "nexora-export.bin"
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(file_name, safe='')}"
 
 
 def create_app(
@@ -453,7 +488,7 @@ def create_app(
             challenge=payload.challenge,
             response_json=payload.response_json,
         )
-        _set_session_cookie(response, issued)
+        _set_session_cookies(response, issued)
         return SessionResponse(
             owner_id=issued.owner_id,
             csrf_token=issued.csrf_token,
@@ -481,7 +516,7 @@ def create_app(
             raise AuthenticationDenied("CSRF token is required")
         issued = repository.rotate_session(token=token, csrf_token=csrf)
         rotated = repository.authenticate_session(token=issued.token)
-        _set_session_cookie(response, issued)
+        _set_session_cookies(response, issued)
         return SessionResponse(
             owner_id=issued.owner_id,
             csrf_token=issued.csrf_token,
@@ -585,7 +620,7 @@ def create_app(
             challenge=payload.challenge,
             response_json=payload.response_json,
         )
-        _set_session_cookie(response, issued)
+        _set_session_cookies(response, issued)
         return SessionResponse(
             owner_id=issued.owner_id,
             csrf_token=issued.csrf_token,
@@ -600,7 +635,7 @@ def create_app(
         token, _ = require_session(request)
         _, repository, _ = identity_runtime()
         repository.revoke_session(token=token)
-        _clear_session_cookie(response)
+        _clear_session_cookies(response)
         return ActionResponse(status="completed")
 
     @application.post("/v1/auth/logout-all", response_model=ActionResponse, operation_id="logoutAll")
@@ -609,8 +644,67 @@ def create_app(
         _, repository, _ = identity_runtime()
         repository.require_recent_reauthentication(session_id=session.session_id)
         repository.revoke_all_sessions(owner_id=session.owner_id)
-        _clear_session_cookie(response)
+        _clear_session_cookies(response)
         return ActionResponse(status="completed")
+
+    @application.get(
+        "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",
+        include_in_schema=False,
+    )
+    def download_export(
+        artifact_type: str,
+        artifact_id: str,
+        version: str,
+        request: Request,
+    ) -> Response:
+        _, session = require_session(request)
+        storage = resolved_container.artifact_storage
+        if storage is None:
+            return _error_response(
+                request,
+                status_code=503,
+                code="ARTIFACT_STORAGE_UNAVAILABLE",
+                message="artifact storage is unavailable",
+            )
+        try:
+            key = ArtifactKey(
+                owner_id=session.owner_id,
+                namespace=ArtifactNamespace.EXPORT,
+                artifact_type=artifact_type,
+                artifact_id=artifact_id,
+                version=version,
+            )
+            stored = storage.read(key)
+        except (ArtifactValidationError, ArtifactNotFound):
+            return _error_response(
+                request,
+                status_code=404,
+                code="ARTIFACT_NOT_FOUND",
+                message="artifact is unavailable",
+            )
+        except ArtifactIntegrityError:
+            return _error_response(
+                request,
+                status_code=409,
+                code="ARTIFACT_INTEGRITY_FAILED",
+                message="artifact integrity verification failed",
+            )
+        except ArtifactStorageError:
+            return _error_response(
+                request,
+                status_code=503,
+                code="ARTIFACT_STORAGE_UNAVAILABLE",
+                message="artifact storage is unavailable",
+            )
+        return Response(
+            content=stored.content,
+            media_type=stored.manifest.media_type,
+            headers={
+                "Content-Disposition": _download_disposition(stored.manifest.file_name),
+                "Content-Length": str(stored.manifest.size_bytes),
+                "X-Artifact-SHA256": stored.manifest.sha256,
+            },
+        )
 
     return application
 

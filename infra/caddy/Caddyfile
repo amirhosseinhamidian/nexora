@@ -10,8 +10,11 @@
     protocols tls1.3
   }
 
-  @api path /api/* /health/*
-  handle @api {
+  handle_path /api/* {
+    reverse_proxy api:8000
+  }
+
+  handle /health/* {
     reverse_proxy api:8000
   }
 

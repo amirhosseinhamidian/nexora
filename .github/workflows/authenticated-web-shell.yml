@@ -1,0 +1,102 @@
+name: Authenticated Web shell
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  web-shell-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-10 prerequisite
+        run: python3 scripts/verify_artifact_export_storage.py
+      - name: Verify P1-11 authenticated Web shell contract
+        run: python3 scripts/verify_authenticated_web_shell.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and contract format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/verify_authenticated_web_shell.py tests/test_authenticated_web_shell.py
+      - name: Lint backend and contracts
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/verify_authenticated_web_shell.py tests/test_authenticated_web_shell.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+      - name: Check generated runtime contracts
+        run: uv run python scripts/generate_runtime_contracts.py --check
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Build Web
+        run: pnpm build
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Test authenticated browser lifecycle
+        run: pnpm --filter @nexora/web test:e2e

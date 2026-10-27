@@ -288,6 +288,39 @@ class ImmutableSourceEvidence(Base):
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class TrdBotSyncReceipt(Base):
+    __tablename__ = "trd_bot_sync_receipts"
+    __table_args__ = (
+        CheckConstraint("char_length(event_id) > 0", name="event_id_nonempty"),
+        CheckConstraint("char_length(event_type) > 0", name="event_type_nonempty"),
+        CheckConstraint("char_length(payload_schema) > 0", name="payload_schema_nonempty"),
+        CheckConstraint("status IN ('applied', 'quarantined')", name="status_allowed"),
+        CheckConstraint(
+            "(status = 'applied' AND reason_code IS NULL) OR (status = 'quarantined' AND reason_code IS NOT NULL)",
+            name="status_reason_shape",
+        ),
+        CheckConstraint("reason_code IS NULL OR reason_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="reason_code_format"),
+        CheckConstraint("envelope_sha256 ~ '^[0-9a-f]{64}$'", name="envelope_sha256_format"),
+        CheckConstraint("jsonb_typeof(envelope) = 'object'", name="envelope_object"),
+        UniqueConstraint("owner_id", "event_id", name="uq_trd_bot_sync_receipts_owner_event"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    receipt_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    event_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    payload_schema: Mapped[str] = mapped_column(String(160), nullable=False)
+    provider_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    envelope: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    envelope_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

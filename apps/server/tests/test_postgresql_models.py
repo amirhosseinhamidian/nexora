@@ -20,6 +20,7 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.sessions",
         "nexora.webauthn_challenges",
         "nexora.webauthn_credentials",
+        "nexora.trd_bot_sync_receipts",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -91,3 +92,19 @@ def test_durable_tables_have_owner_idempotency_and_lease_fields() -> None:
         )
         assert isinstance(table.c.payload.type, postgresql.JSONB)
     assert {"owner_id", "consumer_name", "stream_name", "row_version"}.issubset(checkpoints.c.keys())
+
+
+def test_trd_bot_sync_receipts_are_owner_scoped_and_immutable_input_shaped() -> None:
+    receipts = Base.metadata.tables["nexora.trd_bot_sync_receipts"]
+    assert {
+        "owner_id",
+        "event_id",
+        "event_type",
+        "payload_schema",
+        "provider_version",
+        "status",
+        "reason_code",
+        "envelope",
+        "envelope_sha256",
+    }.issubset(receipts.c.keys())
+    assert isinstance(receipts.c.envelope.type, postgresql.JSONB)

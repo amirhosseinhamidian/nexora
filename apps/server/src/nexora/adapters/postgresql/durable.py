@@ -12,7 +12,14 @@ from sqlalchemy import and_, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.orm import Session, sessionmaker
 
-from nexora.adapters.postgresql.models import BackgroundJob, OutboxEvent, ProjectionCheckpoint
+from nexora.adapters.postgresql.models import (
+    BackgroundJob,
+    ImmutableSourceEvidence,
+    OutboxEvent,
+    ProjectionCheckpoint,
+    SourceReference,
+    TrdBotSyncReceipt,
+)
 
 
 class DurableWorkError(RuntimeError):
@@ -89,9 +96,44 @@ class OutboxMessage:
 
 
 @dataclass(frozen=True, slots=True)
+class EnqueuedJob:
+    job_type: str
+    idempotency_key: str
+    payload: dict[str, Any]
+    max_attempts: int = 4
+
+
+@dataclass(frozen=True, slots=True)
+class SourceEvidenceWrite:
+    source_entity_type: str
+    source_entity_id: str
+    source_schema_version: str
+    source_version: str
+    source_observed_at: datetime
+    correlation_id: UUID
+    payload: dict[str, Any]
+    payload_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class SyncReceiptWrite:
+    event_id: str
+    event_type: str
+    payload_schema: str
+    provider_version: str
+    status: str
+    reason_code: str | None
+    envelope: dict[str, Any]
+    envelope_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
 class JobCompletion:
     checkpoint: CheckpointAdvance | None = None
     outbox: tuple[OutboxMessage, ...] = field(default_factory=tuple)
+    enqueue: tuple[EnqueuedJob, ...] = field(default_factory=tuple)
+    source_evidence: tuple[SourceEvidenceWrite, ...] = field(default_factory=tuple)
+    sync_receipts: tuple[SyncReceiptWrite, ...] = field(default_factory=tuple)
 
 
 class DurableWorkRepository:
@@ -251,10 +293,16 @@ class DurableWorkRepository:
         with self._session_factory.begin() as session:
             job = self._active_job(session, job_id, worker_id, observed_at)
             completed_at = max(observed_at, job.created_at, job.updated_at)
+            for receipt in result.sync_receipts:
+                self._append_sync_receipt(session, job.owner_id, receipt, completed_at)
+            for evidence in result.source_evidence:
+                self._append_source_evidence(session, job.owner_id, evidence, completed_at)
             if result.checkpoint is not None:
                 self._advance_checkpoint(session, job.owner_id, result.checkpoint, completed_at)
             for message in result.outbox:
                 self._append_outbox(session, job, message, completed_at)
+            for queued in result.enqueue:
+                self._enqueue_job(session, job.owner_id, queued, completed_at)
             job.status = "succeeded"
             job.lease_owner = None
             job.lease_expires_at = None
@@ -503,3 +551,136 @@ class DurableWorkRepository:
         )
         if identity != expected:
             raise IdempotencyConflict("outbox idempotency key was reused with different immutable input")
+
+    @staticmethod
+    def _enqueue_job(session: Session, owner_id: UUID, queued: EnqueuedJob, now: datetime) -> None:
+        payload_hash = canonical_payload_sha256(queued.payload)
+        inserted = session.execute(
+            postgresql_insert(BackgroundJob)
+            .values(
+                job_id=uuid4(),
+                owner_id=owner_id,
+                job_type=queued.job_type,
+                idempotency_key=queued.idempotency_key,
+                payload=queued.payload,
+                payload_sha256=payload_hash,
+                max_attempts=queued.max_attempts,
+                available_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=[BackgroundJob.owner_id, BackgroundJob.idempotency_key])
+            .returning(BackgroundJob.job_id)
+        ).scalar_one_or_none()
+        if inserted is not None:
+            return
+        existing = session.execute(
+            select(BackgroundJob).where(
+                BackgroundJob.owner_id == owner_id,
+                BackgroundJob.idempotency_key == queued.idempotency_key,
+            )
+        ).scalar_one()
+        if (
+            existing.job_type != queued.job_type
+            or existing.payload_sha256 != payload_hash
+            or existing.max_attempts != queued.max_attempts
+        ):
+            raise IdempotencyConflict("follow-up job idempotency key was reused with different immutable input")
+
+    @staticmethod
+    def _append_sync_receipt(
+        session: Session,
+        owner_id: UUID,
+        receipt: SyncReceiptWrite,
+        now: datetime,
+    ) -> None:
+        inserted = session.execute(
+            postgresql_insert(TrdBotSyncReceipt)
+            .values(
+                receipt_id=uuid4(),
+                owner_id=owner_id,
+                event_id=receipt.event_id,
+                event_type=receipt.event_type,
+                payload_schema=receipt.payload_schema,
+                provider_version=receipt.provider_version,
+                status=receipt.status,
+                reason_code=receipt.reason_code,
+                envelope=receipt.envelope,
+                envelope_sha256=receipt.envelope_sha256,
+                received_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=[TrdBotSyncReceipt.owner_id, TrdBotSyncReceipt.event_id])
+            .returning(TrdBotSyncReceipt.receipt_id)
+        ).scalar_one_or_none()
+        if inserted is not None:
+            return
+        existing = session.execute(
+            select(TrdBotSyncReceipt).where(
+                TrdBotSyncReceipt.owner_id == owner_id,
+                TrdBotSyncReceipt.event_id == receipt.event_id,
+            )
+        ).scalar_one()
+        if existing.envelope_sha256 != receipt.envelope_sha256 or existing.status != receipt.status:
+            raise IdempotencyConflict("TRD Bot event ID was replayed with different immutable content")
+
+    @staticmethod
+    def _append_source_evidence(
+        session: Session,
+        owner_id: UUID,
+        evidence: SourceEvidenceWrite,
+        now: datetime,
+    ) -> None:
+        reference_id = uuid4()
+        inserted = session.execute(
+            postgresql_insert(SourceReference)
+            .values(
+                source_reference_id=reference_id,
+                owner_id=owner_id,
+                source_system="trd_bot",
+                source_entity_type=evidence.source_entity_type,
+                source_entity_id=evidence.source_entity_id,
+                source_schema_version=evidence.source_schema_version,
+                source_version=evidence.source_version,
+                source_observed_at=evidence.source_observed_at,
+                correlation_id=evidence.correlation_id,
+                payload_sha256=evidence.payload_sha256,
+                recorded_at=now,
+            )
+            .on_conflict_do_nothing(
+                index_elements=[
+                    SourceReference.owner_id,
+                    SourceReference.source_system,
+                    SourceReference.source_entity_type,
+                    SourceReference.source_entity_id,
+                    SourceReference.source_version,
+                ]
+            )
+            .returning(SourceReference.source_reference_id)
+        ).scalar_one_or_none()
+        if inserted is None:
+            existing = session.execute(
+                select(SourceReference).where(
+                    SourceReference.owner_id == owner_id,
+                    SourceReference.source_system == "trd_bot",
+                    SourceReference.source_entity_type == evidence.source_entity_type,
+                    SourceReference.source_entity_id == evidence.source_entity_id,
+                    SourceReference.source_version == evidence.source_version,
+                )
+            ).scalar_one()
+            if (
+                existing.source_schema_version != evidence.source_schema_version
+                or existing.payload_sha256 != evidence.payload_sha256
+                or existing.correlation_id != evidence.correlation_id
+            ):
+                raise IdempotencyConflict("source identity was replayed with different immutable content")
+            reference_id = existing.source_reference_id
+        session.execute(
+            postgresql_insert(ImmutableSourceEvidence)
+            .values(
+                evidence_id=uuid4(),
+                owner_id=owner_id,
+                source_reference_id=reference_id,
+                payload=evidence.payload,
+                payload_sha256=evidence.payload_sha256,
+                recorded_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=[ImmutableSourceEvidence.source_reference_id])
+        )

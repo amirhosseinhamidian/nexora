@@ -89,9 +89,15 @@ remain disabled. Candidate `8aaa4b1fd8a164e325bdc7531aecf72e790df1f3`
 is bound to the successful primary workflow and nine regression workflows on
 the same SHA. The next allowed stage is `NEX-P1-09`.
 
+`NEX-P1-09` is implemented as a freeze candidate. It registers the durable TRD
+Bot event and snapshot handlers, persists immutable owner-scoped sync receipts,
+quarantines unknown payload schemas, and atomically advances evidence,
+checkpoints, outbox records and continuation jobs. The next allowed action is
+`NEX-P1-09-FREEZE`; artifact and export storage remains `NEX-P1-10`.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
-portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
-features and final production acceptance remain deliberately deferred.
+portfolio application. Portfolio-domain features and final production
+acceptance remain deliberately deferred.
 
 ## Verify the scope contract
 
@@ -111,6 +117,7 @@ python3 scripts/verify_phase_one_readiness.py
 uv run python scripts/generate_runtime_contracts.py --check
 uv run python scripts/verify_runtime_api_auth.py
 uv run python scripts/verify_audit_observability.py
+uv run python scripts/verify_trd_bot_sync_runtime.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -156,6 +163,8 @@ NEX_P1_07_FREEZE=PASS
 NEX_P1_07_PREREQUISITE=PASS
 NEX_P1_08_AUDIT_OBSERVABILITY=PASS
 NEX_P1_08_FREEZE=PASS
+NEX_P1_08_PREREQUISITE=PASS
+NEX_P1_09_TRD_BOT_SYNC_RUNTIME=PASS
 ```
 
 ## Documents
@@ -174,6 +183,7 @@ NEX_P1_08_FREEZE=PASS
 - [`docs/v0.1/11-phase-one-roadmap-reconciliation.md`](docs/v0.1/11-phase-one-roadmap-reconciliation.md)
 - [`docs/v0.1/12-runtime-api-authentication-contract-toolchain.md`](docs/v0.1/12-runtime-api-authentication-contract-toolchain.md)
 - [`docs/v0.1/13-audit-and-observability-foundation.md`](docs/v0.1/13-audit-and-observability-foundation.md)
+- [`docs/v0.1/14-trd-bot-sync-runtime.md`](docs/v0.1/14-trd-bot-sync-runtime.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -190,6 +200,7 @@ NEX_P1_08_FREEZE=PASS
 - [`contracts/nexora-v0.1-phase-one-readiness.json`](contracts/nexora-v0.1-phase-one-readiness.json)
 - [`contracts/nexora-v0.1-runtime-api-auth-contract.json`](contracts/nexora-v0.1-runtime-api-auth-contract.json)
 - [`contracts/nexora-v0.1-audit-observability.json`](contracts/nexora-v0.1-audit-observability.json)
+- [`contracts/nexora-v0.1-trd-bot-sync-runtime.json`](contracts/nexora-v0.1-trd-bot-sync-runtime.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

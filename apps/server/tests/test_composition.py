@@ -23,6 +23,7 @@ def test_default_composition_contains_no_side_effecting_runtime_adapters() -> No
     container = compose_application(load_settings({}))
     assert container.database_engine is None
     assert container.identity_repository is None
+    assert container.durable_work_repository is None
     assert container.security is None
     assert container.webauthn_verifier is None
     assert container.owner_identity_service is None
@@ -51,6 +52,7 @@ def test_private_composition_registers_identity_runtime_explicitly(tmp_path: Pat
     try:
         assert container.database_engine is not None
         assert container.identity_repository is not None
+        assert container.durable_work_repository is not None
         assert container.security is not None
         assert container.security.rp_id == "127.0.0.1"
         assert container.webauthn_verifier is not None

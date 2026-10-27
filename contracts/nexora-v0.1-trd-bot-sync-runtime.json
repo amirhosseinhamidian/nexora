@@ -1,0 +1,105 @@
+{
+  "schema_version": "nexora-trd-bot-sync-runtime-v1",
+  "decision_id": "NEX-P1-09",
+  "decision_date": "2026-10-27",
+  "status": "candidate",
+  "p1_08_prerequisite": {
+    "decision_id": "NEX-P1-08",
+    "frozen": true,
+    "freeze_commit_sha": "6ba0ab6d86773aa7aaf4f488a6fd59c6d61cef0e",
+    "freeze_record_path": "artifacts/p1-08/audit-observability-freeze.json",
+    "freeze_record_checksum": "95ad753ff9e079c8479aba34b71782c2c992f841ec187866a2ccda5791f970ec"
+  },
+  "closes_gaps": ["NEX-P1-GAP-005"],
+  "delivery": {
+    "migration_revision": "20261027_0005",
+    "registered_job_types": ["trd_bot.event_sync", "trd_bot.snapshot_sync"],
+    "private_worker_cli_registration": true,
+    "bounded_page_size": 500,
+    "event_delivery": "at_least_once",
+    "external_provider_smoke_claimed": false
+  },
+  "event_ingestion": {
+    "capability_negotiation_per_claim": true,
+    "strict_envelope_validation": true,
+    "owner_event_id_deduplication": true,
+    "replay_content_conflict_fails_closed": true,
+    "immutable_receipt_statuses": ["applied", "quarantined"],
+    "unknown_payload_schema_behavior": "quarantine_and_advance_cursor",
+    "source_evidence_append_only": true,
+    "checkpoint_compare_and_swap": true,
+    "continuation_job_deterministic": true
+  },
+  "transaction_boundary": {
+    "job_lease_validation": true,
+    "receipt_evidence_checkpoint_outbox_and_continuation_atomic": true,
+    "lost_lease_fails_closed": true,
+    "idempotency_scope": "owner_id_and_immutable_source_identity",
+    "raw_provider_error_persisted": false
+  },
+  "full_resync": {
+    "cursor_expired_behavior": "reset_event_checkpoint_and_enqueue_ordered_resource_snapshot_chain",
+    "resource_inventory": [
+      "market_context",
+      "decision_evaluation",
+      "candidate",
+      "risk_gate",
+      "portfolio_intelligence",
+      "alert",
+      "alert_outcome",
+      "paper_shadow_portfolio",
+      "paper_shadow_position",
+      "simulation_outcome"
+    ],
+    "snapshot_generation_isolated": true,
+    "snapshot_resources_complete_before_event_resume": true,
+    "snapshot_evidence_versioned": true,
+    "event_stream_resumed_after_snapshot_completion": true
+  },
+  "worker_runtime": {
+    "empty_registry_claims_work": false,
+    "registered_registry_explicit": true,
+    "single_bounded_cycle_cli": true,
+    "stable_worker_id_required": true,
+    "initial_sync_requires_explicit_owner": true,
+    "restart_and_reclaim_inherited_from_p1_05": true,
+    "aggregate_observability_inherited_from_p1_08": true
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "browser_service_token": false,
+    "exchange_credentials": false,
+    "live_order_capability": false,
+    "wallet_capability": false,
+    "autonomous_ai_execution": false,
+    "portfolio_application_ui": false,
+    "exactly_once_delivery_claim": false
+  },
+  "quality_gates": {
+    "contract": [
+      "frozen_p1_08_prerequisite",
+      "sync_runtime_verifier",
+      "repository_contract_tests"
+    ],
+    "backend": [
+      "locked_dependencies",
+      "ruff_format_check",
+      "ruff_check",
+      "mypy_strict",
+      "pytest_without_integration"
+    ],
+    "postgresql_17": [
+      "upgrade_head",
+      "sync_atomicity_integration",
+      "downgrade_base",
+      "rebuild_head",
+      "alembic_check"
+    ]
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-09-FREEZE",
+    "post_freeze_stage": "NEX-P1-10"
+  }
+}

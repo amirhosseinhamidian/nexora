@@ -8,7 +8,12 @@ from typing import Final
 from sqlalchemy import Engine
 
 from nexora import __version__
-from nexora.adapters.postgresql import PostgreSQLIdentityRepository, create_database_engine, create_session_factory
+from nexora.adapters.postgresql import (
+    DurableWorkRepository,
+    PostgreSQLIdentityRepository,
+    create_database_engine,
+    create_session_factory,
+)
 from nexora.adapters.postgresql.config import (
     DATABASE_DSN_FILE_ENV,
     RUNTIME_DATABASE_DSN_FILE_ENV,
@@ -60,6 +65,7 @@ class ApplicationContainer:
     observability: RuntimeObservability
     database_engine: Engine | None = None
     identity_repository: PostgreSQLIdentityRepository | None = None
+    durable_work_repository: DurableWorkRepository | None = None
     security: SecuritySettings | None = None
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
@@ -113,7 +119,8 @@ def compose_private_application(
         production=settings.environment.value == "production",
     )
     engine = create_database_engine(database_settings)
-    repository = PostgreSQLIdentityRepository(create_session_factory(engine))
+    session_factory = create_session_factory(engine)
+    repository = PostgreSQLIdentityRepository(session_factory)
     verifier = webauthn_verifier or StandardWebAuthnVerifier()
     identity = RuntimeIdentity(
         service=SERVICE_NAME,
@@ -128,6 +135,7 @@ def compose_private_application(
         observability=create_runtime_observability(service=SERVICE_NAME, settings=observability_settings),
         database_engine=engine,
         identity_repository=repository,
+        durable_work_repository=DurableWorkRepository(session_factory),
         security=security,
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),

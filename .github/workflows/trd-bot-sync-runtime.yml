@@ -1,0 +1,102 @@
+name: TRD Bot sync runtime
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Verify frozen P1-08 prerequisite
+        run: uv run python scripts/verify_audit_observability.py
+      - name: Verify P1-09 sync runtime contract
+        run: uv run python scripts/verify_trd_bot_sync_runtime.py
+      - name: Run repository contract tests
+        run: uv run python -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and contract format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/verify_trd_bot_sync_runtime.py tests/test_trd_bot_sync_runtime.py
+      - name: Lint backend and contracts
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/verify_trd_bot_sync_runtime.py tests/test_trd_bot_sync_runtime.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+
+  postgresql-17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: nexora_test
+          POSTGRES_USER: nexora
+          POSTGRES_PASSWORD: nexora_ci_fixture_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexora -d nexora_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /tmp/nexora-database.dsn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Create private CI fixture DSN file
+        run: |
+          umask 077
+          printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_test' > "$NEXORA_MIGRATION_DATABASE_DSN_FILE"
+      - name: Upgrade to repository head
+        run: uv run alembic upgrade head
+      - name: Verify atomic synchronization persistence
+        run: uv run pytest apps/server/tests/test_trd_bot_sync_integration.py -m integration -q
+      - name: Downgrade to base
+        run: uv run alembic downgrade base
+      - name: Rebuild repository head
+        run: uv run alembic upgrade head
+      - name: Check migration drift
+        run: uv run alembic check

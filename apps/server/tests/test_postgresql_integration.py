@@ -42,7 +42,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261026_0004"
+    assert revision == "20261027_0005"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -61,6 +61,7 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "sessions",
         "webauthn_challenges",
         "webauthn_credentials",
+        "trd_bot_sync_receipts",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

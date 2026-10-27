@@ -9,11 +9,15 @@ in P1-04. P1-05 adds PostgreSQL durable jobs, checkpoints, a transactional
 outbox, and a generic explicit-handler worker engine. P1-08 adds bounded JSON
 logging, recursive secret redaction, route-template request metrics, worker and
 database-pool metrics, and dependency-aware readiness. Scheduled provider
-synchronization and production readiness are intentionally deferred.
+synchronization is registered in P1-09 through bounded event and snapshot jobs,
+immutable replay receipts and atomic evidence/checkpoint/outbox completion.
+Portfolio projections and production readiness remain intentionally deferred.
 
 ```bash
 uv run nexora-api
 uv run nexora-worker --check
+uv run nexora-worker --enqueue-initial-sync OWNER_UUID
+uv run nexora-worker --once --worker-id nexora-worker-1
 ```
 
 Configuration is read only from the allowlisted `NEXORA_*` process environment
@@ -32,12 +36,12 @@ does not connect to PostgreSQL or mutate schema at application startup.
 
 The TRD Bot adapter reads its base URL and bearer token from absolute private
 files named by `NEXORA_TRD_BOT_BASE_URL_FILE` and
-`NEXORA_TRD_BOT_TOKEN_FILE`. These adapter-only settings are not part of the
-runtime composition allowlist yet, so API and Worker startup remain side-effect
-free. A caller must explicitly load the files, construct the adapter and
-negotiate exact v1 capabilities before any data operation.
+`NEXORA_TRD_BOT_TOKEN_FILE`. The private worker composition loads these settings
+only for explicit enqueue or `--once` commands and negotiates exact v1
+capabilities before every claimed page. The API and `--check` composition paths
+remain side-effect free.
 
-The worker only claims job types present in an injected handler registry. The
-default CLI has no provider handlers and therefore refuses to claim work; its
-`--check` mode remains side-effect free. Durable delivery is at-least-once, so
-handlers and downstream consumers must honor the owner-scoped idempotency keys.
+The worker only claims job types present in the injected P1-09 registry. The
+default CLI still refuses to claim work, while `--once` registers only event and
+snapshot handlers. Durable delivery is at-least-once; immutable owner/event
+receipts and owner-scoped job keys make retries deterministic.

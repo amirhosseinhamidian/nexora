@@ -1,6 +1,6 @@
 # ADR 0024 — Versioned artifact and export storage
 
-Status: Candidate for NEX-P1-10
+Status: Frozen by NEX-P1-10
 Date: 2026-10-27
 
 ## Decision

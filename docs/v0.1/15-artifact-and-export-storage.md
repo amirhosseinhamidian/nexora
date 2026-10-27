@@ -44,5 +44,16 @@ frozen export contract.
 - final capacity and overload acceptance (`NEX-P1-13`);
 - S3-compatible adapter, SaaS, multi-user, AI/ML and live trading.
 
-The only allowed next action is `NEX-P1-10-FREEZE`; after a separately verified
-freeze, work may move to `NEX-P1-11`.
+## Freeze evidence
+
+Candidate `707795735e156ebbd973f08709e52c5a994e2d17` with commit message
+`feat(nexora): implement P1-10 artifact and export storage` passed the primary
+[Artifact and export storage workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/40524390732)
+and all eleven regression workflows on the same SHA. The evidence records the
+contract, backend, atomic publication, deterministic export, private topology,
+cross-language, PostgreSQL 17 and Web regression gates.
+
+`NEX-P1-10` is therefore frozen. The next allowed stage is `NEX-P1-11`, which
+owns the authenticated Web application shell and download flow. This freeze
+does not enable public artifact access, retention deletion, cloud credentials,
+live trading, wallets or autonomous AI execution.

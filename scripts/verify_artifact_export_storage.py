@@ -10,9 +10,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-artifact-export-storage.json"
 P1_09_FREEZE_PATH = ROOT / "artifacts/p1-09/trd-bot-sync-runtime-freeze.json"
+FREEZE_PATH = ROOT / "artifacts/p1-10/artifact-export-storage-freeze.json"
 CONTRACT_CHECKSUM = "a0badfe42b047b4e69089fbc02425d8a1c51d70465148418948835d95ccdd694"
 P1_09_FREEZE_CHECKSUM = "5b29d6bc22652acc2576f9027a8eb362c41303f8ecfffaf692ba1bcccdcaec9d"
 P1_09_FREEZE_COMMIT = "e3d724074b8ac276f68ebf5d3e100c86a711f672"
+CANDIDATE_SHA = "707795735e156ebbd973f08709e52c5a994e2d17"
+CANDIDATE_MESSAGE = "feat(nexora): implement P1-10 artifact and export storage"
+CANDIDATE_PREDECESSOR = "e3d724074b8ac276f68ebf5d3e100c86a711f672"
 
 
 class ArtifactExportStorageContractError(ValueError):
@@ -37,6 +41,36 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def _validate_workflow(
+    workflow: object,
+    *,
+    label: str,
+    run_id: int,
+    expected_jobs: dict[str, tuple[int, str]],
+) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"{label} run ID drift")
+    expected_url = f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}"
+    _require(workflow.get("run_url") == expected_url, f"{label} run URL drift")
+    _require(workflow.get("head_sha") == CANDIDATE_SHA, f"{label} workflow head SHA drift")
+    _require(workflow.get("event") == "push", f"{label} workflow must be a push run")
+    _require(workflow.get("attempt") == 1, f"{label} workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), f"{label} jobs must be an object")
+    _require(set(jobs) == set(expected_jobs), f"{label} job inventory mismatch")
+    for job_name, (job_id, displayed_name) in expected_jobs.items():
+        job = jobs[job_name]
+        _require(isinstance(job, dict), f"{label}/{job_name} must be an object")
+        _require(job.get("job_id") == job_id, f"{label}/{job_name} job ID drift")
+        _require(job.get("name") == displayed_name, f"{label}/{job_name} name drift")
+        _require(job.get("conclusion") == "success", f"{label}/{job_name} did not succeed")
 
 
 def validate_frozen_p1_09() -> None:
@@ -229,9 +263,15 @@ def validate_files_and_runtime_markers() -> None:
             "NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts",
             "nexora-artifacts:/var/lib/nexora/artifacts",
         ),
-        "docs/adr/0024-versioned-artifact-and-export-storage.md": ("Status: Candidate for NEX-P1-10",),
-        "docs/v0.1/15-artifact-and-export-storage.md": ("NEX-P1-GAP-006", "NEX-P1-11"),
+        "docs/adr/0024-versioned-artifact-and-export-storage.md": ("Status: Frozen by NEX-P1-10",),
+        "docs/v0.1/15-artifact-and-export-storage.md": (
+            "NEX-P1-GAP-006",
+            CANDIDATE_SHA,
+            "40524390732",
+            "NEX-P1-11",
+        ),
         ".github/workflows/artifact-export-storage.yml": ("Artifact and export storage",),
+        "artifacts/p1-10/artifact-export-storage-freeze.json": (CANDIDATE_SHA,),
     }
     for relative, markers in required.items():
         path = ROOT / relative
@@ -247,16 +287,204 @@ def validate_files_and_runtime_markers() -> None:
     _require("StaticFiles" not in api_source, "artifact root cannot be exposed as static files")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-artifact-export-storage-freeze-v1", "invalid freeze schema")
+    _require(record.get("decision_id") == "NEX-P1-10", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "freeze repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate commit message drift")
+    _require(record.get("candidate_predecessor_sha") == CANDIDATE_PREDECESSOR, "candidate predecessor drift")
+
+    primary = record.get("github_actions")
+    _validate_workflow(
+        primary,
+        label="artifact and export storage",
+        run_id=40524390732,
+        expected_jobs={
+            "storage_contract": (122259827912, "storage-contract"),
+            "backend": (122259827442, "backend"),
+            "storage_runtime": (122259827555, "storage-runtime"),
+        },
+    )
+    _require(primary.get("head_branch") == "feature/v0.1-foundation", "primary workflow branch drift")
+    required_markers = {
+        "storage_contract": (
+            "locked_dependencies_installed",
+            "p1_09_freeze_prerequisite_passed",
+            "storage_contract_verifier_passed",
+            "repository_contract_tests_passed",
+        ),
+        "backend": (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "non_integration_tests_passed",
+        ),
+        "storage_runtime": (
+            "locked_dependencies_installed",
+            "atomic_storage_tests_passed",
+            "deterministic_export_tests_passed",
+            "private_topology_verifier_passed",
+        ),
+    }
+    for job_name, markers in required_markers.items():
+        for marker in markers:
+            _require(primary["jobs"][job_name].get(marker) is True, f"{job_name} did not confirm {marker}")
+
+    regression = record.get("regression_workflows")
+    _require(isinstance(regression, dict), "regression workflow evidence must be an object")
+    expected_regression = {
+        "contracts": (
+            40524390853,
+            {
+                "phase_zero_acceptance": (122259827452, "phase-zero-acceptance"),
+                "security_boundary": (122259827841, "security-boundary"),
+                "integration_contract": (122259827883, "integration-contract"),
+                "scope_contract": (122259827941, "scope-contract"),
+                "technical_baseline": (122259828009, "technical-baseline"),
+            },
+        ),
+        "trd_bot_adapter": (
+            40524390759,
+            {
+                "backend": (122259827267, "backend"),
+                "adapter_contract": (122259827768, "adapter-contract"),
+            },
+        ),
+        "postgresql_schema": (
+            40524390897,
+            {
+                "postgresql_17": (122259827680, "postgresql-17"),
+                "backend": (122259827918, "backend"),
+                "database_contract": (122259828040, "database-contract"),
+            },
+        ),
+        "application_composition": (
+            40524390680,
+            {
+                "backend": (122259827368, "backend"),
+                "composition_contract": (122259827857, "composition-contract"),
+            },
+        ),
+        "phase_one_readiness": (
+            40524391011,
+            {
+                "web": (122259828207, "web"),
+                "backend": (122259828408, "backend"),
+                "readiness_contract": (122259828875, "readiness-contract"),
+            },
+        ),
+        "durable_jobs_outbox": (
+            40524390662,
+            {
+                "backend": (122259827381, "backend"),
+                "durable_contract": (122259827920, "durable-contract"),
+                "postgresql_17": (122259828193, "postgresql-17"),
+            },
+        ),
+        "trd_bot_sync_runtime": (
+            40524390771,
+            {
+                "sync_contract": (122259826931, "sync-contract"),
+                "backend": (122259827294, "backend"),
+                "postgresql_17": (122259827444, "postgresql-17"),
+            },
+        ),
+        "runtime_api_auth": (
+            40524390579,
+            {
+                "cross_language_contract": (122259827874, "cross-language-contract"),
+                "postgresql_17": (122259827908, "postgresql-17"),
+                "backend": (122259827928, "backend"),
+                "runtime_contract": (122259828071, "runtime-contract"),
+            },
+        ),
+        "audit_observability": (
+            40524390752,
+            {
+                "postgresql_17": (122259828059, "postgresql-17"),
+                "backend": (122259828558, "backend"),
+                "observability_contract": (122259828639, "observability-contract"),
+            },
+        ),
+        "runtime_foundation": (
+            40524390580,
+            {
+                "backend": (122259827332, "backend"),
+                "web": (122259827682, "web"),
+                "foundation_contract": (122259827683, "foundation-contract"),
+            },
+        ),
+        "single_owner_identity_runtime": (
+            40524390929,
+            {
+                "postgresql_17": (122259827867, "postgresql-17"),
+                "backend": (122259827937, "backend"),
+                "identity_contract": (122259827944, "identity-contract"),
+                "private_topology": (122259828106, "private-topology"),
+            },
+        ),
+    }
+    _require(set(regression) == set(expected_regression), "regression workflow inventory mismatch")
+    for label, (run_id, jobs) in expected_regression.items():
+        _validate_workflow(regression[label], label=label, run_id=run_id, expected_jobs=jobs)
+
+    evidence = record.get("artifact_export_storage_contract")
+    _require(isinstance(evidence, dict), "artifact storage contract evidence must be an object")
+    _require(evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(evidence.get("path") == "contracts/nexora-v0.1-artifact-export-storage.json", "contract path drift")
+    _require(evidence.get("checksum") == CONTRACT_CHECKSUM, "recorded contract checksum drift")
+    _require(evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("p1_09_prerequisite")
+    _require(isinstance(prerequisite, dict), "P1-09 prerequisite must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P1-09", "P1-09 prerequisite decision drift")
+    _require(prerequisite.get("frozen") is True, "P1-09 prerequisite is not frozen")
+    _require(prerequisite.get("freeze_commit_sha") == P1_09_FREEZE_COMMIT, "P1-09 freeze commit drift")
+    _require(
+        prerequisite.get("freeze_record_path") == "artifacts/p1-09/trd-bot-sync-runtime-freeze.json",
+        "P1-09 path drift",
+    )
+    _require(
+        prerequisite.get("freeze_record_checksum")
+        == canonical_checksum(_json(P1_09_FREEZE_PATH))
+        == P1_09_FREEZE_CHECKSUM,
+        "P1-09 freeze checksum mismatch",
+    )
+
+    _require(record.get("recorded_on") == "2026-10-27", "invalid freeze record date")
+    _require(record.get("frozen") is True, "P1-10 is not frozen")
+    _require(record.get("closed_gaps") == ["NEX-P1-GAP-006"], "frozen gap inventory drift")
+    for key in (
+        "production_readiness_claimed",
+        "public_artifact_access",
+        "cloud_storage_credentials",
+        "retention_execution_enabled",
+        "automatic_evidence_deletion",
+        "public_internet_profile",
+        "live_execution_capability",
+        "exchange_credentials",
+        "wallet_capability",
+        "autonomous_ai_execution",
+    ):
+        _require(record.get(key) is False, f"freeze record cannot enable {key}")
+    _require(record.get("next_allowed_stage") == "NEX-P1-11", "post-freeze stage drift")
+
+
 def main() -> int:
     validate_frozen_p1_09()
     contract = load_contract()
     validate_contract(contract)
     validate_files_and_runtime_markers()
+    validate_freeze_record(load_freeze_record(), contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={canonical_checksum(contract)}")
     print("NEX_P1_09_PREREQUISITE=PASS")
     print("NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print("NEX_P1_10_FREEZE=PASS")
     return 0
 
 

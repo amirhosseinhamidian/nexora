@@ -97,12 +97,14 @@ checkpoints, outbox records and continuation jobs. Candidate
 workflow and ten regression workflows on the same SHA. The next allowed stage
 is `NEX-P1-10`, which owns artifact and export storage.
 
-`NEX-P1-10` is implemented as a freeze candidate. It adds the owner-scoped
+`NEX-P1-10` is frozen. It adds the owner-scoped
 versioned local-filesystem adapter, immutable SHA-256 manifests, atomic
 directory publication, deterministic complete export bundles, bounded quota
 enforcement, retention dry-runs and storage reconciliation. No public download
-route or cloud-storage credential is introduced. The next allowed action is
-`NEX-P1-10-FREEZE`; the authenticated Web shell remains `NEX-P1-11`.
+route or cloud-storage credential is introduced. Candidate
+`707795735e156ebbd973f08709e52c5a994e2d17` is bound to the successful primary
+workflow and eleven regression workflows on the same SHA. The next allowed
+stage is `NEX-P1-11`, the authenticated Web shell.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
@@ -178,6 +180,7 @@ NEX_P1_09_TRD_BOT_SYNC_RUNTIME=PASS
 NEX_P1_09_FREEZE=PASS
 NEX_P1_09_PREREQUISITE=PASS
 NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS
+NEX_P1_10_FREEZE=PASS
 ```
 
 ## Documents
@@ -233,3 +236,4 @@ NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS
 - [`artifacts/p1-07/runtime-api-auth-freeze.json`](artifacts/p1-07/runtime-api-auth-freeze.json)
 - [`artifacts/p1-08/audit-observability-freeze.json`](artifacts/p1-08/audit-observability-freeze.json)
 - [`artifacts/p1-09/trd-bot-sync-runtime-freeze.json`](artifacts/p1-09/trd-bot-sync-runtime-freeze.json)
+- [`artifacts/p1-10/artifact-export-storage-freeze.json`](artifacts/p1-10/artifact-export-storage-freeze.json)

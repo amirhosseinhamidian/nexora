@@ -1,9 +1,18 @@
 # NEX-P1-08 — Audit and Observability Foundation
 
-وضعیت: **Candidate — آماده‌ی Freeze پس از CI سبز**
+وضعیت: **Frozen**
 
 این مرحله `NEX-P1-GAP-004` را می‌بندد و روی Freeze معتبر `NEX-P1-07` با commit
 `6ff8e4f185a51fec0fa2c9a7353d35897fef7eec` بنا شده است.
+
+## Freeze evidence
+
+Candidate نهایی `8aaa4b1fd8a164e325bdc7531aecf72e790df1f3` است. اجرای اصلی
+`40387123809` هر سه job قرارداد observability، backend و PostgreSQL 17 را سبز
+کرد و ۹ workflow رگرسیون نیز روی همان SHA موفق شدند. رکورد immutable پذیرش در
+`artifacts/p1-08/audit-observability-freeze.json` نگهداری می‌شود.
+
+`NEX-P1-08` اکنون Frozen است و فقط `NEX-P1-09` را باز می‌کند.
 
 ## Logging امن
 

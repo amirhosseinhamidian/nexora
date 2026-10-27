@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class AuditObservabilityContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p1_07_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p1_07()
@@ -26,6 +27,7 @@ class AuditObservabilityContractTests(unittest.TestCase):
     def test_candidate_contract_and_runtime_markers_are_valid(self) -> None:
         MODULE.validate_contract(self.contract)
         MODULE.validate_files_and_runtime_markers()
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
@@ -83,6 +85,60 @@ class AuditObservabilityContractTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P1-09"
         with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "fix(nexora): wrong candidate"
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "commit message drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_every_primary_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["github_actions"]["jobs"]["postgresql_17"]
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "job inventory mismatch"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_failed_migration_drift_check(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["postgresql_17"]["migration_drift_check_passed"] = False
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "migration_drift_check_passed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_every_regression_workflow(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        del changed["regression_workflows"]["runtime_api_auth"]
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "workflow inventory mismatch"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "workflow head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["runtime_metrics"]["maximum_route_dimensions"] = 1
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "contract checksum mismatch"):
+            MODULE.validate_freeze_record(self.freeze_record, changed)
+
+    def test_freeze_record_cannot_claim_production_readiness(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "production_readiness_claimed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p1_09(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-10"
+        with self.assertRaisesRegex(MODULE.AuditObservabilityContractError, "post-freeze stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

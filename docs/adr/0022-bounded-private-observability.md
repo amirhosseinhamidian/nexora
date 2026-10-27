@@ -1,6 +1,6 @@
 # ADR 0022 — Bounded private observability
 
-Status: Accepted by NEX-P1-08 candidate
+Status: Frozen by NEX-P1-08
 
 ## Context
 

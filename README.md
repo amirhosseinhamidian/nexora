@@ -81,12 +81,13 @@ reauthentication evidence, JSON Schema/OpenAPI/Python/TypeScript generation and
 drift checks. Candidate `2a40a03e5a7995e6b845b3ce73e62646449da507`
 is bound to nine successful workflows. The next allowed stage is `NEX-P1-08`.
 
-`NEX-P1-08` is a candidate. It closes the audit and observability gap with
+`NEX-P1-08` is frozen. It closes the audit and observability gap with
 bounded JSON logging, recursive secret redaction, route-template request
 metrics, worker and database-pool metrics, dependency-aware readiness and
 guarded immutable audit metadata. Public metrics and external telemetry export
-remain disabled. The next allowed action after green candidate CI is
-`NEX-P1-08-FREEZE`; the freeze then opens `NEX-P1-09`.
+remain disabled. Candidate `8aaa4b1fd8a164e325bdc7531aecf72e790df1f3`
+is bound to the successful primary workflow and nine regression workflows on
+the same SHA. The next allowed stage is `NEX-P1-09`.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Scheduled TRD Bot synchronization, portfolio-domain
@@ -154,6 +155,7 @@ NEX_P1_07_RUNTIME_API_AUTH=PASS
 NEX_P1_07_FREEZE=PASS
 NEX_P1_07_PREREQUISITE=PASS
 NEX_P1_08_AUDIT_OBSERVABILITY=PASS
+NEX_P1_08_FREEZE=PASS
 ```
 
 ## Documents
@@ -203,3 +205,4 @@ NEX_P1_08_AUDIT_OBSERVABILITY=PASS
 - [`artifacts/p1-06/single-owner-identity-runtime-freeze.json`](artifacts/p1-06/single-owner-identity-runtime-freeze.json)
 - [`artifacts/p1-acceptance/phase-one-readiness-freeze.json`](artifacts/p1-acceptance/phase-one-readiness-freeze.json)
 - [`artifacts/p1-07/runtime-api-auth-freeze.json`](artifacts/p1-07/runtime-api-auth-freeze.json)
+- [`artifacts/p1-08/audit-observability-freeze.json`](artifacts/p1-08/audit-observability-freeze.json)

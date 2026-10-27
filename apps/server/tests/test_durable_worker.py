@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from threading import Event
 from uuid import UUID, uuid4
 
 from nexora.adapters.postgresql.durable import JobClaim, JobCompletion
@@ -90,3 +91,24 @@ def test_worker_reports_only_bounded_cycle_metrics() -> None:
     )
     worker.run_once()
     assert observer.observed == (1, 1, 0)
+
+
+def test_worker_loop_stops_between_bounded_cycles() -> None:
+    stop = Event()
+
+    class StoppingRepository(FakeRepository):
+        def claim_jobs(
+            self,
+            *,
+            worker_id: str,
+            job_types: tuple[str, ...],
+            limit: int,
+            lease_seconds: int,
+        ) -> tuple[JobClaim, ...]:
+            stop.set()
+            return ()
+
+    worker = DurableWorker(StoppingRepository(()), {"sync": lambda _: JobCompletion()}, worker_id="worker-1")
+    summary = worker.run_until_stopped(stop, poll_seconds=0.01)
+
+    assert (summary.cycles, summary.claimed, summary.succeeded, summary.failed) == (1, 0, 0, 0)

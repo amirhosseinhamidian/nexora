@@ -116,6 +116,13 @@ Authenticated Web shell workflow, including all three Playwright lifecycle
 tests, and twelve regression workflows on the same SHA. The next allowed stage
 is `NEX-P1-12`, private deployment and operations.
 
+`NEX-P1-12` is a candidate. It adds health-ordered private Compose operations,
+a continuously running graceful Worker, bounded interactive overload, encrypted
+database and artifact backup, owner-attended restore, dry-run-first retention
+and capacity reporting. Actual host benchmark and restore-drill evidence remain
+deferred to `NEX-P1-13`; production readiness is not claimed before that final
+acceptance and freeze.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.
@@ -141,6 +148,7 @@ uv run python scripts/verify_audit_observability.py
 uv run python scripts/verify_trd_bot_sync_runtime.py
 uv run python scripts/verify_artifact_export_storage.py
 uv run python scripts/verify_authenticated_web_shell.py
+uv run python scripts/verify_private_deployment_operations.py
 python3 -m unittest discover -s tests -v
 ```
 

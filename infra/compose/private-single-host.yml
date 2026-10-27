@@ -1,5 +1,32 @@
 name: nexora-private
 
+x-bounded-logging: &bounded-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-private-runtime-environment: &private-runtime-environment
+  NEXORA_ENVIRONMENT: production
+  NEXORA_DEPLOYMENT_PROFILE: private_single_host
+  NEXORA_LOG_LEVEL: INFO
+  NEXORA_DATABASE_DSN_FILE: /run/secrets/database.dsn
+  NEXORA_CANONICAL_ORIGIN_FILE: /run/secrets/canonical-origin
+  NEXORA_AUTH_PEPPER_FILE: /run/secrets/auth-pepper
+  NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
+  NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
+  NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts
+  SOURCE_COMMIT_SHA: ${SOURCE_COMMIT_SHA:?deployed commit SHA required}
+
+x-private-runtime-volumes: &private-runtime-volumes
+  - ${NEXORA_DATABASE_DSN_FILE:?database DSN required}:/run/secrets/database.dsn:ro
+  - ${NEXORA_CANONICAL_ORIGIN_FILE:?canonical origin required}:/run/secrets/canonical-origin:ro
+  - ${NEXORA_AUTH_PEPPER_FILE:?authentication pepper required}:/run/secrets/auth-pepper:ro
+  - ${NEXORA_TRD_BOT_BASE_URL_FILE:?TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
+  - ${NEXORA_TRD_BOT_TOKEN_FILE:?TRD Bot token required}:/run/secrets/trd-bot-token:ro
+  - nexora-logs:/var/log/nexora
+  - nexora-artifacts:/var/lib/nexora/artifacts
+
 services:
   ingress:
     image: caddy:2.10.2-alpine
@@ -15,7 +42,9 @@ services:
       api:
         condition: service_healthy
       web:
-        condition: service_started
+        condition: service_healthy
+    stop_grace_period: 20s
+    logging: *bounded-logging
 
   web:
     build:
@@ -24,6 +53,19 @@ services:
     restart: unless-stopped
     networks: [ingress]
     expose: ["3000"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/fa').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 20s
+    logging: *bounded-logging
 
   api:
     build:
@@ -31,48 +73,57 @@ services:
       dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     environment:
-      NEXORA_ENVIRONMENT: production
-      NEXORA_DEPLOYMENT_PROFILE: private_single_host
-      NEXORA_LOG_LEVEL: INFO
+      <<: *private-runtime-environment
       NEXORA_LOG_FILE: /var/log/nexora/api.jsonl
       NEXORA_API_HOST: 0.0.0.0
       NEXORA_API_PORT: "8000"
-      NEXORA_DATABASE_DSN_FILE: /run/secrets/database.dsn
-      NEXORA_CANONICAL_ORIGIN_FILE: /run/secrets/canonical-origin
-      NEXORA_AUTH_PEPPER_FILE: /run/secrets/auth-pepper
-      NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
-      NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
-      NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts
-    volumes:
-      - ${NEXORA_DATABASE_DSN_FILE:?database DSN required}:/run/secrets/database.dsn:ro
-      - ${NEXORA_CANONICAL_ORIGIN_FILE:?canonical origin required}:/run/secrets/canonical-origin:ro
-      - ${NEXORA_AUTH_PEPPER_FILE:?authentication pepper required}:/run/secrets/auth-pepper:ro
-      - ${NEXORA_TRD_BOT_BASE_URL_FILE:?TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
-      - ${NEXORA_TRD_BOT_TOKEN_FILE:?TRD Bot token required}:/run/secrets/trd-bot-token:ro
-      - nexora-logs:/var/log/nexora
-      - nexora-artifacts:/var/lib/nexora/artifacts
+    volumes: *private-runtime-volumes
     networks: [ingress, data]
     expose: ["8000"]
+    depends_on:
+      postgresql:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')",
+        ]
       interval: 15s
       timeout: 3s
       retries: 5
+    stop_grace_period: 30s
+    logging: *bounded-logging
 
   worker:
     build:
       context: ../..
       dockerfile: apps/server/Dockerfile
-    restart: "no"
-    command: ["uv", "run", "--frozen", "nexora-worker", "--check"]
+    restart: unless-stopped
+    command:
+      [
+        "uv",
+        "run",
+        "--frozen",
+        "nexora-worker",
+        "--run",
+        "--worker-id",
+        "nexora-worker-1",
+        "--poll-seconds",
+        "2",
+      ]
     environment:
-      NEXORA_ENVIRONMENT: production
-      NEXORA_DEPLOYMENT_PROFILE: private_single_host
-      NEXORA_LOG_LEVEL: INFO
+      <<: *private-runtime-environment
       NEXORA_LOG_FILE: /var/log/nexora/worker.jsonl
-    volumes:
-      - nexora-logs:/var/log/nexora
+    volumes: *private-runtime-volumes
     networks: [data]
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    stop_grace_period: 45s
+    logging: *bounded-logging
 
   postgresql:
     image: postgres:17.6-alpine
@@ -90,6 +141,37 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+    stop_grace_period: 60s
+    logging: *bounded-logging
+
+  operations:
+    profiles: ["operations"]
+    build:
+      context: ../..
+      dockerfile: infra/operations/Dockerfile
+    restart: "no"
+    environment:
+      SOURCE_COMMIT_SHA: ${SOURCE_COMMIT_SHA:?deployed commit SHA required}
+      NEXORA_POSTGRES_PASSWORD_FILE: /run/secrets/postgresql-password
+      NEXORA_AGE_RECIPIENT_FILE: /run/secrets/age-recipient
+      NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts
+      NEXORA_BACKUP_ROOT: /var/lib/nexora/backups
+      NEXORA_BACKUP_OFFSITE_ROOT: /var/lib/nexora/offsite-backups
+      NEXORA_RETENTION_EVIDENCE_ROOT: /var/lib/nexora/retention-evidence
+      NEXORA_OPERATIONS_AUDIT_FILE: /var/log/nexora/operations-audit.jsonl
+    volumes:
+      - ${NEXORA_POSTGRES_PASSWORD_FILE:?PostgreSQL password required}:/run/secrets/postgresql-password:ro
+      - ${NEXORA_AGE_RECIPIENT_FILE:?age public recipient required}:/run/secrets/age-recipient:ro
+      - nexora-artifacts:/var/lib/nexora/artifacts
+      - ${NEXORA_BACKUP_ROOT:?runtime backup directory required}:/var/lib/nexora/backups
+      - ${NEXORA_BACKUP_OFFSITE_ROOT:?offsite backup directory required}:/var/lib/nexora/offsite-backups
+      - ${NEXORA_RETENTION_EVIDENCE_ROOT:?retention evidence directory required}:/var/lib/nexora/retention-evidence
+      - nexora-logs:/var/log/nexora
+    networks: [data]
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    logging: *bounded-logging
 
 networks:
   ingress:

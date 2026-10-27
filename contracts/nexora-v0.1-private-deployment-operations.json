@@ -1,0 +1,98 @@
+{
+  "schema_version": "nexora-private-deployment-operations-v1",
+  "decision_id": "NEX-P1-12",
+  "decision_date": "2026-10-27",
+  "status": "candidate",
+  "p1_11_prerequisite": {
+    "decision_id": "NEX-P1-11",
+    "frozen": true,
+    "freeze_commit_sha": "6214b79786b0f92d8f06c4c43b3533db717b5ce2",
+    "freeze_record_path": "artifacts/p1-11/authenticated-web-shell-freeze.json",
+    "freeze_record_checksum": "fc955113cdd72f5d5099a1f5988989ee36589b2a30801461ee908bd0b539a1cc"
+  },
+  "closes_gaps": ["NEX-P1-GAP-008"],
+  "topology": {
+    "profile": "private_single_host",
+    "services": ["ingress", "web", "api", "worker", "postgresql"],
+    "only_host_port": 443,
+    "bind_scope": "authenticated_private_overlay_address",
+    "tls_minimum": "1.3",
+    "postgresql_host_port": false,
+    "worker_host_port": false,
+    "bounded_container_logs": true,
+    "health_ordered_startup": true,
+    "graceful_shutdown": true
+  },
+  "secrets": {
+    "injection": "absolute_read_only_mounted_files",
+    "committed_values": false,
+    "included_in_backup": false,
+    "included_in_log": false,
+    "age_private_identity_on_runtime_host_at_rest": false
+  },
+  "backup": {
+    "database_format": "postgresql_custom",
+    "artifacts_included": true,
+    "encryption": "age_x25519_offline_recipient",
+    "manifest_checksum": "sha256",
+    "atomic_publish": true,
+    "runtime_copy_counts_as_offsite": false,
+    "minimum_offsite_copies": 1,
+    "schedule": "daily",
+    "retention_tiers": {"daily": 14, "weekly": 8, "monthly": 12},
+    "recovery_point_objective_hours": 24
+  },
+  "restore": {
+    "owner_present": true,
+    "recent_reauthentication": true,
+    "runtime_stopped": true,
+    "encrypted_copy_verified_before_decrypt": true,
+    "content_checksums_verified": true,
+    "sessions_revoked": true,
+    "service_tokens_revoked": true,
+    "service_token_rotation_required": true,
+    "recovery_time_objective_hours": 4
+  },
+  "retention": {
+    "schedule": "daily",
+    "idempotent": true,
+    "dry_run_default": true,
+    "owner_approval_for_apply": true,
+    "manifest_before_delete": true,
+    "audit_before_delete": true,
+    "automatic_deletion_scope": ["expired_unpinned_export_artifacts", "backups_outside_retention_tiers"],
+    "immutable_evidence_excluded": true,
+    "pinned_artifacts_excluded": true
+  },
+  "capacity_and_overload": {
+    "reference_host": {"cpu_cores": 4, "memory_gib": 8, "encrypted_storage_gib": 200},
+    "database_soft_limit_gib": 20,
+    "artifact_soft_limit_gib": 100,
+    "minimum_free_storage_percent": 20,
+    "interactive_requests_per_second": {"sustained": 10, "burst": 25},
+    "overload_status": 429,
+    "retry_after_required": true,
+    "bounded_worker_concurrency": true,
+    "durable_work_queued": true,
+    "immutable_evidence_dropped": false
+  },
+  "acceptance_boundary": {
+    "implementation_and_smoke_tooling_delivered": true,
+    "actual_capacity_benchmark_deferred_to": "NEX-P1-13",
+    "actual_backup_restore_drill_deferred_to": "NEX-P1-13",
+    "production_readiness_claimed": false
+  },
+  "security_boundary": {
+    "public_internet_profile": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_capability": false,
+    "autonomous_ai_execution": false,
+    "multi_user": false
+  },
+  "transition": {
+    "ready_for_freeze": true,
+    "next_allowed_stage": "NEX-P1-12-FREEZE",
+    "post_freeze_stage": "NEX-P1-13"
+  }
+}

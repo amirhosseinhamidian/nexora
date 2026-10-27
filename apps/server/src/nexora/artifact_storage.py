@@ -355,6 +355,8 @@ class ArtifactStorage(Protocol):
 
     def plan_retention(self, *, now: datetime) -> RetentionDryRun: ...
 
+    def delete_expired_unpinned_export(self, key: ArtifactKey, *, cutoff: datetime) -> int: ...
+
 
 def load_artifact_storage_settings(environ: Mapping[str, str]) -> ArtifactStorageSettings:
     value = environ.get(ARTIFACT_ROOT_ENV)
@@ -728,3 +730,35 @@ class LocalFilesystemArtifactStorage:
             protected_count=protected,
             reclaimable_bytes=sum(item.size_bytes for item in candidates),
         )
+
+    def delete_expired_unpinned_export(self, key: ArtifactKey, *, cutoff: datetime) -> int:
+        if cutoff.tzinfo is None or cutoff.utcoffset() != timedelta(0):
+            raise ArtifactValidationError("retention cutoff must be timezone-aware UTC")
+        if key.namespace is not ArtifactNamespace.EXPORT:
+            raise ArtifactValidationError("retention deletion is restricted to the export namespace")
+        final = self._path(key)
+        if not final.exists():
+            return 0
+        manifest = self._load_manifest(final / MANIFEST_FILENAME)
+        if manifest.key != key:
+            raise ArtifactIntegrityError("retention path and manifest identity disagree")
+        if manifest.retention_class is not RetentionClass.UNPINNED_EXPORT:
+            raise ArtifactValidationError("retention deletion cannot remove protected evidence")
+        if manifest.published_at > cutoff:
+            raise ArtifactValidationError("retention deletion cannot remove a non-expired export")
+        stored = self.read(key)
+        if stored.manifest != manifest:
+            raise ArtifactIntegrityError("retention candidate changed during verification")
+        tombstone = self._root / ".staging" / f"retention-{uuid4()}"
+        try:
+            final.chmod(0o700)
+            os.rename(final, tombstone)
+            self._fsync_directory(final.parent)
+            tombstone.chmod(0o700)
+            shutil.rmtree(tombstone)
+            self._fsync_directory(self._root / ".staging")
+        except OSError as error:
+            if final.exists():
+                final.chmod(0o550)
+            raise ArtifactStorageError("retention deletion failed") from error
+        return manifest.size_bytes

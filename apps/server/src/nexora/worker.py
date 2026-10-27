@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import signal
 from collections.abc import Mapping, Sequence
+from threading import Event
 from uuid import UUID
 
 from nexora import __version__
@@ -25,7 +27,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="validate that the worker package can start without claiming jobs",
     )
     parser.add_argument("--once", action="store_true", help="run one bounded registered synchronization cycle")
+    parser.add_argument("--run", action="store_true", help="run bounded cycles until SIGTERM or SIGINT")
     parser.add_argument("--worker-id", help="stable private worker identity used for leases")
+    parser.add_argument("--poll-seconds", type=float, default=2.0, help="idle polling interval")
     parser.add_argument("--enqueue-initial-sync", metavar="OWNER_UUID", help="enqueue the initial TRD Bot event sync")
     return parser
 
@@ -48,7 +52,7 @@ def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = 
             f"{container.identity.configuration_checksum}; durable-job engine ready"
         )
         return 0
-    if arguments.once or arguments.enqueue_initial_sync:
+    if arguments.once or arguments.run or arguments.enqueue_initial_sync:
         source = os.environ if environ is None else environ
         container = compose_private_application(environ=source)
         try:
@@ -65,14 +69,29 @@ def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = 
                 print(f"enqueued {job_id}")
                 return 0
             if not arguments.worker_id:
-                raise SystemExit("--worker-id is required with --once")
+                raise SystemExit("--worker-id is required with --once or --run")
             handlers = TrdBotSyncHandlers(container.trd_bot_client)
-            result = DurableWorker(
+            worker = DurableWorker(
                 container.durable_work_repository,
                 handlers.registry(),
                 worker_id=arguments.worker_id,
                 observer=container.observability,
-            ).run_once()
+            )
+            if arguments.run:
+                stop = Event()
+
+                def request_stop(_: int, __: object) -> None:
+                    stop.set()
+
+                signal.signal(signal.SIGTERM, request_stop)
+                signal.signal(signal.SIGINT, request_stop)
+                summary = worker.run_until_stopped(stop, poll_seconds=arguments.poll_seconds)
+                print(
+                    f"cycles={summary.cycles} claimed={summary.claimed} "
+                    f"succeeded={summary.succeeded} failed={summary.failed}"
+                )
+                return 1 if summary.failed else 0
+            result = worker.run_once()
             print(f"claimed={result.claimed} succeeded={result.succeeded} failed={result.failed}")
             return 1 if result.failed else 0
         finally:

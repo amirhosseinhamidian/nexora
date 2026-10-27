@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 nexora-api = "nexora.api:run"
 nexora-identity = "nexora.identity_cli:main"
+nexora-operations = "nexora.operations_cli:main"
 nexora-worker = "nexora.worker:main"
 
 [build-system]

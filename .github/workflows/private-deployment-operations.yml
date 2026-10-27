@@ -1,0 +1,101 @@
+name: Private deployment and operations
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  operations-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-11 prerequisite
+        run: python3 scripts/verify_authenticated_web_shell.py
+      - name: Verify P1-12 private operations contract
+        run: python3 scripts/verify_private_deployment_operations.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Check operations shell syntax
+        run: sh -n infra/operations/create-backup.sh infra/operations/restore-backup.sh infra/operations/run-retention.sh
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and operations format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/benchmark_private_runtime.py
+          scripts/verify_private_deployment_operations.py
+          tests/test_private_deployment_operations.py
+      - name: Lint backend and operations
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/benchmark_private_runtime.py
+          scripts/verify_private_deployment_operations.py
+          tests/test_private_deployment_operations.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Test backend and repository contracts
+        run: uv run pytest -m "not integration" -q
+
+  private-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare non-secret Compose fixture paths
+        run: |
+          mkdir -p /tmp/nexora-ci/{secrets,backups,offsite,retention}
+          touch /tmp/nexora-ci/secrets/{database.dsn,postgresql-password,canonical-origin,auth-pepper,trd-bot-base-url,trd-bot-token,tls.crt,tls.key,age-recipient}
+      - name: Validate private topology
+        env:
+          SOURCE_COMMIT_SHA: 0000000000000000000000000000000000000000
+          NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
+          NEXORA_DATABASE_DSN_FILE: /tmp/nexora-ci/secrets/database.dsn
+          NEXORA_POSTGRES_PASSWORD_FILE: /tmp/nexora-ci/secrets/postgresql-password
+          NEXORA_CANONICAL_ORIGIN_FILE: /tmp/nexora-ci/secrets/canonical-origin
+          NEXORA_AUTH_PEPPER_FILE: /tmp/nexora-ci/secrets/auth-pepper
+          NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/nexora-ci/secrets/trd-bot-base-url
+          NEXORA_TRD_BOT_TOKEN_FILE: /tmp/nexora-ci/secrets/trd-bot-token
+          NEXORA_TLS_CERT_FILE: /tmp/nexora-ci/secrets/tls.crt
+          NEXORA_TLS_KEY_FILE: /tmp/nexora-ci/secrets/tls.key
+          NEXORA_AGE_RECIPIENT_FILE: /tmp/nexora-ci/secrets/age-recipient
+          NEXORA_BACKUP_ROOT: /tmp/nexora-ci/backups
+          NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-ci/offsite
+          NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-ci/retention
+        run: docker compose -f infra/compose/private-single-host.yml --profile operations config --quiet
+      - name: Build pinned operations image
+        env:
+          SOURCE_COMMIT_SHA: 0000000000000000000000000000000000000000
+          NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
+          NEXORA_DATABASE_DSN_FILE: /tmp/nexora-ci/secrets/database.dsn
+          NEXORA_POSTGRES_PASSWORD_FILE: /tmp/nexora-ci/secrets/postgresql-password
+          NEXORA_CANONICAL_ORIGIN_FILE: /tmp/nexora-ci/secrets/canonical-origin
+          NEXORA_AUTH_PEPPER_FILE: /tmp/nexora-ci/secrets/auth-pepper
+          NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/nexora-ci/secrets/trd-bot-base-url
+          NEXORA_TRD_BOT_TOKEN_FILE: /tmp/nexora-ci/secrets/trd-bot-token
+          NEXORA_TLS_CERT_FILE: /tmp/nexora-ci/secrets/tls.crt
+          NEXORA_TLS_KEY_FILE: /tmp/nexora-ci/secrets/tls.key
+          NEXORA_AGE_RECIPIENT_FILE: /tmp/nexora-ci/secrets/age-recipient
+          NEXORA_BACKUP_ROOT: /tmp/nexora-ci/backups
+          NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-ci/offsite
+          NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-ci/retention
+        run: docker compose -f infra/compose/private-single-host.yml --profile operations build operations

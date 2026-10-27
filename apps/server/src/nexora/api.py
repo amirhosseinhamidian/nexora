@@ -50,6 +50,7 @@ from nexora.observability import (
     database_pool_values,
     load_observability_settings,
 )
+from nexora.overload import InteractiveRequestGate
 from nexora.runtime_contracts import (
     ActionRequest,
     ActionResponse,
@@ -196,12 +197,13 @@ def create_app(
         redoc_url=None,
         responses={
             status_code: {"model": ErrorEnvelope, "description": "Versioned fail-closed error"}
-            for status_code in (400, 401, 403, 404, 409, 413, 415, 422, 500, 503)
+            for status_code in (400, 401, 403, 404, 409, 413, 415, 422, 429, 500, 503)
         },
         title="Nexora API",
         version=__version__,
     )
     application.state.container = resolved_container
+    application.state.interactive_request_gate = InteractiveRequestGate()
 
     @application.exception_handler(RequestValidationError)
     async def request_validation_error(request: Request, _: RequestValidationError) -> JSONResponse:
@@ -265,6 +267,17 @@ def create_app(
                 ),
                 correlation_id,
             )
+        if resolved_container.settings.environment.value == "production" and request.url.path.startswith("/v1/"):
+            overload = application.state.interactive_request_gate.acquire()
+            if not overload.allowed:
+                overload_response = _error_response(
+                    request,
+                    status_code=429,
+                    code="INTERACTIVE_RATE_LIMITED",
+                    message="request capacity is temporarily unavailable",
+                )
+                overload_response.headers["Retry-After"] = str(overload.retry_after_seconds)
+                return _security_headers(overload_response, correlation_id)
         if resolved_container.security is not None and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
             try:
                 verify_exact_origin(request.headers.get("origin"), resolved_container.security.canonical_origin)

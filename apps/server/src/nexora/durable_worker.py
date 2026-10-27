@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from threading import Event
 from typing import Protocol
 from uuid import UUID
 
@@ -43,6 +44,14 @@ def _error_code(error: Exception) -> str:
 
 @dataclass(frozen=True, slots=True)
 class WorkerCycleResult:
+    claimed: int
+    succeeded: int
+    failed: int
+
+
+@dataclass(frozen=True, slots=True)
+class WorkerRunSummary:
+    cycles: int
     claimed: int
     succeeded: int
     failed: int
@@ -105,3 +114,17 @@ class DurableWorker:
                 failed=result.failed,
             )
         return result
+
+    def run_until_stopped(self, stop: Event, *, poll_seconds: float = 2.0) -> WorkerRunSummary:
+        if poll_seconds <= 0:
+            raise ValueError("worker poll interval must be positive")
+        cycles = claimed = succeeded = failed = 0
+        while not stop.is_set():
+            result = self.run_once()
+            cycles += 1
+            claimed += result.claimed
+            succeeded += result.succeeded
+            failed += result.failed
+            if result.claimed == 0:
+                stop.wait(poll_seconds)
+        return WorkerRunSummary(cycles=cycles, claimed=claimed, succeeded=succeeded, failed=failed)

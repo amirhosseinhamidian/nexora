@@ -106,13 +106,15 @@ route or cloud-storage credential is introduced. Candidate
 workflow and eleven regression workflows on the same SHA. The next allowed
 stage is `NEX-P1-11`, the authenticated Web shell.
 
-`NEX-P1-11` is a freeze candidate. It adds bilingual passkey bootstrap and
+`NEX-P1-11` is frozen. It adds bilingual passkey bootstrap and
 login, the authenticated responsive application shell, explicit lifecycle
 states, a nonce-bound production CSP, a same-origin CSRF-aware browser client,
 and owner-scoped integrity-checked export downloads. Portfolio-domain pages
-remain disabled until Phase 2. The only next stage currently open is
-`NEX-P1-11-FREEZE`; after that freeze, private deployment and operations move to
-`NEX-P1-12`.
+remain disabled until Phase 2. Candidate
+`a32a4245a306173317556dcc5ecf85c22f1d4308` is bound to the successful
+Authenticated Web shell workflow, including all three Playwright lifecycle
+tests, and twelve regression workflows on the same SHA. The next allowed stage
+is `NEX-P1-12`, private deployment and operations.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production

@@ -1,6 +1,6 @@
 # ADR 0025: Authenticated same-origin Web shell
 
-- Status: Candidate for NEX-P1-11
+- Status: Frozen by NEX-P1-11
 - Date: 2026-10-27
 
 ## Decision

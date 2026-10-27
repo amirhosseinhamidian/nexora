@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class AuthenticatedWebShellContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p1_10_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p1_10()
@@ -29,6 +30,9 @@ class AuthenticatedWebShellContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_prerequisite_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)
@@ -83,6 +87,54 @@ class AuthenticatedWebShellContractTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P1-12"
         with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_tree(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_tree_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "candidate tree drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_wrong_commit_message(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_message"] = "test: different candidate"
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "commit message drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_browser_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["browser"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_browser_lifecycle_evidence(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["browser"]["browser_lifecycle_tests_passed"] = False
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "browser_lifecycle"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_workflow_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_enable_public_artifact_access(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["public_artifact_access"] = True
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "public_artifact_access"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p1_12(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P1-13"
+        with self.assertRaisesRegex(MODULE.AuthenticatedWebShellContractError, "post-freeze stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

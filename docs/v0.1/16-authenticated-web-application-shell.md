@@ -63,3 +63,18 @@ Next.js development server to enumerate network interfaces.
 
 The only next stage opened by this candidate is `NEX-P1-11-FREEZE`. After that
 freeze, the next delivery stage is `NEX-P1-12`.
+
+## Freeze evidence
+
+Candidate `a32a4245a306173317556dcc5ecf85c22f1d4308`, with tree
+`df9ad34c65e49ba8a4e75db626bb6629ac53b242`, passed the primary
+[Authenticated Web shell workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/40577080839)
+and all twelve regression workflows on the same SHA. The primary run records
+the frozen prerequisite, contract verifier, backend gates, Web format, lint,
+typecheck, unit tests, production build and all three Playwright lifecycle
+tests, including Chromium installation.
+
+`NEX-P1-11` is therefore frozen. The next allowed delivery stage is
+`NEX-P1-12`, which owns private deployment and operations. This freeze does
+not enable Portfolio domain routes, public deployment, passwords, multi-user,
+live trading, exchange credentials, wallets or autonomous AI execution.

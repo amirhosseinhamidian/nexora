@@ -16,6 +16,17 @@ secret values and command output are not written to the acceptance artifact.
 The candidate worktree must be clean and on a branch. Evidence must be no more
 than seven days old and must share the candidate SHA and environment label.
 
+The reference host may use one of two bounded network modes:
+
+- `loopback_only` (default): bind exactly `127.0.0.1:443`; remote access is
+  disabled and no overlay client is required;
+- `authenticated_private_overlay`: bind the authenticated overlay address when
+  remote access is intentionally required.
+
+Both modes require HTTPS and reject LAN-only, wildcard and public exposure.
+The loopback-only mode is a stricter deployment of the frozen P1-12 topology;
+it does not remove private-overlay support or reopen the earlier freeze.
+
 ## Candidate CI
 
 Commit and push all P1-13 tooling before producing host evidence. The
@@ -24,14 +35,15 @@ URL; rerunning a different SHA does not satisfy the gate.
 
 ## Capacity evidence
 
-Deploy the candidate to the private reference host, use its private-overlay
-HTTPS origin and trusted CA, then run:
+Deploy the candidate to the private reference host. For the default local-only
+mode, use its loopback HTTPS origin and trusted CA, then run:
 
 ```bash
 export SOURCE_COMMIT_SHA="$(git rev-parse HEAD)"
 
 uv run python scripts/benchmark_private_runtime.py \
-  --base-url https://100.64.0.10 \
+  --base-url https://127.0.0.1 \
+  --deployment-network-mode loopback_only \
   --ca-file /absolute/path/to/private-ca.pem \
   --requests 1000 \
   --concurrency 25 \
@@ -63,6 +75,7 @@ uv run python scripts/record_private_operations_drill.py \
   --backup-retention-plan /absolute/path/to/YYYYMMDD.backups.dry-run.plan.json \
   --backup-duration-seconds 12.5 \
   --restore-duration-seconds 42.8 \
+  --deployment-network-mode loopback_only \
   --database-restore-smoke pass \
   --artifact-restore-smoke pass \
   --session-revocation-smoke pass \
@@ -76,7 +89,8 @@ uv run python scripts/record_private_operations_drill.py \
 
 The recorder validates both encrypted copies and retention plans directly. A
 `pass` flag is an owner attestation and must only be supplied after the named
-smoke check actually succeeds.
+smoke check actually succeeds. Use `authenticated_private_overlay` instead of
+`loopback_only` only when the benchmark and deployment actually use that mode.
 
 ## Final acceptance runner
 

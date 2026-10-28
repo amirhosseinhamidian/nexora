@@ -26,7 +26,9 @@ def private_origin(value: str) -> str:
     try:
         address = ipaddress.ip_address(parsed.hostname)
     except ValueError as error:
-        raise argparse.ArgumentTypeError("base URL host must be a literal private-overlay address") from error
+        raise argparse.ArgumentTypeError(
+            "base URL host must be a literal loopback or private-overlay address"
+        ) from error
     carrier_grade_nat = address in ipaddress.ip_network("100.64.0.0/10")
     if address.is_unspecified or address.is_multicast or address.is_reserved:
         raise argparse.ArgumentTypeError("base URL cannot target an unspecified or reserved address")
@@ -35,9 +37,27 @@ def private_origin(value: str) -> str:
     return value.rstrip("/")
 
 
+def deployment_network_mode(base_url: str, declared_mode: str) -> str:
+    target_address = ipaddress.ip_address(urlsplit(base_url).hostname)
+    if declared_mode == "loopback_only":
+        if target_address != ipaddress.ip_address("127.0.0.1"):
+            raise ValueError("loopback_only benchmark must target exactly 127.0.0.1")
+        return declared_mode
+    if declared_mode == "authenticated_private_overlay":
+        if target_address.is_loopback:
+            raise ValueError("authenticated_private_overlay benchmark cannot target loopback")
+        return declared_mode
+    raise ValueError("unsupported deployment network mode")
+
+
 def parser() -> argparse.ArgumentParser:
     value = argparse.ArgumentParser(description="Nexora private overload smoke benchmark")
     value.add_argument("--base-url", required=True, type=private_origin)
+    value.add_argument(
+        "--deployment-network-mode",
+        choices=("loopback_only", "authenticated_private_overlay"),
+        required=True,
+    )
     value.add_argument("--ca-file", required=True, type=Path)
     value.add_argument("--requests", type=int, default=100)
     value.add_argument("--concurrency", type=int, default=25)
@@ -60,6 +80,10 @@ def main() -> int:
     if len(commit_sha) != 40 or any(character not in "0123456789abcdef" for character in commit_sha):
         raise SystemExit("SOURCE_COMMIT_SHA must identify the deployed candidate")
     context = ssl.create_default_context(cafile=str(arguments.ca_file))
+    try:
+        network_mode = deployment_network_mode(arguments.base_url, arguments.deployment_network_mode)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     target = f"{arguments.base_url}/v1/session"
 
     def request_once(_: int) -> tuple[int, float, bool]:
@@ -108,6 +132,8 @@ def main() -> int:
         "environment_label": arguments.environment_label,
         "generated_at": datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"),
         "target_origin": arguments.base_url,
+        "deployment_network_mode": network_mode,
+        "public_network_exposure": False,
         "requested_samples": arguments.requests,
         "completed_samples": len(samples),
         "concurrency": arguments.concurrency,

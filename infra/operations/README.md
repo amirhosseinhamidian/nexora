@@ -1,9 +1,11 @@
 # Nexora private operations runbook
 
 This runbook is for the single-owner, private single-host profile only. The host
-must use encrypted storage and an authenticated private overlay network. Only
-the overlay address may bind HTTPS 443; PostgreSQL, API, Web and Worker have no
-host ports. Public-internet deployment is not supported.
+must use encrypted storage. In the default same-host mode, ingress binds only
+`127.0.0.1:443` and remote access is disabled. An authenticated private-overlay
+address may be used when remote access is intentionally required. PostgreSQL,
+API, Web and Worker have no host ports. LAN-only, wildcard and public-internet
+deployment are not supported.
 
 ## Prerequisites
 
@@ -14,6 +16,10 @@ host ports. Public-internet deployment is not supported.
 - a mounted off-host or independently administered backup destination;
 - an age X25519 public recipient on the host and its private identity kept offline;
 - the deployed 40-character commit SHA in `SOURCE_COMMIT_SHA`.
+
+For a local-only reference host set `NEXORA_PRIVATE_BIND_ADDRESS=127.0.0.1`.
+This mode does not require Tailscale, WireGuard or another overlay client, but
+it also provides no remote access.
 
 Validate the rendered topology before starting it:
 

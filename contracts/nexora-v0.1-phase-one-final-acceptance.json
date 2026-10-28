@@ -55,7 +55,14 @@
     "retention_dry_run_required": true,
     "immutable_evidence_protected": true,
     "worker_restart_and_reclaim_required": true,
-    "https_443_only_required": true
+    "https_443_only_required": true,
+    "deployment_network_modes_allowed": [
+      "loopback_only",
+      "authenticated_private_overlay"
+    ],
+    "reference_host_default_network_mode": "loopback_only",
+    "loopback_bind_address": "127.0.0.1",
+    "loopback_remote_access_allowed": false
   },
   "acceptance_boundary": {
     "phase_one_foundation_may_be_frozen": true,

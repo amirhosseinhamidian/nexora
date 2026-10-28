@@ -220,6 +220,9 @@ def main() -> int:
         raise ValueError("every acceptance report must match the checked-out candidate")
     if any(report["environment_label"] != arguments.environment_label for report in reports):
         raise ValueError("every acceptance report must match --environment-label")
+    deployment_network_mode = capacity["deployment_network_mode"]
+    if drill["private_deployment"]["network_mode"] != deployment_network_mode:
+        raise ValueError("capacity and operations drill deployment network modes do not match")
     preflight_at = datetime.now(UTC)
     for report in reports:
         generated_at = datetime.fromisoformat(report["generated_at"].replace("Z", "+00:00")).astimezone(UTC)
@@ -253,12 +256,14 @@ def main() -> int:
         "branch": branch,
         "environment_label": arguments.environment_label,
         "generated_at": datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"),
+        "deployment_network_mode": deployment_network_mode,
         "prior_freeze": prior,
         "capacity": {
             "artifact_checksum": capacity_checksum,
             "candidate_commit_sha": capacity["candidate_commit_sha"],
             "environment_label": capacity["environment_label"],
             "generated_at": capacity["generated_at"],
+            "deployment_network_mode": deployment_network_mode,
             "passed": capacity["passed"],
         },
         "operations_drill": {
@@ -266,6 +271,7 @@ def main() -> int:
             "candidate_commit_sha": drill["candidate_commit_sha"],
             "environment_label": drill["environment_label"],
             "generated_at": drill["generated_at"],
+            "deployment_network_mode": drill["private_deployment"]["network_mode"],
             "passed": drill["passed"],
         },
         "ci": {

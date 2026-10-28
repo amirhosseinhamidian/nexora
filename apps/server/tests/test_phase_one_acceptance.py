@@ -35,6 +35,8 @@ def capacity() -> dict[str, Any]:
             "candidate_commit_sha": SHA,
             "environment_label": "test-host",
             "generated_at": NOW,
+            "deployment_network_mode": "loopback_only",
+            "public_network_exposure": False,
             "requested_samples": 100,
             "completed_samples": 100,
             "status_counts": {"401": 75, "429": 25},
@@ -81,6 +83,9 @@ def drill() -> dict[str, Any]:
                 "passed": True,
             },
             "private_deployment": {
+                "network_mode": "loopback_only",
+                "remote_access_enabled": False,
+                "public_network_exposure": False,
                 "https_443_only": True,
                 "health_ready": True,
                 "web_shell": True,
@@ -108,6 +113,7 @@ def acceptance() -> dict[str, Any]:
         "branch": "feature/v0.1-foundation",
         "environment_label": "test-host",
         "generated_at": NOW,
+        "deployment_network_mode": "loopback_only",
         "prior_freeze": {
             "p1_12_ready": True,
             "p1_12_commit_sha": "1af9161925a71c4154801bb6ac4f533f4a8e21b8",
@@ -117,12 +123,14 @@ def acceptance() -> dict[str, Any]:
             "candidate_commit_sha": SHA,
             "environment_label": "test-host",
             "passed": True,
+            "deployment_network_mode": "loopback_only",
             "artifact_checksum": "b" * 64,
         },
         "operations_drill": {
             "candidate_commit_sha": SHA,
             "environment_label": "test-host",
             "passed": True,
+            "deployment_network_mode": "loopback_only",
             "artifact_checksum": "c" * 64,
         },
         "ci": {
@@ -176,11 +184,27 @@ def test_capacity_report_is_checksum_bound_and_fail_closed() -> None:
         parse_capacity_report(_bytes(changed))
 
 
+def test_capacity_report_rejects_public_network_mode() -> None:
+    changed = capacity()
+    changed["deployment_network_mode"] = "public_internet"
+    changed = _checksum({key: value for key, value in changed.items() if key != "report_checksum"})
+    with pytest.raises(PhaseOneAcceptanceError, match="network mode"):
+        parse_capacity_report(_bytes(changed))
+
+
 def test_operations_drill_requires_restore_and_protected_retention() -> None:
     assert parse_operations_drill_report(_bytes(drill()))["passed"] is True
     changed = drill()
     changed["restore"]["sessions_revoked"] = False
     with pytest.raises(PhaseOneAcceptanceError, match="sessions_revoked"):
+        parse_operations_drill_report(_bytes(changed))
+
+
+def test_operations_drill_rejects_loopback_remote_access() -> None:
+    changed = drill()
+    changed["private_deployment"]["remote_access_enabled"] = True
+    changed = _checksum({key: value for key, value in changed.items() if key != "report_checksum"})
+    with pytest.raises(PhaseOneAcceptanceError, match="remote-access"):
         parse_operations_drill_report(_bytes(changed))
 
 
@@ -195,6 +219,14 @@ def test_final_acceptance_rejects_ci_drift() -> None:
     payload["ci"]["head_sha"] = "0" * 40
     encoded = serialize_phase_one_acceptance_record(payload).encode()
     with pytest.raises(PhaseOneAcceptanceError, match="CI head SHA drift"):
+        parse_phase_one_acceptance_record(encoded)
+
+
+def test_final_acceptance_rejects_network_mode_drift() -> None:
+    payload = acceptance()
+    payload["capacity"]["deployment_network_mode"] = "authenticated_private_overlay"
+    encoded = serialize_phase_one_acceptance_record(payload).encode()
+    with pytest.raises(PhaseOneAcceptanceError, match="network mode drift"):
         parse_phase_one_acceptance_record(encoded)
 
 

@@ -133,6 +133,11 @@ PostgreSQL/Web/browser gate set to one SHA and environment. The final Freeze
 commit is restricted to the checksummed acceptance artifact; it does not deploy,
 tag, enable public hosting or complete the Portfolio product.
 
+The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
+for same-machine personal use. Authenticated private-overlay deployment remains
+available when remote access is required; LAN-only, wildcard and public binds
+remain forbidden.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.

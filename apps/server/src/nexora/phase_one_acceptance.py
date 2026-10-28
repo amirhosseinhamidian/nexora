@@ -9,6 +9,7 @@ from typing import Any, Final, cast
 PHASE_ONE_MAX_EVIDENCE_AGE: Final = timedelta(days=7)
 SHA = re.compile(r"^[0-9a-f]{40}$")
 RUN_URL = re.compile(r"^https://github\.com/amirhosseinhamidian/nexora/actions/runs/[0-9]+$")
+DEPLOYMENT_NETWORK_MODES: Final = {"loopback_only", "authenticated_private_overlay"}
 
 
 class PhaseOneAcceptanceError(ValueError):
@@ -85,6 +86,11 @@ def parse_capacity_report(value: bytes) -> dict[str, Any]:
     _require(int(statuses.get("429", 0)) > 0, "capacity report has no overload evidence")
     _require(payload.get("retry_after_present_on_all_429") is True, "capacity Retry-After evidence is incomplete")
     _require(payload.get("immutable_evidence_dropped") is False, "capacity report claims evidence loss")
+    _require(
+        payload.get("deployment_network_mode") in DEPLOYMENT_NETWORK_MODES,
+        "capacity deployment network mode is invalid",
+    )
+    _require(payload.get("public_network_exposure") is False, "capacity target cannot be publicly exposed")
     _validated_checksum(payload, "capacity report")
     return payload
 
@@ -127,6 +133,13 @@ def parse_operations_drill_report(value: bytes) -> dict[str, Any]:
     _require(0 < restore_duration <= 4 * 60 * 60, "restore RTO was not met")
     for key in ("https_443_only", "health_ready", "web_shell", "worker_restart_reclaim"):
         _require(deployment.get(key) is True, f"deployment evidence missing {key}")
+    network_mode = deployment.get("network_mode")
+    _require(network_mode in DEPLOYMENT_NETWORK_MODES, "deployment network mode is invalid")
+    _require(deployment.get("public_network_exposure") is False, "public deployment exposure is forbidden")
+    _require(
+        deployment.get("remote_access_enabled") is (network_mode == "authenticated_private_overlay"),
+        "deployment remote-access evidence is inconsistent",
+    )
     _validated_checksum(payload, "operations drill report")
     return payload
 
@@ -149,6 +162,8 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
         "acceptance environment is missing",
     )
     _timestamp(payload.get("generated_at"), "acceptance generated_at")
+    network_mode = payload.get("deployment_network_mode")
+    _require(network_mode in DEPLOYMENT_NETWORK_MODES, "acceptance deployment network mode is invalid")
     prior = _field_object(payload, "prior_freeze", "prior freeze evidence")
     _require(prior.get("p1_12_ready") is True, "P1-12 prerequisite is not frozen")
     _require(prior.get("p1_12_commit_sha") == "1af9161925a71c4154801bb6ac4f533f4a8e21b8", "P1-12 commit drift")
@@ -161,6 +176,7 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
         _require(evidence.get("candidate_commit_sha") == candidate, f"{key} candidate SHA drift")
         _require(evidence.get("environment_label") == payload["environment_label"], f"{key} environment drift")
         _require(evidence.get("passed") is True, f"{key} evidence did not pass")
+        _require(evidence.get("deployment_network_mode") == network_mode, f"{key} network mode drift")
         _require(
             re.fullmatch(r"[0-9a-f]{64}", str(evidence.get("artifact_checksum"))) is not None,
             f"{key} checksum is invalid",

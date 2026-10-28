@@ -24,6 +24,11 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--backup-retention-plan", type=Path, required=True)
     value.add_argument("--backup-duration-seconds", type=float, required=True)
     value.add_argument("--restore-duration-seconds", type=float, required=True)
+    value.add_argument(
+        "--deployment-network-mode",
+        choices=("loopback_only", "authenticated_private_overlay"),
+        required=True,
+    )
     for name in (
         "database-restore-smoke",
         "artifact-restore-smoke",
@@ -138,6 +143,9 @@ def main() -> int:
             "passed": True,
         },
         "private_deployment": {
+            "network_mode": arguments.deployment_network_mode,
+            "remote_access_enabled": arguments.deployment_network_mode == "authenticated_private_overlay",
+            "public_network_exposure": False,
             "https_443_only": arguments.private_deployment_smoke == "pass",
             "health_ready": arguments.private_deployment_smoke == "pass",
             "web_shell": arguments.private_deployment_smoke == "pass",

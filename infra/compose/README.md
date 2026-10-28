@@ -13,7 +13,9 @@ docker compose -f infra/compose/postgresql.dev.yml up -d
 ```
 
 `private-single-host.yml` is the P1-06 production topology: only HTTPS 443 is
-bound, and the bind address must be the authenticated private-overlay address.
+bound. P1-13 accepts either exact loopback `127.0.0.1` for a same-host,
+remote-disabled installation or an authenticated private-overlay address when
+remote access is required. LAN-only, wildcard and public binds are forbidden.
 PostgreSQL, API, web and worker ports remain internal. TLS, database and
 identity secrets are mounted from operator-owned read-only files; Compose does
 not create, migrate, or print them. Run migrations as an explicit release step

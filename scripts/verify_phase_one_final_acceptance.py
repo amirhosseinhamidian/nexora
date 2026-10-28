@@ -10,7 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-one-final-acceptance.json"
 P1_12_FREEZE_PATH = ROOT / "artifacts/p1-12/private-deployment-operations-freeze.json"
-CONTRACT_CHECKSUM = "a7a2274a85d6d75b6268c3339bf4527c49d6ffeb00dce9429c89dd36628d4d3e"
+CONTRACT_CHECKSUM = "c16b066dacc98a838924656daf0797ef2d67124a1e2eb9627ab9dad20ca767e2"
 P1_12_FREEZE_CHECKSUM = "49d9c3c2427d4154445a25c61be8945dca4b46cbcfe43ce25e538c37a457cda6"
 P1_12_FREEZE_COMMIT = "1af9161925a71c4154801bb6ac4f533f4a8e21b8"
 
@@ -136,6 +136,16 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(operations.get("restore_rto_hours") == 4, "restore RTO drift")
     _require(operations.get("non_export_api_p95_ms") == 300, "latency budget drift")
     _require(operations.get("minimum_throughput_per_second") == 10, "throughput budget drift")
+    _require(
+        operations.get("deployment_network_modes_allowed") == ["loopback_only", "authenticated_private_overlay"],
+        "deployment network modes drift",
+    )
+    _require(
+        operations.get("reference_host_default_network_mode") == "loopback_only",
+        "reference host network mode drift",
+    )
+    _require(operations.get("loopback_bind_address") == "127.0.0.1", "loopback bind address drift")
+    _require(operations.get("loopback_remote_access_allowed") is False, "loopback remote access is forbidden")
 
     boundary = contract.get("acceptance_boundary")
     _require(isinstance(boundary, dict), "acceptance boundary must be an object")
@@ -165,11 +175,12 @@ def validate_files_and_runtime_markers() -> None:
             "acceptance-artifact-only",
             "ready_to_freeze_phase_one",
         ),
-        "scripts/benchmark_private_runtime.py": ("environment_label", "generated_at"),
+        "scripts/benchmark_private_runtime.py": ("environment_label", "generated_at", "deployment_network_mode"),
         "scripts/record_private_operations_drill.py": (
             "nexora-private-operations-drill-v1",
             "service_token_rotation_completed",
             "runtime_and_offsite_copies_match",
+            "loopback_only",
         ),
         "scripts/run_phase_one_final_acceptance.py": (
             "nexora_acceptance",
@@ -181,6 +192,7 @@ def validate_files_and_runtime_markers() -> None:
             "NEX-P1-GAP-009",
             "acceptance-artifact-only",
             "NEX-P2-01",
+            "loopback-only",
         ),
         ".github/workflows/phase-one-final-acceptance.yml": ("Phase 1 final acceptance",),
         "tests/test_phase_one_final_acceptance.py": ("PhaseOneFinalAcceptanceContractTests",),

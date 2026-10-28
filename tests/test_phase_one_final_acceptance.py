@@ -15,6 +15,15 @@ if SPEC is None or SPEC.loader is None:
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
+BENCHMARK_SPEC = importlib.util.spec_from_file_location(
+    "benchmark_private_runtime",
+    ROOT / "scripts/benchmark_private_runtime.py",
+)
+if BENCHMARK_SPEC is None or BENCHMARK_SPEC.loader is None:
+    raise RuntimeError("unable to load private runtime benchmark")
+BENCHMARK = importlib.util.module_from_spec(BENCHMARK_SPEC)
+BENCHMARK_SPEC.loader.exec_module(BENCHMARK)
+
 
 class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -29,6 +38,18 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_loopback_mode_requires_exact_loopback_address(self) -> None:
+        self.assertEqual(
+            BENCHMARK.deployment_network_mode("https://127.0.0.1", "loopback_only"),
+            "loopback_only",
+        )
+        with self.assertRaisesRegex(ValueError, "exactly 127.0.0.1"):
+            BENCHMARK.deployment_network_mode("https://192.168.1.10", "loopback_only")
+
+    def test_private_overlay_mode_cannot_claim_loopback(self) -> None:
+        with self.assertRaisesRegex(ValueError, "cannot target loopback"):
+            BENCHMARK.deployment_network_mode("https://127.0.0.1", "authenticated_private_overlay")
 
     def test_prerequisite_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)
@@ -52,6 +73,18 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
         changed = copy.deepcopy(self.contract)
         changed["operations_acceptance"]["restore_rto_hours"] = 24
         with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "RTO"):
+            MODULE.validate_contract(changed)
+
+    def test_public_network_mode_cannot_be_accepted(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["operations_acceptance"]["deployment_network_modes_allowed"].append("public_internet")
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "network modes"):
+            MODULE.validate_contract(changed)
+
+    def test_loopback_remote_access_cannot_be_enabled(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["operations_acceptance"]["loopback_remote_access_allowed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "loopback remote access"):
             MODULE.validate_contract(changed)
 
     def test_acceptance_cannot_claim_portfolio_completion(self) -> None:

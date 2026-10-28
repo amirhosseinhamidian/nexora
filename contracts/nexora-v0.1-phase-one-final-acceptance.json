@@ -1,0 +1,80 @@
+{
+  "schema_version": "nexora-phase-one-final-acceptance-v1",
+  "decision_id": "NEX-P1-13",
+  "decision_date": "2026-10-28",
+  "status": "candidate",
+  "p1_12_prerequisite": {
+    "decision_id": "NEX-P1-12",
+    "frozen": true,
+    "freeze_commit_sha": "1af9161925a71c4154801bb6ac4f533f4a8e21b8",
+    "freeze_record_path": "artifacts/p1-12/private-deployment-operations-freeze.json",
+    "freeze_record_checksum": "49d9c3c2427d4154445a25c61be8945dca4b46cbcfe43ce25e538c37a457cda6"
+  },
+  "closes_gaps": [
+    "NEX-P1-GAP-009"
+  ],
+  "evidence": {
+    "maximum_age_days": 7,
+    "same_candidate_sha_required": true,
+    "same_environment_label_required": true,
+    "github_actions_success_required": true,
+    "capacity_report_schema": "nexora-private-runtime-benchmark-v1",
+    "operations_drill_report_schema": "nexora-private-operations-drill-v1",
+    "final_record_schema": "nexora-phase-one-final-acceptance-record-v1",
+    "checksums_required": true
+  },
+  "automated_gates": [
+    "repository_contract",
+    "backend",
+    "migration_cycle",
+    "postgresql_resilience",
+    "frontend",
+    "browser"
+  ],
+  "destructive_database_boundary": {
+    "required_database_name": "nexora_acceptance",
+    "production_database_allowed": false,
+    "development_database_allowed": false,
+    "dsn_recorded_in_artifact": false
+  },
+  "manual_evidence": [
+    "fresh_clone_install",
+    "passkey_session_and_csrf_lifecycle",
+    "trd_bot_sync_and_idempotency",
+    "private_backup_restore_and_retention",
+    "responsive_bilingual_web_shell",
+    "no_forbidden_capabilities"
+  ],
+  "operations_acceptance": {
+    "actual_capacity_benchmark_required": true,
+    "overload_429_and_retry_after_required": true,
+    "non_export_api_p95_ms": 300,
+    "minimum_throughput_per_second": 10,
+    "runtime_and_offsite_backup_match_required": true,
+    "restore_rto_hours": 4,
+    "retention_dry_run_required": true,
+    "immutable_evidence_protected": true,
+    "worker_restart_and_reclaim_required": true,
+    "https_443_only_required": true
+  },
+  "acceptance_boundary": {
+    "phase_one_foundation_may_be_frozen": true,
+    "portfolio_product_complete": false,
+    "public_production_readiness_claimed": false,
+    "freeze_commit_policy": "acceptance-artifact-only",
+    "freeze_does_not_deploy_or_tag": true
+  },
+  "security_boundary": {
+    "public_internet_production_profile": false,
+    "live_execution_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "autonomous_ai_execution": false,
+    "multi_user_identity": false
+  },
+  "transition": {
+    "ready_for_acceptance_candidate": true,
+    "next_allowed_stage": "NEX-P1-13-ACCEPTANCE",
+    "post_freeze_stage": "NEX-P2-01"
+  }
+}

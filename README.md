@@ -126,6 +126,13 @@ same SHA. Actual host benchmark and restore-drill evidence remain deferred to
 `NEX-P1-13`; production readiness is not claimed before that final acceptance
 and freeze.
 
+`NEX-P1-13` final-acceptance tooling is a candidate. It binds a current
+reference-host overload benchmark, encrypted backup/restore and protected
+retention drill, green GitHub Actions and the complete repository/backend/
+PostgreSQL/Web/browser gate set to one SHA and environment. The final Freeze
+commit is restricted to the checksummed acceptance artifact; it does not deploy,
+tag, enable public hosting or complete the Portfolio product.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.
@@ -152,6 +159,7 @@ uv run python scripts/verify_trd_bot_sync_runtime.py
 uv run python scripts/verify_artifact_export_storage.py
 uv run python scripts/verify_authenticated_web_shell.py
 uv run python scripts/verify_private_deployment_operations.py
+uv run python scripts/verify_phase_one_final_acceptance.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -205,7 +213,13 @@ NEX_P1_10_ARTIFACT_EXPORT_STORAGE=PASS
 NEX_P1_10_FREEZE=PASS
 NEX_P1_10_PREREQUISITE=PASS
 NEX_P1_11_AUTHENTICATED_WEB_SHELL=PASS
-NEX_P1_11_READY_FOR_FREEZE=PASS
+NEX_P1_11_FREEZE=PASS
+NEX_P1_11_PREREQUISITE=PASS
+NEX_P1_12_PRIVATE_DEPLOYMENT_OPERATIONS=PASS
+NEX_P1_12_FREEZE=PASS
+NEX_P1_12_PREREQUISITE=PASS
+NEX_P1_13_FINAL_ACCEPTANCE_TOOLING=PASS
+NEX_P1_13_READY_FOR_CANDIDATE=PASS
 ```
 
 ## Documents
@@ -227,6 +241,8 @@ NEX_P1_11_READY_FOR_FREEZE=PASS
 - [`docs/v0.1/14-trd-bot-sync-runtime.md`](docs/v0.1/14-trd-bot-sync-runtime.md)
 - [`docs/v0.1/15-artifact-and-export-storage.md`](docs/v0.1/15-artifact-and-export-storage.md)
 - [`docs/v0.1/16-authenticated-web-application-shell.md`](docs/v0.1/16-authenticated-web-application-shell.md)
+- [`docs/v0.1/17-private-deployment-and-operations.md`](docs/v0.1/17-private-deployment-and-operations.md)
+- [`docs/v0.1/18-phase-one-final-acceptance.md`](docs/v0.1/18-phase-one-final-acceptance.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -246,6 +262,8 @@ NEX_P1_11_READY_FOR_FREEZE=PASS
 - [`contracts/nexora-v0.1-trd-bot-sync-runtime.json`](contracts/nexora-v0.1-trd-bot-sync-runtime.json)
 - [`contracts/nexora-v0.1-artifact-export-storage.json`](contracts/nexora-v0.1-artifact-export-storage.json)
 - [`contracts/nexora-v0.1-authenticated-web-shell.json`](contracts/nexora-v0.1-authenticated-web-shell.json)
+- [`contracts/nexora-v0.1-private-deployment-operations.json`](contracts/nexora-v0.1-private-deployment-operations.json)
+- [`contracts/nexora-v0.1-phase-one-final-acceptance.json`](contracts/nexora-v0.1-phase-one-final-acceptance.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
@@ -264,3 +282,5 @@ NEX_P1_11_READY_FOR_FREEZE=PASS
 - [`artifacts/p1-08/audit-observability-freeze.json`](artifacts/p1-08/audit-observability-freeze.json)
 - [`artifacts/p1-09/trd-bot-sync-runtime-freeze.json`](artifacts/p1-09/trd-bot-sync-runtime-freeze.json)
 - [`artifacts/p1-10/artifact-export-storage-freeze.json`](artifacts/p1-10/artifact-export-storage-freeze.json)
+- [`artifacts/p1-11/authenticated-web-shell-freeze.json`](artifacts/p1-11/authenticated-web-shell-freeze.json)
+- [`artifacts/p1-12/private-deployment-operations-freeze.json`](artifacts/p1-12/private-deployment-operations-freeze.json)

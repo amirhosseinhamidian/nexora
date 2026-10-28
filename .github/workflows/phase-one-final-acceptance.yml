@@ -1,0 +1,199 @@
+name: Phase 1 final acceptance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P1-12 prerequisite
+        run: python3 scripts/verify_private_deployment_operations.py
+      - name: Verify P1-13 final acceptance tooling
+        run: python3 scripts/verify_phase_one_final_acceptance.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check acceptance format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/benchmark_private_runtime.py
+          scripts/record_private_operations_drill.py
+          scripts/run_phase_one_final_acceptance.py
+          scripts/verify_phase_one_final_acceptance.py
+          tests/test_phase_one_final_acceptance.py
+      - name: Lint acceptance runtime
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/benchmark_private_runtime.py
+          scripts/record_private_operations_drill.py
+          scripts/run_phase_one_final_acceptance.py
+          scripts/verify_phase_one_final_acceptance.py
+          tests/test_phase_one_final_acceptance.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run backend and repository tests
+        run: uv run pytest -m "not integration" -q
+      - name: Check generated runtime contracts
+        run: uv run python scripts/generate_runtime_contracts.py --check
+
+  postgresql-17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: nexora_acceptance
+          POSTGRES_USER: nexora
+          POSTGRES_PASSWORD: nexora_ci_fixture_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexora -d nexora_acceptance"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /tmp/nexora-acceptance.dsn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Create private acceptance DSN fixture
+        run: |
+          umask 077
+          printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_acceptance' > "$NEXORA_MIGRATION_DATABASE_DSN_FILE"
+      - name: Upgrade repository head
+        run: uv run alembic upgrade head
+      - name: Run PostgreSQL resilience tests
+        run: uv run pytest -m integration -q
+      - name: Downgrade to base
+        run: uv run alembic downgrade base
+      - name: Rebuild repository head
+        run: uv run alembic upgrade head
+      - name: Check migration drift
+        run: uv run alembic check
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Build Web
+        run: pnpm build
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Test authenticated browser lifecycle
+        run: pnpm --filter @nexora/web test:e2e
+
+  private-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare non-secret Compose fixture paths
+        run: |
+          mkdir -p /tmp/nexora-ci/{secrets,backups,offsite,retention}
+          touch /tmp/nexora-ci/secrets/{database.dsn,postgresql-password,canonical-origin,auth-pepper,trd-bot-base-url,trd-bot-token,tls.crt,tls.key,age-recipient}
+      - name: Validate private topology
+        env:
+          SOURCE_COMMIT_SHA: ${{ github.sha }}
+          NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
+          NEXORA_DATABASE_DSN_FILE: /tmp/nexora-ci/secrets/database.dsn
+          NEXORA_POSTGRES_PASSWORD_FILE: /tmp/nexora-ci/secrets/postgresql-password
+          NEXORA_CANONICAL_ORIGIN_FILE: /tmp/nexora-ci/secrets/canonical-origin
+          NEXORA_AUTH_PEPPER_FILE: /tmp/nexora-ci/secrets/auth-pepper
+          NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/nexora-ci/secrets/trd-bot-base-url
+          NEXORA_TRD_BOT_TOKEN_FILE: /tmp/nexora-ci/secrets/trd-bot-token
+          NEXORA_TLS_CERT_FILE: /tmp/nexora-ci/secrets/tls.crt
+          NEXORA_TLS_KEY_FILE: /tmp/nexora-ci/secrets/tls.key
+          NEXORA_AGE_RECIPIENT_FILE: /tmp/nexora-ci/secrets/age-recipient
+          NEXORA_BACKUP_ROOT: /tmp/nexora-ci/backups
+          NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-ci/offsite
+          NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-ci/retention
+        run: docker compose -f infra/compose/private-single-host.yml --profile operations config --quiet
+      - name: Build pinned operations image
+        env:
+          SOURCE_COMMIT_SHA: ${{ github.sha }}
+          NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
+          NEXORA_DATABASE_DSN_FILE: /tmp/nexora-ci/secrets/database.dsn
+          NEXORA_POSTGRES_PASSWORD_FILE: /tmp/nexora-ci/secrets/postgresql-password
+          NEXORA_CANONICAL_ORIGIN_FILE: /tmp/nexora-ci/secrets/canonical-origin
+          NEXORA_AUTH_PEPPER_FILE: /tmp/nexora-ci/secrets/auth-pepper
+          NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/nexora-ci/secrets/trd-bot-base-url
+          NEXORA_TRD_BOT_TOKEN_FILE: /tmp/nexora-ci/secrets/trd-bot-token
+          NEXORA_TLS_CERT_FILE: /tmp/nexora-ci/secrets/tls.crt
+          NEXORA_TLS_KEY_FILE: /tmp/nexora-ci/secrets/tls.key
+          NEXORA_AGE_RECIPIENT_FILE: /tmp/nexora-ci/secrets/age-recipient
+          NEXORA_BACKUP_ROOT: /tmp/nexora-ci/backups
+          NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-ci/offsite
+          NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-ci/retention
+        run: docker compose -f infra/compose/private-single-host.yml --profile operations build operations

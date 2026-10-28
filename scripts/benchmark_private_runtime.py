@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -40,6 +41,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--ca-file", required=True, type=Path)
     value.add_argument("--requests", type=int, default=100)
     value.add_argument("--concurrency", type=int, default=25)
+    value.add_argument("--environment-label", required=True)
     value.add_argument("--output", required=True, type=Path)
     return value
 
@@ -50,6 +52,8 @@ def main() -> int:
         raise SystemExit("--requests must be between 26 and 10000")
     if arguments.concurrency < 2 or arguments.concurrency > 100:
         raise SystemExit("--concurrency must be between 2 and 100")
+    if not arguments.environment_label.strip() or len(arguments.environment_label) > 80:
+        raise SystemExit("--environment-label must contain 1 to 80 characters")
     if not arguments.ca_file.is_absolute() or arguments.ca_file.is_symlink() or not arguments.ca_file.is_file():
         raise SystemExit("--ca-file must be an absolute regular non-symbolic file")
     commit_sha = os.environ.get("SOURCE_COMMIT_SHA", "")
@@ -85,6 +89,7 @@ def main() -> int:
         statuses[str(status)] = statuses.get(str(status), 0) + 1
     latencies = sorted(sample[1] for sample in samples)
     p95 = latencies[max(0, int(len(latencies) * 0.95) - 1)]
+    throughput = len(samples) / duration
     rate_limited = [sample for sample in samples if sample[0] == 429]
     failures: list[str] = []
     if not rate_limited:
@@ -93,9 +98,15 @@ def main() -> int:
         failures.append("retry_after_missing")
     if any(sample[0] >= 500 or sample[0] == 0 for sample in samples):
         failures.append("server_or_transport_failure")
+    if p95 > 300:
+        failures.append("non_export_api_p95_budget_exceeded")
+    if throughput < 10:
+        failures.append("sustained_throughput_budget_missed")
     report: dict[str, object] = {
         "schema_version": "nexora-private-runtime-benchmark-v1",
         "candidate_commit_sha": commit_sha,
+        "environment_label": arguments.environment_label,
+        "generated_at": datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"),
         "target_origin": arguments.base_url,
         "requested_samples": arguments.requests,
         "completed_samples": len(samples),
@@ -103,9 +114,11 @@ def main() -> int:
         "status_counts": statuses,
         "retry_after_present_on_all_429": bool(rate_limited) and all(sample[2] for sample in rate_limited),
         "duration_seconds": round(duration, 6),
-        "throughput_per_second": round(len(samples) / duration, 6),
+        "throughput_per_second": round(throughput, 6),
+        "minimum_throughput_per_second": 10,
         "latency_p50_ms": round(statistics.median(latencies), 6),
         "latency_p95_ms": round(p95, 6),
+        "latency_p95_budget_ms": 300,
         "immutable_evidence_dropped": False,
         "failure_reasons": failures,
         "passed": not failures,

@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
-BENCHMARK_PATH = "/api/v1/session"
+BENCHMARK_PATH = "/api/v1/auth/session"
 
 
 def private_origin(value: str) -> str:
@@ -117,11 +117,16 @@ def main() -> int:
     p95 = latencies[max(0, int(len(latencies) * 0.95) - 1)]
     throughput = len(samples) / duration
     rate_limited = [sample for sample in samples if sample[0] == 429]
+    non_overload = [sample for sample in samples if sample[0] != 429]
     failures: list[str] = []
     if not rate_limited:
         failures.append("overload_did_not_produce_429")
     if any(not sample[2] for sample in rate_limited):
         failures.append("retry_after_missing")
+    if not non_overload:
+        failures.append("non_overload_baseline_missing")
+    elif any(sample[0] != 401 for sample in non_overload):
+        failures.append("unexpected_non_overload_status")
     if any(sample[0] >= 500 or sample[0] == 0 for sample in samples):
         failures.append("server_or_transport_failure")
     if p95 > 300:

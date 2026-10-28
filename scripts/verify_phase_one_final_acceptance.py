@@ -198,7 +198,7 @@ def validate_files_and_runtime_markers() -> None:
             "environment_label",
             "generated_at",
             "deployment_network_mode",
-            'BENCHMARK_PATH = "/api/v1/session"',
+            'BENCHMARK_PATH = "/api/v1/auth/session"',
         ),
         "scripts/record_private_operations_drill.py": (
             "nexora-private-operations-drill-v1",

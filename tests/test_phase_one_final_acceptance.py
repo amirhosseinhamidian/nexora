@@ -52,7 +52,7 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
             BENCHMARK.deployment_network_mode("https://127.0.0.1", "authenticated_private_overlay")
 
     def test_benchmark_uses_the_external_caddy_api_route(self) -> None:
-        self.assertEqual(BENCHMARK.BENCHMARK_PATH, "/api/v1/session")
+        self.assertEqual(BENCHMARK.BENCHMARK_PATH, "/api/v1/auth/session")
 
     def test_prerequisite_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)

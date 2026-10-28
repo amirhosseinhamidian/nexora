@@ -185,6 +185,14 @@ def test_capacity_report_is_checksum_bound_and_fail_closed() -> None:
         parse_capacity_report(_bytes(changed))
 
 
+def test_capacity_report_rejects_an_unmatched_route() -> None:
+    changed = capacity()
+    changed["status_counts"] = {"404": 75, "429": 25}
+    changed = _checksum({key: value for key, value in changed.items() if key != "report_checksum"})
+    with pytest.raises(PhaseOneAcceptanceError, match="authenticated-route baseline"):
+        parse_capacity_report(_bytes(changed))
+
+
 def test_capacity_report_rejects_public_network_mode() -> None:
     changed = capacity()
     changed["deployment_network_mode"] = "public_internet"

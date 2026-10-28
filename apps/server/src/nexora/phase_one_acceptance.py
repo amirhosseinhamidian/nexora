@@ -84,6 +84,8 @@ def parse_capacity_report(value: bytes) -> dict[str, Any]:
     _require(float(payload.get("latency_p95_ms", 301)) <= 300, "capacity latency budget exceeded")
     statuses = _field_object(payload, "status_counts", "capacity status counts")
     _require(int(statuses.get("429", 0)) > 0, "capacity report has no overload evidence")
+    _require(int(statuses.get("401", 0)) > 0, "capacity report has no authenticated-route baseline")
+    _require(set(statuses) <= {"401", "429"}, "capacity report contains an unexpected response status")
     _require(payload.get("retry_after_present_on_all_429") is True, "capacity Retry-After evidence is incomplete")
     _require(payload.get("immutable_evidence_dropped") is False, "capacity report claims evidence loss")
     _require(

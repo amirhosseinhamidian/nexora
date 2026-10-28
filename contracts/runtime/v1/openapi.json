@@ -621,6 +621,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -740,6 +750,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -877,6 +897,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -996,6 +1026,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1133,6 +1173,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -1252,6 +1302,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1389,6 +1449,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -1508,6 +1578,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1645,6 +1725,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -1764,6 +1854,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1901,6 +2001,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -2020,6 +2130,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2157,6 +2277,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -2266,6 +2396,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {
@@ -2403,6 +2543,16 @@
             },
             "description": "Versioned fail-closed error"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -2512,6 +2662,16 @@
             "description": "Versioned fail-closed error"
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {

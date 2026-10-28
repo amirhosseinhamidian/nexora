@@ -98,6 +98,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate private Compose topology
         env:
+          SOURCE_COMMIT_SHA: ${{ github.sha }}
           NEXORA_PRIVATE_BIND_ADDRESS: 127.0.0.1
           NEXORA_TLS_CERT_FILE: /tmp/tls.crt
           NEXORA_TLS_KEY_FILE: /tmp/tls.key
@@ -107,4 +108,8 @@ jobs:
           NEXORA_TRD_BOT_BASE_URL_FILE: /tmp/trd-bot-base-url
           NEXORA_TRD_BOT_TOKEN_FILE: /tmp/trd-bot-token
           NEXORA_POSTGRES_PASSWORD_FILE: /tmp/postgresql-password
+          NEXORA_AGE_RECIPIENT_FILE: /tmp/age-recipient
+          NEXORA_BACKUP_ROOT: /tmp/nexora-backups
+          NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-offsite-backups
+          NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-retention
         run: docker compose -f infra/compose/private-single-host.yml config --quiet

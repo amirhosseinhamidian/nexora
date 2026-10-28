@@ -34,7 +34,7 @@ services:
       - ../caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ${NEXORA_TLS_CERT_FILE:?TLS certificate required}:/run/secrets/tls.crt:ro
       - ${NEXORA_TLS_KEY_FILE:?TLS private key required}:/run/secrets/tls.key:ro
-    networks: [ingress]
+    networks: [loopback, ingress]
     depends_on:
       api:
         condition: service_healthy
@@ -101,9 +101,6 @@ services:
     restart: unless-stopped
     command:
       [
-        "uv",
-        "run",
-        "--frozen",
         "nexora-worker",
         "--run",
         "--worker-id",
@@ -171,6 +168,8 @@ services:
     logging: *bounded-logging
 
 networks:
+  loopback:
+    internal: false
   ingress:
     internal: true
   data:

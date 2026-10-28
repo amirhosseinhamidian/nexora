@@ -24,4 +24,4 @@ WORKDIR /app
 COPY --from=build --chown=node:node /app ./
 USER node
 EXPOSE 3000
-CMD ["./node_modules/.bin/next", "start", "apps/web"]
+CMD ["./apps/web/node_modules/.bin/next", "start", "apps/web"]

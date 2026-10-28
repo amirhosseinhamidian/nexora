@@ -116,12 +116,15 @@ Authenticated Web shell workflow, including all three Playwright lifecycle
 tests, and twelve regression workflows on the same SHA. The next allowed stage
 is `NEX-P1-12`, private deployment and operations.
 
-`NEX-P1-12` is a candidate. It adds health-ordered private Compose operations,
+`NEX-P1-12` is frozen. It adds health-ordered private Compose operations,
 a continuously running graceful Worker, bounded interactive overload, encrypted
 database and artifact backup, owner-attended restore, dry-run-first retention
-and capacity reporting. Actual host benchmark and restore-drill evidence remain
-deferred to `NEX-P1-13`; production readiness is not claimed before that final
-acceptance and freeze.
+and capacity reporting. Candidate
+`86651f1b49343e7e609ee5f671ad00eb83822ca9` is bound to the successful Private
+deployment and operations workflow and thirteen regression workflows on the
+same SHA. Actual host benchmark and restore-drill evidence remain deferred to
+`NEX-P1-13`; production readiness is not claimed before that final acceptance
+and freeze.
 
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production

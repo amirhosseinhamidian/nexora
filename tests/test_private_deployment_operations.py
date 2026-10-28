@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class PrivateDeploymentOperationsContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p1_11_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p1_11()
@@ -29,6 +30,9 @@ class PrivateDeploymentOperationsContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_prerequisite_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)
@@ -95,6 +99,48 @@ class PrivateDeploymentOperationsContractTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P1-13"
         with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_tree(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_tree_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "candidate tree drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_topology_job(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["private_topology"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_operations_image_evidence(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["jobs"]["private_topology"]["operations_image_built"] = False
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "operations_image_built"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_workflow_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_claim_production_readiness(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "production readiness"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p1_13(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P2-01"
+        with self.assertRaisesRegex(MODULE.PrivateDeploymentOperationsContractError, "post-freeze stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

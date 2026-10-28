@@ -41,3 +41,19 @@ one candidate SHA and successful CI before Phase 1 can freeze.
 
 Public-internet hosting, SaaS/multi-user support, exchange credentials, wallet
 operations, live orders and autonomous AI execution remain outside v0.1.
+
+## Freeze evidence
+
+Candidate `86651f1b49343e7e609ee5f671ad00eb83822ca9`, with tree
+`8b65ce3e47ca6eeb95552c8b4621b20990c48ecf`, passed the primary
+[Private deployment and operations workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/40645349248)
+and all thirteen regression workflows on the same SHA. The primary run records
+the frozen P1-11 prerequisite, operations contract and repository tests,
+backend format/lint/typecheck/tests, Compose topology validation and the pinned
+operations-image build.
+
+`NEX-P1-12` is therefore frozen and `NEX-P1-GAP-008` is closed. The only next
+delivery stage is `NEX-P1-13`, which owns the actual reference-host benchmark,
+fresh-install and migration evidence, retention dry-run, backup/restore drill,
+private deployment smoke test and final Phase 1 acceptance. This freeze does
+not claim production readiness or enable any excluded capability.

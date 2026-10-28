@@ -1,6 +1,6 @@
 # ADR 0026: Private single-host operations
 
-- Status: Candidate
+- Status: Frozen by NEX-P1-12
 - Date: 2026-10-27
 - Decision: NEX-P1-12
 

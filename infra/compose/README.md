@@ -21,6 +21,13 @@ identity secrets are mounted from operator-owned read-only files; Compose does
 not create, migrate, or print them. Run migrations as an explicit release step
 before starting this topology.
 
+The base topology sets `NEXORA_TRD_BOT_MODE=disabled_incompatible_provider`
+because TRD Bot `0.3.0` cannot satisfy the frozen Nexora contract. It mounts no
+provider URL or token. When a compatible `>=0.3.1,<0.4.0` provider is available,
+use both `private-single-host.yml` and
+`private-single-host.trd-bot.yml`; the override requires private credential
+files and still negotiates capabilities before synchronization.
+
 API and Worker write structured JSON logs to the private `nexora-logs` volume.
 The volume is not exposed by ingress. Application handlers enforce bounded
 rotation; 30-day retention and archival execution remain an operations task for

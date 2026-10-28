@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from nexora.adapters.trd_bot import TRD_BOT_MODE_ENV, TrdBotIntegrationMode
 from nexora.composition import SERVICE_NAME, compose_application, compose_private_application
 from nexora.config import CONFIG_SCHEMA_VERSION, load_settings
 
@@ -64,5 +65,25 @@ def test_private_composition_registers_identity_runtime_explicitly(tmp_path: Pat
     finally:
         if container.trd_bot_client is not None:
             container.trd_bot_client.close()
+        assert container.database_engine is not None
+        container.database_engine.dispose()
+
+
+def test_private_composition_disables_incompatible_provider_without_credentials(tmp_path: Path) -> None:
+    environ = {
+        "NEXORA_DATABASE_DSN_FILE": _private_file(
+            tmp_path / "database.dsn",
+            "postgresql+psycopg://nexora:fixture@127.0.0.1:5432/nexora_test",
+        ),
+        "NEXORA_CANONICAL_ORIGIN_FILE": _private_file(tmp_path / "origin", "http://127.0.0.1:8000"),
+        "NEXORA_AUTH_PEPPER_FILE": _private_file(tmp_path / "pepper", "p" * 43),
+        "NEXORA_ARTIFACT_ROOT": str(tmp_path / "artifacts"),
+        TRD_BOT_MODE_ENV: "disabled_incompatible_provider",
+    }
+    container = compose_private_application(environ=environ)
+    try:
+        assert container.trd_bot_client is None
+        assert container.trd_bot_integration_mode is TrdBotIntegrationMode.DISABLED_INCOMPATIBLE_PROVIDER
+    finally:
         assert container.database_engine is not None
         container.database_engine.dispose()

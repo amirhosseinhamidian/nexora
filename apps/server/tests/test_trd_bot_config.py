@@ -5,8 +5,11 @@ from pathlib import Path
 import pytest
 from nexora.adapters.trd_bot import (
     TRD_BOT_BASE_URL_FILE_ENV,
+    TRD_BOT_MODE_ENV,
     TRD_BOT_TOKEN_FILE_ENV,
     TrdBotConfigurationError,
+    TrdBotIntegrationMode,
+    load_trd_bot_mode,
     load_trd_bot_settings,
 )
 
@@ -34,6 +37,17 @@ def test_settings_load_from_private_files_without_exposing_token(tmp_path: Path)
     assert settings.base_url == "http://127.0.0.1:8080"
     assert settings.token.get_secret_value() == TOKEN
     assert TOKEN not in repr(settings)
+
+
+def test_incompatible_provider_mode_is_explicit_and_fail_closed() -> None:
+    assert load_trd_bot_mode({TRD_BOT_MODE_ENV: "disabled_incompatible_provider"}) is (
+        TrdBotIntegrationMode.DISABLED_INCOMPATIBLE_PROVIDER
+    )
+
+
+def test_unknown_integration_mode_is_rejected() -> None:
+    with pytest.raises(TrdBotConfigurationError, match="mode"):
+        load_trd_bot_mode({TRD_BOT_MODE_ENV: "legacy_read_only"})
 
 
 def test_production_requires_https_and_read_only_files(tmp_path: Path) -> None:

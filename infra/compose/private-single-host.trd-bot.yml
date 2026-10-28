@@ -1,0 +1,18 @@
+services:
+  api:
+    environment:
+      NEXORA_TRD_BOT_MODE: enabled_compatible_provider
+      NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
+      NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
+    volumes:
+      - ${NEXORA_TRD_BOT_BASE_URL_FILE:?compatible TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
+      - ${NEXORA_TRD_BOT_TOKEN_FILE:?compatible TRD Bot token required}:/run/secrets/trd-bot-token:ro
+
+  worker:
+    environment:
+      NEXORA_TRD_BOT_MODE: enabled_compatible_provider
+      NEXORA_TRD_BOT_BASE_URL_FILE: /run/secrets/trd-bot-base-url
+      NEXORA_TRD_BOT_TOKEN_FILE: /run/secrets/trd-bot-token
+    volumes:
+      - ${NEXORA_TRD_BOT_BASE_URL_FILE:?compatible TRD Bot base URL required}:/run/secrets/trd-bot-base-url:ro
+      - ${NEXORA_TRD_BOT_TOKEN_FILE:?compatible TRD Bot token required}:/run/secrets/trd-bot-token:ro

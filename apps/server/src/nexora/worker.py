@@ -8,6 +8,7 @@ from threading import Event
 from uuid import UUID
 
 from nexora import __version__
+from nexora.adapters.trd_bot import TrdBotIntegrationMode
 from nexora.composition import compose_application, compose_private_application
 from nexora.config import load_settings
 from nexora.durable_worker import DurableWorker
@@ -36,6 +37,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
+    if arguments.poll_seconds <= 0:
+        raise SystemExit("--poll-seconds must be positive")
     if arguments.check:
         source = os.environ if environ is None else environ
         settings = load_settings(source, permitted_external_variables=frozenset({LOG_FILE_ENV}))
@@ -56,8 +59,29 @@ def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = 
         source = os.environ if environ is None else environ
         container = compose_private_application(environ=source)
         try:
-            if container.durable_work_repository is None or container.trd_bot_client is None:
+            if container.durable_work_repository is None:
                 raise SystemExit("private synchronization dependencies are unavailable")
+            if container.trd_bot_client is None:
+                if container.trd_bot_integration_mode is not TrdBotIntegrationMode.DISABLED_INCOMPATIBLE_PROVIDER:
+                    raise SystemExit("private synchronization dependencies are unavailable")
+                if arguments.enqueue_initial_sync:
+                    raise SystemExit("TRD Bot sync is disabled for the incompatible provider")
+                if arguments.once:
+                    print("claimed=0 succeeded=0 failed=0 integration=disabled_incompatible_provider")
+                    return 0
+                if not arguments.worker_id:
+                    raise SystemExit("--worker-id is required with --once or --run")
+                stop = Event()
+
+                def request_disabled_stop(_: int, __: object) -> None:
+                    stop.set()
+
+                signal.signal(signal.SIGTERM, request_disabled_stop)
+                signal.signal(signal.SIGINT, request_disabled_stop)
+                while not stop.wait(arguments.poll_seconds):
+                    pass
+                print("cycles=0 claimed=0 succeeded=0 failed=0 integration=disabled_incompatible_provider")
+                return 0
             if arguments.enqueue_initial_sync:
                 owner_id = UUID(arguments.enqueue_initial_sync)
                 job_id = container.durable_work_repository.enqueue_job(

@@ -31,6 +31,15 @@ remote and public access remain disabled, and TLS 1.3 is still required. An
 authenticated private overlay remains supported when remote access is actually
 needed. LAN, wildcard and public binds are not accepted as substitutes.
 
+TRD Bot `0.3.0` remains incompatible with the frozen integration contract, so
+the default private runtime uses `disabled_incompatible_provider`. In this mode
+no provider URL or token is mounted, the readiness document reports the
+intentional disablement, synchronization cannot be enqueued, and the Worker
+remains alive without claiming provider jobs. Enabling the adapter requires the
+separate Compose override, a `>=0.3.1,<0.4.0` provider, credentials and successful
+capability negotiation. Phase 1 verifies the adapter contract and idempotency
+with deterministic transports; it does not claim a live-provider smoke test.
+
 The final runner rejects detached or dirty worktrees, evidence older than seven
 days, candidate or environment drift, non-successful GitHub Actions and any
 database except the disposable `nexora_acceptance` database. It reruns contract,

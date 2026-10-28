@@ -38,10 +38,15 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--github-actions-run-url", required=True)
     value.add_argument("--github-actions-head-sha", required=True)
     value.add_argument("--github-actions-conclusion", choices=("success",), required=True)
+    value.add_argument(
+        "--trd-bot-provider-mode",
+        choices=("disabled_incompatible_provider",),
+        required=True,
+    )
     for name in (
         "fresh-clone-install-smoke",
         "passkey-session-csrf-smoke",
-        "trd-bot-sync-idempotency-smoke",
+        "trd-bot-contract-idempotency-smoke",
         "private-backup-restore-retention-smoke",
         "responsive-bilingual-web-shell-smoke",
         "no-forbidden-capabilities-smoke",
@@ -245,7 +250,7 @@ def main() -> int:
     manual = {
         "fresh_clone_install": arguments.fresh_clone_install_smoke,
         "passkey_session_and_csrf_lifecycle": arguments.passkey_session_csrf_smoke,
-        "trd_bot_sync_and_idempotency": arguments.trd_bot_sync_idempotency_smoke,
+        "trd_bot_contract_and_idempotency": arguments.trd_bot_contract_idempotency_smoke,
         "private_backup_restore_and_retention": arguments.private_backup_restore_retention_smoke,
         "responsive_bilingual_web_shell": arguments.responsive_bilingual_web_shell_smoke,
         "no_forbidden_capabilities": arguments.no_forbidden_capabilities_smoke,
@@ -257,6 +262,7 @@ def main() -> int:
         "environment_label": arguments.environment_label,
         "generated_at": datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"),
         "deployment_network_mode": deployment_network_mode,
+        "trd_bot_provider_mode": arguments.trd_bot_provider_mode,
         "prior_freeze": prior,
         "capacity": {
             "artifact_checksum": capacity_checksum,

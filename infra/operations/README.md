@@ -21,6 +21,11 @@ For a local-only reference host set `NEXORA_PRIVATE_BIND_ADDRESS=127.0.0.1`.
 This mode does not require Tailscale, WireGuard or another overlay client, but
 it also provides no remote access.
 
+TRD Bot `0.3.0` must remain disabled. The base Compose file therefore requires
+no TRD Bot URL or token and the Worker idles without claiming synchronization
+jobs. Do not create placeholder credentials. The compatible-provider override
+is reserved for a negotiated `>=0.3.1,<0.4.0` provider.
+
 Validate the rendered topology before starting it:
 
 ```sh

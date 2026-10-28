@@ -4,6 +4,7 @@ import os
 import stat
 from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Final
 from urllib.parse import urlsplit
@@ -14,9 +15,15 @@ from nexora.adapters.trd_bot.errors import TrdBotConfigurationError
 
 TRD_BOT_BASE_URL_FILE_ENV: Final = "NEXORA_TRD_BOT_BASE_URL_FILE"
 TRD_BOT_TOKEN_FILE_ENV: Final = "NEXORA_TRD_BOT_TOKEN_FILE"
+TRD_BOT_MODE_ENV: Final = "NEXORA_TRD_BOT_MODE"
 RUNTIME_ENVIRONMENT_VARIABLE: Final = "NEXORA_ENVIRONMENT"
 MAX_CONFIGURATION_FILE_BYTES: Final = 4096
 MINIMUM_TOKEN_CHARACTERS: Final = 43
+
+
+class TrdBotIntegrationMode(StrEnum):
+    DISABLED_INCOMPATIBLE_PROVIDER = "disabled_incompatible_provider"
+    ENABLED_COMPATIBLE_PROVIDER = "enabled_compatible_provider"
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +33,15 @@ class TrdBotSettings:
     base_url_file: Path
     token_file: Path
     timeout_seconds: float = 10.0
+
+
+def load_trd_bot_mode(environ: Mapping[str, str] | None = None) -> TrdBotIntegrationMode:
+    source = os.environ if environ is None else environ
+    raw = source.get(TRD_BOT_MODE_ENV, TrdBotIntegrationMode.ENABLED_COMPATIBLE_PROVIDER.value)
+    try:
+        return TrdBotIntegrationMode(raw)
+    except ValueError as error:
+        raise TrdBotConfigurationError("TRD Bot integration mode is invalid") from error
 
 
 def _validate_private_file(path: Path, *, production: bool, label: str) -> None:

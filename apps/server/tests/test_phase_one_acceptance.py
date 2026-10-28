@@ -114,6 +114,7 @@ def acceptance() -> dict[str, Any]:
         "environment_label": "test-host",
         "generated_at": NOW,
         "deployment_network_mode": "loopback_only",
+        "trd_bot_provider_mode": "disabled_incompatible_provider",
         "prior_freeze": {
             "p1_12_ready": True,
             "p1_12_commit_sha": "1af9161925a71c4154801bb6ac4f533f4a8e21b8",
@@ -141,7 +142,7 @@ def acceptance() -> dict[str, Any]:
         "manual": {
             "fresh_clone_install": "pass",
             "passkey_session_and_csrf_lifecycle": "pass",
-            "trd_bot_sync_and_idempotency": "pass",
+            "trd_bot_contract_and_idempotency": "pass",
             "private_backup_restore_and_retention": "pass",
             "responsive_bilingual_web_shell": "pass",
             "no_forbidden_capabilities": "pass",
@@ -227,6 +228,14 @@ def test_final_acceptance_rejects_network_mode_drift() -> None:
     payload["capacity"]["deployment_network_mode"] = "authenticated_private_overlay"
     encoded = serialize_phase_one_acceptance_record(payload).encode()
     with pytest.raises(PhaseOneAcceptanceError, match="network mode drift"):
+        parse_phase_one_acceptance_record(encoded)
+
+
+def test_final_acceptance_rejects_enabled_incompatible_provider() -> None:
+    payload = acceptance()
+    payload["trd_bot_provider_mode"] = "enabled_compatible_provider"
+    encoded = serialize_phase_one_acceptance_record(payload).encode()
+    with pytest.raises(PhaseOneAcceptanceError, match="provider mode drift"):
         parse_phase_one_acceptance_record(encoded)
 
 

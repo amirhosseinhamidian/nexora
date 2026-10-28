@@ -179,7 +179,12 @@ jobs:
           NEXORA_BACKUP_ROOT: /tmp/nexora-ci/backups
           NEXORA_BACKUP_OFFSITE_ROOT: /tmp/nexora-ci/offsite
           NEXORA_RETENTION_EVIDENCE_ROOT: /tmp/nexora-ci/retention
-        run: docker compose -f infra/compose/private-single-host.yml --profile operations config --quiet
+        run: |
+          docker compose -f infra/compose/private-single-host.yml --profile operations config --quiet
+          docker compose \
+            -f infra/compose/private-single-host.yml \
+            -f infra/compose/private-single-host.trd-bot.yml \
+            --profile operations config --quiet
       - name: Build pinned operations image
         env:
           SOURCE_COMMIT_SHA: ${{ github.sha }}

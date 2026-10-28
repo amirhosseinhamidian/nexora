@@ -1,7 +1,10 @@
+from dataclasses import replace
+
 import pytest
 from httpx import ASGITransport, AsyncClient
+from nexora.adapters.trd_bot import TrdBotIntegrationMode
 from nexora.api import create_app
-from nexora.composition import ApplicationContainer
+from nexora.composition import ApplicationContainer, compose_application
 from nexora.config import load_settings
 
 
@@ -64,6 +67,25 @@ async def test_readiness_fails_closed_without_private_runtime() -> None:
             "identity": {"status": "not_configured", "reason_code": "IDENTITY_NOT_CONFIGURED"},
             "trd_bot": {"status": "not_configured", "reason_code": "TRD_BOT_NOT_CONFIGURED"},
         },
+    }
+
+
+@pytest.mark.anyio
+async def test_readiness_reports_intentionally_disabled_incompatible_provider() -> None:
+    container = replace(
+        compose_application(load_settings({})),
+        trd_bot_integration_mode=TrdBotIntegrationMode.DISABLED_INCOMPATIBLE_PROVIDER,
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=create_app(container=container)),
+        base_url="http://test",
+    ) as client:
+        response = await client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["dependencies"]["trd_bot"] == {
+        "status": "not_configured",
+        "reason_code": "TRD_BOT_DISABLED_INCOMPATIBLE_PROVIDER",
     }
 
 

@@ -40,7 +40,7 @@
   "manual_evidence": [
     "fresh_clone_install",
     "passkey_session_and_csrf_lifecycle",
-    "trd_bot_sync_and_idempotency",
+    "trd_bot_contract_and_idempotency",
     "private_backup_restore_and_retention",
     "responsive_bilingual_web_shell",
     "no_forbidden_capabilities"
@@ -63,6 +63,15 @@
     "reference_host_default_network_mode": "loopback_only",
     "loopback_bind_address": "127.0.0.1",
     "loopback_remote_access_allowed": false
+  },
+  "trd_bot_provider_acceptance": {
+    "default_runtime_mode": "disabled_incompatible_provider",
+    "provider_0_3_0_sync_allowed": false,
+    "live_provider_smoke_required": false,
+    "contract_and_idempotency_tests_required": true,
+    "compatible_provider_range": ">=0.3.1,<0.4.0",
+    "capability_negotiation_required_before_enable": true,
+    "credentials_required_when_disabled": false
   },
   "acceptance_boundary": {
     "phase_one_foundation_may_be_frozen": true,

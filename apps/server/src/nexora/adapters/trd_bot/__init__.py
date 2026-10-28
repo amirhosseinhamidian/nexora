@@ -3,8 +3,11 @@
 from nexora.adapters.trd_bot.client import API_NAMESPACE, CONTRACT_VERSION, TrdBotClient
 from nexora.adapters.trd_bot.config import (
     TRD_BOT_BASE_URL_FILE_ENV,
+    TRD_BOT_MODE_ENV,
     TRD_BOT_TOKEN_FILE_ENV,
+    TrdBotIntegrationMode,
     TrdBotSettings,
+    load_trd_bot_mode,
     load_trd_bot_settings,
 )
 from nexora.adapters.trd_bot.errors import (
@@ -36,6 +39,7 @@ __all__ = [
     "API_NAMESPACE",
     "CONTRACT_VERSION",
     "TRD_BOT_BASE_URL_FILE_ENV",
+    "TRD_BOT_MODE_ENV",
     "TRD_BOT_TOKEN_FILE_ENV",
     "CapabilitiesResponse",
     "CapabilityNegotiationRequired",
@@ -56,8 +60,10 @@ __all__ = [
     "TrdBotAdapterError",
     "TrdBotClient",
     "TrdBotConfigurationError",
+    "TrdBotIntegrationMode",
     "TrdBotResponseError",
     "TrdBotSchemaError",
     "TrdBotSettings",
+    "load_trd_bot_mode",
     "load_trd_bot_settings",
 ]

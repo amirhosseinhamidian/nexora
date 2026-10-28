@@ -18,6 +18,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from nexora import __version__
 from nexora.adapters.postgresql import RUNTIME_DATABASE_DSN_FILE_ENV, PostgreSQLIdentityRepository, probe_database
+from nexora.adapters.trd_bot import TrdBotIntegrationMode
 from nexora.artifact_storage import (
     ArtifactIntegrityError,
     ArtifactKey,
@@ -404,7 +405,10 @@ def create_app(
                 resolved_container.security,
             )
         )
-        trd_ready = resolved_container.trd_bot_client is not None
+        trd_disabled = (
+            resolved_container.trd_bot_integration_mode is TrdBotIntegrationMode.DISABLED_INCOMPATIBLE_PROVIDER
+        )
+        trd_ready = trd_disabled or resolved_container.trd_bot_client is not None
         if engine is None:
             database = DependencyReadiness(status="not_configured", reason_code="DATABASE_NOT_CONFIGURED")
         elif database_ready:
@@ -416,8 +420,14 @@ def create_app(
             reason_code="IDENTITY_RUNTIME_READY" if identity_ready else "IDENTITY_NOT_CONFIGURED",
         )
         trd_bot = DependencyReadiness(
-            status="ready" if trd_ready else "not_configured",
-            reason_code="TRD_BOT_ADAPTER_READY" if trd_ready else "TRD_BOT_NOT_CONFIGURED",
+            status="not_configured" if trd_disabled else "ready" if trd_ready else "not_configured",
+            reason_code=(
+                "TRD_BOT_DISABLED_INCOMPATIBLE_PROVIDER"
+                if trd_disabled
+                else "TRD_BOT_ADAPTER_READY"
+                if trd_ready
+                else "TRD_BOT_NOT_CONFIGURED"
+            ),
         )
         overall_status: Literal["ready", "not_configured", "unavailable"] = (
             "unavailable"

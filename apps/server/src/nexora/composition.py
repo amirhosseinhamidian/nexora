@@ -19,8 +19,8 @@ from nexora.adapters.postgresql.config import (
     RUNTIME_DATABASE_DSN_FILE_ENV,
     load_database_settings,
 )
-from nexora.adapters.trd_bot import TrdBotClient, load_trd_bot_settings
-from nexora.adapters.trd_bot.config import TRD_BOT_BASE_URL_FILE_ENV, TRD_BOT_TOKEN_FILE_ENV
+from nexora.adapters.trd_bot import TrdBotClient, TrdBotIntegrationMode, load_trd_bot_mode, load_trd_bot_settings
+from nexora.adapters.trd_bot.config import TRD_BOT_BASE_URL_FILE_ENV, TRD_BOT_MODE_ENV, TRD_BOT_TOKEN_FILE_ENV
 from nexora.artifact_storage import (
     ARTIFACT_ROOT_ENV,
     ArtifactStorage,
@@ -76,6 +76,7 @@ class ApplicationContainer:
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
     trd_bot_client: TrdBotClient | None = None
+    trd_bot_integration_mode: TrdBotIntegrationMode | None = None
     artifact_storage: ArtifactStorage | None = None
 
 
@@ -104,6 +105,7 @@ PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES: Final = frozenset(
         DATABASE_DSN_FILE_ENV,
         RUNTIME_DATABASE_DSN_FILE_ENV,
         TRD_BOT_BASE_URL_FILE_ENV,
+        TRD_BOT_MODE_ENV,
         TRD_BOT_TOKEN_FILE_ENV,
         CANONICAL_ORIGIN_FILE_ENV,
         AUTH_PEPPER_FILE_ENV,
@@ -121,7 +123,12 @@ def compose_private_application(
     settings = load_settings(environ, permitted_external_variables=PRIVATE_RUNTIME_ENVIRONMENT_VARIABLES)
     database_settings = load_database_settings(environ, variable=RUNTIME_DATABASE_DSN_FILE_ENV)
     security = load_security_settings(environ)
-    trd_bot_settings = load_trd_bot_settings(environ)
+    trd_bot_mode = load_trd_bot_mode(environ)
+    trd_bot_client = (
+        TrdBotClient(load_trd_bot_settings(environ))
+        if trd_bot_mode is TrdBotIntegrationMode.ENABLED_COMPATIBLE_PROVIDER
+        else None
+    )
     artifact_storage = LocalFilesystemArtifactStorage(load_artifact_storage_settings(environ))
     observability_settings = load_observability_settings(
         environ,
@@ -148,6 +155,7 @@ def compose_private_application(
         security=security,
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),
-        trd_bot_client=TrdBotClient(trd_bot_settings),
+        trd_bot_client=trd_bot_client,
+        trd_bot_integration_mode=trd_bot_mode,
         artifact_storage=artifact_storage,
     )

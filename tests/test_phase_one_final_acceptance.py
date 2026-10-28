@@ -90,6 +90,18 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "loopback remote access"):
             MODULE.validate_contract(changed)
 
+    def test_incompatible_provider_cannot_enable_sync(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["trd_bot_provider_acceptance"]["provider_0_3_0_sync_allowed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "0.3.0 sync"):
+            MODULE.validate_contract(changed)
+
+    def test_disabled_provider_cannot_require_credentials(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["trd_bot_provider_acceptance"]["credentials_required_when_disabled"] = True
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "cannot require secrets"):
+            MODULE.validate_contract(changed)
+
     def test_acceptance_cannot_claim_portfolio_completion(self) -> None:
         changed = copy.deepcopy(self.contract)
         changed["acceptance_boundary"]["portfolio_product_complete"] = True

@@ -164,6 +164,10 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
     _timestamp(payload.get("generated_at"), "acceptance generated_at")
     network_mode = payload.get("deployment_network_mode")
     _require(network_mode in DEPLOYMENT_NETWORK_MODES, "acceptance deployment network mode is invalid")
+    _require(
+        payload.get("trd_bot_provider_mode") == "disabled_incompatible_provider",
+        "acceptance TRD Bot provider mode drift",
+    )
     prior = _field_object(payload, "prior_freeze", "prior freeze evidence")
     _require(prior.get("p1_12_ready") is True, "P1-12 prerequisite is not frozen")
     _require(prior.get("p1_12_commit_sha") == "1af9161925a71c4154801bb6ac4f533f4a8e21b8", "P1-12 commit drift")
@@ -189,7 +193,7 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
     expected_manual = {
         "fresh_clone_install",
         "passkey_session_and_csrf_lifecycle",
-        "trd_bot_sync_and_idempotency",
+        "trd_bot_contract_and_idempotency",
         "private_backup_restore_and_retention",
         "responsive_bilingual_web_shell",
         "no_forbidden_capabilities",

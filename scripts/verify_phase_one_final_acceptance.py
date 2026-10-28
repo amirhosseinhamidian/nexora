@@ -10,7 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-one-final-acceptance.json"
 P1_12_FREEZE_PATH = ROOT / "artifacts/p1-12/private-deployment-operations-freeze.json"
-CONTRACT_CHECKSUM = "c16b066dacc98a838924656daf0797ef2d67124a1e2eb9627ab9dad20ca767e2"
+CONTRACT_CHECKSUM = "3fe43c8250e85e8f141813b9d265052cbaff51b036094ed36db5d1528071981e"
 P1_12_FREEZE_CHECKSUM = "49d9c3c2427d4154445a25c61be8945dca4b46cbcfe43ce25e538c37a457cda6"
 P1_12_FREEZE_COMMIT = "1af9161925a71c4154801bb6ac4f533f4a8e21b8"
 
@@ -114,7 +114,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
         == [
             "fresh_clone_install",
             "passkey_session_and_csrf_lifecycle",
-            "trd_bot_sync_and_idempotency",
+            "trd_bot_contract_and_idempotency",
             "private_backup_restore_and_retention",
             "responsive_bilingual_web_shell",
             "no_forbidden_capabilities",
@@ -146,6 +146,25 @@ def validate_contract(contract: dict[str, Any]) -> None:
     )
     _require(operations.get("loopback_bind_address") == "127.0.0.1", "loopback bind address drift")
     _require(operations.get("loopback_remote_access_allowed") is False, "loopback remote access is forbidden")
+
+    provider = contract.get("trd_bot_provider_acceptance")
+    _require(isinstance(provider, dict), "TRD Bot provider acceptance must be an object")
+    _require(
+        provider.get("default_runtime_mode") == "disabled_incompatible_provider",
+        "TRD Bot default runtime mode drift",
+    )
+    _require(provider.get("provider_0_3_0_sync_allowed") is False, "TRD Bot 0.3.0 sync is forbidden")
+    _require(provider.get("live_provider_smoke_required") is False, "live provider smoke cannot be claimed")
+    _require(
+        provider.get("contract_and_idempotency_tests_required") is True,
+        "TRD Bot contract tests are required",
+    )
+    _require(provider.get("compatible_provider_range") == ">=0.3.1,<0.4.0", "provider range drift")
+    _require(
+        provider.get("capability_negotiation_required_before_enable") is True,
+        "provider negotiation is required",
+    )
+    _require(provider.get("credentials_required_when_disabled") is False, "disabled provider cannot require secrets")
 
     boundary = contract.get("acceptance_boundary")
     _require(isinstance(boundary, dict), "acceptance boundary must be an object")
@@ -191,6 +210,13 @@ def validate_files_and_runtime_markers() -> None:
             "nexora_acceptance",
             "confirm-destructive-migration-cycle",
             "acceptance-artifact-only",
+            "disabled_incompatible_provider",
+        ),
+        "infra/compose/private-single-host.yml": ("NEXORA_TRD_BOT_MODE: disabled_incompatible_provider",),
+        "infra/compose/private-single-host.trd-bot.yml": (
+            "enabled_compatible_provider",
+            "NEXORA_TRD_BOT_BASE_URL_FILE",
+            "NEXORA_TRD_BOT_TOKEN_FILE",
         ),
         "docs/adr/0027-phase-one-final-acceptance.md": ("Status: Candidate for NEX-P1-13",),
         "docs/v0.1/18-phase-one-final-acceptance.md": (

@@ -27,6 +27,13 @@ Both modes require HTTPS and reject LAN-only, wildcard and public exposure.
 The loopback-only mode is a stricter deployment of the frozen P1-12 topology;
 it does not remove private-overlay support or reopen the earlier freeze.
 
+TRD Bot `0.3.0` is `legacy_read_only_blocked`, so the default reference runtime
+must set `NEXORA_TRD_BOT_MODE=disabled_incompatible_provider`. No provider URL
+or token is required or permitted for this mode. The adapter's contract,
+negotiation, retry and idempotency tests remain mandatory, but Phase 1 does not
+claim a live-provider sync. The compatible-provider override may be used only
+for a `>=0.3.1,<0.4.0` provider after capability negotiation succeeds.
+
 ## Candidate CI
 
 Commit and push all P1-13 tooling before producing host evidence. The
@@ -116,9 +123,10 @@ uv run python scripts/run_phase_one_final_acceptance.py \
   --github-actions-run-url "$P1_13_GITHUB_ACTIONS_RUN_URL" \
   --github-actions-head-sha "$(git rev-parse HEAD)" \
   --github-actions-conclusion success \
+  --trd-bot-provider-mode disabled_incompatible_provider \
   --fresh-clone-install-smoke pass \
   --passkey-session-csrf-smoke pass \
-  --trd-bot-sync-idempotency-smoke pass \
+  --trd-bot-contract-idempotency-smoke pass \
   --private-backup-restore-retention-smoke pass \
   --responsive-bilingual-web-shell-smoke pass \
   --no-forbidden-capabilities-smoke pass \

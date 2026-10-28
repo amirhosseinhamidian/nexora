@@ -138,6 +138,11 @@ for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
 remain forbidden.
 
+The private runtime defaults to `disabled_incompatible_provider` for TRD Bot
+`0.3.0`; it does not mount fabricated provider credentials or claim live sync.
+The versioned adapter remains fail-closed until a compatible provider release
+and capability negotiation are available.
+
 The repository now contains the Phase 1 runtime foundation, not the complete
 portfolio application. Portfolio-domain features and final production
 acceptance remain deliberately deferred.

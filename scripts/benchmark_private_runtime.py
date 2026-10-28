@@ -16,6 +16,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlsplit
 
+BENCHMARK_PATH = "/api/v1/session"
+
 
 def private_origin(value: str) -> str:
     parsed = urlsplit(value)
@@ -84,7 +86,7 @@ def main() -> int:
         network_mode = deployment_network_mode(arguments.base_url, arguments.deployment_network_mode)
     except ValueError as error:
         raise SystemExit(str(error)) from error
-    target = f"{arguments.base_url}/v1/session"
+    target = f"{arguments.base_url}{BENCHMARK_PATH}"
 
     def request_once(_: int) -> tuple[int, float, bool]:
         started = time.perf_counter()

@@ -52,7 +52,9 @@ uv run python scripts/benchmark_private_runtime.py \
 ```
 
 Success requires completed samples, actual HTTP 429 responses, `Retry-After`
-on every 429, no transport/5xx failure and no immutable-evidence loss.
+on every 429, no transport/5xx failure and no immutable-evidence loss. The
+benchmark uses the external Caddy route `/api/v1/session`; Caddy strips `/api`
+before proxying the request to the API runtime.
 
 ## Backup, restore and retention drill
 

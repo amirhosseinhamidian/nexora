@@ -175,7 +175,12 @@ def validate_files_and_runtime_markers() -> None:
             "acceptance-artifact-only",
             "ready_to_freeze_phase_one",
         ),
-        "scripts/benchmark_private_runtime.py": ("environment_label", "generated_at", "deployment_network_mode"),
+        "scripts/benchmark_private_runtime.py": (
+            "environment_label",
+            "generated_at",
+            "deployment_network_mode",
+            'BENCHMARK_PATH = "/api/v1/session"',
+        ),
         "scripts/record_private_operations_drill.py": (
             "nexora-private-operations-drill-v1",
             "service_token_rotation_completed",

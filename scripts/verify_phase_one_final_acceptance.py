@@ -232,6 +232,10 @@ def validate_files_and_runtime_markers() -> None:
             "deployment_network_mode",
             'BENCHMARK_PATH = "/api/v1/auth/session"',
         ),
+        "apps/web/playwright.config.ts": (
+            "pnpm exec next build && pnpm exec next start --hostname 127.0.0.1",
+            "reuseExistingServer: false",
+        ),
         "scripts/record_private_operations_drill.py": (
             "nexora-private-operations-drill-v1",
             "service_token_rotation_completed",

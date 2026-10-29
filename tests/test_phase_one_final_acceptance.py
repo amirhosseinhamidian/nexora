@@ -36,6 +36,15 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
         MODULE.validate_contract(self.contract)
         MODULE.validate_files_and_runtime_markers()
 
+    def test_browser_acceptance_uses_a_fresh_production_server(self) -> None:
+        config = (ROOT / "apps/web/playwright.config.ts").read_text(encoding="utf-8")
+        self.assertIn(
+            "pnpm exec next build && pnpm exec next start --hostname 127.0.0.1",
+            config,
+        )
+        self.assertIn("reuseExistingServer: false", config)
+        self.assertNotIn("next dev", config)
+
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
 

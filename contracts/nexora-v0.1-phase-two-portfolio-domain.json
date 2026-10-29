@@ -1,0 +1,345 @@
+{
+  "schema_version": "nexora-phase-two-portfolio-domain-v1",
+  "decision_id": "NEX-P2-01",
+  "decision_date": "2026-10-29",
+  "status": "candidate",
+  "phase": "P2",
+  "title": "Portfolio domain and Phase 2 roadmap",
+  "prerequisite": {
+    "decision_id": "NEX-P1-13",
+    "freeze_commit_sha": "5708a15d1c983c45885eeabdc4b3f77375cfc1d7",
+    "accepted_candidate_commit_sha": "61c5eba2ecf2a3696b6b60c87ecb1afb6064d26d",
+    "artifact_path": "artifacts/p1-13/phase-one-final-acceptance.json",
+    "artifact_checksum": "86e69a8a50ab75c2be9c5501ad90c8504a5c0d230cb18e90d787bb76dad86dfb",
+    "record_checksum": "a874e2a18deedab36491cd927c818f1fa26d52df22a376f9f846cd719979ca4f",
+    "phase_one_complete": true
+  },
+  "product_boundary": {
+    "owner_model": "single_owner",
+    "deployment_model": "private_only",
+    "primary_domain": "personal_portfolio_accounting_and_intelligence",
+    "portfolio_product_complete": false,
+    "production_readiness_claimed": false,
+    "authoritative_source_policy": "immutable_evidence_plus_derived_projections",
+    "money_representation": "exact_decimal_minor_or_declared_precision",
+    "financial_float_allowed": false,
+    "canonical_time": "utc",
+    "default_locale": "fa",
+    "supported_locales": [
+      "fa",
+      "en"
+    ],
+    "base_currency_initial": "USD",
+    "additional_base_currencies_deferred": true
+  },
+  "domain_model": {
+    "aggregate_roots": [
+      "portfolio",
+      "account",
+      "asset",
+      "transaction",
+      "import_batch",
+      "reconciliation_case",
+      "valuation_snapshot"
+    ],
+    "entities": [
+      "portfolio",
+      "account",
+      "asset",
+      "asset_identifier",
+      "transaction",
+      "transaction_leg",
+      "lot",
+      "holding_projection",
+      "price_observation",
+      "fx_rate_observation",
+      "manual_valuation",
+      "import_batch",
+      "import_row",
+      "reconciliation_case",
+      "valuation_snapshot",
+      "performance_snapshot"
+    ],
+    "portfolio_kinds": [
+      "personal",
+      "paper",
+      "shadow"
+    ],
+    "account_kinds": [
+      "exchange",
+      "wallet_watch_only",
+      "cash",
+      "brokerage_manual",
+      "paper",
+      "shadow",
+      "other_manual"
+    ],
+    "asset_classes": [
+      "crypto",
+      "fiat",
+      "equity",
+      "fund",
+      "commodity",
+      "other"
+    ],
+    "transaction_kinds": [
+      "buy",
+      "sell",
+      "deposit",
+      "withdrawal",
+      "transfer",
+      "fee",
+      "income",
+      "reward",
+      "airdrop",
+      "adjustment",
+      "opening_balance"
+    ],
+    "transaction_semantics": {
+      "journal": "immutable_double_entry_like_legs",
+      "minimum_legs": 2,
+      "mutation": "forbidden_after_posting",
+      "correction": "reversal_or_supersession",
+      "idempotency_required": true,
+      "source_lineage_required": true,
+      "owner_scope_required": true,
+      "occurred_at_required": true,
+      "recorded_at_required": true
+    },
+    "projection_semantics": {
+      "holdings_are_derived": true,
+      "lots_are_derived": true,
+      "nav_is_derived": true,
+      "pnl_is_derived": true,
+      "rebuildable_from_journal": true,
+      "checkpointed": true,
+      "projection_version_required": true
+    }
+  },
+  "accounting_policy": {
+    "cost_basis_methods_initial": [
+      "fifo",
+      "weighted_average"
+    ],
+    "specific_identification_deferred": true,
+    "fees": "capitalized_or_expensed_by_transaction_policy",
+    "transfer_between_owned_accounts": "non_disposal_with_basis_continuity",
+    "negative_holding_default": "reject_and_quarantine",
+    "rounding": "explicit_per_asset_precision_with_no_silent_truncation",
+    "tax_advice_claimed": false,
+    "tax_jurisdiction_logic_deferred": true
+  },
+  "valuation_policy": {
+    "evidence_priority": [
+      "trusted_price_observation",
+      "trusted_fx_rate_observation",
+      "owner_manual_valuation",
+      "unpriced"
+    ],
+    "price_observation_immutable": true,
+    "fx_observation_immutable": true,
+    "manual_valuation_requires_reason": true,
+    "stale_price_must_be_visible": true,
+    "missing_price_must_be_visible": true,
+    "valuation_time_required": true,
+    "source_reference_required": true,
+    "no_forward_fill_without_policy": true
+  },
+  "import_and_reconciliation": {
+    "supported_initial_sources": [
+      "manual_entry",
+      "csv_import",
+      "nexora_json_import",
+      "trd_bot_paper_shadow_projection"
+    ],
+    "dry_run_required": true,
+    "deterministic_normalization": true,
+    "content_checksum_required": true,
+    "idempotent_reimport": true,
+    "duplicate_detection": true,
+    "unknown_rows_quarantined": true,
+    "partial_publish_forbidden": true,
+    "reconciliation_states": [
+      "open",
+      "matched",
+      "accepted_difference",
+      "resolved",
+      "ignored_with_reason"
+    ],
+    "destructive_auto_fix": false,
+    "owner_approval_for_corrections": true
+  },
+  "trd_bot_boundary": {
+    "supported_provider_release": null,
+    "trd_bot_0_3_0_compatible": false,
+    "runtime_mode": "disabled_incompatible_provider",
+    "direct_database_access": false,
+    "paper_shadow_only": true,
+    "live_orders": false,
+    "projection_is_authoritative_accounting_source": false,
+    "projection_requires_immutable_receipt": true,
+    "unknown_schema_action": "quarantine",
+    "expired_cursor_action": "full_resync_required"
+  },
+  "export_policy": {
+    "export_first": true,
+    "formats": [
+      "json",
+      "csv",
+      "parquet",
+      "zip_bundle"
+    ],
+    "profiles": [
+      "private_complete",
+      "ai_safe"
+    ],
+    "private_complete_includes": [
+      "portfolios",
+      "accounts",
+      "assets",
+      "transactions",
+      "transaction_legs",
+      "holdings",
+      "lots",
+      "valuations",
+      "performance",
+      "reconciliation",
+      "lineage",
+      "uncertainty"
+    ],
+    "ai_safe_excludes": [
+      "credentials",
+      "tokens",
+      "recovery_codes",
+      "private_keys",
+      "session_identifiers",
+      "raw_security_audit_context"
+    ],
+    "manifest_required": true,
+    "sha256_required": true,
+    "schema_version_required": true,
+    "generated_at_required": true,
+    "owner_scope_required": true,
+    "public_download": false
+  },
+  "phase_two_roadmap": [
+    {
+      "stage_id": "NEX-P2-01",
+      "title": "Portfolio Domain and Phase Two Roadmap",
+      "outcome": "Freeze the domain language, accounting invariants, boundaries and delivery order.",
+      "status": "candidate"
+    },
+    {
+      "stage_id": "NEX-P2-02",
+      "title": "Portfolio, Asset and Account Registry",
+      "outcome": "Persist owner-scoped portfolios, assets, identifiers and accounts.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-03",
+      "title": "Immutable Transaction Journal",
+      "outcome": "Persist idempotent transactions and immutable balanced legs with correction lineage.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-04",
+      "title": "Import and Reconciliation Runtime",
+      "outcome": "Add dry-run imports, deduplication, quarantine and owner-reviewed reconciliation.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-05",
+      "title": "Holdings, Lots and Cost Basis",
+      "outcome": "Build deterministic rebuildable holdings and lot projections.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-06",
+      "title": "Price, FX and Manual Valuation",
+      "outcome": "Store immutable price evidence and explicit manual valuations with uncertainty.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-07",
+      "title": "NAV, P&L and Performance",
+      "outcome": "Derive point-in-time NAV, realized and unrealized P&L and bounded performance series.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-08",
+      "title": "TRD Bot Paper/Shadow Projection",
+      "outcome": "Project compatible Paper/Shadow evidence without direct database access or live execution.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-09",
+      "title": "Portfolio API and Export",
+      "outcome": "Expose owner-scoped read APIs and deterministic private/AI-safe exports.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-10",
+      "title": "Portfolio Dashboard and Accounts UI",
+      "outcome": "Deliver bilingual responsive overview, valuation status and account registry screens.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-11",
+      "title": "Transactions, Holdings and Reconciliation UI",
+      "outcome": "Deliver journal, holdings, lots, import review and reconciliation workflows.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P2-12",
+      "title": "Acceptance, Hardening and Freeze",
+      "outcome": "Bind deterministic accounting, migrations, export, browser and private-runtime evidence to one SHA.",
+      "status": "planned"
+    }
+  ],
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_order_submission": false,
+    "live_order_cancellation": false,
+    "autonomous_ai_execution": false,
+    "ml_training": false,
+    "ml_inference": false,
+    "financial_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "deferred": [
+    "multi_user_and_saas",
+    "public_internet_hosting",
+    "live_trading",
+    "exchange_account_connectivity",
+    "wallet_signing_and_fund_transfer",
+    "jurisdiction_specific_tax_engine",
+    "autonomous_ai_actions",
+    "machine_learning_training_and_inference",
+    "financial_advice",
+    "production_release_before_private_vps_acceptance"
+  ],
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "planned_country_code": "DE",
+    "planned_host_type": "private_vps",
+    "status": "deferred_to_server_deployment",
+    "blocks": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ]
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P2-01-FREEZE",
+    "post_freeze_stage": "NEX-P2-02",
+    "candidate_commit_message": "feat(nexora): define P2-01 portfolio domain roadmap",
+    "freeze_commit_message": "chore(nexora): freeze P2-01 portfolio domain roadmap",
+    "requires_successful_ci_on_candidate_sha": true,
+    "freeze_before_implementation": true
+  }
+}

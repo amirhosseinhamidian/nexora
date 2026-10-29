@@ -2,9 +2,16 @@
 
 Status: **Candidate tooling — execute only after commit, push and green CI**
 
-This stage closes `NEX-P1-GAP-009`. It adds no Portfolio feature and grants no
-new operational capability. Its purpose is to bind current host evidence,
-GitHub Actions and the full Phase 1 regression suite to one candidate SHA.
+This stage closes the local-foundation part of `NEX-P1-GAP-009`. It adds no
+Portfolio feature and grants no new operational capability. Its purpose is to
+bind local reference-host evidence, GitHub Actions and the full Phase 1
+regression suite to one candidate SHA.
+
+This acceptance is intentionally split in two. The current
+`local_reference_foundation` profile may freeze Phase 1 and open `NEX-P2-01`,
+but it is not production acceptance. The later
+`NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate must run on the private VPS آلمان
+before the first v0.1 production deployment or release.
 
 ## Safety boundary
 
@@ -16,16 +23,11 @@ secret values and command output are not written to the acceptance artifact.
 The candidate worktree must be clean and on a branch. Evidence must be no more
 than seven days old and must share the candidate SHA and environment label.
 
-The reference host may use one of two bounded network modes:
-
-- `loopback_only` (default): bind exactly `127.0.0.1:443`; remote access is
-  disabled and no overlay client is required;
-- `authenticated_private_overlay`: bind the authenticated overlay address when
-  remote access is intentionally required.
-
-Both modes require HTTPS and reject LAN-only, wildcard and public exposure.
-The loopback-only mode is a stricter deployment of the frozen P1-12 topology;
-it does not remove private-overlay support or reopen the earlier freeze.
+The current local reference host uses the loopback-only (`loopback_only`)
+profile: bind exactly
+`127.0.0.1:443`, keep remote access disabled and require HTTPS. LAN, wildcard
+and public exposure are rejected. The later VPS gate will choose and verify an
+authenticated private network or an equivalently hardened server access model.
 
 TRD Bot `0.3.0` is `legacy_read_only_blocked`, so the default reference runtime
 must set `NEXORA_TRD_BOT_MODE=disabled_incompatible_provider`. No provider URL
@@ -42,8 +44,8 @@ URL; rerunning a different SHA does not satisfy the gate.
 
 ## Capacity evidence
 
-Deploy the candidate to the private reference host. For the default local-only
-mode, use its loopback HTTPS origin and trusted CA, then run:
+Deploy the candidate to the local reference host. Use its loopback HTTPS origin
+and trusted CA, then run:
 
 ```bash
 export SOURCE_COMMIT_SHA="$(git rev-parse HEAD)"
@@ -60,46 +62,22 @@ uv run python scripts/benchmark_private_runtime.py \
 
 Success requires completed samples, actual HTTP 429 responses, `Retry-After`
 on every 429, no transport/5xx failure and no immutable-evidence loss. The
-benchmark uses the external Caddy route `/api/v1/session`; Caddy strips `/api`
+benchmark uses the external Caddy route `/api/v1/auth/session`; Caddy strips `/api`
 before proxying the request to the API runtime.
 
-## Backup, restore and retention drill
+## Deferred server deployment acceptance
 
-Use the P1-12 runbook to create an encrypted backup, verify the independently
-mounted off-site copy, restore into the disposable acceptance runtime, revoke
-sessions and service tokens, rotate the scoped service token, run post-restore
-health checks and restart/reclaim the Worker. Measure backup and restore wall
-time. Run both retention commands without `--apply` and retain their two plan
-files.
+The local Mac run must not pretend that a same-machine directory is an off-host
+backup. `NEX-DEBT-P1-13-001` therefore keeps the server-only work in status
+`deferred_to_server_deployment`. When the German VPS is provisioned, the
+deployment gate must verify the hardened private access model, encrypted runtime
+backup, an independent off-host copy, restore within the four-hour RTO,
+retention dry-run, server capacity and overload, Worker restart/reclaim, and
+post-restore session and service-token revocation.
 
-With the measured values and real evidence paths, create the drill report:
-
-```bash
-uv run python scripts/record_private_operations_drill.py \
-  --environment-label macbook-pro-reference \
-  --runtime-backup-root /absolute/path/to/runtime-backups \
-  --offsite-backup-root /absolute/path/to/offsite-backups \
-  --backup-id YYYYMMDDTHHMMSSZ-1234abcd \
-  --artifact-retention-plan /absolute/path/to/YYYYMMDD.artifacts.dry-run.plan.json \
-  --backup-retention-plan /absolute/path/to/YYYYMMDD.backups.dry-run.plan.json \
-  --backup-duration-seconds 12.5 \
-  --restore-duration-seconds 42.8 \
-  --deployment-network-mode loopback_only \
-  --database-restore-smoke pass \
-  --artifact-restore-smoke pass \
-  --session-revocation-smoke pass \
-  --service-token-revocation-smoke pass \
-  --service-token-rotation-smoke pass \
-  --post-restore-health-smoke pass \
-  --private-deployment-smoke pass \
-  --worker-restart-reclaim-smoke pass \
-  --output /tmp/nexora-p1-13-operations-drill.json
-```
-
-The recorder validates both encrypted copies and retention plans directly. A
-`pass` flag is an owner attestation and must only be supplied after the named
-smoke check actually succeeds. Use `authenticated_private_overlay` instead of
-`loopback_only` only when the benchmark and deployment actually use that mode.
+The existing `record_private_operations_drill.py` remains the evidence recorder
+for that later gate. Its report must be produced on the deployed VPS candidate;
+it is not an input to the current local-reference acceptance runner.
 
 ## Final acceptance runner
 
@@ -118,8 +96,8 @@ export P1_13_GITHUB_ACTIONS_RUN_URL='https://github.com/amirhosseinhamidian/nexo
 
 uv run python scripts/run_phase_one_final_acceptance.py \
   --confirm-destructive-migration-cycle nexora_acceptance \
+  --acceptance-profile local_reference_foundation \
   --capacity-report /tmp/nexora-p1-13-capacity.json \
-  --operations-drill-report /tmp/nexora-p1-13-operations-drill.json \
   --github-actions-run-url "$P1_13_GITHUB_ACTIONS_RUN_URL" \
   --github-actions-head-sha "$(git rev-parse HEAD)" \
   --github-actions-conclusion success \
@@ -127,7 +105,6 @@ uv run python scripts/run_phase_one_final_acceptance.py \
   --fresh-clone-install-smoke pass \
   --passkey-session-csrf-smoke pass \
   --trd-bot-contract-idempotency-smoke pass \
-  --private-backup-restore-retention-smoke pass \
   --responsive-bilingual-web-shell-smoke pass \
   --no-forbidden-capabilities-smoke pass \
   --environment-label macbook-pro-reference
@@ -135,7 +112,8 @@ uv run python scripts/run_phase_one_final_acceptance.py \
 
 The runner executes six ordered gates: repository contracts, backend quality
 and tests, migration cycle, PostgreSQL resilience, frontend and browser. A
-successful record has `ready_to_freeze_phase_one=true`, `failed_gates=[]` and a
+successful record has `ready_to_freeze_phase_one=true`, `failed_gates=[]`,
+`production_readiness_claimed=false`, an explicitly deferred VPS gate and a
 valid `record_checksum`.
 
 ## Freeze policy
@@ -151,7 +129,9 @@ capacity reports, drill reports, DSNs, certificates, backup material or secret
 files. If any gate fails, do not commit the failed artifact; correct the cause
 and rerun with a new output.
 
-After the artifact-only Freeze and green CI, Phase 1 is complete and the only
-next development stage is `NEX-P2-01`. Portfolio features, SaaS/multi-user,
+After the artifact-only Freeze and green CI, the Phase 1 foundation is complete
+and the only next development stage is `NEX-P2-01`. This does not authorize a
+v0.1 production deployment or release: the VPS gate remains blocking until it
+passes on the actual German server. Portfolio features, SaaS/multi-user,
 public-internet deployment, exchange credentials, wallets, live execution and
 autonomous AI remain outside this acceptance.

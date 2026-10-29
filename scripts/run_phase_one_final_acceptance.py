@@ -16,7 +16,6 @@ from typing import Any
 from nexora.phase_one_acceptance import (
     PHASE_ONE_MAX_EVIDENCE_AGE,
     parse_capacity_report,
-    parse_operations_drill_report,
     parse_phase_one_acceptance_record,
     serialize_phase_one_acceptance_record,
     sha256_bytes,
@@ -33,8 +32,8 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--database-url", default=os.environ.get("NEXORA_ACCEPTANCE_DATABASE_URL"))
     value.add_argument("--confirm-destructive-migration-cycle", choices=("nexora_acceptance",), required=True)
     value.add_argument("--p1-12-record", type=Path, default=DEFAULT_PRIOR)
+    value.add_argument("--acceptance-profile", choices=("local_reference_foundation",), required=True)
     value.add_argument("--capacity-report", type=Path, required=True)
-    value.add_argument("--operations-drill-report", type=Path, required=True)
     value.add_argument("--github-actions-run-url", required=True)
     value.add_argument("--github-actions-head-sha", required=True)
     value.add_argument("--github-actions-conclusion", choices=("success",), required=True)
@@ -47,7 +46,6 @@ def parser() -> argparse.ArgumentParser:
         "fresh-clone-install-smoke",
         "passkey-session-csrf-smoke",
         "trd-bot-contract-idempotency-smoke",
-        "private-backup-restore-retention-smoke",
         "responsive-bilingual-web-shell-smoke",
         "no-forbidden-capabilities-smoke",
     ):
@@ -217,23 +215,19 @@ def main() -> int:
         raise ValueError("GitHub Actions head SHA must match the checked-out candidate")
 
     capacity_bytes, capacity_checksum = _artifact(arguments.capacity_report, "capacity report")
-    drill_bytes, drill_checksum = _artifact(arguments.operations_drill_report, "operations drill report")
     capacity = parse_capacity_report(capacity_bytes)
-    drill = parse_operations_drill_report(drill_bytes)
-    reports = (capacity, drill)
-    if any(report["candidate_commit_sha"] != candidate_sha for report in reports):
-        raise ValueError("every acceptance report must match the checked-out candidate")
-    if any(report["environment_label"] != arguments.environment_label for report in reports):
-        raise ValueError("every acceptance report must match --environment-label")
+    if capacity["candidate_commit_sha"] != candidate_sha:
+        raise ValueError("capacity report must match the checked-out candidate")
+    if capacity["environment_label"] != arguments.environment_label:
+        raise ValueError("capacity report must match --environment-label")
     deployment_network_mode = capacity["deployment_network_mode"]
-    if drill["private_deployment"]["network_mode"] != deployment_network_mode:
-        raise ValueError("capacity and operations drill deployment network modes do not match")
+    if deployment_network_mode != "loopback_only":
+        raise ValueError("local reference acceptance requires loopback_only deployment")
     preflight_at = datetime.now(UTC)
-    for report in reports:
-        generated_at = datetime.fromisoformat(report["generated_at"].replace("Z", "+00:00")).astimezone(UTC)
-        age = preflight_at - generated_at
-        if age.total_seconds() < 0 or age > PHASE_ONE_MAX_EVIDENCE_AGE:
-            raise ValueError("acceptance report evidence must be current")
+    generated_at = datetime.fromisoformat(capacity["generated_at"].replace("Z", "+00:00")).astimezone(UTC)
+    age = preflight_at - generated_at
+    if age.total_seconds() < 0 or age > PHASE_ONE_MAX_EVIDENCE_AGE:
+        raise ValueError("acceptance report evidence must be current")
 
     prior = _prior(arguments.p1_12_record)
     clean_environment = {key: value for key, value in os.environ.items() if not key.startswith("NEXORA_")}
@@ -251,7 +245,6 @@ def main() -> int:
         "fresh_clone_install": arguments.fresh_clone_install_smoke,
         "passkey_session_and_csrf_lifecycle": arguments.passkey_session_csrf_smoke,
         "trd_bot_contract_and_idempotency": arguments.trd_bot_contract_idempotency_smoke,
-        "private_backup_restore_and_retention": arguments.private_backup_restore_retention_smoke,
         "responsive_bilingual_web_shell": arguments.responsive_bilingual_web_shell_smoke,
         "no_forbidden_capabilities": arguments.no_forbidden_capabilities_smoke,
     }
@@ -259,6 +252,7 @@ def main() -> int:
         "schema_version": "nexora-phase-one-final-acceptance-record-v1",
         "candidate_commit_sha": candidate_sha,
         "branch": branch,
+        "acceptance_profile": arguments.acceptance_profile,
         "environment_label": arguments.environment_label,
         "generated_at": datetime.now(UTC).isoformat(timespec="microseconds").replace("+00:00", "Z"),
         "deployment_network_mode": deployment_network_mode,
@@ -272,13 +266,14 @@ def main() -> int:
             "deployment_network_mode": deployment_network_mode,
             "passed": capacity["passed"],
         },
-        "operations_drill": {
-            "artifact_checksum": drill_checksum,
-            "candidate_commit_sha": drill["candidate_commit_sha"],
-            "environment_label": drill["environment_label"],
-            "generated_at": drill["generated_at"],
-            "deployment_network_mode": drill["private_deployment"]["network_mode"],
-            "passed": drill["passed"],
+        "server_deployment_acceptance": {
+            "status": "deferred_to_server_deployment",
+            "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+            "debt_id": "NEX-DEBT-P1-13-001",
+            "planned_host_type": "private_vps",
+            "planned_country_code": "DE",
+            "blocks": ["v0.1-production-deployment", "v0.1-release"],
+            "production_readiness_claimed": False,
         },
         "ci": {
             "run_url": arguments.github_actions_run_url,
@@ -289,6 +284,7 @@ def main() -> int:
         "gates": list(gates),
         "failed_gates": failed,
         "ready_to_freeze_phase_one": not failed,
+        "production_readiness_claimed": False,
         "freeze_commit_policy": "acceptance-artifact-only",
         "security_boundary": {
             "public_internet_production_profile": False,

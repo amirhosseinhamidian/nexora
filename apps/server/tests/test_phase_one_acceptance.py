@@ -111,6 +111,7 @@ def acceptance() -> dict[str, Any]:
         "schema_version": "nexora-phase-one-final-acceptance-record-v1",
         "candidate_commit_sha": SHA,
         "branch": "feature/v0.1-foundation",
+        "acceptance_profile": "local_reference_foundation",
         "environment_label": "test-host",
         "generated_at": NOW,
         "deployment_network_mode": "loopback_only",
@@ -127,12 +128,14 @@ def acceptance() -> dict[str, Any]:
             "deployment_network_mode": "loopback_only",
             "artifact_checksum": "b" * 64,
         },
-        "operations_drill": {
-            "candidate_commit_sha": SHA,
-            "environment_label": "test-host",
-            "passed": True,
-            "deployment_network_mode": "loopback_only",
-            "artifact_checksum": "c" * 64,
+        "server_deployment_acceptance": {
+            "status": "deferred_to_server_deployment",
+            "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+            "debt_id": "NEX-DEBT-P1-13-001",
+            "planned_host_type": "private_vps",
+            "planned_country_code": "DE",
+            "blocks": ["v0.1-production-deployment", "v0.1-release"],
+            "production_readiness_claimed": False,
         },
         "ci": {
             "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/123",
@@ -143,7 +146,6 @@ def acceptance() -> dict[str, Any]:
             "fresh_clone_install": "pass",
             "passkey_session_and_csrf_lifecycle": "pass",
             "trd_bot_contract_and_idempotency": "pass",
-            "private_backup_restore_and_retention": "pass",
             "responsive_bilingual_web_shell": "pass",
             "no_forbidden_capabilities": "pass",
         },
@@ -165,6 +167,7 @@ def acceptance() -> dict[str, Any]:
         ],
         "failed_gates": [],
         "ready_to_freeze_phase_one": True,
+        "production_readiness_claimed": False,
         "freeze_commit_policy": "acceptance-artifact-only",
         "security_boundary": {
             "public_internet_production_profile": False,
@@ -236,6 +239,22 @@ def test_final_acceptance_rejects_network_mode_drift() -> None:
     payload["capacity"]["deployment_network_mode"] = "authenticated_private_overlay"
     encoded = serialize_phase_one_acceptance_record(payload).encode()
     with pytest.raises(PhaseOneAcceptanceError, match="network mode drift"):
+        parse_phase_one_acceptance_record(encoded)
+
+
+def test_final_acceptance_rejects_server_acceptance_claim() -> None:
+    payload = acceptance()
+    payload["server_deployment_acceptance"]["status"] = "passed"
+    encoded = serialize_phase_one_acceptance_record(payload).encode()
+    with pytest.raises(PhaseOneAcceptanceError, match="remain deferred"):
+        parse_phase_one_acceptance_record(encoded)
+
+
+def test_final_acceptance_rejects_production_readiness_claim() -> None:
+    payload = acceptance()
+    payload["production_readiness_claimed"] = True
+    encoded = serialize_phase_one_acceptance_record(payload).encode()
+    with pytest.raises(PhaseOneAcceptanceError, match="production readiness"):
         parse_phase_one_acceptance_record(encoded)
 
 

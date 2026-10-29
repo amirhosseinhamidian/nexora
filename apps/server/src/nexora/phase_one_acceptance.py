@@ -159,6 +159,7 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
     candidate = payload.get("candidate_commit_sha")
     _require(isinstance(candidate, str) and SHA.fullmatch(candidate) is not None, "acceptance candidate SHA is invalid")
     _require(isinstance(payload.get("branch"), str) and payload["branch"], "acceptance branch is missing")
+    _require(payload.get("acceptance_profile") == "local_reference_foundation", "acceptance profile drift")
     _require(
         isinstance(payload.get("environment_label"), str) and payload["environment_label"],
         "acceptance environment is missing",
@@ -177,16 +178,27 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
         prior.get("p1_12_record_checksum") == "49d9c3c2427d4154445a25c61be8945dca4b46cbcfe43ce25e538c37a457cda6",
         "P1-12 record drift",
     )
-    for key in ("capacity", "operations_drill"):
-        evidence = _field_object(payload, key, f"{key} evidence")
-        _require(evidence.get("candidate_commit_sha") == candidate, f"{key} candidate SHA drift")
-        _require(evidence.get("environment_label") == payload["environment_label"], f"{key} environment drift")
-        _require(evidence.get("passed") is True, f"{key} evidence did not pass")
-        _require(evidence.get("deployment_network_mode") == network_mode, f"{key} network mode drift")
-        _require(
-            re.fullmatch(r"[0-9a-f]{64}", str(evidence.get("artifact_checksum"))) is not None,
-            f"{key} checksum is invalid",
-        )
+    _require(network_mode == "loopback_only", "local acceptance requires loopback_only deployment")
+    capacity = _field_object(payload, "capacity", "capacity evidence")
+    _require(capacity.get("candidate_commit_sha") == candidate, "capacity candidate SHA drift")
+    _require(capacity.get("environment_label") == payload["environment_label"], "capacity environment drift")
+    _require(capacity.get("passed") is True, "capacity evidence did not pass")
+    _require(capacity.get("deployment_network_mode") == network_mode, "capacity network mode drift")
+    _require(
+        re.fullmatch(r"[0-9a-f]{64}", str(capacity.get("artifact_checksum"))) is not None,
+        "capacity checksum is invalid",
+    )
+    server = _field_object(payload, "server_deployment_acceptance", "server deployment acceptance")
+    _require(server.get("status") == "deferred_to_server_deployment", "server acceptance must remain deferred")
+    _require(server.get("gate_id") == "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE", "server gate drift")
+    _require(server.get("debt_id") == "NEX-DEBT-P1-13-001", "server deployment debt drift")
+    _require(server.get("planned_host_type") == "private_vps", "planned server type drift")
+    _require(server.get("planned_country_code") == "DE", "planned server country drift")
+    _require(
+        server.get("blocks") == ["v0.1-production-deployment", "v0.1-release"],
+        "server deployment blockers drift",
+    )
+    _require(server.get("production_readiness_claimed") is False, "server readiness cannot be claimed locally")
     ci = _field_object(payload, "ci", "CI evidence")
     _require(RUN_URL.fullmatch(str(ci.get("run_url"))) is not None, "CI run URL is invalid")
     _require(ci.get("head_sha") == candidate, "CI head SHA drift")
@@ -196,7 +208,6 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
         "fresh_clone_install",
         "passkey_session_and_csrf_lifecycle",
         "trd_bot_contract_and_idempotency",
-        "private_backup_restore_and_retention",
         "responsive_bilingual_web_shell",
         "no_forbidden_capabilities",
     }
@@ -250,6 +261,7 @@ def parse_phase_one_acceptance_record(value: bytes) -> dict[str, Any]:
         "Phase 1 readiness is inconsistent",
     )
     _require(payload.get("freeze_commit_policy") == "acceptance-artifact-only", "freeze commit policy drift")
+    _require(payload.get("production_readiness_claimed") is False, "production readiness cannot be claimed locally")
     security = _field_object(payload, "security_boundary", "security boundary")
     _require(bool(security), "security boundary is missing")
     _require(all(value is False for value in security.values()), "forbidden capability enabled")

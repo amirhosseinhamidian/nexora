@@ -74,20 +74,44 @@ class PhaseOneFinalAcceptanceContractTests(unittest.TestCase):
 
     def test_restore_rto_cannot_be_relaxed(self) -> None:
         changed = copy.deepcopy(self.contract)
-        changed["operations_acceptance"]["restore_rto_hours"] = 24
+        changed["server_deployment_acceptance"]["restore_rto_hours"] = 24
         with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "RTO"):
             MODULE.validate_contract(changed)
 
-    def test_public_network_mode_cannot_be_accepted(self) -> None:
+    def test_local_acceptance_cannot_claim_an_overlay_deployment(self) -> None:
         changed = copy.deepcopy(self.contract)
-        changed["operations_acceptance"]["deployment_network_modes_allowed"].append("public_internet")
-        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "network modes"):
+        changed["local_reference_acceptance"]["deployment_network_mode"] = "authenticated_private_overlay"
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "local network mode"):
             MODULE.validate_contract(changed)
 
     def test_loopback_remote_access_cannot_be_enabled(self) -> None:
         changed = copy.deepcopy(self.contract)
-        changed["operations_acceptance"]["loopback_remote_access_allowed"] = True
+        changed["local_reference_acceptance"]["loopback_remote_access_allowed"] = True
         with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "loopback remote access"):
+            MODULE.validate_contract(changed)
+
+    def test_server_deployment_acceptance_cannot_be_marked_complete_locally(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["server_deployment_acceptance"]["status"] = "passed"
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "remain deferred"):
+            MODULE.validate_contract(changed)
+
+    def test_server_deployment_release_blockers_cannot_be_removed(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["server_deployment_acceptance"]["required_before"] = ["v0.1-release"]
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "release blockers"):
+            MODULE.validate_contract(changed)
+
+    def test_server_deployment_debt_cannot_be_dropped(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["opens_deferred_debts"] = []
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "debt ownership"):
+            MODULE.validate_contract(changed)
+
+    def test_local_acceptance_cannot_claim_private_vps_readiness(self) -> None:
+        changed = copy.deepcopy(self.contract)
+        changed["acceptance_boundary"]["private_vps_production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseOneFinalAcceptanceContractError, "VPS readiness"):
             MODULE.validate_contract(changed)
 
     def test_incompatible_provider_cannot_enable_sync(self) -> None:

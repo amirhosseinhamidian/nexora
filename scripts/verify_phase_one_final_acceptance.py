@@ -10,7 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-one-final-acceptance.json"
 P1_12_FREEZE_PATH = ROOT / "artifacts/p1-12/private-deployment-operations-freeze.json"
-CONTRACT_CHECKSUM = "3fe43c8250e85e8f141813b9d265052cbaff51b036094ed36db5d1528071981e"
+CONTRACT_CHECKSUM = "1a764ba49ce6526233b6000259f3a8f4bdfad7f1d963c93c6d87b68135715332"
 P1_12_FREEZE_CHECKSUM = "49d9c3c2427d4154445a25c61be8945dca4b46cbcfe43ce25e538c37a457cda6"
 P1_12_FREEZE_COMMIT = "1af9161925a71c4154801bb6ac4f533f4a8e21b8"
 
@@ -71,6 +71,10 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(prerequisite.get("freeze_record_checksum") == P1_12_FREEZE_CHECKSUM, "P1-12 checksum drift")
     _require(canonical_checksum(_json(P1_12_FREEZE_PATH)) == P1_12_FREEZE_CHECKSUM, "P1-12 record drift")
     _require(contract.get("closes_gaps") == ["NEX-P1-GAP-009"], "P1-13 gap ownership drift")
+    _require(
+        contract.get("opens_deferred_debts") == ["NEX-DEBT-P1-13-001"],
+        "server deployment debt ownership drift",
+    )
 
     evidence = contract.get("evidence")
     _require(isinstance(evidence, dict), "evidence policy must be an object")
@@ -83,9 +87,6 @@ def validate_contract(contract: dict[str, Any]) -> None:
     ):
         _require(evidence.get(key) is True, f"evidence policy requires {key}")
     _require(evidence.get("capacity_report_schema") == "nexora-private-runtime-benchmark-v1", "capacity schema drift")
-    _require(
-        evidence.get("operations_drill_report_schema") == "nexora-private-operations-drill-v1", "drill schema drift"
-    )
     _require(
         evidence.get("final_record_schema") == "nexora-phase-one-final-acceptance-record-v1",
         "acceptance record schema drift",
@@ -115,37 +116,60 @@ def validate_contract(contract: dict[str, Any]) -> None:
             "fresh_clone_install",
             "passkey_session_and_csrf_lifecycle",
             "trd_bot_contract_and_idempotency",
-            "private_backup_restore_and_retention",
             "responsive_bilingual_web_shell",
             "no_forbidden_capabilities",
         ],
         "manual evidence inventory drift",
     )
-    operations = contract.get("operations_acceptance")
-    _require(isinstance(operations, dict), "operations acceptance must be an object")
+    local = contract.get("local_reference_acceptance")
+    _require(isinstance(local, dict), "local reference acceptance must be an object")
+    _require(local.get("profile_id") == "local_reference_foundation", "local acceptance profile drift")
     for key in (
         "actual_capacity_benchmark_required",
         "overload_429_and_retry_after_required",
-        "runtime_and_offsite_backup_match_required",
-        "retention_dry_run_required",
         "immutable_evidence_protected",
         "worker_restart_and_reclaim_required",
         "https_443_only_required",
     ):
-        _require(operations.get(key) is True, f"operations acceptance requires {key}")
-    _require(operations.get("restore_rto_hours") == 4, "restore RTO drift")
-    _require(operations.get("non_export_api_p95_ms") == 300, "latency budget drift")
-    _require(operations.get("minimum_throughput_per_second") == 10, "throughput budget drift")
+        _require(local.get(key) is True, f"local acceptance requires {key}")
+    _require(local.get("non_export_api_p95_ms") == 300, "latency budget drift")
+    _require(local.get("minimum_throughput_per_second") == 10, "throughput budget drift")
+    _require(local.get("deployment_network_mode") == "loopback_only", "local network mode drift")
+    _require(local.get("loopback_bind_address") == "127.0.0.1", "loopback bind address drift")
+    _require(local.get("loopback_remote_access_allowed") is False, "loopback remote access is forbidden")
+
+    server = contract.get("server_deployment_acceptance")
+    _require(isinstance(server, dict), "server deployment acceptance must be an object")
+    _require(server.get("status") == "deferred_to_server_deployment", "server acceptance must remain deferred")
+    _require(server.get("gate_id") == "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE", "server gate drift")
+    _require(server.get("debt_id") == "NEX-DEBT-P1-13-001", "server deployment debt drift")
+    _require(server.get("planned_host_type") == "private_vps", "planned server type drift")
+    _require(server.get("planned_country_code") == "DE", "planned server country drift")
     _require(
-        operations.get("deployment_network_modes_allowed") == ["loopback_only", "authenticated_private_overlay"],
-        "deployment network modes drift",
+        server.get("required_before") == ["v0.1-production-deployment", "v0.1-release"],
+        "server acceptance release blockers drift",
     )
     _require(
-        operations.get("reference_host_default_network_mode") == "loopback_only",
-        "reference host network mode drift",
+        server.get("required_evidence")
+        == [
+            "authenticated_private_network_or_equivalent_hardened_access",
+            "encrypted_runtime_backup",
+            "independent_off_host_backup_copy",
+            "restore_drill_within_rto",
+            "retention_dry_run",
+            "server_capacity_and_overload_benchmark",
+            "worker_restart_and_reclaim",
+            "post_restore_session_and_service_token_revocation",
+        ],
+        "server acceptance evidence inventory drift",
     )
-    _require(operations.get("loopback_bind_address") == "127.0.0.1", "loopback bind address drift")
-    _require(operations.get("loopback_remote_access_allowed") is False, "loopback remote access is forbidden")
+    _require(
+        server.get("operations_drill_report_schema") == "nexora-private-operations-drill-v1",
+        "server operations drill schema drift",
+    )
+    _require(server.get("restore_rto_hours") == 4, "server restore RTO drift")
+    _require(server.get("runtime_copy_counts_as_off_host") is False, "runtime copy cannot count as off-host")
+    _require(server.get("production_readiness_claimed") is False, "server readiness cannot be claimed locally")
 
     provider = contract.get("trd_bot_provider_acceptance")
     _require(isinstance(provider, dict), "TRD Bot provider acceptance must be an object")
@@ -169,6 +193,14 @@ def validate_contract(contract: dict[str, Any]) -> None:
     boundary = contract.get("acceptance_boundary")
     _require(isinstance(boundary, dict), "acceptance boundary must be an object")
     _require(boundary.get("phase_one_foundation_may_be_frozen") is True, "Phase 1 freeze is not authorized")
+    _require(
+        boundary.get("local_reference_acceptance_is_production_acceptance") is False,
+        "local acceptance cannot become production acceptance",
+    )
+    _require(
+        boundary.get("private_vps_production_readiness_claimed") is False,
+        "private VPS readiness cannot be claimed",
+    )
     _require(boundary.get("portfolio_product_complete") is False, "Portfolio product cannot be complete in Phase 1")
     _require(boundary.get("public_production_readiness_claimed") is False, "public readiness cannot be claimed")
     _require(boundary.get("freeze_commit_policy") == "acceptance-artifact-only", "freeze policy drift")
@@ -209,6 +241,8 @@ def validate_files_and_runtime_markers() -> None:
         "scripts/run_phase_one_final_acceptance.py": (
             "nexora_acceptance",
             "confirm-destructive-migration-cycle",
+            "local_reference_foundation",
+            "deferred_to_server_deployment",
             "acceptance-artifact-only",
             "disabled_incompatible_provider",
         ),
@@ -218,12 +252,16 @@ def validate_files_and_runtime_markers() -> None:
             "NEXORA_TRD_BOT_BASE_URL_FILE",
             "NEXORA_TRD_BOT_TOKEN_FILE",
         ),
-        "docs/adr/0027-phase-one-final-acceptance.md": ("Status: Candidate for NEX-P1-13",),
+        "docs/adr/0027-phase-one-final-acceptance.md": (
+            "Status: Candidate for NEX-P1-13",
+            "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+        ),
         "docs/v0.1/18-phase-one-final-acceptance.md": (
             "NEX-P1-GAP-009",
             "acceptance-artifact-only",
             "NEX-P2-01",
             "loopback-only",
+            "VPS آلمان",
         ),
         ".github/workflows/phase-one-final-acceptance.yml": ("Phase 1 final acceptance",),
         "tests/test_phase_one_final_acceptance.py": ("PhaseOneFinalAcceptanceContractTests",),

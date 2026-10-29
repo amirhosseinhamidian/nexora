@@ -7,8 +7,9 @@
 ## Context
 
 P1-12 froze the complete Phase 1 implementation boundary but intentionally
-deferred reference-host capacity, backup/restore, retention and final lifecycle
-evidence. Passing CI alone cannot prove those host-dependent operations.
+deferred reference-host capacity and host-dependent operations. Passing CI
+alone cannot prove either category, but the development reference host and the
+future production server are different acceptance environments.
 
 The owner does not currently require remote access. Requiring an overlay client
 for a same-machine reference host would add operational surface without adding
@@ -17,19 +18,23 @@ private-overlay capability.
 
 ## Decision
 
-Phase 1 acceptance uses two current, checksum-bound reports produced on one
-clean candidate and one named environment: the private overload benchmark and
-the private operations drill. The drill verifies matching runtime/off-site
-encrypted backup copies, a restore within the four-hour RTO, credential
-revocation and rotation, protected retention dry-runs, HTTPS-only deployment
-and Worker restart/reclaim behavior.
+Phase 1 acceptance is split into two explicit profiles. The current
+`local_reference_foundation` profile binds a checksum-protected capacity and
+overload report, green CI and the complete regression suite to one clean
+candidate. It may freeze the Phase 1 foundation and open `NEX-P2-01`, but it
+cannot claim production readiness.
 
-The reference deployment may use either `loopback_only` or
-`authenticated_private_overlay`. `loopback_only` is the default for a
-single-owner, same-host installation: ingress binds exactly `127.0.0.1:443`,
-remote and public access remain disabled, and TLS 1.3 is still required. An
-authenticated private overlay remains supported when remote access is actually
-needed. LAN, wildcard and public binds are not accepted as substitutes.
+The second gate, `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE`, is deferred until the
+private German VPS exists. It remains a blocker for v0.1 production deployment
+and release and owns the off-host encrypted backup, restore/RTO, retention,
+server capacity, hardened remote access and post-restore lifecycle evidence.
+The debt is tracked as `NEX-DEBT-P1-13-001`.
+
+The local reference deployment uses `loopback_only`: ingress binds exactly
+`127.0.0.1:443`, remote and public access remain disabled, and TLS 1.3 is still
+required. A private overlay or equivalently hardened access model is selected
+and verified later on the actual VPS. LAN, wildcard and accidental public binds
+are not accepted as substitutes.
 
 TRD Bot `0.3.0` remains incompatible with the frozen integration contract, so
 the default private runtime uses `disabled_incompatible_provider`. In this mode
@@ -48,7 +53,9 @@ command metadata without DSNs or command output.
 
 ## Consequences
 
-The successful runner creates one checksummed acceptance artifact. The Freeze
-commit may contain only that artifact. Freeze does not deploy, tag, publish,
-enable public hosting or complete the Portfolio product; it closes Phase 1
-foundation work and opens `NEX-P2-01`.
+The successful local runner creates one checksummed acceptance artifact with
+`production_readiness_claimed=false` and the server gate recorded as
+`deferred_to_server_deployment`. The Freeze commit may contain only that
+artifact. Freeze does not deploy, tag, publish, enable public hosting or complete
+the Portfolio product; it closes Phase 1 foundation work and opens `NEX-P2-01`.
+The later server gate must pass before v0.1 can be deployed or released.

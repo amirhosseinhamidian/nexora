@@ -1,6 +1,141 @@
 {
   "components": {
     "schemas": {
+      "AccountKind": {
+        "enum": [
+          "exchange",
+          "wallet_watch_only",
+          "cash",
+          "brokerage_manual",
+          "paper",
+          "shadow",
+          "other_manual"
+        ],
+        "title": "AccountKind",
+        "type": "string"
+      },
+      "AccountListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-account-registry-list-v1",
+            "default": "nexora-account-registry-list-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AccountListResponse",
+        "type": "object"
+      },
+      "AccountResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "account_key": {
+            "title": "Account Key",
+            "type": "string"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "external_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Reference"
+          },
+          "institution_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AccountKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": "nexora-account-registry-v1",
+            "default": "nexora-account-registry-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistryStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_id",
+          "portfolio_id",
+          "account_key",
+          "name",
+          "kind",
+          "institution_name",
+          "external_reference",
+          "status",
+          "row_version",
+          "created_at",
+          "updated_at",
+          "closed_at"
+        ],
+        "title": "AccountResponse",
+        "type": "object"
+      },
       "ActionRequest": {
         "additionalProperties": false,
         "properties": {},
@@ -29,6 +164,180 @@
           "status"
         ],
         "title": "ActionResponse",
+        "type": "object"
+      },
+      "AssetClass": {
+        "enum": [
+          "crypto",
+          "fiat",
+          "equity",
+          "fund",
+          "commodity",
+          "other"
+        ],
+        "title": "AssetClass",
+        "type": "string"
+      },
+      "AssetIdentifierResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "asset_identifier_id": {
+            "format": "uuid",
+            "title": "Asset Identifier Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "is_primary": {
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "schema_version": {
+            "const": "nexora-asset-identifier-v1",
+            "default": "nexora-asset-identifier-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "scheme": {
+            "$ref": "#/components/schemas/AssetIdentifierScheme"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_identifier_id",
+          "asset_id",
+          "scheme",
+          "value",
+          "is_primary",
+          "created_at"
+        ],
+        "title": "AssetIdentifierResponse",
+        "type": "object"
+      },
+      "AssetIdentifierScheme": {
+        "enum": [
+          "iso_4217",
+          "ticker",
+          "coingecko",
+          "isin",
+          "cusip",
+          "figi",
+          "manual"
+        ],
+        "title": "AssetIdentifierScheme",
+        "type": "string"
+      },
+      "AssetListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssetResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-asset-registry-list-v1",
+            "default": "nexora-asset-registry-list-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AssetListResponse",
+        "type": "object"
+      },
+      "AssetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_class": {
+            "$ref": "#/components/schemas/AssetClass"
+          },
+          "asset_id": {
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "asset_key": {
+            "title": "Asset Key",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "deactivated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deactivated At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "precision": {
+            "title": "Precision",
+            "type": "integer"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": "nexora-asset-registry-v1",
+            "default": "nexora-asset-registry-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistryStatus"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "asset_key",
+          "symbol",
+          "name",
+          "asset_class",
+          "precision",
+          "status",
+          "row_version",
+          "created_at",
+          "updated_at",
+          "deactivated_at"
+        ],
+        "title": "AssetResponse",
         "type": "object"
       },
       "AuthenticationCompleteRequest": {
@@ -196,6 +505,169 @@
         "title": "BootstrapOptionsRequest",
         "type": "object"
       },
+      "CreateAccountRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "account_key": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+            "title": "Account Key",
+            "type": "string"
+          },
+          "external_reference": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Reference"
+          },
+          "institution_name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Institution Name"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AccountKind"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "portfolio_id",
+          "account_key",
+          "name",
+          "kind"
+        ],
+        "title": "CreateAccountRequest",
+        "type": "object"
+      },
+      "CreateAssetIdentifierRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "is_primary": {
+            "default": false,
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "scheme": {
+            "$ref": "#/components/schemas/AssetIdentifierScheme"
+          },
+          "value": {
+            "maxLength": 160,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scheme",
+          "value"
+        ],
+        "title": "CreateAssetIdentifierRequest",
+        "type": "object"
+      },
+      "CreateAssetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_class": {
+            "$ref": "#/components/schemas/AssetClass"
+          },
+          "asset_key": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+            "title": "Asset Key",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "precision": {
+            "maximum": 30.0,
+            "minimum": 0.0,
+            "title": "Precision",
+            "type": "integer"
+          },
+          "symbol": {
+            "maxLength": 24,
+            "minLength": 1,
+            "pattern": "^[A-Z0-9][A-Z0-9._-]{0,23}$",
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_key",
+          "symbol",
+          "name",
+          "asset_class",
+          "precision"
+        ],
+        "title": "CreateAssetRequest",
+        "type": "object"
+      },
+      "CreatePortfolioRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset_id": {
+            "format": "uuid",
+            "title": "Base Asset Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PortfolioKind"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "portfolio_key": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+            "title": "Portfolio Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "portfolio_key",
+          "name",
+          "kind",
+          "base_asset_id"
+        ],
+        "title": "CreatePortfolioRequest",
+        "type": "object"
+      },
       "ErrorDetail": {
         "additionalProperties": false,
         "properties": {
@@ -243,6 +715,21 @@
         "title": "ErrorEnvelope",
         "type": "object"
       },
+      "LifecycleRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_row_version": {
+            "minimum": 1.0,
+            "title": "Expected Row Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_row_version"
+        ],
+        "title": "LifecycleRequest",
+        "type": "object"
+      },
       "LivenessResponse": {
         "properties": {
           "service": {
@@ -264,6 +751,113 @@
           "version"
         ],
         "title": "LivenessResponse",
+        "type": "object"
+      },
+      "PortfolioKind": {
+        "enum": [
+          "personal",
+          "paper",
+          "shadow"
+        ],
+        "title": "PortfolioKind",
+        "type": "string"
+      },
+      "PortfolioListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-registry-list-v1",
+            "default": "nexora-portfolio-registry-list-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PortfolioListResponse",
+        "type": "object"
+      },
+      "PortfolioResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "base_asset_id": {
+            "format": "uuid",
+            "title": "Base Asset Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PortfolioKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "portfolio_key": {
+            "title": "Portfolio Key",
+            "type": "string"
+          },
+          "row_version": {
+            "title": "Row Version",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-registry-v1",
+            "default": "nexora-portfolio-registry-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistryStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "portfolio_id",
+          "portfolio_key",
+          "name",
+          "kind",
+          "base_asset_id",
+          "status",
+          "row_version",
+          "created_at",
+          "updated_at",
+          "archived_at"
+        ],
+        "title": "PortfolioResponse",
         "type": "object"
       },
       "RecoveryCompleteRequest": {
@@ -411,6 +1005,16 @@
         ],
         "title": "RegistrationOptionsResponse",
         "type": "object"
+      },
+      "RegistryStatus": {
+        "enum": [
+          "active",
+          "archived",
+          "inactive",
+          "closed"
+        ],
+        "title": "RegistryStatus",
+        "type": "string"
       },
       "SessionResponse": {
         "additionalProperties": false,
@@ -653,6 +1257,1003 @@
           }
         },
         "summary": "Liveness"
+      }
+    },
+    "/v1/accounts": {
+      "get": {
+        "operationId": "listAccounts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "portfolio_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Portfolio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Accounts"
+      },
+      "post": {
+        "operationId": "createAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Account"
+      }
+    },
+    "/v1/accounts/{account_id}/close": {
+      "post": {
+        "operationId": "closeAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Close Account"
+      }
+    },
+    "/v1/assets": {
+      "get": {
+        "operationId": "listAssets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Assets"
+      },
+      "post": {
+        "operationId": "createAsset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Asset"
+      }
+    },
+    "/v1/assets/{asset_id}/deactivate": {
+      "post": {
+        "operationId": "deactivateAsset",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Deactivate Asset"
+      }
+    },
+    "/v1/assets/{asset_id}/identifiers": {
+      "post": {
+        "operationId": "createAssetIdentifier",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssetIdentifierRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetIdentifierResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Asset Identifier"
       }
     },
     "/v1/auth/authentication/complete": {
@@ -2575,6 +4176,560 @@
           }
         },
         "summary": "Rotate Session"
+      }
+    },
+    "/v1/portfolios": {
+      "get": {
+        "operationId": "listPortfolios",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Portfolios"
+      },
+      "post": {
+        "operationId": "createPortfolio",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortfolioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Portfolio"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}": {
+      "get": {
+        "operationId": "getPortfolio",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Portfolio"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}/archive": {
+      "post": {
+        "operationId": "archivePortfolio",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Archive Portfolio"
       }
     },
     "/version": {

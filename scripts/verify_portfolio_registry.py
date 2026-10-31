@@ -190,6 +190,14 @@ def validate_runtime_markers() -> None:
         _require(operation in api, f"missing API route: {operation}")
     _require('revision: str = "20261031_0006"' in migration, "migration revision marker drift")
     _require("transactions" not in {table.split(".")[-1] for table in EXPECTED_TABLES}, "journal entered P2-02")
+    openapi = _json(ROOT / "contracts/runtime/v1/openapi.json")
+    operations = {
+        f"{method.upper()} {path}"
+        for path, path_item in openapi["paths"].items()
+        for method in path_item
+        if method in {"get", "post", "put", "patch", "delete"}
+    }
+    _require(operations >= EXPECTED_OPERATIONS, "P2-02 OpenAPI operation inventory drift")
 
 
 def main() -> int:

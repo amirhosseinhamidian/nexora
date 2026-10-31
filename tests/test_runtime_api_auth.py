@@ -63,6 +63,10 @@ class RuntimeApiAuthContractTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.RuntimeApiAuthContractError, "operation inventory drift"):
             MODULE.validate_contract(candidate)
 
+    def test_phase_two_openapi_extensions_are_explicitly_bounded(self) -> None:
+        self.assertTrue(MODULE.EXPECTED_OPERATIONS.isdisjoint(MODULE.APPROVED_EXTENSION_OPERATIONS))
+        self.assertEqual(len(MODULE.APPROVED_EXTENSION_OPERATIONS), 11)
+
     def test_generated_checksum_cannot_change(self) -> None:
         candidate = copy.deepcopy(self.contract)
         candidate["contract_toolchain"]["contract_checksum"] = "0" * 64

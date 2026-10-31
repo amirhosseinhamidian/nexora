@@ -143,12 +143,14 @@ claim product completion. Candidate
 workflow and fifteen regression workflows on the same SHA. The next allowed
 implementation stage is `NEX-P2-02`.
 
-`NEX-P2-02` is a candidate. It adds owner-scoped asset and identifier,
+`NEX-P2-02` is frozen. It adds owner-scoped asset and identifier,
 portfolio, and descriptive account registries with explicit lifecycle state,
 optimistic concurrency, PostgreSQL constraints, a reversible migration, and
 authenticated CSRF-protected APIs. It stores no exchange credential or wallet
-signing material and does not introduce the transaction journal. `NEX-P2-03`
-remains blocked until the P2-02 candidate is accepted and frozen.
+signing material and does not introduce the transaction journal. Accepted
+candidate `add7a7eec7226ecc62989b23cccf380c32e678d7` is bound to all 57
+successful checks across the primary workflow and sixteen regression
+workflows. The immutable transaction journal is now opened as `NEX-P2-03`.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -161,9 +163,9 @@ The versioned adapter remains fail-closed until a compatible provider release
 and capability negotiation are available.
 
 The repository contains the accepted Phase 1 runtime foundation, the frozen
-Phase 2 domain contract, and the P2-02 registry candidate. It is not yet the
-complete portfolio application; the immutable transaction journal starts only
-after the P2-02 Freeze.
+Phase 2 domain contract, and the frozen P2-02 registry. It is not yet the
+complete portfolio application; the immutable transaction journal starts in
+P2-03.
 
 ## Verify the scope contract
 
@@ -189,6 +191,7 @@ uv run python scripts/verify_authenticated_web_shell.py
 uv run python scripts/verify_private_deployment_operations.py
 uv run python scripts/verify_phase_one_final_acceptance.py
 uv run python scripts/verify_phase_two_portfolio_domain.py
+uv run python scripts/verify_portfolio_registry.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -252,6 +255,8 @@ NEX_P1_13_READY_FOR_CANDIDATE=PASS
 NEX_P1_13_PREREQUISITE=PASS
 NEX_P2_01_PORTFOLIO_DOMAIN=PASS
 NEX_P2_01_FREEZE=PASS
+NEX_P2_02_PORTFOLIO_REGISTRY=PASS
+NEX_P2_02_FREEZE=PASS
 ```
 
 ## Documents
@@ -322,3 +327,4 @@ NEX_P2_01_FREEZE=PASS
 - [`artifacts/p1-12/private-deployment-operations-freeze.json`](artifacts/p1-12/private-deployment-operations-freeze.json)
 - [`artifacts/p1-13/phase-one-final-acceptance.json`](artifacts/p1-13/phase-one-final-acceptance.json)
 - [`artifacts/p2-01/portfolio-domain-roadmap-freeze.json`](artifacts/p2-01/portfolio-domain-roadmap-freeze.json)
+- [`artifacts/p2-02/portfolio-registry-freeze.json`](artifacts/p2-02/portfolio-registry-freeze.json)

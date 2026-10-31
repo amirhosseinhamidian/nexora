@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class PortfolioRegistryContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p2_01_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p2_01()
@@ -26,6 +27,10 @@ class PortfolioRegistryContractTests(unittest.TestCase):
     def test_candidate_contract_and_runtime_are_valid(self) -> None:
         MODULE.validate_contract(self.contract)
         MODULE.validate_runtime_markers()
+
+    def test_freeze_record_and_workflow_are_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
+        MODULE.validate_freeze_workflow()
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
@@ -65,6 +70,54 @@ class PortfolioRegistryContractTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P2-03"
         with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "next stage"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_candidate_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_lineage_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_lineage"][1]["parent_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "candidate lineage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_workflows(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["workflow_runs"].pop()
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "workflow run inventory drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_checks(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["checks"].pop()
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "check inventory drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_failed_check(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["checks"][0]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "check evidence drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_contract_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["portfolio_registry_contract"]["checksum"] = "0" * 64
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "contract evidence drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_claim_transaction_journal(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["transaction_journal_implemented"] = True
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "transaction journal"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_only_opens_p2_03(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P2-04"
+        with self.assertRaisesRegex(MODULE.PortfolioRegistryContractError, "next stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

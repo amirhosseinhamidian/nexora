@@ -1,8 +1,9 @@
 # NEX-P2-02 — Portfolio, Asset and Account Registry
 
-Status: candidate
+Status: frozen
 Date: 2026-10-31
 Prerequisite: frozen `NEX-P2-01` at `e82731b9ab50ca7ca0911250f71bf9096a89b314`
+Accepted candidate: `add7a7eec7226ecc62989b23cccf380c32e678d7`
 
 ## Outcome
 
@@ -69,6 +70,18 @@ uniqueness, lifecycle and optimistic-concurrency conflicts return 409.
 
 P2-02 requires deterministic contract checks, backend format/lint/typecheck,
 non-integration tests, PostgreSQL 17 integration tests, and the full Alembic
-upgrade/downgrade/rebuild/drift cycle. Only a candidate SHA with green CI may
-be frozen. P2-03 (the immutable transaction journal) remains blocked until
-that Freeze.
+upgrade/downgrade/rebuild/drift cycle. The accepted candidate is the end of a
+three-commit lineage covering the registry implementation, runtime-contract
+synchronization and host-capacity-independent retention tests. All 57 checks
+from the primary workflow and sixteen regression workflows completed
+successfully on that SHA.
+
+The immutable Freeze record is stored at
+`artifacts/p2-02/portfolio-registry-freeze.json`. It binds the candidate SHA
+and tree, the exact lineage, contract checksum, frozen P2-01 prerequisite, all
+workflow runs and all check jobs. Any missing, failed or changed item is
+rejected by `scripts/verify_portfolio_registry.py`.
+
+P2-02 is therefore complete and frozen. The next allowed stage is `NEX-P2-03`
+for the immutable transaction journal; holdings, valuation and full portfolio
+product completion remain out of scope until their later Phase 2 stages.

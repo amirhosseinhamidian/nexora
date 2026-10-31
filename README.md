@@ -161,12 +161,14 @@ cost basis, valuation and P&L remain deferred. Accepted candidate
 checks across the primary workflow and seventeen regression workflows. Bounded
 import and reconciliation is now opened as `NEX-P2-04`.
 
-`NEX-P2-04` is a candidate. It adds bounded CSV and Nexora JSON dry runs,
+`NEX-P2-04` is frozen. It adds bounded CSV and Nexora JSON dry runs,
 deterministic row normalization and fingerprints, duplicate detection,
 quarantine, explicit reconciliation evidence, owner review and transactional
 all-or-nothing publication into the immutable journal. It adds no holdings,
-cost basis, valuation or trading capability. The next allowed step is the
-separate `NEX-P2-04-FREEZE`; `NEX-P2-05` remains blocked until then.
+cost basis, valuation or trading capability. Accepted candidate
+`8e1f59f4084f902b4917d91f6ee9593217dbca1e` is bound to all 63 successful
+checks across the primary workflow and eighteen regression workflows.
+Rebuildable holdings, lots and cost basis are now opened as `NEX-P2-05`.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -279,7 +281,7 @@ NEX_P2_03_TRANSACTION_JOURNAL=PASS
 NEX_P2_03_FREEZE=PASS
 NEX_P2_03_PREREQUISITE=PASS
 NEX_P2_04_IMPORT_RECONCILIATION=PASS
-NEX_P2_04_READY_FOR_CANDIDATE=PASS
+NEX_P2_04_FREEZE=PASS
 ```
 
 ## Documents
@@ -356,3 +358,4 @@ NEX_P2_04_READY_FOR_CANDIDATE=PASS
 - [`artifacts/p2-01/portfolio-domain-roadmap-freeze.json`](artifacts/p2-01/portfolio-domain-roadmap-freeze.json)
 - [`artifacts/p2-02/portfolio-registry-freeze.json`](artifacts/p2-02/portfolio-registry-freeze.json)
 - [`artifacts/p2-03/transaction-journal-freeze.json`](artifacts/p2-03/transaction-journal-freeze.json)
+- [`artifacts/p2-04/import-reconciliation-freeze.json`](artifacts/p2-04/import-reconciliation-freeze.json)

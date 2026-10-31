@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class ImportReconciliationContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze = MODULE.load_freeze_record()
 
     def test_frozen_p2_03_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p2_03()
@@ -29,6 +30,28 @@ class ImportReconciliationContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze, self.contract)
+        MODULE.validate_freeze_workflow()
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.ImportReconciliationContractError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_failed_check(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["checks"][0]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.ImportReconciliationContractError, "check evidence"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p2_05(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["next_allowed_stage"] = "NEX-P2-06"
+        with self.assertRaisesRegex(MODULE.ImportReconciliationContractError, "next stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
     def test_partial_publish_cannot_be_enabled(self) -> None:
         changed = copy.deepcopy(self.contract)

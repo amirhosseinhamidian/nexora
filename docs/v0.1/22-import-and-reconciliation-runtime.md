@@ -1,8 +1,9 @@
 # NEX-P2-04 — Import and Reconciliation Runtime
 
-Status: candidate
+Status: frozen
 Date: 2026-10-31
 Prerequisite: frozen `NEX-P2-03` at `35572e1fba3c023e512ef2e101749fc77df29e41`
+Accepted candidate: `8e1f59f4084f902b4917d91f6ee9593217dbca1e`
 
 ## Outcome
 
@@ -52,6 +53,19 @@ listing and reasoned decisions under `/v1/imports` and
 This stage does not add holdings, lots, cost basis, valuation, P&L, TRD Bot
 projection, exchange credentials, wallet signing or live orders.
 
+## Freeze evidence
+
+The accepted candidate is bound to its exact Git tree, parent and commit
+message, all 19 successful GitHub Actions workflow runs, all 63 successful
+check jobs, the frozen P2-03 prerequisite and the import/reconciliation
+contract checksum. Durable evidence is stored in
+`artifacts/p2-04/import-reconciliation-freeze.json` and validated by
+`scripts/verify_import_reconciliation.py`.
+
+P2-04 is complete and frozen. The next allowed stage is `NEX-P2-05` for
+rebuildable holdings, lots and cost basis. Valuation, P&L, AI/ML, exchange
+credentials, wallet signing and live orders remain deferred.
+
 ## Verification
 
 Run:
@@ -61,6 +75,3 @@ uv run python scripts/verify_import_reconciliation.py
 uv run python -m unittest tests/test_import_reconciliation_contract.py -v
 uv run pytest -m "not integration" -q
 ```
-
-After the candidate and its CI are accepted, a separate P2-04 Freeze commit
-may open `NEX-P2-05` for rebuildable holdings, lots and cost basis.

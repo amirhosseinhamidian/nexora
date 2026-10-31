@@ -161,6 +161,13 @@ cost basis, valuation and P&L remain deferred. Accepted candidate
 checks across the primary workflow and seventeen regression workflows. Bounded
 import and reconciliation is now opened as `NEX-P2-04`.
 
+`NEX-P2-04` is a candidate. It adds bounded CSV and Nexora JSON dry runs,
+deterministic row normalization and fingerprints, duplicate detection,
+quarantine, explicit reconciliation evidence, owner review and transactional
+all-or-nothing publication into the immutable journal. It adds no holdings,
+cost basis, valuation or trading capability. The next allowed step is the
+separate `NEX-P2-04-FREEZE`; `NEX-P2-05` remains blocked until then.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -202,6 +209,7 @@ uv run python scripts/verify_phase_one_final_acceptance.py
 uv run python scripts/verify_phase_two_portfolio_domain.py
 uv run python scripts/verify_portfolio_registry.py
 uv run python scripts/verify_transaction_journal.py
+uv run python scripts/verify_import_reconciliation.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -269,6 +277,9 @@ NEX_P2_02_PORTFOLIO_REGISTRY=PASS
 NEX_P2_02_FREEZE=PASS
 NEX_P2_03_TRANSACTION_JOURNAL=PASS
 NEX_P2_03_FREEZE=PASS
+NEX_P2_03_PREREQUISITE=PASS
+NEX_P2_04_IMPORT_RECONCILIATION=PASS
+NEX_P2_04_READY_FOR_CANDIDATE=PASS
 ```
 
 ## Documents
@@ -295,6 +306,7 @@ NEX_P2_03_FREEZE=PASS
 - [`docs/v0.1/19-phase-two-portfolio-domain-roadmap.md`](docs/v0.1/19-phase-two-portfolio-domain-roadmap.md)
 - [`docs/v0.1/20-portfolio-asset-account-registry.md`](docs/v0.1/20-portfolio-asset-account-registry.md)
 - [`docs/v0.1/21-immutable-transaction-journal.md`](docs/v0.1/21-immutable-transaction-journal.md)
+- [`docs/v0.1/22-import-and-reconciliation-runtime.md`](docs/v0.1/22-import-and-reconciliation-runtime.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -319,6 +331,7 @@ NEX_P2_03_FREEZE=PASS
 - [`contracts/nexora-v0.1-phase-two-portfolio-domain.json`](contracts/nexora-v0.1-phase-two-portfolio-domain.json)
 - [`contracts/nexora-v0.1-portfolio-registry.json`](contracts/nexora-v0.1-portfolio-registry.json)
 - [`contracts/nexora-v0.1-transaction-journal.json`](contracts/nexora-v0.1-transaction-journal.json)
+- [`contracts/nexora-v0.1-import-reconciliation.json`](contracts/nexora-v0.1-import-reconciliation.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

@@ -51,6 +51,13 @@ APPROVED_EXTENSION_OPERATIONS = {
     "GET /v1/transactions/{transaction_id}",
     "POST /v1/transactions/{transaction_id}/reversals",
     "POST /v1/transactions/{transaction_id}/supersessions",
+    "POST /v1/imports/dry-runs",
+    "GET /v1/imports",
+    "GET /v1/imports/{import_batch_id}",
+    "POST /v1/imports/{import_batch_id}/reviews",
+    "POST /v1/imports/{import_batch_id}/publication",
+    "GET /v1/reconciliation-cases",
+    "POST /v1/reconciliation-cases/{reconciliation_case_id}/decisions",
 }
 
 

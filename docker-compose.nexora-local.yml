@@ -1,0 +1,109 @@
+name: nexora-local
+
+x-nexora-runtime: &nexora-runtime
+  NEXORA_ENVIRONMENT: development
+  NEXORA_DEPLOYMENT_PROFILE: local_development
+  NEXORA_API_HOST: "127.0.0.1"
+  NEXORA_API_PORT: "8000"
+  NEXORA_TRD_BOT_MODE: disabled_incompatible_provider
+  NEXORA_DATABASE_DSN_FILE: /run/secrets/db.dsn
+  NEXORA_CANONICAL_ORIGIN_FILE: /run/secrets/origin
+  NEXORA_AUTH_PEPPER_FILE: /run/secrets/auth-pepper
+  NEXORA_ARTIFACT_ROOT: /var/lib/nexora/artifacts
+
+x-nexora-volumes: &nexora-volumes
+  - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/db.dsn:/run/secrets/db.dsn:ro
+  - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/origin:/run/secrets/origin:ro
+  - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/auth-pepper:/run/secrets/auth-pepper:ro
+  - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/artifacts:/var/lib/nexora/artifacts
+
+services:
+  db:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexora
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+    volumes:
+      - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/db-password:/run/secrets/db-password:ro
+      - local-postgresql:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  migrate:
+    image: nexora-api:local
+    profiles: [migration]
+    # Development-only runner. Secret files stay outside the repository.
+    user: "0:0"
+    environment:
+      NEXORA_ENVIRONMENT: development
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /run/secrets/db.dsn
+    volumes:
+      - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/db.dsn:/run/secrets/db.dsn:ro
+    networks: [internal]
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+
+  api:
+    image: nexora-api:local
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile.local
+    restart: unless-stopped
+    # Local-only: read private mode-0600 bind-mounted files on macOS Docker Desktop.
+    user: "0:0"
+    environment: *nexora-runtime
+    volumes: *nexora-volumes
+    # Published port belongs to the shared API/gateway network namespace.
+    ports:
+      - "127.0.0.1:8443:8443"
+    networks: [internal]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: nexora-web:local
+    restart: unless-stopped
+    expose: ["3000"]
+    networks: [internal]
+
+  gateway:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    # API binds 127.0.0.1 by security contract: share its network namespace.
+    network_mode: "service:api"
+    volumes:
+      - ${NEXORA_LOCAL_DIR:?missing Nexora local config directory}/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [api, web]
+
+  worker:
+    profiles: [worker]
+    image: nexora-api:local
+    restart: unless-stopped
+    user: "0:0"
+    environment: *nexora-runtime
+    volumes: *nexora-volumes
+    networks: [internal]
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["nexora-worker", "--run", "--worker-id", "nexora-local-1", "--poll-seconds", "2"]
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  local-postgresql:
+  caddy-data:
+  caddy-config:

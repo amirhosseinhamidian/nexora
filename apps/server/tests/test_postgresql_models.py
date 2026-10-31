@@ -28,6 +28,10 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.accounts",
         "nexora.transactions",
         "nexora.transaction_legs",
+        "nexora.import_batches",
+        "nexora.import_rows",
+        "nexora.reconciliation_cases",
+        "nexora.reconciliation_decisions",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -145,3 +149,19 @@ def test_transaction_journal_models_are_owner_scoped_exact_decimal_and_append_on
     forbidden = {"balance", "holding", "cost_basis", "price", "pnl", "api_key", "private_key"}
     assert forbidden.isdisjoint(transactions.c.keys())
     assert forbidden.isdisjoint(legs.c.keys())
+
+
+def test_import_reconciliation_models_are_bounded_owner_scoped_and_evidence_shaped() -> None:
+    batches = Base.metadata.tables["nexora.import_batches"]
+    rows = Base.metadata.tables["nexora.import_rows"]
+    cases = Base.metadata.tables["nexora.reconciliation_cases"]
+    decisions = Base.metadata.tables["nexora.reconciliation_decisions"]
+    assert all(table.c.owner_id.nullable is False for table in (batches, rows, cases, decisions))
+    assert {"content_sha256", "status", "row_count", "quarantined_count"}.issubset(batches.c.keys())
+    assert {"fingerprint_sha256", "normalized_payload", "reason_code"}.issubset(rows.c.keys())
+    assert isinstance(rows.c.normalized_payload.type, postgresql.JSONB)
+    assert rows.c.normalized_payload.type.none_as_null is True
+    assert {"state", "difference_code", "reason", "row_version"}.issubset(cases.c.keys())
+    assert {"from_state", "to_state", "reason", "decided_at"}.issubset(decisions.c.keys())
+    forbidden = {"api_key", "private_key", "seed_phrase", "live_order_id"}
+    assert all(forbidden.isdisjoint(table.c.keys()) for table in (batches, rows, cases, decisions))

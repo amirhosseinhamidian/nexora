@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -17,6 +18,7 @@ from nexora.adapters.postgresql import (
     CheckpointAdvance,
     CheckpointConflict,
     DurableWorkRepository,
+    ImportReconciliationRepository,
     JobCompletion,
     LeaseLost,
     OutboxEvent,
@@ -31,6 +33,7 @@ from nexora.adapters.postgresql import (
     create_session_factory,
     load_database_settings,
 )
+from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
     CorrectionKind,
@@ -62,7 +65,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261031_0007"
+    assert revision == "20261031_0008"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -88,6 +91,10 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "accounts",
         "transactions",
         "transaction_legs",
+        "import_batches",
+        "import_rows",
+        "reconciliation_cases",
+        "reconciliation_decisions",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
@@ -656,3 +663,102 @@ def test_concurrent_transaction_posting_converges_on_one_idempotent_record(engin
                 text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"),
                 {"owner_id": owner_id},
             )
+
+
+def test_import_dry_run_is_idempotent_and_publication_is_atomic(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    imports = ImportReconciliationRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        asset = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="import-usd",
+            symbol="USD",
+            name="Import US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="import-core",
+            name="Import Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="import-cash",
+            name="Import Cash",
+            kind=AccountKind.CASH,
+        )
+        content = json.dumps(
+            {
+                "schema_version": "nexora-transaction-import-v1",
+                "rows": [
+                    {
+                        "row_id": "statement-1",
+                        "portfolio_id": str(portfolio.portfolio_id),
+                        "transaction_kind": "opening_balance",
+                        "occurred_at": "2026-10-31T12:00:00Z",
+                        "memo": "Imported opening balance",
+                        "legs": [
+                            {
+                                "account_id": str(account.account_id),
+                                "asset_id": str(asset.asset_id),
+                                "quantity": "25.00",
+                            },
+                            {
+                                "external_counterparty": "Opening equity",
+                                "asset_id": str(asset.asset_id),
+                                "quantity": "-25.00",
+                            },
+                        ],
+                    }
+                ],
+            }
+        )
+        preview = imports.create_dry_run(owner_id=owner_id, source_format=ImportFormat.NEXORA_JSON, content=content)
+        repeated = imports.create_dry_run(
+            owner_id=owner_id,
+            source_format=ImportFormat.NEXORA_JSON,
+            content=content,
+        )
+        assert repeated.import_batch_id == preview.import_batch_id
+        assert preview.rows[0].status is ImportRowStatus.READY
+        reviewed = imports.review_batch(
+            owner_id=owner_id,
+            import_batch_id=preview.import_batch_id,
+            reason="Owner reviewed the deterministic preview",
+        )
+        published = imports.publish_batch(owner_id=owner_id, import_batch_id=reviewed.import_batch_id)
+        assert published.rows[0].status is ImportRowStatus.PUBLISHED
+        assert (
+            connection.execute(
+                select(TransactionRecord.source_kind).where(TransactionRecord.owner_id == owner_id)
+            ).scalar_one()
+            == "import"
+        )
+
+        invalid = content.replace('"-25.00"', '"-24.00"')
+        quarantined = imports.create_dry_run(
+            owner_id=owner_id,
+            source_format=ImportFormat.NEXORA_JSON,
+            content=invalid,
+        )
+        with pytest.raises(ImportConflict):
+            imports.review_batch(
+                owner_id=owner_id,
+                import_batch_id=quarantined.import_batch_id,
+                reason="Owner cannot approve quarantined evidence",
+            )
+    finally:
+        outer.rollback()
+        connection.close()

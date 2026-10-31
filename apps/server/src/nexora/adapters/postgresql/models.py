@@ -584,6 +584,177 @@ class TransactionLegRecord(Base):
     memo: Mapped[str | None] = mapped_column(String(240))
 
 
+class ImportBatchRecord(Base):
+    __tablename__ = "import_batches"
+    __table_args__ = (
+        CheckConstraint("source_format IN ('csv', 'nexora_json')", name="source_format_allowed"),
+        CheckConstraint("content_sha256 ~ '^[0-9a-f]{64}$'", name="content_sha256_format"),
+        CheckConstraint("status IN ('dry_run', 'reviewed', 'published', 'quarantined')", name="status_allowed"),
+        CheckConstraint("row_count BETWEEN 1 AND 5000", name="row_count_bounded"),
+        CheckConstraint("ready_count >= 0 AND duplicate_count >= 0 AND quarantined_count >= 0", name="counts_positive"),
+        CheckConstraint("ready_count + duplicate_count + quarantined_count = row_count", name="counts_complete"),
+        CheckConstraint(
+            "review_reason IS NULL OR char_length(review_reason) BETWEEN 8 AND 500", name="review_reason_length"
+        ),
+        CheckConstraint(
+            "(status = 'dry_run' AND reviewed_at IS NULL AND published_at IS NULL) OR "
+            "(status = 'quarantined' AND reviewed_at IS NULL AND published_at IS NULL) OR "
+            "(status = 'reviewed' AND reviewed_at IS NOT NULL AND published_at IS NULL) OR "
+            "(status = 'published' AND reviewed_at IS NOT NULL AND published_at IS NOT NULL)",
+            name="status_timestamps_shape",
+        ),
+        UniqueConstraint("owner_id", "content_sha256", name="uq_import_batches_owner_content"),
+        UniqueConstraint("owner_id", "import_batch_id", name="uq_import_batches_owner_batch"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    import_batch_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    source_format: Mapped[str] = mapped_column(String(24), nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    ready_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    duplicate_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    quarantined_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    review_reason: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ImportRowRecord(Base):
+    __tablename__ = "import_rows"
+    __table_args__ = (
+        CheckConstraint("row_number BETWEEN 1 AND 5000", name="row_number_bounded"),
+        CheckConstraint(
+            "external_row_id IS NULL OR char_length(external_row_id) BETWEEN 1 AND 160", name="external_row_id_length"
+        ),
+        CheckConstraint(
+            "fingerprint_sha256 IS NULL OR fingerprint_sha256 ~ '^[0-9a-f]{64}$'", name="fingerprint_format"
+        ),
+        CheckConstraint("status IN ('ready', 'duplicate', 'quarantined', 'published')", name="status_allowed"),
+        CheckConstraint(
+            "(status IN ('ready', 'published') AND normalized_payload IS NOT NULL AND fingerprint_sha256 IS NOT NULL "
+            "AND reason_code IS NULL) OR (status IN ('duplicate', 'quarantined') AND reason_code IS NOT NULL)",
+            name="status_evidence_shape",
+        ),
+        CheckConstraint(
+            "normalized_payload IS NULL OR jsonb_typeof(normalized_payload) = 'object'", name="payload_object"
+        ),
+        CheckConstraint("reason_code IS NULL OR reason_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="reason_code_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "import_batch_id"],
+            [f"{SCHEMA_NAME}.import_batches.owner_id", f"{SCHEMA_NAME}.import_batches.import_batch_id"],
+            name="fk_import_rows_owner_batch",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "import_batch_id", "row_number", name="uq_import_rows_owner_batch_row"),
+        UniqueConstraint("owner_id", "import_row_id", name="uq_import_rows_owner_row"),
+        Index("ix_import_rows_owner_fingerprint", "owner_id", "fingerprint_sha256"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    import_row_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    import_batch_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    external_row_id: Mapped[str | None] = mapped_column(String(160))
+    fingerprint_sha256: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    normalized_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ReconciliationCaseRecord(Base):
+    __tablename__ = "reconciliation_cases"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('open', 'matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="state_allowed",
+        ),
+        CheckConstraint("difference_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="difference_code_format"),
+        CheckConstraint("reason IS NULL OR char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        ForeignKeyConstraint(
+            ["owner_id", "import_batch_id"],
+            [f"{SCHEMA_NAME}.import_batches.owner_id", f"{SCHEMA_NAME}.import_batches.import_batch_id"],
+            name="fk_reconciliation_cases_owner_batch",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "import_row_id"],
+            [f"{SCHEMA_NAME}.import_rows.owner_id", f"{SCHEMA_NAME}.import_rows.import_row_id"],
+            name="fk_reconciliation_cases_owner_row",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_reconciliation_cases_owner_transaction",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "reconciliation_case_id", name="uq_reconciliation_cases_owner_case"),
+        UniqueConstraint("owner_id", "import_row_id", name="uq_reconciliation_cases_owner_row"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    reconciliation_case_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    import_batch_id: Mapped[UUID] = mapped_column(nullable=False)
+    import_row_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_id: Mapped[UUID | None] = mapped_column()
+    state: Mapped[str] = mapped_column(String(24), nullable=False)
+    difference_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(500))
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ReconciliationDecisionRecord(Base):
+    __tablename__ = "reconciliation_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "from_state IN ('open', 'matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="from_state_allowed",
+        ),
+        CheckConstraint(
+            "to_state IN ('matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="to_state_allowed",
+        ),
+        CheckConstraint("char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "reconciliation_case_id"],
+            [
+                f"{SCHEMA_NAME}.reconciliation_cases.owner_id",
+                f"{SCHEMA_NAME}.reconciliation_cases.reconciliation_case_id",
+            ],
+            name="fk_reconciliation_decisions_owner_case",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "reconciliation_decision_id", name="uq_reconciliation_decisions_owner_decision"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    reconciliation_decision_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    reconciliation_case_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    from_state: Mapped[str] = mapped_column(String(24), nullable=False)
+    to_state: Mapped[str] = mapped_column(String(24), nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

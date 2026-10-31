@@ -33,6 +33,7 @@ from nexora.adapters.postgresql.durable import (
 )
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
 from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQLIdentityRepository
+from nexora.adapters.postgresql.import_reconciliation import ImportReconciliationRepository
 from nexora.adapters.postgresql.models import (
     AccountRecord,
     AssetIdentifierRecord,
@@ -41,10 +42,14 @@ from nexora.adapters.postgresql.models import (
     BootstrapToken,
     BrowserSession,
     ImmutableSourceEvidence,
+    ImportBatchRecord,
+    ImportRowRecord,
     OutboxEvent,
     OwnerProfile,
     PortfolioRecord,
     ProjectionCheckpoint,
+    ReconciliationCaseRecord,
+    ReconciliationDecisionRecord,
     RecoveryCode,
     SecurityAuditEvent,
     ServiceTokenRecord,
@@ -82,6 +87,9 @@ __all__ = [
     "IdempotencyConflict",
     "IdentityStateConflict",
     "ImmutableSourceEvidence",
+    "ImportBatchRecord",
+    "ImportReconciliationRepository",
+    "ImportRowRecord",
     "JobClaim",
     "JobCompletion",
     "LeaseLost",
@@ -93,6 +101,8 @@ __all__ = [
     "PortfolioRegistryRepository",
     "PostgreSQLIdentityRepository",
     "ProjectionCheckpoint",
+    "ReconciliationCaseRecord",
+    "ReconciliationDecisionRecord",
     "RecoveryCode",
     "SecurityAuditEvent",
     "ServiceTokenRecord",

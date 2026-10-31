@@ -19,6 +19,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from nexora import __version__
 from nexora.adapters.postgresql import (
     RUNTIME_DATABASE_DSN_FILE_ENV,
+    ImportReconciliationRepository,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
     TransactionJournalRepository,
@@ -50,6 +51,23 @@ from nexora.identity import (
     verify_exact_origin,
 )
 from nexora.identity_service import OwnerIdentityService
+from nexora.import_contracts import (
+    ImportBatchListResponse,
+    ImportBatchResponse,
+    ImportDryRunRequest,
+    ImportReviewRequest,
+    ImportRowResponse,
+    ReconciliationCaseListResponse,
+    ReconciliationCaseResponse,
+    ReconciliationDecisionRequest,
+)
+from nexora.import_reconciliation import (
+    ImportBatchView,
+    ImportConflict,
+    ImportNotFound,
+    ImportValidationError,
+    ReconciliationCaseView,
+)
 from nexora.observability import (
     DependencyReadiness,
     ReadinessSnapshot,
@@ -150,6 +168,28 @@ def _transaction_response(transaction: TransactionView) -> TransactionResponse:
             for leg in transaction.legs
         ],
     )
+
+
+def _import_batch_response(batch: ImportBatchView) -> ImportBatchResponse:
+    return ImportBatchResponse(
+        import_batch_id=batch.import_batch_id,
+        source_format=batch.source_format,
+        content_sha256=batch.content_sha256,
+        status=batch.status,
+        row_count=batch.row_count,
+        ready_count=batch.ready_count,
+        duplicate_count=batch.duplicate_count,
+        quarantined_count=batch.quarantined_count,
+        review_reason=batch.review_reason,
+        created_at=batch.created_at,
+        reviewed_at=batch.reviewed_at,
+        published_at=batch.published_at,
+        rows=[ImportRowResponse.model_validate(row) for row in batch.rows],
+    )
+
+
+def _reconciliation_response(case: ReconciliationCaseView) -> ReconciliationCaseResponse:
+    return ReconciliationCaseResponse.model_validate(case)
 
 
 def _transaction_legs(
@@ -361,6 +401,33 @@ def create_app(
             message="transaction journal validation failed",
         )
 
+    @application.exception_handler(ImportNotFound)
+    async def import_not_found(request: Request, _: ImportNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="IMPORT_RESOURCE_NOT_FOUND",
+            message="import or reconciliation evidence is unavailable",
+        )
+
+    @application.exception_handler(ImportConflict)
+    async def import_conflict(request: Request, _: ImportConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="IMPORT_STATE_CONFLICT",
+            message="import or reconciliation state conflicts with the requested transition",
+        )
+
+    @application.exception_handler(ImportValidationError)
+    async def import_validation_error(request: Request, _: ImportValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="IMPORT_VALIDATION_FAILED",
+            message="import or reconciliation validation failed",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -517,6 +584,12 @@ def create_app(
         repository = resolved_container.transaction_journal_repository
         if repository is None:
             raise CeremonyUnavailable("transaction journal is not configured")
+        return repository
+
+    def import_reconciliation() -> ImportReconciliationRepository:
+        repository = resolved_container.import_reconciliation_repository
+        if repository is None:
+            raise CeremonyUnavailable("import and reconciliation runtime is not configured")
         return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
@@ -1056,6 +1129,113 @@ def create_app(
             memo=payload.memo,
         )
         return _transaction_response(supersession)
+
+    @application.post(
+        "/v1/imports/dry-runs",
+        response_model=ImportBatchResponse,
+        status_code=201,
+        operation_id="createImportDryRun",
+    )
+    def create_import_dry_run(payload: ImportDryRunRequest, request: Request) -> ImportBatchResponse:
+        _, session = require_session(request)
+        batch = import_reconciliation().create_dry_run(
+            owner_id=session.owner_id,
+            source_format=payload.source_format,
+            content=payload.content,
+        )
+        return _import_batch_response(batch)
+
+    @application.get(
+        "/v1/imports",
+        response_model=ImportBatchListResponse,
+        operation_id="listImportBatches",
+    )
+    def list_import_batches(request: Request) -> ImportBatchListResponse:
+        _, session = require_session(request)
+        batches = import_reconciliation().list_batches(owner_id=session.owner_id)
+        return ImportBatchListResponse(items=[_import_batch_response(batch) for batch in batches])
+
+    @application.get(
+        "/v1/imports/{import_batch_id}",
+        response_model=ImportBatchResponse,
+        operation_id="getImportBatch",
+    )
+    def get_import_batch(import_batch_id: UUID, request: Request) -> ImportBatchResponse:
+        _, session = require_session(request)
+        batch = import_reconciliation().get_batch(
+            owner_id=session.owner_id,
+            import_batch_id=import_batch_id,
+        )
+        return _import_batch_response(batch)
+
+    @application.post(
+        "/v1/imports/{import_batch_id}/reviews",
+        response_model=ImportBatchResponse,
+        operation_id="reviewImportBatch",
+    )
+    def review_import_batch(
+        import_batch_id: UUID,
+        payload: ImportReviewRequest,
+        request: Request,
+    ) -> ImportBatchResponse:
+        _, session = require_session(request)
+        batch = import_reconciliation().review_batch(
+            owner_id=session.owner_id,
+            import_batch_id=import_batch_id,
+            reason=payload.reason,
+        )
+        return _import_batch_response(batch)
+
+    @application.post(
+        "/v1/imports/{import_batch_id}/publication",
+        response_model=ImportBatchResponse,
+        operation_id="publishImportBatch",
+    )
+    def publish_import_batch(
+        import_batch_id: UUID,
+        _payload: ActionRequest,
+        request: Request,
+    ) -> ImportBatchResponse:
+        _, session = require_session(request)
+        _, identity_repository, _ = identity_runtime()
+        identity_repository.require_recent_reauthentication(session_id=session.session_id)
+        batch = import_reconciliation().publish_batch(
+            owner_id=session.owner_id,
+            import_batch_id=import_batch_id,
+        )
+        return _import_batch_response(batch)
+
+    @application.get(
+        "/v1/reconciliation-cases",
+        response_model=ReconciliationCaseListResponse,
+        operation_id="listReconciliationCases",
+    )
+    def list_reconciliation_cases(request: Request) -> ReconciliationCaseListResponse:
+        _, session = require_session(request)
+        cases = import_reconciliation().list_reconciliation_cases(owner_id=session.owner_id)
+        return ReconciliationCaseListResponse(items=[_reconciliation_response(case) for case in cases])
+
+    @application.post(
+        "/v1/reconciliation-cases/{reconciliation_case_id}/decisions",
+        response_model=ReconciliationCaseResponse,
+        operation_id="decideReconciliationCase",
+    )
+    def decide_reconciliation_case(
+        reconciliation_case_id: UUID,
+        payload: ReconciliationDecisionRequest,
+        request: Request,
+    ) -> ReconciliationCaseResponse:
+        _, session = require_session(request)
+        _, identity_repository, _ = identity_runtime()
+        identity_repository.require_recent_reauthentication(session_id=session.session_id)
+        case = import_reconciliation().decide_reconciliation_case(
+            owner_id=session.owner_id,
+            reconciliation_case_id=reconciliation_case_id,
+            state=payload.state,
+            expected_row_version=payload.expected_row_version,
+            reason=payload.reason,
+        )
+        return _reconciliation_response(case)
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

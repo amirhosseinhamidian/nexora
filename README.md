@@ -152,6 +152,13 @@ candidate `add7a7eec7226ecc62989b23cccf380c32e678d7` is bound to all 57
 successful checks across the primary workflow and sixteen regression
 workflows. The immutable transaction journal is now opened as `NEX-P2-03`.
 
+`NEX-P2-03` is a candidate. It adds an owner-scoped append-only transaction
+journal with exact-decimal balanced legs, mandatory source lineage, canonical
+request checksums, idempotent posting, and explicit reversal/supersession
+corrections. PostgreSQL rejects journal updates and deletes. Holdings, lots,
+cost basis, valuation and P&L remain deferred. The only next step currently
+opened is `NEX-P2-03-FREEZE`; P2-04 import and reconciliation is still blocked.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -163,9 +170,9 @@ The versioned adapter remains fail-closed until a compatible provider release
 and capability negotiation are available.
 
 The repository contains the accepted Phase 1 runtime foundation, the frozen
-Phase 2 domain contract, and the frozen P2-02 registry. It is not yet the
-complete portfolio application; the immutable transaction journal starts in
-P2-03.
+Phase 2 domain contract, the frozen P2-02 registry, and the P2-03 transaction
+journal candidate. It is not yet the complete portfolio application; derived
+holdings and analytics remain in later Phase 2 stages.
 
 ## Verify the scope contract
 
@@ -192,6 +199,7 @@ uv run python scripts/verify_private_deployment_operations.py
 uv run python scripts/verify_phase_one_final_acceptance.py
 uv run python scripts/verify_phase_two_portfolio_domain.py
 uv run python scripts/verify_portfolio_registry.py
+uv run python scripts/verify_transaction_journal.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -257,6 +265,8 @@ NEX_P2_01_PORTFOLIO_DOMAIN=PASS
 NEX_P2_01_FREEZE=PASS
 NEX_P2_02_PORTFOLIO_REGISTRY=PASS
 NEX_P2_02_FREEZE=PASS
+NEX_P2_03_TRANSACTION_JOURNAL=PASS
+NEX_P2_03_READY_FOR_CANDIDATE=PASS
 ```
 
 ## Documents
@@ -282,6 +292,7 @@ NEX_P2_02_FREEZE=PASS
 - [`docs/v0.1/18-phase-one-final-acceptance.md`](docs/v0.1/18-phase-one-final-acceptance.md)
 - [`docs/v0.1/19-phase-two-portfolio-domain-roadmap.md`](docs/v0.1/19-phase-two-portfolio-domain-roadmap.md)
 - [`docs/v0.1/20-portfolio-asset-account-registry.md`](docs/v0.1/20-portfolio-asset-account-registry.md)
+- [`docs/v0.1/21-immutable-transaction-journal.md`](docs/v0.1/21-immutable-transaction-journal.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -305,6 +316,7 @@ NEX_P2_02_FREEZE=PASS
 - [`contracts/nexora-v0.1-phase-one-final-acceptance.json`](contracts/nexora-v0.1-phase-one-final-acceptance.json)
 - [`contracts/nexora-v0.1-phase-two-portfolio-domain.json`](contracts/nexora-v0.1-phase-two-portfolio-domain.json)
 - [`contracts/nexora-v0.1-portfolio-registry.json`](contracts/nexora-v0.1-portfolio-registry.json)
+- [`contracts/nexora-v0.1-transaction-journal.json`](contracts/nexora-v0.1-transaction-journal.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

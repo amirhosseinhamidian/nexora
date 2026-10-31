@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from nexora.adapters.postgresql import ALEMBIC_VERSION_SCHEMA, DATABASE_SESSION_OPTIONS, SCHEMA_NAME, Base
+from sqlalchemy import Numeric
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateTable
 
@@ -25,6 +26,8 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.asset_identifiers",
         "nexora.portfolios",
         "nexora.accounts",
+        "nexora.transactions",
+        "nexora.transaction_legs",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -114,7 +117,7 @@ def test_trd_bot_sync_receipts_are_owner_scoped_and_immutable_input_shaped() -> 
     assert isinstance(receipts.c.envelope.type, postgresql.JSONB)
 
 
-def test_portfolio_registry_is_owner_scoped_and_has_no_secret_or_transaction_columns() -> None:
+def test_portfolio_registry_is_owner_scoped_and_has_no_secret_columns() -> None:
     assets = Base.metadata.tables["nexora.assets"]
     identifiers = Base.metadata.tables["nexora.asset_identifiers"]
     portfolios = Base.metadata.tables["nexora.portfolios"]
@@ -126,4 +129,19 @@ def test_portfolio_registry_is_owner_scoped_and_has_no_secret_or_transaction_col
     assert {"portfolio_id", "kind", "status", "row_version", "closed_at"}.issubset(accounts.c.keys())
     forbidden_columns = {"api_key", "api_secret", "private_key", "seed_phrase", "access_token"}
     assert all(forbidden_columns.isdisjoint(table.c.keys()) for table in (assets, identifiers, portfolios, accounts))
-    assert "nexora.transactions" not in Base.metadata.tables
+
+
+def test_transaction_journal_models_are_owner_scoped_exact_decimal_and_append_only_shaped() -> None:
+    transactions = Base.metadata.tables["nexora.transactions"]
+    legs = Base.metadata.tables["nexora.transaction_legs"]
+    assert transactions.c.owner_id.nullable is False
+    assert legs.c.owner_id.nullable is False
+    assert {"idempotency_key", "occurred_at", "recorded_at", "request_sha256"}.issubset(transactions.c.keys())
+    assert {"correction_of_transaction_id", "correction_kind", "correction_reason"}.issubset(transactions.c.keys())
+    assert {"account_id", "external_counterparty", "asset_id", "quantity", "sequence"}.issubset(legs.c.keys())
+    assert isinstance(legs.c.quantity.type, Numeric)
+    assert legs.c.quantity.type.precision == 60
+    assert legs.c.quantity.type.scale == 30
+    forbidden = {"balance", "holding", "cost_basis", "price", "pnl", "api_key", "private_key"}
+    assert forbidden.isdisjoint(transactions.c.keys())
+    assert forbidden.isdisjoint(legs.c.keys())

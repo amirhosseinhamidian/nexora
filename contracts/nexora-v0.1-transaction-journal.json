@@ -1,0 +1,114 @@
+{
+  "schema_version": "nexora-transaction-journal-contract-v1",
+  "decision_id": "NEX-P2-03",
+  "decision_date": "2026-10-31",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-02",
+    "frozen": true,
+    "freeze_commit_sha": "db6566bc0713a8c9822f52d2b895f790440a3621",
+    "accepted_candidate_commit_sha": "add7a7eec7226ecc62989b23cccf380c32e678d7",
+    "freeze_record_path": "artifacts/p2-02/portfolio-registry-freeze.json",
+    "freeze_record_checksum": "d4b549c07cb3596b3de36a73cb658a2bb7a7a8efa74d84e693179e15134e65bf"
+  },
+  "scope": {
+    "entities": ["transaction", "transaction_leg"],
+    "transaction_kinds": [
+      "buy",
+      "sell",
+      "deposit",
+      "withdrawal",
+      "transfer",
+      "fee",
+      "income",
+      "reward",
+      "airdrop",
+      "adjustment",
+      "opening_balance"
+    ],
+    "source_kinds": ["manual", "import", "trd_bot"],
+    "correction_kinds": ["reversal", "supersession"],
+    "holdings_projection_included": false,
+    "lots_included": false,
+    "cost_basis_included": false,
+    "valuation_included": false,
+    "pnl_included": false,
+    "import_runtime_included": false
+  },
+  "journal_invariants": {
+    "append_only": true,
+    "database_update_delete_rejected": true,
+    "minimum_legs": 2,
+    "balance_scope": "zero_sum_per_asset",
+    "owner_account_leg_required": true,
+    "account_or_external_counterparty_exclusive": true,
+    "owner_scope_on_transactions_and_legs": true,
+    "portfolio_scope_required": true,
+    "occurred_at_required": true,
+    "recorded_at_required": true,
+    "idempotency_key_required": true,
+    "request_checksum_required": true,
+    "source_lineage_required": true,
+    "source_payload_checksum_required": true,
+    "exact_decimal_strings_at_api": true,
+    "binary_float_forbidden": true,
+    "asset_precision_enforced": true,
+    "maximum_decimal_places": 30,
+    "maximum_decimal_digits": 60
+  },
+  "correction_policy": {
+    "in_place_edit": false,
+    "physical_delete": false,
+    "reversal_legs_derived_from_target": true,
+    "supersession_creates_new_balanced_transaction": true,
+    "owner_reason_required": true,
+    "single_direct_correction_per_transaction": true,
+    "cross_owner_correction": false,
+    "cross_portfolio_correction": false
+  },
+  "persistence": {
+    "migration_revision": "20261031_0007",
+    "tables": ["nexora.transactions", "nexora.transaction_legs"],
+    "account_owner_composite_key_added": true,
+    "composite_owner_foreign_keys": true,
+    "immutable_database_triggers": true,
+    "postgresql_concurrency_required": true,
+    "upgrade_downgrade_rebuild_drift_cycle_required": true
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "owner_id_accepted_from_request": false,
+    "csrf_for_mutations": true,
+    "idempotency_header": "Idempotency-Key",
+    "unknown_fields_rejected": true,
+    "operations": [
+      "POST /v1/transactions",
+      "GET /v1/transactions",
+      "GET /v1/transactions/{transaction_id}",
+      "POST /v1/transactions/{transaction_id}/reversals",
+      "POST /v1/transactions/{transaction_id}/supersessions"
+    ],
+    "update_operation_exposed": false,
+    "delete_operation_exposed": false
+  },
+  "security_boundary": {
+    "exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-03-FREEZE",
+    "post_freeze_stage": "NEX-P2-04",
+    "freeze_before_import_runtime": true
+  }
+}

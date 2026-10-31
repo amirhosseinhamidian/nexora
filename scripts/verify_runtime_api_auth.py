@@ -46,6 +46,11 @@ APPROVED_EXTENSION_OPERATIONS = {
     "POST /v1/accounts",
     "GET /v1/accounts",
     "POST /v1/accounts/{account_id}/close",
+    "POST /v1/transactions",
+    "GET /v1/transactions",
+    "GET /v1/transactions/{transaction_id}",
+    "POST /v1/transactions/{transaction_id}/reversals",
+    "POST /v1/transactions/{transaction_id}/supersessions",
 }
 
 

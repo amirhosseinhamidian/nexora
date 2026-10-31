@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     func,
@@ -450,6 +452,7 @@ class AccountRecord(Base):
             ondelete="RESTRICT",
         ),
         UniqueConstraint("owner_id", "account_key", name="uq_accounts_owner_key"),
+        UniqueConstraint("owner_id", "account_id", name="uq_accounts_owner_account"),
         {"schema": SCHEMA_NAME},
     )
 
@@ -468,6 +471,117 @@ class AccountRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class TransactionRecord(Base):
+    __tablename__ = "transactions"
+    __table_args__ = (
+        CheckConstraint(
+            "transaction_kind IN ('buy', 'sell', 'deposit', 'withdrawal', 'transfer', 'fee', "
+            "'income', 'reward', 'airdrop', 'adjustment', 'opening_balance')",
+            name="transaction_kind_allowed",
+        ),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 16 AND 160", name="idempotency_key_length"),
+        CheckConstraint("idempotency_key !~ '[[:space:]]'", name="idempotency_key_no_whitespace"),
+        CheckConstraint("source_kind IN ('manual', 'import', 'trd_bot')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        CheckConstraint("memo IS NULL OR char_length(memo) BETWEEN 1 AND 500", name="memo_length"),
+        CheckConstraint(
+            "(correction_kind IS NULL AND correction_of_transaction_id IS NULL AND correction_reason IS NULL) OR "
+            "(correction_kind IN ('reversal', 'supersession') AND correction_of_transaction_id IS NOT NULL "
+            "AND char_length(correction_reason) BETWEEN 8 AND 500)",
+            name="correction_shape",
+        ),
+        CheckConstraint(
+            "correction_of_transaction_id IS NULL OR correction_of_transaction_id <> transaction_id",
+            name="no_self_correction",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_transactions_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "correction_of_transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_transactions_owner_correction_target",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "transaction_id", name="uq_transactions_owner_transaction"),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_transactions_owner_idempotency_key"),
+        UniqueConstraint("owner_id", "correction_of_transaction_id", name="uq_transactions_owner_correction_target"),
+        Index("ix_transactions_owner_portfolio_occurred", "owner_id", "portfolio_id", "occurred_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    transaction_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    memo: Mapped[str | None] = mapped_column(String(500))
+    correction_of_transaction_id: Mapped[UUID | None] = mapped_column()
+    correction_kind: Mapped[str | None] = mapped_column(String(16))
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+
+
+class TransactionLegRecord(Base):
+    __tablename__ = "transaction_legs"
+    __table_args__ = (
+        CheckConstraint("sequence >= 1", name="sequence_positive"),
+        CheckConstraint("quantity <> 0", name="quantity_nonzero"),
+        CheckConstraint(
+            "(account_id IS NOT NULL AND external_counterparty IS NULL) OR "
+            "(account_id IS NULL AND char_length(external_counterparty) BETWEEN 1 AND 160)",
+            name="account_boundary_shape",
+        ),
+        CheckConstraint("memo IS NULL OR char_length(memo) BETWEEN 1 AND 240", name="memo_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_transaction_legs_owner_transaction",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_transaction_legs_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_transaction_legs_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "transaction_id", "sequence", name="uq_transaction_legs_owner_sequence"),
+        Index("ix_transaction_legs_owner_asset", "owner_id", "asset_id"),
+        Index("ix_transaction_legs_owner_account", "owner_id", "account_id"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    transaction_leg_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    account_id: Mapped[UUID | None] = mapped_column()
+    external_counterparty: Mapped[str | None] = mapped_column(String(160))
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    memo: Mapped[str | None] = mapped_column(String(240))
 
 
 class ProjectionCheckpoint(Base):

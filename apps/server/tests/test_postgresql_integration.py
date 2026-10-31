@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from decimal import Decimal
+from threading import Barrier
+from uuid import UUID, uuid4
 
 import pytest
 from nexora.adapters.postgresql import (
@@ -21,13 +24,24 @@ from nexora.adapters.postgresql import (
     PortfolioRecord,
     PortfolioRegistryRepository,
     ProjectionCheckpoint,
+    TransactionJournalRepository,
+    TransactionLegRecord,
+    TransactionRecord,
     create_database_engine,
     create_session_factory,
     load_database_settings,
 )
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
+from nexora.transaction_journal import (
+    CorrectionKind,
+    JournalSourceKind,
+    JournalValidationError,
+    TransactionKind,
+    TransactionLegInput,
+)
 from sqlalchemy import Engine, delete, inspect, select, text
 from sqlalchemy.exc import DBAPIError
+from sqlalchemy.orm import Session, sessionmaker
 
 pytestmark = pytest.mark.integration
 
@@ -48,7 +62,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261031_0006"
+    assert revision == "20261031_0007"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -72,6 +86,8 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "asset_identifiers",
         "portfolios",
         "accounts",
+        "transactions",
+        "transaction_legs",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
@@ -436,4 +452,207 @@ def test_portfolio_registry_lifecycle_is_owner_scoped_and_optimistically_locked(
             session.execute(delete(AssetRecord).where(AssetRecord.owner_id == owner_id))
             session.execute(
                 text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"), {"owner_id": owner_id}
+            )
+
+
+def test_transaction_journal_is_balanced_idempotent_correctable_and_database_immutable(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        asset = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="usd",
+            symbol="USD",
+            name="US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="personal-core",
+            name="Personal Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="manual-cash",
+            name="Manual Cash",
+            kind=AccountKind.CASH,
+        )
+        legs = (
+            TransactionLegInput(
+                account_id=account.account_id,
+                asset_id=asset.asset_id,
+                quantity=Decimal("100.00"),
+            ),
+            TransactionLegInput(
+                external_counterparty="Opening equity",
+                asset_id=asset.asset_id,
+                quantity=Decimal("-100.00"),
+            ),
+        )
+        occurred_at = datetime.now(UTC)
+        posted = journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="manual-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-entry-1",
+            source_payload_sha256="a" * 64,
+            legs=legs,
+        )
+        repeated = journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="manual-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-entry-1",
+            source_payload_sha256="a" * 64,
+            legs=legs,
+        )
+        assert repeated.transaction_id == posted.transaction_id
+
+        with pytest.raises(JournalValidationError, match="at least two legs"):
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=TransactionKind.ADJUSTMENT,
+                idempotency_key="manual-20261031-unbalanced",
+                occurred_at=datetime.now(UTC),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference="manual-entry-unbalanced",
+                source_payload_sha256="b" * 64,
+                legs=(legs[0],),
+            )
+
+        reversed_entry = journal.reverse_transaction(
+            owner_id=owner_id,
+            transaction_id=posted.transaction_id,
+            idempotency_key="manual-20261031-reversal",
+            occurred_at=datetime.now(UTC),
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-reversal-1",
+            source_payload_sha256="c" * 64,
+            reason="Correct an owner-confirmed opening balance",
+        )
+        assert reversed_entry.correction_kind is CorrectionKind.REVERSAL
+        assert reversed_entry.correction_of_transaction_id == posted.transaction_id
+        assert [leg.quantity for leg in reversed_entry.legs] == [Decimal("-100.00"), Decimal("100.00")]
+
+        savepoint = connection.begin_nested()
+        with pytest.raises(DBAPIError, match="immutable"):
+            connection.execute(
+                text("UPDATE nexora.transactions SET memo = 'mutated' WHERE transaction_id = :transaction_id"),
+                {"transaction_id": posted.transaction_id},
+            )
+        savepoint.rollback()
+        assert len(journal.list_transactions(owner_id=owner_id, portfolio_id=portfolio.portfolio_id)) == 2
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_concurrent_transaction_posting_converges_on_one_idempotent_record(engine: Engine) -> None:
+    owner_id = uuid4()
+    factory = create_session_factory(engine)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+    asset = registry.create_asset(
+        owner_id=owner_id,
+        asset_key="usd",
+        symbol="USD",
+        name="US Dollar",
+        asset_class=AssetClass.FIAT,
+        precision=2,
+    )
+    portfolio = registry.create_portfolio(
+        owner_id=owner_id,
+        portfolio_key="concurrent-core",
+        name="Concurrent Core",
+        kind=PortfolioKind.PERSONAL,
+        base_asset_id=asset.asset_id,
+    )
+    account = registry.create_account(
+        owner_id=owner_id,
+        portfolio_id=portfolio.portfolio_id,
+        account_key="concurrent-cash",
+        name="Concurrent Cash",
+        kind=AccountKind.CASH,
+    )
+    occurred_at = datetime.now(UTC)
+    legs = (
+        TransactionLegInput(account_id=account.account_id, asset_id=asset.asset_id, quantity=Decimal("25.00")),
+        TransactionLegInput(
+            external_counterparty="Opening equity",
+            asset_id=asset.asset_id,
+            quantity=Decimal("-25.00"),
+        ),
+    )
+    barrier = Barrier(2)
+
+    def post_once() -> UUID:
+        barrier.wait(timeout=10)
+        return journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="concurrent-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="concurrent-manual-entry",
+            source_payload_sha256="d" * 64,
+            legs=legs,
+        ).transaction_id
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            transaction_ids = tuple(executor.map(lambda _: post_once(), range(2)))
+        assert transaction_ids[0] == transaction_ids[1]
+        with factory() as session:
+            count = len(
+                session.scalars(
+                    select(TransactionRecord).where(
+                        TransactionRecord.owner_id == owner_id,
+                        TransactionRecord.idempotency_key == "concurrent-20261031-0001",
+                    )
+                ).all()
+            )
+        assert count == 1
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE nexora.transaction_legs DISABLE TRIGGER trg_transaction_legs_immutable")
+            )
+            connection.execute(text("ALTER TABLE nexora.transactions DISABLE TRIGGER trg_transactions_immutable"))
+            connection.execute(delete(TransactionLegRecord).where(TransactionLegRecord.owner_id == owner_id))
+            connection.execute(delete(TransactionRecord).where(TransactionRecord.owner_id == owner_id))
+            connection.execute(text("ALTER TABLE nexora.transactions ENABLE TRIGGER trg_transactions_immutable"))
+            connection.execute(
+                text("ALTER TABLE nexora.transaction_legs ENABLE TRIGGER trg_transaction_legs_immutable")
+            )
+            connection.execute(delete(AccountRecord).where(AccountRecord.owner_id == owner_id))
+            connection.execute(delete(PortfolioRecord).where(PortfolioRecord.owner_id == owner_id))
+            connection.execute(delete(AssetRecord).where(AssetRecord.owner_id == owner_id))
+            connection.execute(
+                text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"),
+                {"owner_id": owner_id},
             )

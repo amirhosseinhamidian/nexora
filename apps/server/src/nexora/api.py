@@ -10,7 +10,7 @@ from urllib.parse import quote
 from uuid import UUID, uuid4
 
 import uvicorn
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Header, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -21,6 +21,7 @@ from nexora.adapters.postgresql import (
     RUNTIME_DATABASE_DSN_FILE_ENV,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
+    TransactionJournalRepository,
     probe_database,
 )
 from nexora.adapters.trd_bot import TrdBotIntegrationMode
@@ -91,6 +92,23 @@ from nexora.runtime_contracts import (
     VersionResponse,
 )
 from nexora.security_config import SecuritySettings
+from nexora.transaction_contracts import (
+    CreateTransactionRequest,
+    ReverseTransactionRequest,
+    SupersedeTransactionRequest,
+    TransactionLegResponse,
+    TransactionListResponse,
+    TransactionResponse,
+)
+from nexora.transaction_journal import (
+    JournalConflict,
+    JournalNotFound,
+    JournalValidationError,
+    TransactionLegInput,
+    TransactionView,
+    canonical_quantity,
+    normalize_quantity,
+)
 
 CORRELATION_HEADER = "X-Correlation-ID"
 CSRF_HEADER = "X-CSRF-Token"
@@ -101,6 +119,52 @@ class LivenessResponse(BaseModel):
     status: str
     service: str
     version: str
+
+
+def _transaction_response(transaction: TransactionView) -> TransactionResponse:
+    return TransactionResponse(
+        transaction_id=transaction.transaction_id,
+        portfolio_id=transaction.portfolio_id,
+        transaction_kind=transaction.transaction_kind,
+        idempotency_key=transaction.idempotency_key,
+        occurred_at=transaction.occurred_at,
+        recorded_at=transaction.recorded_at,
+        source_kind=transaction.source_kind,
+        source_reference=transaction.source_reference,
+        source_payload_sha256=transaction.source_payload_sha256,
+        request_sha256=transaction.request_sha256,
+        memo=transaction.memo,
+        correction_of_transaction_id=transaction.correction_of_transaction_id,
+        correction_kind=transaction.correction_kind,
+        correction_reason=transaction.correction_reason,
+        legs=[
+            TransactionLegResponse(
+                transaction_leg_id=leg.transaction_leg_id,
+                sequence=leg.sequence,
+                account_id=leg.account_id,
+                external_counterparty=leg.external_counterparty,
+                asset_id=leg.asset_id,
+                quantity=canonical_quantity(leg.quantity),
+                memo=leg.memo,
+            )
+            for leg in transaction.legs
+        ],
+    )
+
+
+def _transaction_legs(
+    payload: CreateTransactionRequest | SupersedeTransactionRequest,
+) -> tuple[TransactionLegInput, ...]:
+    return tuple(
+        TransactionLegInput(
+            account_id=leg.account_id,
+            external_counterparty=leg.external_counterparty,
+            asset_id=leg.asset_id,
+            quantity=normalize_quantity(leg.quantity),
+            memo=leg.memo,
+        )
+        for leg in payload.legs
+    )
 
 
 def _correlation_id(request: Request) -> UUID:
@@ -270,6 +334,33 @@ def create_app(
             message="registry state changed or conflicts with an existing resource",
         )
 
+    @application.exception_handler(JournalNotFound)
+    async def journal_not_found(request: Request, _: JournalNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="JOURNAL_RESOURCE_NOT_FOUND",
+            message="journal resource is unavailable",
+        )
+
+    @application.exception_handler(JournalConflict)
+    async def journal_conflict(request: Request, _: JournalConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="JOURNAL_STATE_CONFLICT",
+            message="journal state conflicts with the requested append",
+        )
+
+    @application.exception_handler(JournalValidationError)
+    async def journal_validation_error(request: Request, _: JournalValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="JOURNAL_VALIDATION_FAILED",
+            message="transaction journal validation failed",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -420,6 +511,12 @@ def create_app(
         repository = resolved_container.portfolio_registry_repository
         if repository is None:
             raise CeremonyUnavailable("portfolio registry is not configured")
+        return repository
+
+    def transaction_journal() -> TransactionJournalRepository:
+        repository = resolved_container.transaction_journal_repository
+        if repository is None:
+            raise CeremonyUnavailable("transaction journal is not configured")
         return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
@@ -853,6 +950,112 @@ def create_app(
             expected_row_version=payload.expected_row_version,
         )
         return AccountResponse.model_validate(changed)
+
+    @application.post(
+        "/v1/transactions",
+        response_model=TransactionResponse,
+        status_code=201,
+        operation_id="postTransaction",
+    )
+    def post_transaction(
+        payload: CreateTransactionRequest,
+        request: Request,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=160),
+    ) -> TransactionResponse:
+        _, session = require_session(request)
+        posted = transaction_journal().post_transaction(
+            owner_id=session.owner_id,
+            portfolio_id=payload.portfolio_id,
+            transaction_kind=payload.transaction_kind,
+            idempotency_key=idempotency_key,
+            occurred_at=payload.occurred_at,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            legs=_transaction_legs(payload),
+            memo=payload.memo,
+        )
+        return _transaction_response(posted)
+
+    @application.get(
+        "/v1/transactions",
+        response_model=TransactionListResponse,
+        operation_id="listTransactions",
+    )
+    def list_transactions(request: Request, portfolio_id: UUID | None = None) -> TransactionListResponse:
+        _, session = require_session(request)
+        transactions = transaction_journal().list_transactions(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+        )
+        return TransactionListResponse(items=[_transaction_response(item) for item in transactions])
+
+    @application.get(
+        "/v1/transactions/{transaction_id}",
+        response_model=TransactionResponse,
+        operation_id="getTransaction",
+    )
+    def get_transaction(transaction_id: UUID, request: Request) -> TransactionResponse:
+        _, session = require_session(request)
+        transaction = transaction_journal().get_transaction(
+            owner_id=session.owner_id,
+            transaction_id=transaction_id,
+        )
+        return _transaction_response(transaction)
+
+    @application.post(
+        "/v1/transactions/{transaction_id}/reversals",
+        response_model=TransactionResponse,
+        status_code=201,
+        operation_id="reverseTransaction",
+    )
+    def reverse_transaction(
+        transaction_id: UUID,
+        payload: ReverseTransactionRequest,
+        request: Request,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=160),
+    ) -> TransactionResponse:
+        _, session = require_session(request)
+        reversal = transaction_journal().reverse_transaction(
+            owner_id=session.owner_id,
+            transaction_id=transaction_id,
+            idempotency_key=idempotency_key,
+            occurred_at=payload.occurred_at,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            reason=payload.reason,
+            memo=payload.memo,
+        )
+        return _transaction_response(reversal)
+
+    @application.post(
+        "/v1/transactions/{transaction_id}/supersessions",
+        response_model=TransactionResponse,
+        status_code=201,
+        operation_id="supersedeTransaction",
+    )
+    def supersede_transaction(
+        transaction_id: UUID,
+        payload: SupersedeTransactionRequest,
+        request: Request,
+        idempotency_key: str = Header(alias="Idempotency-Key", min_length=16, max_length=160),
+    ) -> TransactionResponse:
+        _, session = require_session(request)
+        supersession = transaction_journal().supersede_transaction(
+            owner_id=session.owner_id,
+            transaction_id=transaction_id,
+            transaction_kind=payload.transaction_kind,
+            idempotency_key=idempotency_key,
+            occurred_at=payload.occurred_at,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            legs=_transaction_legs(payload),
+            reason=payload.reason,
+            memo=payload.memo,
+        )
+        return _transaction_response(supersession)
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

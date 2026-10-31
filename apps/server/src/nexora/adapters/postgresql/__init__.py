@@ -49,11 +49,14 @@ from nexora.adapters.postgresql.models import (
     SecurityAuditEvent,
     ServiceTokenRecord,
     SourceReference,
+    TransactionLegRecord,
+    TransactionRecord,
     TrdBotSyncReceipt,
     WebAuthnChallenge,
     WebAuthnCredential,
 )
 from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
+from nexora.adapters.postgresql.transaction_journal import TransactionJournalRepository
 
 __all__ = [
     "ALEMBIC_VERSION_SCHEMA",
@@ -96,6 +99,9 @@ __all__ = [
     "SourceEvidenceWrite",
     "SourceReference",
     "SyncReceiptWrite",
+    "TransactionJournalRepository",
+    "TransactionLegRecord",
+    "TransactionRecord",
     "TrdBotSyncReceipt",
     "WebAuthnChallenge",
     "WebAuthnCredential",

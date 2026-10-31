@@ -1,8 +1,9 @@
 # NEX-P2-01 — Portfolio Domain and Phase Two Roadmap
 
-Status: candidate
+Status: frozen
 Decision date: 2026-10-29
-Next allowed stage: `NEX-P2-01-FREEZE`
+Freeze evidence date: 2026-10-31
+Next allowed stage: `NEX-P2-02`
 
 ## Purpose
 
@@ -13,6 +14,10 @@ security boundary and delivery order before portfolio tables or APIs are built.
 
 P2-01 does not claim that the portfolio product exists. It defines the contract
 that P2-02 through P2-12 must implement and verify.
+
+Candidate `5fad7e9f49a48fb3068634ee8ae6621af8cc6ec1` is bound to the successful
+`Phase 2 portfolio domain` workflow and all fifteen regression workflows on the
+same SHA. The checksummed Freeze record opens only `NEX-P2-02`.
 
 ## Accepted prerequisite
 
@@ -191,6 +196,7 @@ uv run python scripts/verify_phase_two_portfolio_domain.py
 uv run python -m unittest tests/test_phase_two_portfolio_domain.py -v
 ```
 
-The candidate must pass its dedicated GitHub Actions workflow and repository
-regressions on one SHA. Only then may a separate P2-01 Freeze record be created.
-After Freeze, the only opened implementation stage is `NEX-P2-02`.
+The candidate passed its dedicated GitHub Actions workflow and repository
+regressions on one SHA. The Freeze record validates the exact commit, tree,
+workflow runs, job IDs, contract checksum and Phase 1 prerequisite. The only
+opened implementation stage is `NEX-P2-02`.

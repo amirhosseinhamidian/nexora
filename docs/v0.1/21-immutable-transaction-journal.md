@@ -1,8 +1,9 @@
 # NEX-P2-03 — Immutable Transaction Journal
 
-Status: candidate
+Status: frozen
 Date: 2026-10-31
 Prerequisite: frozen `NEX-P2-02` at `db6566bc0713a8c9822f52d2b895f790440a3621`
+Accepted candidate: `cf3ddd90eed968a4f672e78866338d97e68e3e25`
 
 ## Outcome
 
@@ -58,5 +59,15 @@ Migration `20261031_0007` adds `nexora.transactions` and
 closed owner-scoped foreign keys. The authenticated API exposes create, list,
 detail, reversal and supersession operations under `/v1/transactions`.
 
-The next allowed step is `NEX-P2-03-FREEZE`. `NEX-P2-04` import and
-reconciliation remains blocked until this candidate is accepted and frozen.
+## Freeze evidence
+
+The accepted candidate is bound to its exact Git tree, parent and commit
+message, all 18 successful GitHub Actions workflow runs, all 60 successful
+check jobs, the frozen P2-02 prerequisite and the immutable transaction
+journal contract checksum. The durable evidence is stored in
+`artifacts/p2-03/transaction-journal-freeze.json` and is validated by
+`scripts/verify_transaction_journal.py`.
+
+P2-03 is complete and frozen. The next allowed stage is `NEX-P2-04` for
+bounded import and reconciliation. Holdings, cost basis, valuation and P&L
+remain deferred to later Phase 2 stages.

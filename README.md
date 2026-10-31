@@ -152,12 +152,14 @@ candidate `add7a7eec7226ecc62989b23cccf380c32e678d7` is bound to all 57
 successful checks across the primary workflow and sixteen regression
 workflows. The immutable transaction journal is now opened as `NEX-P2-03`.
 
-`NEX-P2-03` is a candidate. It adds an owner-scoped append-only transaction
+`NEX-P2-03` is frozen. It adds an owner-scoped append-only transaction
 journal with exact-decimal balanced legs, mandatory source lineage, canonical
 request checksums, idempotent posting, and explicit reversal/supersession
 corrections. PostgreSQL rejects journal updates and deletes. Holdings, lots,
-cost basis, valuation and P&L remain deferred. The only next step currently
-opened is `NEX-P2-03-FREEZE`; P2-04 import and reconciliation is still blocked.
+cost basis, valuation and P&L remain deferred. Accepted candidate
+`cf3ddd90eed968a4f672e78866338d97e68e3e25` is bound to all 60 successful
+checks across the primary workflow and seventeen regression workflows. Bounded
+import and reconciliation is now opened as `NEX-P2-04`.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -171,7 +173,7 @@ and capability negotiation are available.
 
 The repository contains the accepted Phase 1 runtime foundation, the frozen
 Phase 2 domain contract, the frozen P2-02 registry, and the P2-03 transaction
-journal candidate. It is not yet the complete portfolio application; derived
+journal. It is not yet the complete portfolio application; derived
 holdings and analytics remain in later Phase 2 stages.
 
 ## Verify the scope contract
@@ -266,7 +268,7 @@ NEX_P2_01_FREEZE=PASS
 NEX_P2_02_PORTFOLIO_REGISTRY=PASS
 NEX_P2_02_FREEZE=PASS
 NEX_P2_03_TRANSACTION_JOURNAL=PASS
-NEX_P2_03_READY_FOR_CANDIDATE=PASS
+NEX_P2_03_FREEZE=PASS
 ```
 
 ## Documents
@@ -340,3 +342,4 @@ NEX_P2_03_READY_FOR_CANDIDATE=PASS
 - [`artifacts/p1-13/phase-one-final-acceptance.json`](artifacts/p1-13/phase-one-final-acceptance.json)
 - [`artifacts/p2-01/portfolio-domain-roadmap-freeze.json`](artifacts/p2-01/portfolio-domain-roadmap-freeze.json)
 - [`artifacts/p2-02/portfolio-registry-freeze.json`](artifacts/p2-02/portfolio-registry-freeze.json)
+- [`artifacts/p2-03/transaction-journal-freeze.json`](artifacts/p2-03/transaction-journal-freeze.json)

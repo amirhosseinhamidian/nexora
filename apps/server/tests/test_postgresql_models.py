@@ -21,6 +21,10 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.webauthn_challenges",
         "nexora.webauthn_credentials",
         "nexora.trd_bot_sync_receipts",
+        "nexora.assets",
+        "nexora.asset_identifiers",
+        "nexora.portfolios",
+        "nexora.accounts",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -108,3 +112,18 @@ def test_trd_bot_sync_receipts_are_owner_scoped_and_immutable_input_shaped() -> 
         "envelope_sha256",
     }.issubset(receipts.c.keys())
     assert isinstance(receipts.c.envelope.type, postgresql.JSONB)
+
+
+def test_portfolio_registry_is_owner_scoped_and_has_no_secret_or_transaction_columns() -> None:
+    assets = Base.metadata.tables["nexora.assets"]
+    identifiers = Base.metadata.tables["nexora.asset_identifiers"]
+    portfolios = Base.metadata.tables["nexora.portfolios"]
+    accounts = Base.metadata.tables["nexora.accounts"]
+    for table in (assets, identifiers, portfolios, accounts):
+        assert table.c.owner_id.nullable is False
+    assert {"status", "row_version", "deactivated_at"}.issubset(assets.c.keys())
+    assert {"base_asset_id", "status", "row_version", "archived_at"}.issubset(portfolios.c.keys())
+    assert {"portfolio_id", "kind", "status", "row_version", "closed_at"}.issubset(accounts.c.keys())
+    forbidden_columns = {"api_key", "api_secret", "private_key", "seed_phrase", "access_token"}
+    assert all(forbidden_columns.isdisjoint(table.c.keys()) for table in (assets, identifiers, portfolios, accounts))
+    assert "nexora.transactions" not in Base.metadata.tables

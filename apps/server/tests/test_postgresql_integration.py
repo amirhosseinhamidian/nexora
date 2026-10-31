@@ -7,6 +7,9 @@ from uuid import uuid4
 
 import pytest
 from nexora.adapters.postgresql import (
+    AccountRecord,
+    AssetIdentifierRecord,
+    AssetRecord,
     BackgroundJob,
     CheckpointAdvance,
     CheckpointConflict,
@@ -15,11 +18,14 @@ from nexora.adapters.postgresql import (
     LeaseLost,
     OutboxEvent,
     OutboxMessage,
+    PortfolioRecord,
+    PortfolioRegistryRepository,
     ProjectionCheckpoint,
     create_database_engine,
     create_session_factory,
     load_database_settings,
 )
+from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from sqlalchemy import Engine, delete, inspect, select, text
 from sqlalchemy.exc import DBAPIError
 
@@ -42,7 +48,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261027_0005"
+    assert revision == "20261031_0006"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -62,6 +68,10 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "webauthn_challenges",
         "webauthn_credentials",
         "trd_bot_sync_receipts",
+        "assets",
+        "asset_identifiers",
+        "portfolios",
+        "accounts",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
@@ -342,6 +352,88 @@ def test_durable_claim_reclaim_retry_checkpoint_and_outbox_are_atomic(engine: En
             session.execute(delete(OutboxEvent).where(OutboxEvent.owner_id == owner_id))
             session.execute(delete(ProjectionCheckpoint).where(ProjectionCheckpoint.owner_id == owner_id))
             session.execute(delete(BackgroundJob).where(BackgroundJob.owner_id == owner_id))
+            session.execute(
+                text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"), {"owner_id": owner_id}
+            )
+
+
+def test_portfolio_registry_lifecycle_is_owner_scoped_and_optimistically_locked(engine: Engine) -> None:
+    owner_id = uuid4()
+    factory = create_session_factory(engine)
+    repository = PortfolioRegistryRepository(factory)
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+    try:
+        asset = repository.create_asset(
+            owner_id=owner_id,
+            asset_key="usd",
+            symbol="USD",
+            name="US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        identifier = repository.add_asset_identifier(
+            owner_id=owner_id,
+            asset_id=asset.asset_id,
+            scheme=AssetIdentifierScheme.ISO_4217,
+            value="USD",
+            is_primary=True,
+        )
+        portfolio = repository.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="personal-core",
+            name="Personal Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = repository.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="manual-cash",
+            name="Manual Cash",
+            kind=AccountKind.CASH,
+        )
+
+        assert identifier.asset_id == asset.asset_id
+        assert repository.list_assets(owner_id=owner_id) == (asset,)
+        assert repository.list_portfolios(owner_id=owner_id) == (portfolio,)
+        assert repository.list_accounts(owner_id=owner_id, portfolio_id=portfolio.portfolio_id) == (account,)
+
+        closed = repository.close_account(
+            owner_id=owner_id,
+            account_id=account.account_id,
+            expected_row_version=1,
+        )
+        archived = repository.archive_portfolio(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            expected_row_version=1,
+        )
+        inactive = repository.deactivate_asset(
+            owner_id=owner_id,
+            asset_id=asset.asset_id,
+            expected_row_version=1,
+        )
+        assert (closed.status.value, archived.status.value, inactive.status.value) == (
+            "closed",
+            "archived",
+            "inactive",
+        )
+        with pytest.raises(RegistryConflict):
+            repository.archive_portfolio(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                expected_row_version=1,
+            )
+    finally:
+        with factory.begin() as session:
+            session.execute(delete(AccountRecord).where(AccountRecord.owner_id == owner_id))
+            session.execute(delete(PortfolioRecord).where(PortfolioRecord.owner_id == owner_id))
+            session.execute(delete(AssetIdentifierRecord).where(AssetIdentifierRecord.owner_id == owner_id))
+            session.execute(delete(AssetRecord).where(AssetRecord.owner_id == owner_id))
             session.execute(
                 text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"), {"owner_id": owner_id}
             )

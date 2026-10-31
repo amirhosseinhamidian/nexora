@@ -1,0 +1,97 @@
+name: Portfolio registry
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  registry-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P2-01 prerequisite
+        run: python3 scripts/verify_phase_two_portfolio_domain.py
+      - name: Verify P2-02 registry contract
+        run: python3 scripts/verify_portfolio_registry.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/verify_portfolio_registry.py
+          tests/test_portfolio_registry_contract.py
+      - name: Lint backend
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/verify_portfolio_registry.py
+          tests/test_portfolio_registry_contract.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run backend tests
+        run: uv run pytest -m "not integration" -q
+
+  postgresql-17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: nexora_test
+          POSTGRES_USER: nexora
+          POSTGRES_PASSWORD: nexora_ci_fixture_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexora -d nexora_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /tmp/nexora-database.dsn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Create private CI fixture DSN file
+        run: |
+          umask 077
+          printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_test' > "$NEXORA_MIGRATION_DATABASE_DSN_FILE"
+      - name: Upgrade and test registry
+        run: |
+          uv run alembic upgrade head
+          uv run pytest apps/server/tests/test_postgresql_integration.py -m integration -q
+      - name: Verify reversible migration and no drift
+        run: |
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+          uv run alembic check

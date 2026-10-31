@@ -17,7 +17,12 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from nexora import __version__
-from nexora.adapters.postgresql import RUNTIME_DATABASE_DSN_FILE_ENV, PostgreSQLIdentityRepository, probe_database
+from nexora.adapters.postgresql import (
+    RUNTIME_DATABASE_DSN_FILE_ENV,
+    PortfolioRegistryRepository,
+    PostgreSQLIdentityRepository,
+    probe_database,
+)
 from nexora.adapters.trd_bot import TrdBotIntegrationMode
 from nexora.artifact_storage import (
     ArtifactIntegrityError,
@@ -52,6 +57,21 @@ from nexora.observability import (
     load_observability_settings,
 )
 from nexora.overload import InteractiveRequestGate
+from nexora.portfolio_contracts import (
+    AccountListResponse,
+    AccountResponse,
+    AssetIdentifierResponse,
+    AssetListResponse,
+    AssetResponse,
+    CreateAccountRequest,
+    CreateAssetIdentifierRequest,
+    CreateAssetRequest,
+    CreatePortfolioRequest,
+    LifecycleRequest,
+    PortfolioListResponse,
+    PortfolioResponse,
+)
+from nexora.portfolio_registry import RegistryConflict, RegistryNotFound
 from nexora.runtime_contracts import (
     ActionRequest,
     ActionResponse,
@@ -232,6 +252,24 @@ def create_app(
     async def identity_error(request: Request, _: IdentityError) -> JSONResponse:
         return _error_response(request, status_code=409, code="IDENTITY_STATE_CONFLICT", message="request denied")
 
+    @application.exception_handler(RegistryNotFound)
+    async def registry_not_found(request: Request, _: RegistryNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="REGISTRY_RESOURCE_NOT_FOUND",
+            message="registry resource is unavailable",
+        )
+
+    @application.exception_handler(RegistryConflict)
+    async def registry_conflict(request: Request, _: RegistryConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="REGISTRY_STATE_CONFLICT",
+            message="registry state changed or conflicts with an existing resource",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -377,6 +415,12 @@ def create_app(
         if token is None:
             raise AuthenticationDenied("session is required")
         return token, repository.authenticate_session(token=token)
+
+    def portfolio_registry() -> PortfolioRegistryRepository:
+        repository = resolved_container.portfolio_registry_repository
+        if repository is None:
+            raise CeremonyUnavailable("portfolio registry is not configured")
+        return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -669,6 +713,146 @@ def create_app(
         repository.revoke_all_sessions(owner_id=session.owner_id)
         _clear_session_cookies(response)
         return ActionResponse(status="completed")
+
+    @application.post("/v1/assets", response_model=AssetResponse, status_code=201, operation_id="createAsset")
+    def create_asset(payload: CreateAssetRequest, request: Request) -> AssetResponse:
+        _, session = require_session(request)
+        created = portfolio_registry().create_asset(
+            owner_id=session.owner_id,
+            asset_key=payload.asset_key,
+            symbol=payload.symbol,
+            name=payload.name,
+            asset_class=payload.asset_class,
+            precision=payload.precision,
+        )
+        return AssetResponse.model_validate(created)
+
+    @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")
+    def list_assets(request: Request) -> AssetListResponse:
+        _, session = require_session(request)
+        assets = portfolio_registry().list_assets(owner_id=session.owner_id)
+        return AssetListResponse(items=[AssetResponse.model_validate(asset) for asset in assets])
+
+    @application.post(
+        "/v1/assets/{asset_id}/identifiers",
+        response_model=AssetIdentifierResponse,
+        status_code=201,
+        operation_id="createAssetIdentifier",
+    )
+    def create_asset_identifier(
+        asset_id: UUID,
+        payload: CreateAssetIdentifierRequest,
+        request: Request,
+    ) -> AssetIdentifierResponse:
+        _, session = require_session(request)
+        created = portfolio_registry().add_asset_identifier(
+            owner_id=session.owner_id,
+            asset_id=asset_id,
+            scheme=payload.scheme,
+            value=payload.value,
+            is_primary=payload.is_primary,
+        )
+        return AssetIdentifierResponse.model_validate(created)
+
+    @application.post(
+        "/v1/assets/{asset_id}/deactivate",
+        response_model=AssetResponse,
+        operation_id="deactivateAsset",
+    )
+    def deactivate_asset(asset_id: UUID, payload: LifecycleRequest, request: Request) -> AssetResponse:
+        _, session = require_session(request)
+        changed = portfolio_registry().deactivate_asset(
+            owner_id=session.owner_id,
+            asset_id=asset_id,
+            expected_row_version=payload.expected_row_version,
+        )
+        return AssetResponse.model_validate(changed)
+
+    @application.post(
+        "/v1/portfolios",
+        response_model=PortfolioResponse,
+        status_code=201,
+        operation_id="createPortfolio",
+    )
+    def create_portfolio(payload: CreatePortfolioRequest, request: Request) -> PortfolioResponse:
+        _, session = require_session(request)
+        created = portfolio_registry().create_portfolio(
+            owner_id=session.owner_id,
+            portfolio_key=payload.portfolio_key,
+            name=payload.name,
+            kind=payload.kind,
+            base_asset_id=payload.base_asset_id,
+        )
+        return PortfolioResponse.model_validate(created)
+
+    @application.get("/v1/portfolios", response_model=PortfolioListResponse, operation_id="listPortfolios")
+    def list_portfolios(request: Request) -> PortfolioListResponse:
+        _, session = require_session(request)
+        portfolios = portfolio_registry().list_portfolios(owner_id=session.owner_id)
+        return PortfolioListResponse(items=[PortfolioResponse.model_validate(item) for item in portfolios])
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}",
+        response_model=PortfolioResponse,
+        operation_id="getPortfolio",
+    )
+    def get_portfolio(portfolio_id: UUID, request: Request) -> PortfolioResponse:
+        _, session = require_session(request)
+        portfolio = portfolio_registry().get_portfolio(owner_id=session.owner_id, portfolio_id=portfolio_id)
+        return PortfolioResponse.model_validate(portfolio)
+
+    @application.post(
+        "/v1/portfolios/{portfolio_id}/archive",
+        response_model=PortfolioResponse,
+        operation_id="archivePortfolio",
+    )
+    def archive_portfolio(portfolio_id: UUID, payload: LifecycleRequest, request: Request) -> PortfolioResponse:
+        _, session = require_session(request)
+        changed = portfolio_registry().archive_portfolio(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            expected_row_version=payload.expected_row_version,
+        )
+        return PortfolioResponse.model_validate(changed)
+
+    @application.post(
+        "/v1/accounts",
+        response_model=AccountResponse,
+        status_code=201,
+        operation_id="createAccount",
+    )
+    def create_account(payload: CreateAccountRequest, request: Request) -> AccountResponse:
+        _, session = require_session(request)
+        created = portfolio_registry().create_account(
+            owner_id=session.owner_id,
+            portfolio_id=payload.portfolio_id,
+            account_key=payload.account_key,
+            name=payload.name,
+            kind=payload.kind,
+            institution_name=payload.institution_name,
+            external_reference=payload.external_reference,
+        )
+        return AccountResponse.model_validate(created)
+
+    @application.get("/v1/accounts", response_model=AccountListResponse, operation_id="listAccounts")
+    def list_accounts(request: Request, portfolio_id: UUID | None = None) -> AccountListResponse:
+        _, session = require_session(request)
+        accounts = portfolio_registry().list_accounts(owner_id=session.owner_id, portfolio_id=portfolio_id)
+        return AccountListResponse(items=[AccountResponse.model_validate(item) for item in accounts])
+
+    @application.post(
+        "/v1/accounts/{account_id}/close",
+        response_model=AccountResponse,
+        operation_id="closeAccount",
+    )
+    def close_account(account_id: UUID, payload: LifecycleRequest, request: Request) -> AccountResponse:
+        _, session = require_session(request)
+        changed = portfolio_registry().close_account(
+            owner_id=session.owner_id,
+            account_id=account_id,
+            expected_row_version=payload.expected_row_version,
+        )
+        return AccountResponse.model_validate(changed)
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

@@ -10,6 +10,7 @@ from sqlalchemy import Engine
 from nexora import __version__
 from nexora.adapters.postgresql import (
     DurableWorkRepository,
+    PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
     create_database_engine,
     create_session_factory,
@@ -72,6 +73,7 @@ class ApplicationContainer:
     database_engine: Engine | None = None
     identity_repository: PostgreSQLIdentityRepository | None = None
     durable_work_repository: DurableWorkRepository | None = None
+    portfolio_registry_repository: PortfolioRegistryRepository | None = None
     security: SecuritySettings | None = None
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
@@ -152,6 +154,7 @@ def compose_private_application(
         database_engine=engine,
         identity_repository=repository,
         durable_work_repository=DurableWorkRepository(session_factory),
+        portfolio_registry_repository=PortfolioRegistryRepository(session_factory),
         security=security,
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),

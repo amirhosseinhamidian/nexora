@@ -34,12 +34,16 @@ from nexora.adapters.postgresql.durable import (
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
 from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQLIdentityRepository
 from nexora.adapters.postgresql.models import (
+    AccountRecord,
+    AssetIdentifierRecord,
+    AssetRecord,
     BackgroundJob,
     BootstrapToken,
     BrowserSession,
     ImmutableSourceEvidence,
     OutboxEvent,
     OwnerProfile,
+    PortfolioRecord,
     ProjectionCheckpoint,
     RecoveryCode,
     SecurityAuditEvent,
@@ -49,6 +53,7 @@ from nexora.adapters.postgresql.models import (
     WebAuthnChallenge,
     WebAuthnCredential,
 )
+from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
 
 __all__ = [
     "ALEMBIC_VERSION_SCHEMA",
@@ -57,6 +62,9 @@ __all__ = [
     "NAMING_CONVENTION",
     "RUNTIME_DATABASE_DSN_FILE_ENV",
     "SCHEMA_NAME",
+    "AccountRecord",
+    "AssetIdentifierRecord",
+    "AssetRecord",
     "BackgroundJob",
     "Base",
     "BootstrapToken",
@@ -78,6 +86,8 @@ __all__ = [
     "OutboxEvent",
     "OutboxMessage",
     "OwnerProfile",
+    "PortfolioRecord",
+    "PortfolioRegistryRepository",
     "PostgreSQLIdentityRepository",
     "ProjectionCheckpoint",
     "RecoveryCode",

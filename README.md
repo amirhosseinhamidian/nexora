@@ -143,6 +143,13 @@ claim product completion. Candidate
 workflow and fifteen regression workflows on the same SHA. The next allowed
 implementation stage is `NEX-P2-02`.
 
+`NEX-P2-02` is a candidate. It adds owner-scoped asset and identifier,
+portfolio, and descriptive account registries with explicit lifecycle state,
+optimistic concurrency, PostgreSQL constraints, a reversible migration, and
+authenticated CSRF-protected APIs. It stores no exchange credential or wallet
+signing material and does not introduce the transaction journal. `NEX-P2-03`
+remains blocked until the P2-02 candidate is accepted and frozen.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -153,9 +160,10 @@ The private runtime defaults to `disabled_incompatible_provider` for TRD Bot
 The versioned adapter remains fail-closed until a compatible provider release
 and capability negotiation are available.
 
-The repository now contains the accepted Phase 1 runtime foundation and the
-frozen Phase 2 domain contract, not the complete portfolio application.
-Portfolio implementation starts at P2-02.
+The repository contains the accepted Phase 1 runtime foundation, the frozen
+Phase 2 domain contract, and the P2-02 registry candidate. It is not yet the
+complete portfolio application; the immutable transaction journal starts only
+after the P2-02 Freeze.
 
 ## Verify the scope contract
 
@@ -268,6 +276,7 @@ NEX_P2_01_FREEZE=PASS
 - [`docs/v0.1/17-private-deployment-and-operations.md`](docs/v0.1/17-private-deployment-and-operations.md)
 - [`docs/v0.1/18-phase-one-final-acceptance.md`](docs/v0.1/18-phase-one-final-acceptance.md)
 - [`docs/v0.1/19-phase-two-portfolio-domain-roadmap.md`](docs/v0.1/19-phase-two-portfolio-domain-roadmap.md)
+- [`docs/v0.1/20-portfolio-asset-account-registry.md`](docs/v0.1/20-portfolio-asset-account-registry.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -290,6 +299,7 @@ NEX_P2_01_FREEZE=PASS
 - [`contracts/nexora-v0.1-private-deployment-operations.json`](contracts/nexora-v0.1-private-deployment-operations.json)
 - [`contracts/nexora-v0.1-phase-one-final-acceptance.json`](contracts/nexora-v0.1-phase-one-final-acceptance.json)
 - [`contracts/nexora-v0.1-phase-two-portfolio-domain.json`](contracts/nexora-v0.1-phase-two-portfolio-domain.json)
+- [`contracts/nexora-v0.1-portfolio-registry.json`](contracts/nexora-v0.1-portfolio-registry.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

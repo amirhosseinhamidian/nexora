@@ -321,6 +321,155 @@ class TrdBotSyncReceipt(Base):
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class AssetRecord(Base):
+    __tablename__ = "assets"
+    __table_args__ = (
+        CheckConstraint("asset_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="asset_key_format"),
+        CheckConstraint("symbol ~ '^[A-Z0-9][A-Z0-9._-]{0,23}$'", name="symbol_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint(
+            "asset_class IN ('crypto', 'fiat', 'equity', 'fund', 'commodity', 'other')",
+            name="asset_class_allowed",
+        ),
+        CheckConstraint("precision BETWEEN 0 AND 30", name="precision_bounded"),
+        CheckConstraint("status IN ('active', 'inactive')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND deactivated_at IS NULL) OR (status = 'inactive' AND deactivated_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        UniqueConstraint("owner_id", "asset_key", name="uq_assets_owner_key"),
+        UniqueConstraint("owner_id", "asset_id", name="uq_assets_owner_asset"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    asset_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    asset_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(24), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    asset_class: Mapped[str] = mapped_column(String(16), nullable=False)
+    precision: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AssetIdentifierRecord(Base):
+    __tablename__ = "asset_identifiers"
+    __table_args__ = (
+        CheckConstraint(
+            "scheme IN ('iso_4217', 'ticker', 'coingecko', 'isin', 'cusip', 'figi', 'manual')",
+            name="scheme_allowed",
+        ),
+        CheckConstraint("char_length(value) BETWEEN 1 AND 160", name="value_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_asset_identifiers_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "scheme", "value", name="uq_asset_identifiers_owner_scheme_value"),
+        UniqueConstraint("owner_id", "asset_id", "scheme", name="uq_asset_identifiers_owner_asset_scheme"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    asset_identifier_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    scheme: Mapped[str] = mapped_column(String(24), nullable=False)
+    value: Mapped[str] = mapped_column(String(160), nullable=False)
+    is_primary: Mapped[bool] = mapped_column(nullable=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class PortfolioRecord(Base):
+    __tablename__ = "portfolios"
+    __table_args__ = (
+        CheckConstraint("portfolio_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="portfolio_key_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint("kind IN ('personal', 'paper', 'shadow')", name="kind_allowed"),
+        CheckConstraint("status IN ('active', 'archived')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND archived_at IS NULL) OR (status = 'archived' AND archived_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "base_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_portfolios_owner_base_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "portfolio_key", name="uq_portfolios_owner_key"),
+        UniqueConstraint("owner_id", "portfolio_id", name="uq_portfolios_owner_portfolio"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    portfolio_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    base_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    portfolio_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AccountRecord(Base):
+    __tablename__ = "accounts"
+    __table_args__ = (
+        CheckConstraint("account_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="account_key_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint(
+            "kind IN ('exchange', 'wallet_watch_only', 'cash', 'brokerage_manual', 'paper', 'shadow', 'other_manual')",
+            name="kind_allowed",
+        ),
+        CheckConstraint("status IN ('active', 'closed')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND closed_at IS NULL) OR (status = 'closed' AND closed_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_accounts_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "account_key", name="uq_accounts_owner_key"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    account_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    institution_name: Mapped[str | None] = mapped_column(String(120))
+    external_reference: Mapped[str | None] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

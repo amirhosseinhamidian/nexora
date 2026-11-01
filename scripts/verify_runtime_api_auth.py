@@ -61,6 +61,13 @@ APPROVED_EXTENSION_OPERATIONS = {
     "POST /v1/portfolios/{portfolio_id}/holdings/rebuilds",
     "GET /v1/portfolios/{portfolio_id}/holdings",
     "GET /v1/portfolios/{portfolio_id}/lots",
+    "GET /v1/portfolios/{portfolio_id}/valuation-status",
+    "POST /v1/valuation/price-observations",
+    "GET /v1/valuation/price-observations",
+    "POST /v1/valuation/fx-rate-observations",
+    "GET /v1/valuation/fx-rate-observations",
+    "POST /v1/valuation/manual-valuations",
+    "GET /v1/valuation/manual-valuations",
 }
 
 

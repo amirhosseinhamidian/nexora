@@ -42,6 +42,7 @@ from nexora.adapters.postgresql.models import (
     BackgroundJob,
     BootstrapToken,
     BrowserSession,
+    FxRateObservationRecord,
     HoldingProjectionRecord,
     HoldingsRebuildIssueRecord,
     HoldingsRebuildRecord,
@@ -50,9 +51,11 @@ from nexora.adapters.postgresql.models import (
     ImportRowRecord,
     LotConsumptionRecord,
     LotProjectionRecord,
+    ManualValuationRecord,
     OutboxEvent,
     OwnerProfile,
     PortfolioRecord,
+    PriceObservationRecord,
     ProjectionCheckpoint,
     ReconciliationCaseRecord,
     ReconciliationDecisionRecord,
@@ -68,6 +71,7 @@ from nexora.adapters.postgresql.models import (
 )
 from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
 from nexora.adapters.postgresql.transaction_journal import TransactionJournalRepository
+from nexora.adapters.postgresql.valuation import ValuationEvidenceRepository
 
 __all__ = [
     "ALEMBIC_VERSION_SCHEMA",
@@ -90,6 +94,7 @@ __all__ = [
     "DurableWorkError",
     "DurableWorkRepository",
     "EnqueuedJob",
+    "FxRateObservationRecord",
     "HoldingProjectionRecord",
     "HoldingsProjectionRepository",
     "HoldingsProjectionView",
@@ -106,6 +111,7 @@ __all__ = [
     "LeaseLost",
     "LotConsumptionRecord",
     "LotProjectionRecord",
+    "ManualValuationRecord",
     "OutboxClaim",
     "OutboxEvent",
     "OutboxMessage",
@@ -113,6 +119,7 @@ __all__ = [
     "PortfolioRecord",
     "PortfolioRegistryRepository",
     "PostgreSQLIdentityRepository",
+    "PriceObservationRecord",
     "ProjectionCheckpoint",
     "ReconciliationCaseRecord",
     "ReconciliationDecisionRecord",
@@ -126,6 +133,7 @@ __all__ = [
     "TransactionLegRecord",
     "TransactionRecord",
     "TrdBotSyncReceipt",
+    "ValuationEvidenceRepository",
     "WebAuthnChallenge",
     "WebAuthnCredential",
     "canonical_payload_sha256",

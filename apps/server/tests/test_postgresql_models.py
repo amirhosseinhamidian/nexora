@@ -37,6 +37,9 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.lot_projections",
         "nexora.lot_consumptions",
         "nexora.holdings_rebuild_issues",
+        "nexora.price_observations",
+        "nexora.fx_rate_observations",
+        "nexora.manual_valuations",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -195,3 +198,23 @@ def test_holdings_projection_models_use_exact_decimals_and_separate_rejection_ev
         assert column.type.scale == 30
     assert {"journal_sha256", "projection_version", "journal_transaction_count"}.issubset(rebuilds.c.keys())
     assert {"reason_code", "transaction_id", "transaction_leg_id", "available_quantity"}.issubset(issues.c.keys())
+
+
+def test_valuation_evidence_models_are_owner_scoped_exact_decimal_and_append_only_shaped() -> None:
+    prices = Base.metadata.tables["nexora.price_observations"]
+    rates = Base.metadata.tables["nexora.fx_rate_observations"]
+    manual = Base.metadata.tables["nexora.manual_valuations"]
+    for table in (prices, rates, manual):
+        assert table.c.owner_id.nullable is False
+        assert {"idempotency_key", "request_sha256", "source_reference", "source_payload_sha256"}.issubset(
+            table.c.keys()
+        )
+    for column in (prices.c.price, rates.c.rate, manual.c.unit_value):
+        assert isinstance(column.type, Numeric)
+        assert column.type.precision == 60
+        assert column.type.scale == 30
+    assert {"observed_at", "valid_until", "source_kind"}.issubset(prices.c.keys())
+    assert {"base_asset_id", "quote_asset_id", "observed_at", "valid_until"}.issubset(rates.c.keys())
+    assert {"portfolio_id", "valued_at", "valid_until", "reason"}.issubset(manual.c.keys())
+    forbidden = {"api_key", "private_key", "seed_phrase", "live_order_id", "nav", "pnl"}
+    assert all(forbidden.isdisjoint(table.c.keys()) for table in (prices, rates, manual))

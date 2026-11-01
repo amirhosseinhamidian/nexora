@@ -1015,6 +1015,164 @@ class HoldingsRebuildIssueRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class PriceObservationRecord(Base):
+    __tablename__ = "price_observations"
+    __table_args__ = (
+        CheckConstraint("price > 0", name="price_positive"),
+        CheckConstraint("asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > observed_at", name="validity_after_observation"),
+        CheckConstraint("source_kind IN ('provider', 'import')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_price_observations_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_price_observations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_price_observations_owner_idempotency"),
+        UniqueConstraint("owner_id", "price_observation_id", name="uq_price_observations_owner_observation"),
+        Index("ix_price_observations_owner_pair_time", "owner_id", "asset_id", "quote_asset_id", "observed_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    price_observation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class FxRateObservationRecord(Base):
+    __tablename__ = "fx_rate_observations"
+    __table_args__ = (
+        CheckConstraint("rate > 0", name="rate_positive"),
+        CheckConstraint("base_asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > observed_at", name="validity_after_observation"),
+        CheckConstraint("source_kind IN ('provider', 'import')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "base_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_fx_rate_observations_owner_base_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_fx_rate_observations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_fx_rate_observations_owner_idempotency"),
+        UniqueConstraint("owner_id", "fx_rate_observation_id", name="uq_fx_rate_observations_owner_observation"),
+        Index(
+            "ix_fx_rate_observations_owner_pair_time",
+            "owner_id",
+            "base_asset_id",
+            "quote_asset_id",
+            "observed_at",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    fx_rate_observation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    base_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    rate: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ManualValuationRecord(Base):
+    __tablename__ = "manual_valuations"
+    __table_args__ = (
+        CheckConstraint("unit_value > 0", name="unit_value_positive"),
+        CheckConstraint("asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > valued_at", name="validity_after_valuation"),
+        CheckConstraint("char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_manual_valuations_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_manual_valuations_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_manual_valuations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_manual_valuations_owner_idempotency"),
+        UniqueConstraint("owner_id", "manual_valuation_id", name="uq_manual_valuations_owner_valuation"),
+        Index(
+            "ix_manual_valuations_owner_portfolio_pair_time",
+            "owner_id",
+            "portfolio_id",
+            "asset_id",
+            "quote_asset_id",
+            "valued_at",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    manual_valuation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    unit_value: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    valued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

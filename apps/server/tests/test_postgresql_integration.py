@@ -31,6 +31,7 @@ from nexora.adapters.postgresql import (
     TransactionJournalRepository,
     TransactionLegRecord,
     TransactionRecord,
+    ValuationEvidenceRepository,
     create_database_engine,
     create_session_factory,
     load_database_settings,
@@ -45,6 +46,7 @@ from nexora.transaction_journal import (
     TransactionKind,
     TransactionLegInput,
 )
+from nexora.valuation import ValuationConflict, ValuationSourceKind, ValuationValidationError
 from sqlalchemy import Engine, delete, inspect, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session, sessionmaker
@@ -68,7 +70,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261101_0009"
+    assert revision == "20261101_0010"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -103,6 +105,9 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "lot_projections",
         "lot_consumptions",
         "holdings_rebuild_issues",
+        "price_observations",
+        "fx_rate_observations",
+        "manual_valuations",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
@@ -932,6 +937,156 @@ def test_holdings_rebuild_persists_fifo_weighted_average_and_rejection_evidence(
             select(HoldingsRebuildIssueRecord.reason_code).where(HoldingsRebuildIssueRecord.owner_id == owner_id)
         ).scalar_one()
         assert reason_code == "NEGATIVE_HOLDING_REJECTED"
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_valuation_evidence_is_idempotent_owner_scoped_and_append_only(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    valuation = ValuationEvidenceRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-usd",
+            symbol="USD",
+            name="Valuation US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-btc",
+            symbol="BTC",
+            name="Valuation Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        eur = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-eur",
+            symbol="EUR",
+            name="Valuation Euro",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="valuation-core",
+            name="Valuation Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        observed = datetime(2026, 11, 1, 8, tzinfo=UTC)
+        price = valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            price="68123.4500",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="provider-price-1",
+            source_payload_sha256="a" * 64,
+            idempotency_key="valuation-price-0001",
+        )
+        repeated = valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            price="68123.4500",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="provider-price-1",
+            source_payload_sha256="a" * 64,
+            idempotency_key="valuation-price-0001",
+        )
+        assert repeated.price_observation_id == price.price_observation_id
+        with pytest.raises(ValuationConflict):
+            valuation.create_price_observation(
+                owner_id=owner_id,
+                asset_id=btc.asset_id,
+                quote_asset_id=usd.asset_id,
+                price="68124",
+                observed_at=observed,
+                valid_until=observed + timedelta(minutes=5),
+                source_kind=ValuationSourceKind.PROVIDER,
+                source_reference="provider-price-1",
+                source_payload_sha256="a" * 64,
+                idempotency_key="valuation-price-0001",
+            )
+        rate = valuation.create_fx_rate_observation(
+            owner_id=owner_id,
+            base_asset_id=eur.asset_id,
+            quote_asset_id=usd.asset_id,
+            rate="1.08",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.IMPORT,
+            source_reference="fx-import-1",
+            source_payload_sha256="b" * 64,
+            idempotency_key="valuation-fx-0001",
+        )
+        with pytest.raises(ValuationValidationError, match="two fiat assets"):
+            valuation.create_fx_rate_observation(
+                owner_id=owner_id,
+                base_asset_id=btc.asset_id,
+                quote_asset_id=usd.asset_id,
+                rate="68123.45",
+                observed_at=observed,
+                valid_until=observed + timedelta(minutes=5),
+                source_kind=ValuationSourceKind.PROVIDER,
+                source_reference="invalid-crypto-fx",
+                source_payload_sha256="d" * 64,
+                idempotency_key="valuation-fx-invalid-0001",
+            )
+        manual = valuation.create_manual_valuation(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            unit_value="68000",
+            valued_at=observed,
+            valid_until=observed + timedelta(hours=1),
+            reason="Owner reviewed illiquid market evidence",
+            source_reference="owner-note-1",
+            source_payload_sha256="c" * 64,
+            idempotency_key="valuation-manual-0001",
+        )
+        with pytest.raises(ValuationValidationError, match="portfolio base asset"):
+            valuation.create_manual_valuation(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                asset_id=btc.asset_id,
+                quote_asset_id=eur.asset_id,
+                unit_value="63000",
+                valued_at=observed,
+                valid_until=observed + timedelta(hours=1),
+                reason="Quote does not match portfolio base",
+                source_reference="invalid-owner-note",
+                source_payload_sha256="e" * 64,
+                idempotency_key="valuation-manual-invalid-0001",
+            )
+        assert rate.rate == Decimal("1.08")
+        assert manual.reason == "Owner reviewed illiquid market evidence"
+        assert valuation.list_price_observations(owner_id=owner_id)[0].price == Decimal("68123.4500")
+
+        nested = connection.begin_nested()
+        with pytest.raises(DBAPIError):
+            connection.execute(
+                text("UPDATE nexora.price_observations SET price = 1 WHERE price_observation_id = :observation_id"),
+                {"observation_id": price.price_observation_id},
+            )
+        nested.rollback()
     finally:
         outer.rollback()
         connection.close()

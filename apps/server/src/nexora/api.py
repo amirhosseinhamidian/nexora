@@ -4,6 +4,7 @@ import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from datetime import datetime
 from decimal import Decimal
 from time import perf_counter
 from typing import Literal
@@ -26,6 +27,7 @@ from nexora.adapters.postgresql import (
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
     TransactionJournalRepository,
+    ValuationEvidenceRepository,
     probe_database,
 )
 from nexora.adapters.trd_bot import TrdBotIntegrationMode
@@ -146,6 +148,30 @@ from nexora.transaction_journal import (
     TransactionView,
     canonical_quantity,
     normalize_quantity,
+)
+from nexora.valuation import (
+    FxRateObservationView,
+    ManualValuationView,
+    PriceObservationView,
+    ValuationConflict,
+    ValuationNotFound,
+    ValuationValidationError,
+    aware_utc,
+    canonical_decimal,
+    evidence_state,
+)
+from nexora.valuation_contracts import (
+    CreateFxRateObservationRequest,
+    CreateManualValuationRequest,
+    CreatePriceObservationRequest,
+    FxRateObservationListResponse,
+    FxRateObservationResponse,
+    ManualValuationListResponse,
+    ManualValuationResponse,
+    PortfolioValuationStatusResponse,
+    PriceObservationListResponse,
+    PriceObservationResponse,
+    ValuationStatusResponse,
 )
 
 CORRELATION_HEADER = "X-Correlation-ID"
@@ -278,6 +304,55 @@ def _holdings_response(view: HoldingsProjectionView) -> HoldingsProjectionRespon
 
 def _reconciliation_response(case: ReconciliationCaseView) -> ReconciliationCaseResponse:
     return ReconciliationCaseResponse.model_validate(case)
+
+
+def _price_response(item: PriceObservationView, as_of: datetime) -> PriceObservationResponse:
+    return PriceObservationResponse(
+        price_observation_id=item.price_observation_id,
+        asset_id=item.asset_id,
+        quote_asset_id=item.quote_asset_id,
+        price=canonical_decimal(item.price),
+        observed_at=item.observed_at,
+        valid_until=item.valid_until,
+        state=evidence_state(as_of=as_of, valid_until=item.valid_until),
+        source_kind=item.source_kind,
+        source_reference=item.source_reference,
+        source_payload_sha256=item.source_payload_sha256,
+        recorded_at=item.recorded_at,
+    )
+
+
+def _fx_response(item: FxRateObservationView, as_of: datetime) -> FxRateObservationResponse:
+    return FxRateObservationResponse(
+        fx_rate_observation_id=item.fx_rate_observation_id,
+        base_asset_id=item.base_asset_id,
+        quote_asset_id=item.quote_asset_id,
+        rate=canonical_decimal(item.rate),
+        observed_at=item.observed_at,
+        valid_until=item.valid_until,
+        state=evidence_state(as_of=as_of, valid_until=item.valid_until),
+        source_kind=item.source_kind,
+        source_reference=item.source_reference,
+        source_payload_sha256=item.source_payload_sha256,
+        recorded_at=item.recorded_at,
+    )
+
+
+def _manual_response(item: ManualValuationView, as_of: datetime) -> ManualValuationResponse:
+    return ManualValuationResponse(
+        manual_valuation_id=item.manual_valuation_id,
+        portfolio_id=item.portfolio_id,
+        asset_id=item.asset_id,
+        quote_asset_id=item.quote_asset_id,
+        unit_value=canonical_decimal(item.unit_value),
+        valued_at=item.valued_at,
+        valid_until=item.valid_until,
+        state=evidence_state(as_of=as_of, valid_until=item.valid_until),
+        reason=item.reason,
+        source_reference=item.source_reference,
+        source_payload_sha256=item.source_payload_sha256,
+        recorded_at=item.recorded_at,
+    )
 
 
 def _transaction_legs(
@@ -552,6 +627,33 @@ def create_app(
             message="journal cannot be projected under the selected cost-basis policy",
         )
 
+    @application.exception_handler(ValuationNotFound)
+    async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="VALUATION_RESOURCE_NOT_FOUND",
+            message="valuation evidence or registry resource is unavailable",
+        )
+
+    @application.exception_handler(ValuationConflict)
+    async def valuation_conflict(request: Request, _: ValuationConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="VALUATION_EVIDENCE_CONFLICT",
+            message="valuation evidence conflicts with an immutable idempotency key",
+        )
+
+    @application.exception_handler(ValuationValidationError)
+    async def valuation_validation(request: Request, _: ValuationValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="VALUATION_EVIDENCE_VALIDATION_FAILED",
+            message="valuation evidence validation failed",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -720,6 +822,12 @@ def create_app(
         repository = resolved_container.holdings_projection_repository
         if repository is None:
             raise CeremonyUnavailable("holdings projection runtime is not configured")
+        return repository
+
+    def valuation_evidence() -> ValuationEvidenceRepository:
+        repository = resolved_container.valuation_evidence_repository
+        if repository is None:
+            raise CeremonyUnavailable("valuation evidence runtime is not configured")
         return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
@@ -1425,6 +1533,175 @@ def create_app(
             )
         )
         return LotListResponse(checkpoint=response.checkpoint, items=response.lots)
+
+    @application.post(
+        "/v1/valuation/price-observations",
+        response_model=PriceObservationResponse,
+        status_code=201,
+        operation_id="createPriceObservation",
+    )
+    def create_price_observation(payload: CreatePriceObservationRequest, request: Request) -> PriceObservationResponse:
+        _, session = require_session(request)
+        item = valuation_evidence().create_price_observation(
+            owner_id=session.owner_id,
+            asset_id=payload.asset_id,
+            quote_asset_id=payload.quote_asset_id,
+            price=payload.price,
+            observed_at=payload.observed_at,
+            valid_until=payload.valid_until,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            idempotency_key=payload.idempotency_key,
+        )
+        return _price_response(item, item.recorded_at)
+
+    @application.get(
+        "/v1/valuation/price-observations",
+        response_model=PriceObservationListResponse,
+        operation_id="listPriceObservations",
+    )
+    def list_price_observations(
+        request: Request,
+        as_of: datetime,
+        asset_id: UUID | None = None,
+        quote_asset_id: UUID | None = None,
+        limit: int = 100,
+    ) -> PriceObservationListResponse:
+        _, session = require_session(request)
+        resolved_as_of = aware_utc(as_of)
+        items = valuation_evidence().list_price_observations(
+            owner_id=session.owner_id,
+            asset_id=asset_id,
+            quote_asset_id=quote_asset_id,
+            limit=limit,
+        )
+        return PriceObservationListResponse(items=[_price_response(item, resolved_as_of) for item in items])
+
+    @application.post(
+        "/v1/valuation/fx-rate-observations",
+        response_model=FxRateObservationResponse,
+        status_code=201,
+        operation_id="createFxRateObservation",
+    )
+    def create_fx_rate_observation(
+        payload: CreateFxRateObservationRequest, request: Request
+    ) -> FxRateObservationResponse:
+        _, session = require_session(request)
+        item = valuation_evidence().create_fx_rate_observation(
+            owner_id=session.owner_id,
+            base_asset_id=payload.base_asset_id,
+            quote_asset_id=payload.quote_asset_id,
+            rate=payload.rate,
+            observed_at=payload.observed_at,
+            valid_until=payload.valid_until,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            idempotency_key=payload.idempotency_key,
+        )
+        return _fx_response(item, item.recorded_at)
+
+    @application.get(
+        "/v1/valuation/fx-rate-observations",
+        response_model=FxRateObservationListResponse,
+        operation_id="listFxRateObservations",
+    )
+    def list_fx_rate_observations(
+        request: Request,
+        as_of: datetime,
+        base_asset_id: UUID | None = None,
+        quote_asset_id: UUID | None = None,
+        limit: int = 100,
+    ) -> FxRateObservationListResponse:
+        _, session = require_session(request)
+        resolved_as_of = aware_utc(as_of)
+        items = valuation_evidence().list_fx_rate_observations(
+            owner_id=session.owner_id,
+            base_asset_id=base_asset_id,
+            quote_asset_id=quote_asset_id,
+            limit=limit,
+        )
+        return FxRateObservationListResponse(items=[_fx_response(item, resolved_as_of) for item in items])
+
+    @application.post(
+        "/v1/valuation/manual-valuations",
+        response_model=ManualValuationResponse,
+        status_code=201,
+        operation_id="createManualValuation",
+    )
+    def create_manual_valuation(payload: CreateManualValuationRequest, request: Request) -> ManualValuationResponse:
+        _, session = require_session(request)
+        item = valuation_evidence().create_manual_valuation(
+            owner_id=session.owner_id,
+            portfolio_id=payload.portfolio_id,
+            asset_id=payload.asset_id,
+            quote_asset_id=payload.quote_asset_id,
+            unit_value=payload.unit_value,
+            valued_at=payload.valued_at,
+            valid_until=payload.valid_until,
+            reason=payload.reason,
+            source_reference=payload.source_reference,
+            source_payload_sha256=payload.source_payload_sha256,
+            idempotency_key=payload.idempotency_key,
+        )
+        return _manual_response(item, item.recorded_at)
+
+    @application.get(
+        "/v1/valuation/manual-valuations",
+        response_model=ManualValuationListResponse,
+        operation_id="listManualValuations",
+    )
+    def list_manual_valuations(
+        request: Request,
+        as_of: datetime,
+        portfolio_id: UUID | None = None,
+        limit: int = 100,
+    ) -> ManualValuationListResponse:
+        _, session = require_session(request)
+        resolved_as_of = aware_utc(as_of)
+        items = valuation_evidence().list_manual_valuations(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            limit=limit,
+        )
+        return ManualValuationListResponse(items=[_manual_response(item, resolved_as_of) for item in items])
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}/valuation-status",
+        response_model=PortfolioValuationStatusResponse,
+        operation_id="getPortfolioValuationStatus",
+    )
+    def get_portfolio_valuation_status(
+        portfolio_id: UUID, request: Request, as_of: datetime
+    ) -> PortfolioValuationStatusResponse:
+        _, session = require_session(request)
+        resolved_as_of = aware_utc(as_of)
+        base_asset_id, statuses = valuation_evidence().portfolio_status(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            as_of=resolved_as_of,
+        )
+        return PortfolioValuationStatusResponse(
+            portfolio_id=portfolio_id,
+            base_asset_id=base_asset_id,
+            as_of=resolved_as_of,
+            items=[
+                ValuationStatusResponse(
+                    asset_id=item.asset_id,
+                    quote_asset_id=item.quote_asset_id,
+                    as_of=item.as_of,
+                    state=item.state,
+                    evidence_kind=item.evidence_kind,
+                    unit_value=None if item.unit_value is None else canonical_decimal(item.unit_value),
+                    evidence_id=item.evidence_id,
+                    evidence_at=item.evidence_at,
+                    valid_until=item.valid_until,
+                    source_reference=item.source_reference,
+                )
+                for item in statuses
+            ],
+        )
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

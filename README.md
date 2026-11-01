@@ -170,6 +170,14 @@ cost basis, valuation or trading capability. Accepted candidate
 checks across the primary workflow and eighteen regression workflows.
 Rebuildable holdings, lots and cost basis are now opened as `NEX-P2-05`.
 
+`NEX-P2-05` is frozen. It adds deterministic rebuildable holdings, FIFO and
+weighted-average cost-basis lots, transfer continuity and append-only negative
+holding rejection evidence. Accepted candidate
+`40fb21d10132260da98569018744b35697a5c3d4` is bound by Freeze commit
+`bddee3b638e67d25aaeaa1b754352b78579e5d2a`. `NEX-P2-06` is now a candidate:
+it adds immutable price, FX and reasoned manual valuation evidence with explicit
+fresh, stale and missing states. NAV, P&L and performance remain deferred.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -212,6 +220,8 @@ uv run python scripts/verify_phase_two_portfolio_domain.py
 uv run python scripts/verify_portfolio_registry.py
 uv run python scripts/verify_transaction_journal.py
 uv run python scripts/verify_import_reconciliation.py
+uv run python scripts/verify_holdings_projection.py
+uv run python scripts/verify_valuation_evidence.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -285,6 +295,8 @@ NEX_P2_04_FREEZE=PASS
 NEX_P2_04_PREREQUISITE=PASS
 NEX_P2_05_HOLDINGS_PROJECTION=PASS
 NEX_P2_05_FREEZE=PASS
+NEX_P2_05_PREREQUISITE=PASS
+NEX_P2_06_VALUATION_EVIDENCE=PASS
 ```
 
 ## Documents
@@ -313,6 +325,7 @@ NEX_P2_05_FREEZE=PASS
 - [`docs/v0.1/21-immutable-transaction-journal.md`](docs/v0.1/21-immutable-transaction-journal.md)
 - [`docs/v0.1/22-import-and-reconciliation-runtime.md`](docs/v0.1/22-import-and-reconciliation-runtime.md)
 - [`docs/v0.1/23-holdings-lots-cost-basis.md`](docs/v0.1/23-holdings-lots-cost-basis.md)
+- [`docs/v0.1/24-price-fx-manual-valuation.md`](docs/v0.1/24-price-fx-manual-valuation.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -339,6 +352,7 @@ NEX_P2_05_FREEZE=PASS
 - [`contracts/nexora-v0.1-transaction-journal.json`](contracts/nexora-v0.1-transaction-journal.json)
 - [`contracts/nexora-v0.1-import-reconciliation.json`](contracts/nexora-v0.1-import-reconciliation.json)
 - [`contracts/nexora-v0.1-holdings-lots-cost-basis.json`](contracts/nexora-v0.1-holdings-lots-cost-basis.json)
+- [`contracts/nexora-v0.1-price-fx-manual-valuation.json`](contracts/nexora-v0.1-price-fx-manual-valuation.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

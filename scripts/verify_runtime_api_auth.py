@@ -58,6 +58,9 @@ APPROVED_EXTENSION_OPERATIONS = {
     "POST /v1/imports/{import_batch_id}/publication",
     "GET /v1/reconciliation-cases",
     "POST /v1/reconciliation-cases/{reconciliation_case_id}/decisions",
+    "POST /v1/portfolios/{portfolio_id}/holdings/rebuilds",
+    "GET /v1/portfolios/{portfolio_id}/holdings",
+    "GET /v1/portfolios/{portfolio_id}/lots",
 }
 
 

@@ -1,0 +1,102 @@
+{
+  "schema_version": "nexora-holdings-lots-cost-basis-contract-v1",
+  "decision_id": "NEX-P2-05",
+  "decision_date": "2026-11-01",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-04",
+    "frozen": true,
+    "freeze_commit_sha": "751ada7dc4226745e894fdc630b8d2e92eff1f36",
+    "accepted_candidate_commit_sha": "8e1f59f4084f902b4917d91f6ee9593217dbca1e",
+    "freeze_record_path": "artifacts/p2-04/import-reconciliation-freeze.json",
+    "freeze_record_checksum": "facbffd3a5a3faf9783b990383919cce936c4b52a28b201a6cca891e39a4ef77"
+  },
+  "scope": {
+    "entities": [
+      "holdings_rebuild",
+      "holding_projection",
+      "lot_projection",
+      "lot_consumption",
+      "holdings_rebuild_issue"
+    ],
+    "cost_basis_methods": ["fifo", "weighted_average"],
+    "valuation_included": false,
+    "nav_included": false,
+    "realized_pnl_included": false,
+    "unrealized_pnl_included": false,
+    "tax_advice_included": false
+  },
+  "projection_invariants": {
+    "immutable_journal_is_source_of_truth": true,
+    "projection_is_fully_rebuildable": true,
+    "deterministic_journal_order": true,
+    "journal_sha256_checkpoint": true,
+    "explicit_projection_version": true,
+    "exact_decimal_arithmetic": true,
+    "binary_float_forbidden": true,
+    "idempotent_same_journal_rebuild": true,
+    "atomic_projection_replacement": true,
+    "owned_account_transfer_retains_basis": true,
+    "owned_account_transfer_is_not_disposal": true,
+    "negative_holding_rejected": true,
+    "negative_holding_issue_append_only": true,
+    "unknown_basis_remains_visible": true,
+    "owner_scope_required": true
+  },
+  "cost_basis_policy": {
+    "fifo_consumes_oldest_lots_first": true,
+    "weighted_average_consumes_pool_proportionally": true,
+    "half_even_rounding": true,
+    "asset_precision_required": true,
+    "rounding_remainder_preserved": true,
+    "missing_cost_evidence_cannot_be_invented": true,
+    "jurisdiction_specific_tax_logic": false
+  },
+  "persistence": {
+    "migration_revision": "20261101_0009",
+    "tables": [
+      "nexora.holdings_rebuilds",
+      "nexora.holding_projections",
+      "nexora.lot_projections",
+      "nexora.lot_consumptions",
+      "nexora.holdings_rebuild_issues"
+    ],
+    "derived_rows_replaceable": true,
+    "rejection_evidence_immutable": true,
+    "composite_owner_foreign_keys": true,
+    "upgrade_downgrade_rebuild_drift_cycle_required": true
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "owner_id_accepted_from_request": false,
+    "csrf_for_rebuild": true,
+    "unknown_fields_rejected": true,
+    "decimal_values_encoded_as_strings": true,
+    "operations": [
+      "POST /v1/portfolios/{portfolio_id}/holdings/rebuilds",
+      "GET /v1/portfolios/{portfolio_id}/holdings",
+      "GET /v1/portfolios/{portfolio_id}/lots"
+    ]
+  },
+  "security_boundary": {
+    "raw_exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-05-FREEZE",
+    "post_freeze_stage": "NEX-P2-06",
+    "freeze_before_valuation": true
+  }
+}

@@ -4,6 +4,7 @@ import os
 import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from decimal import Decimal
 from time import perf_counter
 from typing import Literal
 from urllib.parse import quote
@@ -19,6 +20,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from nexora import __version__
 from nexora.adapters.postgresql import (
     RUNTIME_DATABASE_DSN_FILE_ENV,
+    HoldingsProjectionRepository,
+    HoldingsProjectionView,
     ImportReconciliationRepository,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
@@ -41,6 +44,23 @@ from nexora.composition import (
     compose_private_application,
 )
 from nexora.config import RuntimeSettings, load_settings
+from nexora.holdings_contracts import (
+    HoldingListResponse,
+    HoldingResponse,
+    HoldingsProjectionResponse,
+    LotConsumptionResponse,
+    LotListResponse,
+    LotResponse,
+    ProjectionCheckpointResponse,
+    RebuildHoldingsRequest,
+)
+from nexora.holdings_projection import (
+    CostBasisMethod,
+    NegativeHoldingRejected,
+    ProjectionConflict,
+    ProjectionNotFound,
+    ProjectionValidationError,
+)
 from nexora.identity import (
     SESSION_COOKIE_NAME,
     AuthenticatedSession,
@@ -185,6 +205,74 @@ def _import_batch_response(batch: ImportBatchView) -> ImportBatchResponse:
         reviewed_at=batch.reviewed_at,
         published_at=batch.published_at,
         rows=[ImportRowResponse.model_validate(row) for row in batch.rows],
+    )
+
+
+def _optional_quantity(value: Decimal | None) -> str | None:
+    return None if value is None else canonical_quantity(value)
+
+
+def _holdings_response(view: HoldingsProjectionView) -> HoldingsProjectionResponse:
+    snapshot = view.snapshot
+    checkpoint = ProjectionCheckpointResponse(
+        holdings_rebuild_id=view.holdings_rebuild_id,
+        portfolio_id=snapshot.portfolio_id,
+        cost_basis_method=snapshot.cost_basis_method,
+        projection_version=snapshot.projection_version,
+        journal_sha256=snapshot.journal_sha256,
+        journal_transaction_count=snapshot.journal_transaction_count,
+        last_transaction_id=snapshot.last_transaction_id,
+        rebuilt_at=view.rebuilt_at,
+    )
+    holdings = [
+        HoldingResponse(
+            account_id=item.account_id,
+            asset_id=item.asset_id,
+            quantity=canonical_quantity(item.quantity),
+            cost_basis_asset_id=item.cost_basis_asset_id,
+            total_cost_basis=_optional_quantity(item.total_cost_basis),
+            average_unit_cost=_optional_quantity(item.average_unit_cost),
+            basis_status=item.basis_status,
+        )
+        for item in snapshot.holdings
+    ]
+    lots = [
+        LotResponse(
+            lot_key=item.lot_key,
+            source_lot_key=item.source_lot_key,
+            account_id=item.account_id,
+            asset_id=item.asset_id,
+            acquisition_transaction_id=item.acquisition_transaction_id,
+            acquisition_leg_id=item.acquisition_leg_id,
+            acquired_at=item.acquired_at,
+            original_quantity=canonical_quantity(item.original_quantity),
+            remaining_quantity=canonical_quantity(item.remaining_quantity),
+            cost_basis_asset_id=item.cost_basis_asset_id,
+            original_cost_basis=_optional_quantity(item.original_cost_basis),
+            remaining_cost_basis=_optional_quantity(item.remaining_cost_basis),
+            basis_status=item.basis_status,
+        )
+        for item in snapshot.lots
+    ]
+    consumptions = [
+        LotConsumptionResponse(
+            consumption_key=item.consumption_key,
+            disposal_transaction_id=item.disposal_transaction_id,
+            disposal_leg_id=item.disposal_leg_id,
+            lot_key=item.lot_key,
+            quantity=canonical_quantity(item.quantity),
+            cost_basis_asset_id=item.cost_basis_asset_id,
+            allocated_cost_basis=_optional_quantity(item.allocated_cost_basis),
+            basis_status=item.basis_status,
+            sequence=item.sequence,
+        )
+        for item in snapshot.consumptions
+    ]
+    return HoldingsProjectionResponse(
+        checkpoint=checkpoint,
+        holdings=holdings,
+        lots=lots,
+        consumptions=consumptions,
     )
 
 
@@ -428,6 +516,42 @@ def create_app(
             message="import or reconciliation validation failed",
         )
 
+    @application.exception_handler(ProjectionNotFound)
+    async def projection_not_found(request: Request, _: ProjectionNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="HOLDINGS_PROJECTION_NOT_FOUND",
+            message="holdings projection is unavailable",
+        )
+
+    @application.exception_handler(ProjectionConflict)
+    async def projection_conflict(request: Request, _: ProjectionConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="HOLDINGS_PROJECTION_CONFLICT",
+            message="holdings projection conflicts with current journal state",
+        )
+
+    @application.exception_handler(NegativeHoldingRejected)
+    async def negative_holding(request: Request, _: NegativeHoldingRejected) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="NEGATIVE_HOLDING_REJECTED",
+            message="journal would create a negative holding",
+        )
+
+    @application.exception_handler(ProjectionValidationError)
+    async def projection_validation(request: Request, _: ProjectionValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="HOLDINGS_PROJECTION_VALIDATION_FAILED",
+            message="journal cannot be projected under the selected cost-basis policy",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -590,6 +714,12 @@ def create_app(
         repository = resolved_container.import_reconciliation_repository
         if repository is None:
             raise CeremonyUnavailable("import and reconciliation runtime is not configured")
+        return repository
+
+    def holdings_projection() -> HoldingsProjectionRepository:
+        repository = resolved_container.holdings_projection_repository
+        if repository is None:
+            raise CeremonyUnavailable("holdings projection runtime is not configured")
         return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
@@ -1236,6 +1366,65 @@ def create_app(
             reason=payload.reason,
         )
         return _reconciliation_response(case)
+
+    @application.post(
+        "/v1/portfolios/{portfolio_id}/holdings/rebuilds",
+        response_model=HoldingsProjectionResponse,
+        status_code=201,
+        operation_id="rebuildPortfolioHoldings",
+    )
+    def rebuild_portfolio_holdings(
+        portfolio_id: UUID,
+        payload: RebuildHoldingsRequest,
+        request: Request,
+    ) -> HoldingsProjectionResponse:
+        _, session = require_session(request)
+        view = holdings_projection().rebuild(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            cost_basis_method=payload.cost_basis_method,
+        )
+        return _holdings_response(view)
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}/holdings",
+        response_model=HoldingListResponse,
+        operation_id="listPortfolioHoldings",
+    )
+    def list_portfolio_holdings(
+        portfolio_id: UUID,
+        request: Request,
+        cost_basis_method: CostBasisMethod = CostBasisMethod.FIFO,
+    ) -> HoldingListResponse:
+        _, session = require_session(request)
+        response = _holdings_response(
+            holdings_projection().get(
+                owner_id=session.owner_id,
+                portfolio_id=portfolio_id,
+                cost_basis_method=cost_basis_method,
+            )
+        )
+        return HoldingListResponse(checkpoint=response.checkpoint, items=response.holdings)
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}/lots",
+        response_model=LotListResponse,
+        operation_id="listPortfolioLots",
+    )
+    def list_portfolio_lots(
+        portfolio_id: UUID,
+        request: Request,
+        cost_basis_method: CostBasisMethod = CostBasisMethod.FIFO,
+    ) -> LotListResponse:
+        _, session = require_session(request)
+        response = _holdings_response(
+            holdings_projection().get(
+                owner_id=session.owner_id,
+                portfolio_id=portfolio_id,
+                cost_basis_method=cost_basis_method,
+            )
+        )
+        return LotListResponse(checkpoint=response.checkpoint, items=response.lots)
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

@@ -32,6 +32,7 @@ from nexora.adapters.postgresql.durable import (
     retry_delay,
 )
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
+from nexora.adapters.postgresql.holdings_projection import HoldingsProjectionRepository, HoldingsProjectionView
 from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQLIdentityRepository
 from nexora.adapters.postgresql.import_reconciliation import ImportReconciliationRepository
 from nexora.adapters.postgresql.models import (
@@ -41,9 +42,14 @@ from nexora.adapters.postgresql.models import (
     BackgroundJob,
     BootstrapToken,
     BrowserSession,
+    HoldingProjectionRecord,
+    HoldingsRebuildIssueRecord,
+    HoldingsRebuildRecord,
     ImmutableSourceEvidence,
     ImportBatchRecord,
     ImportRowRecord,
+    LotConsumptionRecord,
+    LotProjectionRecord,
     OutboxEvent,
     OwnerProfile,
     PortfolioRecord,
@@ -84,6 +90,11 @@ __all__ = [
     "DurableWorkError",
     "DurableWorkRepository",
     "EnqueuedJob",
+    "HoldingProjectionRecord",
+    "HoldingsProjectionRepository",
+    "HoldingsProjectionView",
+    "HoldingsRebuildIssueRecord",
+    "HoldingsRebuildRecord",
     "IdempotencyConflict",
     "IdentityStateConflict",
     "ImmutableSourceEvidence",
@@ -93,6 +104,8 @@ __all__ = [
     "JobClaim",
     "JobCompletion",
     "LeaseLost",
+    "LotConsumptionRecord",
+    "LotProjectionRecord",
     "OutboxClaim",
     "OutboxEvent",
     "OutboxMessage",

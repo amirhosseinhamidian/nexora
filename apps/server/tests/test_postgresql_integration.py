@@ -18,6 +18,8 @@ from nexora.adapters.postgresql import (
     CheckpointAdvance,
     CheckpointConflict,
     DurableWorkRepository,
+    HoldingsProjectionRepository,
+    HoldingsRebuildIssueRecord,
     ImportReconciliationRepository,
     JobCompletion,
     LeaseLost,
@@ -33,6 +35,7 @@ from nexora.adapters.postgresql import (
     create_session_factory,
     load_database_settings,
 )
+from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
@@ -65,7 +68,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261031_0008"
+    assert revision == "20261101_0009"
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -95,6 +98,11 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "import_rows",
         "reconciliation_cases",
         "reconciliation_decisions",
+        "holdings_rebuilds",
+        "holding_projections",
+        "lot_projections",
+        "lot_consumptions",
+        "holdings_rebuild_issues",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
@@ -759,6 +767,171 @@ def test_import_dry_run_is_idempotent_and_publication_is_atomic(engine: Engine) 
                 import_batch_id=quarantined.import_batch_id,
                 reason="Owner cannot approve quarantined evidence",
             )
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_holdings_rebuild_persists_fifo_weighted_average_and_rejection_evidence(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    projections = HoldingsProjectionRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="projection-usd",
+            symbol="USD",
+            name="Projection US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="projection-btc",
+            symbol="BTC",
+            name="Projection Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="projection-core",
+            name="Projection Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="projection-account",
+            name="Projection Account",
+            kind=AccountKind.EXCHANGE,
+        )
+
+        def post(
+            sequence: int,
+            kind: TransactionKind,
+            legs: list[TransactionLegInput],
+        ) -> None:
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=kind,
+                idempotency_key=f"projection-entry-{sequence:04d}",
+                occurred_at=datetime(2026, 11, 1, sequence, tzinfo=UTC),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference=f"projection-reference-{sequence}",
+                source_payload_sha256=hashlib.sha256(str(sequence).encode()).hexdigest(),
+                legs=legs,
+            )
+
+        post(
+            1,
+            TransactionKind.OPENING_BALANCE,
+            [
+                TransactionLegInput(usd.asset_id, Decimal("1000"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-1000"), external_counterparty="Opening equity"),
+            ],
+        )
+        post(
+            2,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("10"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-100"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-10"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("100"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            3,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("5"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-75"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-5"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("75"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            4,
+            TransactionKind.SELL,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("-12"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("240"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("12"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("-240"), external_counterparty="Market"),
+            ],
+        )
+
+        fifo = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        repeated = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        weighted = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.WEIGHTED_AVERAGE,
+        )
+        fifo_btc = next(item for item in fifo.snapshot.holdings if item.asset_id == btc.asset_id)
+        weighted_btc = next(item for item in weighted.snapshot.holdings if item.asset_id == btc.asset_id)
+        assert repeated.holdings_rebuild_id == fifo.holdings_rebuild_id
+        assert (fifo_btc.quantity, fifo_btc.total_cost_basis) == (Decimal("3"), Decimal("45"))
+        assert (weighted_btc.quantity, weighted_btc.total_cost_basis) == (Decimal("3"), Decimal("35"))
+        assert fifo_btc.basis_status is BasisStatus.KNOWN
+
+        negative_portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="projection-negative",
+            name="Projection Negative",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        negative_account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=negative_portfolio.portfolio_id,
+            account_key="projection-negative-account",
+            name="Projection Negative Account",
+            kind=AccountKind.EXCHANGE,
+        )
+        journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=negative_portfolio.portfolio_id,
+            transaction_kind=TransactionKind.WITHDRAWAL,
+            idempotency_key="projection-negative-0001",
+            occurred_at=datetime(2026, 11, 1, 5, tzinfo=UTC),
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="projection-negative-reference",
+            source_payload_sha256="f" * 64,
+            legs=[
+                TransactionLegInput(btc.asset_id, Decimal("-1"), account_id=negative_account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("1"), external_counterparty="External wallet"),
+            ],
+        )
+        with pytest.raises(NegativeHoldingRejected):
+            projections.rebuild(
+                owner_id=owner_id,
+                portfolio_id=negative_portfolio.portfolio_id,
+                cost_basis_method=CostBasisMethod.FIFO,
+            )
+        reason_code = connection.execute(
+            select(HoldingsRebuildIssueRecord.reason_code).where(HoldingsRebuildIssueRecord.owner_id == owner_id)
+        ).scalar_one()
+        assert reason_code == "NEGATIVE_HOLDING_REJECTED"
     finally:
         outer.rollback()
         connection.close()

@@ -755,6 +755,266 @@ class ReconciliationDecisionRecord(Base):
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class HoldingsRebuildRecord(Base):
+    __tablename__ = "holdings_rebuilds"
+    __table_args__ = (
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("status IN ('succeeded', 'rejected')", name="status_allowed"),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        CheckConstraint("journal_transaction_count >= 0", name="journal_transaction_count_nonnegative"),
+        CheckConstraint(
+            "(status = 'succeeded' AND reason_code IS NULL) OR "
+            "(status = 'rejected' AND reason_code = 'NEGATIVE_HOLDING_REJECTED')",
+            name="status_reason_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_holdings_rebuilds_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "holdings_rebuild_id", name="uq_holdings_rebuilds_owner_rebuild"),
+        UniqueConstraint(
+            "owner_id",
+            "portfolio_id",
+            "cost_basis_method",
+            "projection_version",
+            "journal_sha256",
+            name="uq_holdings_rebuilds_owner_snapshot",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holdings_rebuild_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_transaction_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_transaction_id: Mapped[UUID | None] = mapped_column()
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class HoldingProjectionRecord(Base):
+    __tablename__ = "holding_projections"
+    __table_args__ = (
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND total_cost_basis IS NOT NULL "
+            "AND average_unit_cost IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL "
+            "AND total_cost_basis IS NULL AND average_unit_cost IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_holding_projections_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_holding_projections_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_holding_projections_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_holding_projections_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "owner_id", "portfolio_id", "account_id", "asset_id", "cost_basis_method", name="uq_holding_projection"
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holding_projection_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    total_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    average_unit_cost: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LotProjectionRecord(Base):
+    __tablename__ = "lot_projections"
+    __table_args__ = (
+        CheckConstraint("lot_key ~ '^[0-9a-f]{64}$'", name="lot_key_format"),
+        CheckConstraint("source_lot_key IS NULL OR source_lot_key ~ '^[0-9a-f]{64}$'", name="source_lot_key_format"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("original_quantity > 0", name="original_quantity_positive"),
+        CheckConstraint(
+            "remaining_quantity > 0 AND remaining_quantity <= original_quantity", name="remaining_quantity_bounded"
+        ),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND original_cost_basis IS NOT NULL "
+            "AND remaining_cost_basis IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL "
+            "AND original_cost_basis IS NULL AND remaining_cost_basis IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_lot_projections_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_lot_projections_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_projections_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_projections_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "cost_basis_method", "lot_key", name="uq_lot_projection_key"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    lot_projection_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    lot_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_lot_key: Mapped[str | None] = mapped_column(String(64))
+    acquisition_transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    acquisition_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    original_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    remaining_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    original_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    remaining_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LotConsumptionRecord(Base):
+    __tablename__ = "lot_consumptions"
+    __table_args__ = (
+        CheckConstraint("consumption_key ~ '^[0-9a-f]{64}$'", name="consumption_key_format"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("sequence >= 1", name="sequence_positive"),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND allocated_cost_basis IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL AND allocated_cost_basis IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_lot_consumptions_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_consumptions_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "cost_basis_method", "consumption_key", name="uq_lot_consumption_key"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    lot_consumption_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    consumption_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    disposal_transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    disposal_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    lot_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    allocated_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HoldingsRebuildIssueRecord(Base):
+    __tablename__ = "holdings_rebuild_issues"
+    __table_args__ = (
+        CheckConstraint("reason_code = 'NEGATIVE_HOLDING_REJECTED'", name="reason_code_allowed"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("requested_quantity > 0", name="requested_quantity_positive"),
+        CheckConstraint("available_quantity >= 0", name="available_quantity_nonnegative"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "holdings_rebuild_id"],
+            [f"{SCHEMA_NAME}.holdings_rebuilds.owner_id", f"{SCHEMA_NAME}.holdings_rebuilds.holdings_rebuild_id"],
+            name="fk_holdings_rebuild_issues_owner_rebuild",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "holdings_rebuild_issue_id", name="uq_holdings_rebuild_issues_owner_issue"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holdings_rebuild_issue_id: Mapped[UUID] = mapped_column(primary_key=True)
+    holdings_rebuild_id: Mapped[UUID] = mapped_column(nullable=False)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    requested_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    available_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

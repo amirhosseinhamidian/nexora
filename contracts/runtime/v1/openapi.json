@@ -437,6 +437,15 @@
         "title": "AuthenticatorDescriptor",
         "type": "object"
       },
+      "BasisStatus": {
+        "enum": [
+          "known",
+          "unknown",
+          "mixed"
+        ],
+        "title": "BasisStatus",
+        "type": "string"
+      },
       "BootstrapCompleteRequest": {
         "additionalProperties": false,
         "properties": {
@@ -511,6 +520,14 @@
           "supersession"
         ],
         "title": "CorrectionKind",
+        "type": "string"
+      },
+      "CostBasisMethod": {
+        "enum": [
+          "fifo",
+          "weighted_average"
+        ],
+        "title": "CostBasisMethod",
         "type": "string"
       },
       "CreateAccountRequest": {
@@ -786,6 +803,149 @@
           "error"
         ],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "HoldingListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint": {
+            "$ref": "#/components/schemas/ProjectionCheckpointResponse"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-holding-list-v1",
+            "default": "nexora-holding-list-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpoint",
+          "items"
+        ],
+        "title": "HoldingListResponse",
+        "type": "object"
+      },
+      "HoldingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "asset_id": {
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "average_unit_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Unit Cost"
+          },
+          "basis_status": {
+            "$ref": "#/components/schemas/BasisStatus"
+          },
+          "cost_basis_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis Asset Id"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-holding-v1",
+            "default": "nexora-holding-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "total_cost_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost Basis"
+          }
+        },
+        "required": [
+          "account_id",
+          "asset_id",
+          "quantity",
+          "cost_basis_asset_id",
+          "total_cost_basis",
+          "average_unit_cost",
+          "basis_status"
+        ],
+        "title": "HoldingResponse",
+        "type": "object"
+      },
+      "HoldingsProjectionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint": {
+            "$ref": "#/components/schemas/ProjectionCheckpointResponse"
+          },
+          "consumptions": {
+            "items": {
+              "$ref": "#/components/schemas/LotConsumptionResponse"
+            },
+            "title": "Consumptions",
+            "type": "array"
+          },
+          "holdings": {
+            "items": {
+              "$ref": "#/components/schemas/HoldingResponse"
+            },
+            "title": "Holdings",
+            "type": "array"
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/LotResponse"
+            },
+            "title": "Lots",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-holdings-projection-response-v1",
+            "default": "nexora-holdings-projection-response-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpoint",
+          "holdings",
+          "lots",
+          "consumptions"
+        ],
+        "title": "HoldingsProjectionResponse",
         "type": "object"
       },
       "ImportBatchListResponse": {
@@ -1107,6 +1267,222 @@
         "title": "LivenessResponse",
         "type": "object"
       },
+      "LotConsumptionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "allocated_cost_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocated Cost Basis"
+          },
+          "basis_status": {
+            "$ref": "#/components/schemas/BasisStatus"
+          },
+          "consumption_key": {
+            "title": "Consumption Key",
+            "type": "string"
+          },
+          "cost_basis_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis Asset Id"
+          },
+          "disposal_leg_id": {
+            "format": "uuid",
+            "title": "Disposal Leg Id",
+            "type": "string"
+          },
+          "disposal_transaction_id": {
+            "format": "uuid",
+            "title": "Disposal Transaction Id",
+            "type": "string"
+          },
+          "lot_key": {
+            "title": "Lot Key",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-lot-consumption-v1",
+            "default": "nexora-lot-consumption-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "consumption_key",
+          "disposal_transaction_id",
+          "disposal_leg_id",
+          "lot_key",
+          "quantity",
+          "cost_basis_asset_id",
+          "allocated_cost_basis",
+          "basis_status",
+          "sequence"
+        ],
+        "title": "LotConsumptionResponse",
+        "type": "object"
+      },
+      "LotListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint": {
+            "$ref": "#/components/schemas/ProjectionCheckpointResponse"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LotResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-cost-basis-lot-list-v1",
+            "default": "nexora-cost-basis-lot-list-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "checkpoint",
+          "items"
+        ],
+        "title": "LotListResponse",
+        "type": "object"
+      },
+      "LotResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "acquired_at": {
+            "format": "date-time",
+            "title": "Acquired At",
+            "type": "string"
+          },
+          "acquisition_leg_id": {
+            "format": "uuid",
+            "title": "Acquisition Leg Id",
+            "type": "string"
+          },
+          "acquisition_transaction_id": {
+            "format": "uuid",
+            "title": "Acquisition Transaction Id",
+            "type": "string"
+          },
+          "asset_id": {
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "basis_status": {
+            "$ref": "#/components/schemas/BasisStatus"
+          },
+          "cost_basis_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis Asset Id"
+          },
+          "lot_key": {
+            "title": "Lot Key",
+            "type": "string"
+          },
+          "original_cost_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Cost Basis"
+          },
+          "original_quantity": {
+            "title": "Original Quantity",
+            "type": "string"
+          },
+          "remaining_cost_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Cost Basis"
+          },
+          "remaining_quantity": {
+            "title": "Remaining Quantity",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-cost-basis-lot-v1",
+            "default": "nexora-cost-basis-lot-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_lot_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Lot Key"
+          }
+        },
+        "required": [
+          "lot_key",
+          "source_lot_key",
+          "account_id",
+          "asset_id",
+          "acquisition_transaction_id",
+          "acquisition_leg_id",
+          "acquired_at",
+          "original_quantity",
+          "remaining_quantity",
+          "cost_basis_asset_id",
+          "original_cost_basis",
+          "remaining_cost_basis",
+          "basis_status"
+        ],
+        "title": "LotResponse",
+        "type": "object"
+      },
       "PortfolioKind": {
         "enum": [
           "personal",
@@ -1212,6 +1588,84 @@
           "archived_at"
         ],
         "title": "PortfolioResponse",
+        "type": "object"
+      },
+      "ProjectionCheckpointResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_basis_method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
+          "holdings_rebuild_id": {
+            "format": "uuid",
+            "title": "Holdings Rebuild Id",
+            "type": "string"
+          },
+          "journal_sha256": {
+            "title": "Journal Sha256",
+            "type": "string"
+          },
+          "journal_transaction_count": {
+            "title": "Journal Transaction Count",
+            "type": "integer"
+          },
+          "last_transaction_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Transaction Id"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "projection_version": {
+            "title": "Projection Version",
+            "type": "string"
+          },
+          "rebuilt_at": {
+            "format": "date-time",
+            "title": "Rebuilt At",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-holdings-projection-v1",
+            "default": "nexora-holdings-projection-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "holdings_rebuild_id",
+          "portfolio_id",
+          "cost_basis_method",
+          "projection_version",
+          "journal_sha256",
+          "journal_transaction_count",
+          "last_transaction_id",
+          "rebuilt_at"
+        ],
+        "title": "ProjectionCheckpointResponse",
+        "type": "object"
+      },
+      "RebuildHoldingsRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_basis_method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          }
+        },
+        "required": [
+          "cost_basis_method"
+        ],
+        "title": "RebuildHoldingsRequest",
         "type": "object"
       },
       "ReconciliationCaseListResponse": {
@@ -6355,6 +6809,454 @@
           }
         },
         "summary": "Archive Portfolio"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}/holdings": {
+      "get": {
+        "operationId": "listPortfolioHoldings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_basis_method",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CostBasisMethod",
+              "default": "fifo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Portfolio Holdings"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}/holdings/rebuilds": {
+      "post": {
+        "operationId": "rebuildPortfolioHoldings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebuildHoldingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingsProjectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Rebuild Portfolio Holdings"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}/lots": {
+      "get": {
+        "operationId": "listPortfolioLots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_basis_method",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CostBasisMethod",
+              "default": "fifo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LotListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Portfolio Lots"
       }
     },
     "/v1/reconciliation-cases": {

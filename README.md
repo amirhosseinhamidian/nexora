@@ -282,6 +282,8 @@ NEX_P2_03_FREEZE=PASS
 NEX_P2_03_PREREQUISITE=PASS
 NEX_P2_04_IMPORT_RECONCILIATION=PASS
 NEX_P2_04_FREEZE=PASS
+NEX_P2_04_PREREQUISITE=PASS
+NEX_P2_05_HOLDINGS_PROJECTION=PASS
 ```
 
 ## Documents
@@ -309,6 +311,7 @@ NEX_P2_04_FREEZE=PASS
 - [`docs/v0.1/20-portfolio-asset-account-registry.md`](docs/v0.1/20-portfolio-asset-account-registry.md)
 - [`docs/v0.1/21-immutable-transaction-journal.md`](docs/v0.1/21-immutable-transaction-journal.md)
 - [`docs/v0.1/22-import-and-reconciliation-runtime.md`](docs/v0.1/22-import-and-reconciliation-runtime.md)
+- [`docs/v0.1/23-holdings-lots-cost-basis.md`](docs/v0.1/23-holdings-lots-cost-basis.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -334,6 +337,7 @@ NEX_P2_04_FREEZE=PASS
 - [`contracts/nexora-v0.1-portfolio-registry.json`](contracts/nexora-v0.1-portfolio-registry.json)
 - [`contracts/nexora-v0.1-transaction-journal.json`](contracts/nexora-v0.1-transaction-journal.json)
 - [`contracts/nexora-v0.1-import-reconciliation.json`](contracts/nexora-v0.1-import-reconciliation.json)
+- [`contracts/nexora-v0.1-holdings-lots-cost-basis.json`](contracts/nexora-v0.1-holdings-lots-cost-basis.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

@@ -32,6 +32,11 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.import_rows",
         "nexora.reconciliation_cases",
         "nexora.reconciliation_decisions",
+        "nexora.holdings_rebuilds",
+        "nexora.holding_projections",
+        "nexora.lot_projections",
+        "nexora.lot_consumptions",
+        "nexora.holdings_rebuild_issues",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -165,3 +170,28 @@ def test_import_reconciliation_models_are_bounded_owner_scoped_and_evidence_shap
     assert {"from_state", "to_state", "reason", "decided_at"}.issubset(decisions.c.keys())
     forbidden = {"api_key", "private_key", "seed_phrase", "live_order_id"}
     assert all(forbidden.isdisjoint(table.c.keys()) for table in (batches, rows, cases, decisions))
+
+
+def test_holdings_projection_models_use_exact_decimals_and_separate_rejection_evidence() -> None:
+    rebuilds = Base.metadata.tables["nexora.holdings_rebuilds"]
+    holdings = Base.metadata.tables["nexora.holding_projections"]
+    lots = Base.metadata.tables["nexora.lot_projections"]
+    consumptions = Base.metadata.tables["nexora.lot_consumptions"]
+    issues = Base.metadata.tables["nexora.holdings_rebuild_issues"]
+    for table in (rebuilds, holdings, lots, consumptions, issues):
+        assert table.c.owner_id.nullable is False
+    for column in (
+        holdings.c.quantity,
+        holdings.c.total_cost_basis,
+        holdings.c.average_unit_cost,
+        lots.c.original_quantity,
+        lots.c.remaining_quantity,
+        consumptions.c.quantity,
+        issues.c.requested_quantity,
+        issues.c.available_quantity,
+    ):
+        assert isinstance(column.type, Numeric)
+        assert column.type.precision == 60
+        assert column.type.scale == 30
+    assert {"journal_sha256", "projection_version", "journal_transaction_count"}.issubset(rebuilds.c.keys())
+    assert {"reason_code", "transaction_id", "transaction_leg_id", "available_quantity"}.issubset(issues.c.keys())

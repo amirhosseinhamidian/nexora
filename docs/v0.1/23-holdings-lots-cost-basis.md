@@ -1,12 +1,18 @@
 # NEX-P2-05 — Holdings, Lots and Cost Basis
 
-Status: candidate
+Status: frozen
 
 Decision date: 2026-11-01
 
 Prerequisite: frozen `NEX-P2-04` at `751ada7dc4226745e894fdc630b8d2e92eff1f36`
 
-Next allowed stage: `NEX-P2-05-FREEZE`
+Accepted candidate: `40fb21d10132260da98569018744b35697a5c3d4`
+
+Candidate tree: `6efbc842391b5fd870b32a55e9c5f26ce418aa4a`
+
+Verified GitHub Actions: 20 successful workflow runs and 66 successful checks
+
+Next allowed stage: `NEX-P2-06`
 
 ## Purpose
 
@@ -103,5 +109,6 @@ uv run alembic upgrade head
 uv run alembic check
 ```
 
-After the candidate SHA and all GitHub Actions checks are green, a separate
-P2-05 Freeze commit may bind that evidence and open only `NEX-P2-06`.
+The P2-05 Freeze record binds the accepted candidate SHA, tree, predecessor,
+contract checksum, complete successful GitHub Actions inventory and frozen
+P2-04 prerequisite. Only `NEX-P2-06` is now open.

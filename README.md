@@ -284,6 +284,7 @@ NEX_P2_04_IMPORT_RECONCILIATION=PASS
 NEX_P2_04_FREEZE=PASS
 NEX_P2_04_PREREQUISITE=PASS
 NEX_P2_05_HOLDINGS_PROJECTION=PASS
+NEX_P2_05_FREEZE=PASS
 ```
 
 ## Documents
@@ -363,3 +364,4 @@ NEX_P2_05_HOLDINGS_PROJECTION=PASS
 - [`artifacts/p2-02/portfolio-registry-freeze.json`](artifacts/p2-02/portfolio-registry-freeze.json)
 - [`artifacts/p2-03/transaction-journal-freeze.json`](artifacts/p2-03/transaction-journal-freeze.json)
 - [`artifacts/p2-04/import-reconciliation-freeze.json`](artifacts/p2-04/import-reconciliation-freeze.json)
+- [`artifacts/p2-05/holdings-projection-freeze.json`](artifacts/p2-05/holdings-projection-freeze.json)

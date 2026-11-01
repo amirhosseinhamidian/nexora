@@ -9,8 +9,22 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-price-fx-manual-valuation.json"
+FREEZE_PATH = ROOT / "artifacts/p2-06/valuation-evidence-freeze.json"
 P2_05_VERIFIER_PATH = ROOT / "scripts/verify_holdings_projection.py"
+P2_05_FREEZE_PATH = ROOT / "artifacts/p2-05/holdings-projection-freeze.json"
+P2_05_FREEZE_COMMIT = "bddee3b638e67d25aaeaa1b754352b78579e5d2a"
+P2_05_CANDIDATE_COMMIT = "40fb21d10132260da98569018744b35697a5c3d4"
+P2_05_FREEZE_CHECKSUM = "3c6dc09b869048d84b513d79a318fea8aee2ca97b79383ec2be5f4fd676d0e04"
 CONTRACT_CHECKSUM = "3d3de09ac85d60b1701618d423e5d5d5ebec1fc1fdb7948da3960eda29edc67a"
+CANDIDATE_SHA = "f88bf5f7f24ae807bb8d6820ea5e99e872af5224"
+CANDIDATE_TREE_SHA = "6b4a506451741f95a414f4cb3198c5d41e947863"
+CANDIDATE_MESSAGE = "fix(nexora): sync valuation runtime contract"
+CANDIDATE_PREDECESSOR = P2_05_FREEZE_COMMIT
+CANDIDATE_LINEAGE_CHECKSUM = "4d68769b59971bc038e1b3e03eb4eb1c26702957d8b3e199ed0a520490c27b0e"
+WORKFLOW_RUNS_CHECKSUM = "69c54ea826b9a7a82e96c1c92090b06cb54bec9b819b6e6fb024b239d6d0449e"
+CHECKS_CHECKSUM = "da063d244dacc231fa4983f78c9d6e33c38aeb180747d0f0ee01c09f6b789bb9"
+EXPECTED_WORKFLOW_RUNS = 21
+EXPECTED_CHECKS = 69
 
 EXPECTED_OPERATIONS = {
     "POST /v1/valuation/price-observations",
@@ -52,6 +66,10 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return _json(path)
 
 
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
 def validate_frozen_p2_05() -> None:
     spec = importlib.util.spec_from_file_location("verify_holdings_projection", P2_05_VERIFIER_PATH)
     _require(spec is not None and spec.loader is not None, "unable to load P2-05 verifier")
@@ -64,6 +82,7 @@ def validate_frozen_p2_05() -> None:
     module.validate_runtime_markers()
     module.validate_freeze_record(freeze, contract)
     module.validate_freeze_workflow()
+    _require(canonical_checksum(freeze) == P2_05_FREEZE_CHECKSUM, "P2-05 Freeze checksum drift")
 
 
 def validate_contract(contract: dict[str, Any]) -> None:
@@ -188,17 +207,128 @@ def validate_runtime_markers() -> None:
     _require("valuation_evidence_repository" in composition, "valuation repository is not composed")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-valuation-evidence-freeze-v1", "invalid Freeze schema")
+    _require(record.get("decision_id") == "NEX-P2-06", "invalid Freeze decision")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "Freeze repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_tree_sha") == CANDIDATE_TREE_SHA, "candidate tree drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate message drift")
+    _require(record.get("candidate_predecessor_sha") == CANDIDATE_PREDECESSOR, "candidate predecessor drift")
+
+    lineage = record.get("candidate_lineage")
+    _require(isinstance(lineage, list), "candidate lineage must be an array")
+    _require(len(lineage) == 3, "candidate lineage must contain all P2-06 commits")
+    _require(canonical_checksum(lineage) == CANDIDATE_LINEAGE_CHECKSUM, "candidate lineage drift")
+    _require(lineage[0].get("parent_sha") == CANDIDATE_PREDECESSOR, "candidate lineage base drift")
+    _require(lineage[-1].get("sha") == CANDIDATE_SHA, "candidate lineage does not end at accepted SHA")
+
+    workflows = record.get("workflow_runs")
+    _require(isinstance(workflows, list), "workflow runs must be an array")
+    _require(len(workflows) == EXPECTED_WORKFLOW_RUNS, "workflow run inventory drift")
+    _require(canonical_checksum(workflows) == WORKFLOW_RUNS_CHECKSUM, "workflow run evidence drift")
+    run_ids = {workflow.get("run_id") for workflow in workflows}
+    _require(len(run_ids) == EXPECTED_WORKFLOW_RUNS, "workflow run IDs must be unique")
+    _require(all(workflow.get("conclusion") == "success" for workflow in workflows), "workflow did not succeed")
+
+    checks = record.get("checks")
+    _require(isinstance(checks, list), "checks must be an array")
+    _require(len(checks) == EXPECTED_CHECKS, "check inventory drift")
+    _require(canonical_checksum(checks) == CHECKS_CHECKSUM, "check evidence drift")
+    job_ids = {check.get("job_id") for check in checks}
+    _require(len(job_ids) == EXPECTED_CHECKS, "check job IDs must be unique")
+    _require(all(check.get("run_id") in run_ids for check in checks), "check references an unknown workflow")
+    _require(all(check.get("conclusion") == "success" for check in checks), "check did not succeed")
+    _require(
+        record.get("check_summary") == {"total": 69, "successful": 69, "failed": 0, "pending": 0},
+        "check summary drift",
+    )
+
+    contract_evidence = record.get("valuation_evidence_contract")
+    _require(isinstance(contract_evidence, dict), "valuation contract evidence must be an object")
+    _require(contract_evidence.get("schema_version") == contract.get("schema_version"), "contract schema drift")
+    _require(contract_evidence.get("path") == CONTRACT_PATH.relative_to(ROOT).as_posix(), "contract path drift")
+    _require(contract_evidence.get("checksum") == canonical_checksum(contract), "contract evidence drift")
+    _require(contract_evidence.get("checksum") == CONTRACT_CHECKSUM, "contract checksum drift")
+
+    prerequisite = record.get("p2_05_prerequisite")
+    _require(isinstance(prerequisite, dict), "P2-05 prerequisite evidence must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P2-05", "P2-05 decision drift")
+    _require(prerequisite.get("frozen") is True, "P2-05 prerequisite must be frozen")
+    _require(prerequisite.get("freeze_commit_sha") == P2_05_FREEZE_COMMIT, "P2-05 Freeze commit drift")
+    _require(
+        prerequisite.get("accepted_candidate_commit_sha") == P2_05_CANDIDATE_COMMIT,
+        "P2-05 candidate drift",
+    )
+    _require(
+        prerequisite.get("freeze_record_path") == P2_05_FREEZE_PATH.relative_to(ROOT).as_posix(),
+        "P2-05 Freeze path drift",
+    )
+    _require(prerequisite.get("freeze_record_checksum") == P2_05_FREEZE_CHECKSUM, "P2-05 checksum drift")
+
+    _require(record.get("recorded_on") == "2026-11-01", "Freeze record date drift")
+    _require(record.get("frozen") is True, "P2-06 must be frozen")
+    _require(record.get("price_fx_manual_valuation_complete") is True, "valuation evidence completion missing")
+    _require(record.get("valuation_status_complete") is True, "valuation status completion missing")
+    for deferred in (
+        "nav_complete",
+        "realized_pnl_complete",
+        "unrealized_pnl_complete",
+        "performance_complete",
+        "production_readiness_claimed",
+    ):
+        _require(record.get(deferred) is False, f"Freeze cannot claim {deferred}")
+    for forbidden in (
+        "public_internet_deployment",
+        "multi_user",
+        "exchange_credentials",
+        "wallet_private_keys_or_signing",
+        "fund_transfer",
+        "live_order_capability",
+        "autonomous_ai_execution",
+        "ml_training_or_inference",
+        "financial_advice",
+        "tax_advice",
+        "direct_trd_bot_database_access",
+    ):
+        _require(record.get(forbidden) is False, f"Freeze enables forbidden capability: {forbidden}")
+    _require(record.get("next_allowed_stage") == "NEX-P2-07", "Freeze next stage drift")
+
+
+def validate_freeze_workflow() -> None:
+    workflow = (ROOT / ".github/workflows/valuation-evidence.yml").read_text(encoding="utf-8")
+    for marker in (
+        "Verify frozen P2-05 prerequisite",
+        "Verify P2-06 valuation contract",
+        "python3 -m unittest discover -s tests -v",
+        "uv run ruff format --check",
+        "uv run ruff check",
+        "uv run mypy",
+        'uv run pytest -m "not integration" -q',
+        "uv run alembic upgrade head",
+        "uv run pytest apps/server/tests/test_postgresql_integration.py -m integration -q",
+        "uv run alembic downgrade base",
+        "uv run alembic check",
+    ):
+        _require(marker in workflow, f"P2-06 workflow evidence missing: {marker}")
+
+
 def main() -> int:
     validate_frozen_p2_05()
     contract = load_contract()
+    freeze_record = load_freeze_record()
     validate_contract(contract)
     validate_runtime_markers()
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P2-06 contract checksum drift")
+    validate_freeze_record(freeze_record, contract)
+    validate_freeze_workflow()
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P2_05_PREREQUISITE=PASS")
     print("NEX_P2_06_VALUATION_EVIDENCE=PASS")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print("NEX_P2_06_FREEZE=PASS")
     return 0
 
 

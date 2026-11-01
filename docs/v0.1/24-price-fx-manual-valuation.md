@@ -1,12 +1,18 @@
 # NEX-P2-06 — Price, FX and Manual Valuation
 
-Status: candidate
+Status: frozen
 
 Decision date: 2026-11-01
 
 Prerequisite: frozen `NEX-P2-05` at `bddee3b638e67d25aaeaa1b754352b78579e5d2a`
 
-Next allowed stage: `NEX-P2-06-FREEZE`
+Accepted candidate: `f88bf5f7f24ae807bb8d6820ea5e99e872af5224`
+
+Candidate tree: `6b4a506451741f95a414f4cb3198c5d41e947863`
+
+Verified GitHub Actions: 21 successful workflow runs and 69 successful checks
+
+Next allowed stage: `NEX-P2-07`
 
 ## Purpose
 
@@ -89,5 +95,8 @@ uv run alembic upgrade head
 uv run alembic check
 ```
 
-After all checks are green on one candidate SHA, a separate P2-06 Freeze commit
-may bind the evidence and open only `NEX-P2-07`.
+The P2-06 Freeze record binds the complete three-commit candidate lineage, the
+accepted SHA and tree, the contract checksum, all 21 successful GitHub Actions
+runs and 69 successful checks, and the frozen P2-05 prerequisite. Only
+`NEX-P2-07` is now open; NAV, P&L and performance remain unimplemented until
+that separate stage.

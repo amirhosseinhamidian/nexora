@@ -946,7 +946,12 @@ def test_valuation_evidence_is_idempotent_owner_scoped_and_append_only(engine: E
     owner_id = uuid4()
     connection = engine.connect()
     outer = connection.begin()
-    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
     registry = PortfolioRegistryRepository(factory)
     valuation = ValuationEvidenceRepository(factory)
     try:

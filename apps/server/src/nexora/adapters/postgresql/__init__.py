@@ -71,6 +71,7 @@ from nexora.adapters.postgresql.models import (
 )
 from nexora.adapters.postgresql.paper_shadow_projection import PaperShadowProjectionRepository
 from nexora.adapters.postgresql.performance import PortfolioPerformanceRepository
+from nexora.adapters.postgresql.portfolio_export import PostgreSQLPortfolioExportSource
 from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
 from nexora.adapters.postgresql.transaction_journal import TransactionJournalRepository
 from nexora.adapters.postgresql.valuation import ValuationEvidenceRepository
@@ -123,6 +124,7 @@ __all__ = [
     "PortfolioRecord",
     "PortfolioRegistryRepository",
     "PostgreSQLIdentityRepository",
+    "PostgreSQLPortfolioExportSource",
     "PriceObservationRecord",
     "ProjectionCheckpoint",
     "ReconciliationCaseRecord",

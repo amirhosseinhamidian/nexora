@@ -29,6 +29,7 @@ from nexora.adapters.postgresql import (
     PortfolioPerformanceRepository,
     PortfolioRecord,
     PortfolioRegistryRepository,
+    PostgreSQLPortfolioExportSource,
     ProjectionCheckpoint,
     TransactionJournalRepository,
     TransactionLegRecord,
@@ -42,6 +43,7 @@ from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHol
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.paper_shadow_projection import canonical_json_sha256
 from nexora.performance import AnalyticsState, PerformancePointState
+from nexora.portfolio_export import PortfolioExportProfile
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
     CorrectionKind,
@@ -75,6 +77,72 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert timezone == "UTC"
     assert search_path == "public"
     assert revision == "20261101_0010"
+
+
+def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    registry = PortfolioRegistryRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="export-usd",
+            symbol="USD",
+            name="Export US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="export-core",
+            name="Export Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="export-broker",
+            name="Export Broker",
+            kind=AccountKind.BROKERAGE_MANUAL,
+            institution_name="Private Broker",
+            external_reference="sensitive-account-reference",
+        )
+        source = PostgreSQLPortfolioExportSource(factory)
+        captured_at = datetime(2026, 11, 2, 12, tzinfo=UTC)
+
+        complete = source.snapshot(
+            owner_id=owner_id,
+            profile=PortfolioExportProfile.PRIVATE_COMPLETE,
+            captured_at=captured_at,
+        )
+        ai_safe = source.snapshot(
+            owner_id=owner_id,
+            profile=PortfolioExportProfile.AI_SAFE,
+            captured_at=captured_at,
+        )
+
+        assert complete.datasets["accounts"][0]["external_reference"] == "sensitive-account-reference"
+        assert "external_reference" not in ai_safe.datasets["accounts"][0]
+        assert "owner_id" not in complete.datasets["portfolios"][0]
+        assert ai_safe.datasets["portfolio_analytics"][0]["nav"] == "0"
+        assert len(ai_safe.datasets["performance_series"][0]["points"]) == 31  # type: ignore[arg-type]
+        assert ai_safe.uncertainty["paper_shadow_complete"] is False
+        assert "accounts.external_reference" in ai_safe.excluded_fields
+    finally:
+        outer.rollback()
+        connection.close()
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:

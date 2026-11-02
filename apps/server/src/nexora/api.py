@@ -24,6 +24,7 @@ from nexora.adapters.postgresql import (
     HoldingsProjectionRepository,
     HoldingsProjectionView,
     ImportReconciliationRepository,
+    PaperShadowProjectionRepository,
     PortfolioPerformanceRepository,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
@@ -33,6 +34,8 @@ from nexora.adapters.postgresql import (
 )
 from nexora.adapters.trd_bot import TrdBotIntegrationMode
 from nexora.artifact_storage import (
+    ArtifactCapacityExceeded,
+    ArtifactConflict,
     ArtifactIntegrityError,
     ArtifactKey,
     ArtifactNamespace,
@@ -125,6 +128,17 @@ from nexora.portfolio_contracts import (
     LifecycleRequest,
     PortfolioListResponse,
     PortfolioResponse,
+)
+from nexora.portfolio_export import (
+    PortfolioExportCapacityExceeded,
+    PortfolioExportService,
+    PortfolioExportValidationError,
+)
+from nexora.portfolio_export_contracts import (
+    CreatePortfolioExportRequest,
+    CreatePortfolioExportResponse,
+    PaperShadowProjectionResponse,
+    PortfolioExportManifestResponse,
 )
 from nexora.portfolio_registry import RegistryConflict, RegistryNotFound
 from nexora.runtime_contracts import (
@@ -759,6 +773,51 @@ def create_app(
             message="portfolio analytics request violates a bounded calculation policy",
         )
 
+    @application.exception_handler(PortfolioExportValidationError)
+    async def portfolio_export_validation(request: Request, _: PortfolioExportValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="PORTFOLIO_EXPORT_VALIDATION_FAILED",
+            message="portfolio export request or snapshot is invalid",
+        )
+
+    @application.exception_handler(PortfolioExportCapacityExceeded)
+    async def portfolio_export_capacity(request: Request, _: PortfolioExportCapacityExceeded) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=413,
+            code="PORTFOLIO_EXPORT_CAPACITY_EXCEEDED",
+            message="a complete export exceeds the synchronous export budget",
+        )
+
+    @application.exception_handler(ArtifactConflict)
+    async def artifact_conflict(request: Request, _: ArtifactConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="ARTIFACT_STATE_CONFLICT",
+            message="artifact identity conflicts with existing immutable content",
+        )
+
+    @application.exception_handler(ArtifactCapacityExceeded)
+    async def artifact_capacity(request: Request, _: ArtifactCapacityExceeded) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=503,
+            code="ARTIFACT_STORAGE_CAPACITY_EXCEEDED",
+            message="artifact storage capacity is unavailable",
+        )
+
+    @application.exception_handler(ArtifactStorageError)
+    async def artifact_storage(request: Request, _: ArtifactStorageError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=503,
+            code="ARTIFACT_STORAGE_UNAVAILABLE",
+            message="artifact storage is unavailable",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -940,6 +999,18 @@ def create_app(
         if repository is None:
             raise CeremonyUnavailable("portfolio analytics runtime is not configured")
         return repository
+
+    def paper_shadow_projection() -> PaperShadowProjectionRepository:
+        repository = resolved_container.paper_shadow_projection_repository
+        if repository is None:
+            raise CeremonyUnavailable("Paper/Shadow projection runtime is not configured")
+        return repository
+
+    def portfolio_exports() -> PortfolioExportService:
+        service = resolved_container.portfolio_export_service
+        if service is None:
+            raise CeremonyUnavailable("portfolio export runtime is not configured")
+        return service
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1857,6 +1928,45 @@ def create_app(
             cost_basis_method=cost_basis_method,
         )
         return _performance_response(series)
+
+    @application.get(
+        "/v1/trd-bot/paper-shadow-projection",
+        response_model=PaperShadowProjectionResponse,
+        operation_id="getPaperShadowProjection",
+    )
+    def get_paper_shadow_projection(request: Request) -> PaperShadowProjectionResponse:
+        _, session = require_session(request)
+        projection = paper_shadow_projection().rebuild(owner_id=session.owner_id)
+        return PaperShadowProjectionResponse.model_validate(projection.model_dump(mode="json"))
+
+    @application.post(
+        "/v1/portfolio-exports",
+        response_model=CreatePortfolioExportResponse,
+        operation_id="createPortfolioExport",
+        status_code=201,
+    )
+    def create_portfolio_export(
+        payload: CreatePortfolioExportRequest,
+        request: Request,
+    ) -> CreatePortfolioExportResponse:
+        _, session = require_session(request)
+        published = portfolio_exports().create(
+            owner_id=session.owner_id,
+            profile=payload.profile,
+            formats=payload.formats,
+            pinned=payload.pinned,
+        )
+        retention_class: Literal["pinned_export", "unpinned_export"] = (
+            "pinned_export" if published.artifact.retention_class.value == "pinned_export" else "unpinned_export"
+        )
+        return CreatePortfolioExportResponse(
+            manifest=PortfolioExportManifestResponse.model_validate(published.manifest),
+            artifact_version=published.artifact.key.version,
+            artifact_sha256=published.artifact.sha256,
+            artifact_size_bytes=published.artifact.size_bytes,
+            retention_class=retention_class,
+            download_path=published.download_path,
+        )
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

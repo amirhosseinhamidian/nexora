@@ -32,3 +32,11 @@ snapshotهای projection تعداد evidence پذیرفته و قرنطینه�
 P2-08 هیچ endpoint عمومی، export، transaction، valuation، NAV یا P&L جدیدی ایجاد نمی‌کند. API و export به P2-09 تعلق دارند. دسترسی مستقیم به دیتابیس TRD Bot، credential صرافی، کلید یا signing کیف پول، انتقال وجه، سفارش زنده، SaaS/multi-user، اجرای خودکار AI، ML و توصیهٔ مالی یا مالیاتی همچنان ممنوع‌اند.
 
 ورود به `NEX-P2-09` فقط بعد از Freeze مستقل P2-08 مجاز است.
+
+## Freeze مرحلهٔ P2-08
+
+پیاده‌سازی پذیرفته‌شده با commit `d53f0e90acaac2de3157e9c535f99070bfb73a9d` و tree `b33a761c2d03e38b425d0a8a9614c42ccb388dc7` فریز شده است. شواهد اجرای همان commit شامل ۲۳ workflow موفق و ۷۵ job موفق است و در `artifacts/p2-08/trd-bot-paper-shadow-projection-freeze.json` نگهداری می‌شود.
+
+قرارداد `contracts/nexora-v0.1-trd-bot-paper-shadow-projection.json` با checksum برابر `c67975344a7741f57d7f6dce494a1f9b8c8f0312a4b14028c8b5621f3c2f8277` قفل شده و Freeze مرحلهٔ P2-07 با commit `c2bda7c3e1ec8407ad3ed50698e87d2c3c5c8ec8` پیش‌نیاز معتبر آن باقی می‌ماند.
+
+این Freeze فقط projection قطعی Paper/Shadow، lineage شواهد immutable، تشخیص gap/conflict و قرنطینهٔ schema ناشناخته را تأیید می‌کند. API عمومی، export، smoke خارجی provider و production readiness همچنان خارج از این مرحله‌اند و journal، NAV یا P&L تغییری نکرده‌اند. تنها مرحلهٔ مجاز بعدی `NEX-P2-09` است.

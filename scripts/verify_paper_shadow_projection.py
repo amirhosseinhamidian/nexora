@@ -9,12 +9,22 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-trd-bot-paper-shadow-projection.json"
+FREEZE_PATH = ROOT / "artifacts/p2-08/trd-bot-paper-shadow-projection-freeze.json"
 P2_07_VERIFIER_PATH = ROOT / "scripts/verify_nav_pnl_performance.py"
 P2_07_FREEZE_PATH = ROOT / "artifacts/p2-07/nav-pnl-performance-freeze.json"
 P2_07_FREEZE_COMMIT = "c2bda7c3e1ec8407ad3ed50698e87d2c3c5c8ec8"
 P2_07_CANDIDATE_COMMIT = "fbdc2999af83352af6379f05438feba4a1723ec5"
 P2_07_FREEZE_CHECKSUM = "1b87efa133beec050bec2ffd0e145cb302863f43448396da205c66bc3486fa67"
 CONTRACT_CHECKSUM = "c67975344a7741f57d7f6dce494a1f9b8c8f0312a4b14028c8b5621f3c2f8277"
+CANDIDATE_SHA = "d53f0e90acaac2de3157e9c535f99070bfb73a9d"
+CANDIDATE_TREE_SHA = "b33a761c2d03e38b425d0a8a9614c42ccb388dc7"
+CANDIDATE_MESSAGE = "feat(nexora): add TRD Bot Paper Shadow projection"
+CANDIDATE_PREDECESSOR = P2_07_FREEZE_COMMIT
+CANDIDATE_LINEAGE_CHECKSUM = "3c061b147f901a35b9c37d63fdd8085d556d0840f404c9e699ff20238debf7d4"
+WORKFLOW_RUNS_CHECKSUM = "fbf0d97d7c56e362348f726181ad8d4b9a319ff5fa706bae71b002b66dc29a5b"
+CHECKS_CHECKSUM = "b3f8c8e03843abd680b858131f790460c40dd6b0481104fe50899352ba7f3dc2"
+EXPECTED_WORKFLOW_RUNS = 23
+EXPECTED_CHECKS = 75
 
 EXPECTED_ENTITIES = {
     "paper_shadow_portfolio_projection",
@@ -55,6 +65,10 @@ def canonical_checksum(payload: object) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -220,6 +234,105 @@ def validate_runtime_markers() -> None:
     _require("paper_shadow_projection_repository" in composition, "projection repository is not composed")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-trd-bot-paper-shadow-projection-freeze-v1",
+        "invalid Freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P2-08", "invalid Freeze decision")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "Freeze repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_tree_sha") == CANDIDATE_TREE_SHA, "candidate tree drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate message drift")
+    _require(record.get("candidate_predecessor_sha") == CANDIDATE_PREDECESSOR, "candidate predecessor drift")
+
+    lineage = record.get("candidate_lineage")
+    _require(isinstance(lineage, list), "candidate lineage must be an array")
+    _require(len(lineage) == 1, "candidate lineage must contain the P2-08 implementation commit")
+    _require(canonical_checksum(lineage) == CANDIDATE_LINEAGE_CHECKSUM, "candidate lineage drift")
+    _require(lineage[0].get("parent_sha") == CANDIDATE_PREDECESSOR, "candidate lineage base drift")
+    _require(lineage[-1].get("sha") == CANDIDATE_SHA, "candidate lineage does not end at accepted SHA")
+
+    workflows = record.get("workflow_runs")
+    _require(isinstance(workflows, list), "workflow runs must be an array")
+    _require(len(workflows) == EXPECTED_WORKFLOW_RUNS, "workflow run inventory drift")
+    _require(canonical_checksum(workflows) == WORKFLOW_RUNS_CHECKSUM, "workflow run evidence drift")
+    run_ids = {workflow.get("run_id") for workflow in workflows}
+    _require(len(run_ids) == EXPECTED_WORKFLOW_RUNS, "workflow run IDs must be unique")
+    _require(all(workflow.get("conclusion") == "success" for workflow in workflows), "workflow did not succeed")
+
+    checks = record.get("checks")
+    _require(isinstance(checks, list), "checks must be an array")
+    _require(len(checks) == EXPECTED_CHECKS, "check inventory drift")
+    _require(canonical_checksum(checks) == CHECKS_CHECKSUM, "check evidence drift")
+    job_ids = {check.get("job_id") for check in checks}
+    _require(len(job_ids) == EXPECTED_CHECKS, "check job IDs must be unique")
+    _require(all(check.get("run_id") in run_ids for check in checks), "check references an unknown workflow")
+    _require(all(check.get("conclusion") == "success" for check in checks), "check did not succeed")
+    _require(
+        record.get("check_summary") == {"total": 75, "successful": 75, "failed": 0, "pending": 0},
+        "check summary drift",
+    )
+
+    contract_evidence = record.get("paper_shadow_projection_contract")
+    _require(isinstance(contract_evidence, dict), "projection contract evidence must be an object")
+    _require(contract_evidence.get("schema_version") == contract.get("schema_version"), "contract schema drift")
+    _require(contract_evidence.get("path") == CONTRACT_PATH.relative_to(ROOT).as_posix(), "contract path drift")
+    _require(contract_evidence.get("checksum") == canonical_checksum(contract), "contract evidence drift")
+    _require(contract_evidence.get("checksum") == CONTRACT_CHECKSUM, "contract checksum drift")
+
+    prerequisite = record.get("p2_07_prerequisite")
+    _require(isinstance(prerequisite, dict), "P2-07 prerequisite evidence must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P2-07", "P2-07 decision drift")
+    _require(prerequisite.get("frozen") is True, "P2-07 prerequisite must be frozen")
+    _require(prerequisite.get("freeze_commit_sha") == P2_07_FREEZE_COMMIT, "P2-07 Freeze commit drift")
+    _require(
+        prerequisite.get("accepted_candidate_commit_sha") == P2_07_CANDIDATE_COMMIT,
+        "P2-07 candidate drift",
+    )
+    _require(
+        prerequisite.get("freeze_record_path") == P2_07_FREEZE_PATH.relative_to(ROOT).as_posix(),
+        "P2-07 Freeze path drift",
+    )
+    _require(prerequisite.get("freeze_record_checksum") == P2_07_FREEZE_CHECKSUM, "P2-07 checksum drift")
+
+    _require(record.get("recorded_on") == "2026-11-02", "Freeze record date drift")
+    _require(record.get("frozen") is True, "P2-08 must be frozen")
+    for completed in (
+        "paper_shadow_portfolio_projection_complete",
+        "paper_shadow_position_projection_complete",
+        "deterministic_rebuild_complete",
+        "immutable_lineage_complete",
+        "gap_and_conflict_detection_complete",
+        "unknown_schema_quarantine_complete",
+    ):
+        _require(record.get(completed) is True, f"Freeze completion missing: {completed}")
+    for deferred in (
+        "public_api_complete",
+        "export_complete",
+        "external_provider_smoke_claimed",
+        "production_readiness_claimed",
+    ):
+        _require(record.get(deferred) is False, f"Freeze cannot claim {deferred}")
+    for forbidden in (
+        "public_internet_deployment",
+        "multi_user",
+        "exchange_credentials",
+        "wallet_private_keys_or_signing",
+        "fund_transfer",
+        "live_order_capability",
+        "autonomous_ai_execution",
+        "ml_training_or_inference",
+        "financial_advice",
+        "tax_advice",
+        "direct_trd_bot_database_access",
+        "journal_mutation",
+        "nav_or_pnl_mutation",
+    ):
+        _require(record.get(forbidden) is False, f"Freeze enables forbidden capability: {forbidden}")
+    _require(record.get("next_allowed_stage") == "NEX-P2-09", "Freeze next stage drift")
+
+
 def validate_workflow() -> None:
     workflow = (ROOT / ".github/workflows/paper-shadow-projection.yml").read_text(encoding="utf-8")
     for marker in (
@@ -240,14 +353,18 @@ def validate_workflow() -> None:
 def main() -> int:
     validate_frozen_p2_07()
     contract = load_contract()
+    freeze_record = load_freeze_record()
     validate_contract(contract)
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P2-08 contract checksum drift")
     validate_runtime_markers()
+    validate_freeze_record(freeze_record, contract)
     validate_workflow()
     print("NEX_P2_07_PREREQUISITE=PASS")
     print("NEX_P2_08_PAPER_SHADOW_PROJECTION=PASS")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print(f"p2_07_freeze_checksum={P2_07_FREEZE_CHECKSUM}")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print("NEX_P2_08_FREEZE=PASS")
     return 0
 
 

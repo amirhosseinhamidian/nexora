@@ -69,6 +69,7 @@ from nexora.adapters.postgresql.models import (
     WebAuthnChallenge,
     WebAuthnCredential,
 )
+from nexora.adapters.postgresql.performance import PortfolioPerformanceRepository
 from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
 from nexora.adapters.postgresql.transaction_journal import TransactionJournalRepository
 from nexora.adapters.postgresql.valuation import ValuationEvidenceRepository
@@ -116,6 +117,7 @@ __all__ = [
     "OutboxEvent",
     "OutboxMessage",
     "OwnerProfile",
+    "PortfolioPerformanceRepository",
     "PortfolioRecord",
     "PortfolioRegistryRepository",
     "PostgreSQLIdentityRepository",

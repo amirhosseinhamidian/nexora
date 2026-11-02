@@ -25,6 +25,7 @@ from nexora.adapters.postgresql import (
     LeaseLost,
     OutboxEvent,
     OutboxMessage,
+    PortfolioPerformanceRepository,
     PortfolioRecord,
     PortfolioRegistryRepository,
     ProjectionCheckpoint,
@@ -38,6 +39,7 @@ from nexora.adapters.postgresql import (
 )
 from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
+from nexora.performance import AnalyticsState, PerformancePointState
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
     CorrectionKind,
@@ -581,6 +583,157 @@ def test_transaction_journal_is_balanced_idempotent_correctable_and_database_imm
             )
         savepoint.rollback()
         assert len(journal.list_transactions(owner_id=owner_id, portfolio_id=portfolio.portfolio_id)) == 2
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_nav_pnl_and_bounded_performance_use_historical_journal_and_explicit_fx(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    valuation = ValuationEvidenceRepository(factory)
+    analytics = PortfolioPerformanceRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-usd",
+            symbol="USD",
+            name="Analytics US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        eur = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-eur",
+            symbol="EUR",
+            name="Analytics Euro",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-btc",
+            symbol="BTC",
+            name="Analytics Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="analytics-core",
+            name="Analytics Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="analytics-account",
+            name="Analytics Account",
+            kind=AccountKind.EXCHANGE,
+        )
+        start = datetime(2026, 11, 1, 8, tzinfo=UTC)
+
+        def post(sequence: int, kind: TransactionKind, legs: list[TransactionLegInput]) -> None:
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=kind,
+                idempotency_key=f"analytics-entry-{sequence:04d}",
+                occurred_at=start + timedelta(hours=sequence),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference=f"analytics-reference-{sequence}",
+                source_payload_sha256=hashlib.sha256(f"analytics-{sequence}".encode()).hexdigest(),
+                legs=legs,
+            )
+
+        post(
+            0,
+            TransactionKind.OPENING_BALANCE,
+            [
+                TransactionLegInput(usd.asset_id, Decimal("1000"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-1000"), external_counterparty="Opening equity"),
+            ],
+        )
+        post(
+            1,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("10"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-100"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-10"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("100"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            2,
+            TransactionKind.SELL,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("-2"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("40"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("2"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("-40"), external_counterparty="Market"),
+            ],
+        )
+        observed = start + timedelta(hours=2, minutes=30)
+        valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=eur.asset_id,
+            price="20",
+            observed_at=observed,
+            valid_until=observed + timedelta(hours=2),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="analytics-btc-eur",
+            source_payload_sha256="a" * 64,
+            idempotency_key="analytics-price-0001",
+        )
+        valuation.create_fx_rate_observation(
+            owner_id=owner_id,
+            base_asset_id=eur.asset_id,
+            quote_asset_id=usd.asset_id,
+            rate="1.1",
+            observed_at=observed,
+            valid_until=observed + timedelta(hours=2),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="analytics-eur-usd",
+            source_payload_sha256="b" * 64,
+            idempotency_key="analytics-fx-0001",
+        )
+        end = start + timedelta(hours=3)
+        snapshot = analytics.snapshot(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            as_of=end,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        btc_position = next(item for item in snapshot.positions if item.asset_id == btc.asset_id)
+        assert snapshot.state is AnalyticsState.COMPLETE
+        assert snapshot.nav == Decimal("1116.0")
+        assert snapshot.realized_pnl == Decimal("20")
+        assert snapshot.unrealized_pnl == Decimal("96.0")
+        assert btc_position.valuation.unit_value == Decimal("22.0")
+        assert len(btc_position.valuation.evidence_ids) == 2
+
+        series = analytics.performance_series(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            start_at=start,
+            end_at=end,
+            point_count=2,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        assert series.points[-1].state is PerformancePointState.AVAILABLE
+        assert series.points[-1].external_flow == 0
+        assert series.points[-1].period_return == Decimal("0.116")
     finally:
         outer.rollback()
         connection.close()

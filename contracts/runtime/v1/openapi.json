@@ -166,6 +166,15 @@
         "title": "ActionResponse",
         "type": "object"
       },
+      "AnalyticsState": {
+        "enum": [
+          "complete",
+          "stale",
+          "missing"
+        ],
+        "title": "AnalyticsState",
+        "type": "string"
+      },
       "AssetClass": {
         "enum": [
           "crypto",
@@ -1882,6 +1891,269 @@
         "title": "ManualValuationResponse",
         "type": "object"
       },
+      "PerformancePointResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "cumulative_return": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cumulative Return"
+          },
+          "external_flow": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Flow"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "period_return": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Return"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "schema_version": {
+            "const": "nexora-performance-point-v1",
+            "default": "nexora-performance-point-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PerformancePointState"
+          }
+        },
+        "required": [
+          "as_of",
+          "nav",
+          "external_flow",
+          "period_return",
+          "cumulative_return",
+          "state",
+          "reason_code"
+        ],
+        "title": "PerformancePointResponse",
+        "type": "object"
+      },
+      "PerformancePointState": {
+        "enum": [
+          "available",
+          "stale",
+          "unavailable"
+        ],
+        "title": "PerformancePointState",
+        "type": "string"
+      },
+      "PerformanceSeriesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "base_asset_id": {
+            "format": "uuid",
+            "title": "Base Asset Id",
+            "type": "string"
+          },
+          "cost_basis_method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PerformancePointResponse"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-performance-series-v1",
+            "default": "nexora-performance-series-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "portfolio_id",
+          "base_asset_id",
+          "cost_basis_method",
+          "policy_version",
+          "start_at",
+          "end_at",
+          "points"
+        ],
+        "title": "PerformanceSeriesResponse",
+        "type": "object"
+      },
+      "PortfolioAnalyticsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "base_asset_id": {
+            "format": "uuid",
+            "title": "Base Asset Id",
+            "type": "string"
+          },
+          "cost_basis_method": {
+            "$ref": "#/components/schemas/CostBasisMethod"
+          },
+          "journal_sha256": {
+            "title": "Journal Sha256",
+            "type": "string"
+          },
+          "journal_transaction_count": {
+            "title": "Journal Transaction Count",
+            "type": "integer"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "format": "uuid",
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/PositionValuationResponse"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "priced_value": {
+            "title": "Priced Value",
+            "type": "string"
+          },
+          "realized_events": {
+            "items": {
+              "$ref": "#/components/schemas/RealizedPnlEventResponse"
+            },
+            "title": "Realized Events",
+            "type": "array"
+          },
+          "realized_pnl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Pnl"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-analytics-v1",
+            "default": "nexora-portfolio-analytics-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AnalyticsState"
+          },
+          "unrealized_pnl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealized Pnl"
+          }
+        },
+        "required": [
+          "portfolio_id",
+          "base_asset_id",
+          "as_of",
+          "cost_basis_method",
+          "policy_version",
+          "journal_sha256",
+          "journal_transaction_count",
+          "state",
+          "nav",
+          "priced_value",
+          "realized_pnl",
+          "unrealized_pnl",
+          "positions",
+          "realized_events"
+        ],
+        "title": "PortfolioAnalyticsResponse",
+        "type": "object"
+      },
       "PortfolioKind": {
         "enum": [
           "personal",
@@ -2028,6 +2300,166 @@
           "items"
         ],
         "title": "PortfolioValuationStatusResponse",
+        "type": "object"
+      },
+      "PositionValuationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "format": "uuid",
+            "title": "Account Id",
+            "type": "string"
+          },
+          "asset_id": {
+            "format": "uuid",
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "basis_status": {
+            "$ref": "#/components/schemas/BasisStatus"
+          },
+          "cost_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis"
+          },
+          "cost_basis_asset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis Asset Id"
+          },
+          "cost_basis_in_base": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis In Base"
+          },
+          "evidence_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence At"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "evidence_kind": {
+            "$ref": "#/components/schemas/ValuationEvidenceKind"
+          },
+          "market_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Value"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-position-valuation-v1",
+            "default": "nexora-position-valuation-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source References",
+            "type": "array"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ValuationEvidenceState"
+          },
+          "unit_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Value"
+          },
+          "unrealized_pnl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealized Pnl"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          }
+        },
+        "required": [
+          "account_id",
+          "asset_id",
+          "quantity",
+          "state",
+          "evidence_kind",
+          "unit_value",
+          "evidence_ids",
+          "evidence_at",
+          "valid_until",
+          "source_references",
+          "market_value",
+          "basis_status",
+          "cost_basis_asset_id",
+          "cost_basis",
+          "cost_basis_in_base",
+          "unrealized_pnl"
+        ],
+        "title": "PositionValuationResponse",
         "type": "object"
       },
       "PriceObservationListResponse": {
@@ -2190,6 +2622,85 @@
           "rebuilt_at"
         ],
         "title": "ProjectionCheckpointResponse",
+        "type": "object"
+      },
+      "RealizedPnlEventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cost_basis_in_base": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Basis In Base"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "proceeds_in_base": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proceeds In Base"
+          },
+          "realized_pnl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Pnl"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "schema_version": {
+            "const": "nexora-realized-pnl-event-v1",
+            "default": "nexora-realized-pnl-event-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AnalyticsState"
+          },
+          "transaction_id": {
+            "format": "uuid",
+            "title": "Transaction Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "occurred_at",
+          "proceeds_in_base",
+          "cost_basis_in_base",
+          "realized_pnl",
+          "state",
+          "reason_code"
+        ],
+        "title": "RealizedPnlEventResponse",
         "type": "object"
       },
       "RebuildHoldingsRequest": {
@@ -7330,6 +7841,165 @@
         "summary": "Get Portfolio"
       }
     },
+    "/v1/portfolios/{portfolio_id}/analytics": {
+      "get": {
+        "operationId": "getPortfolioAnalytics",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "As Of",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_basis_method",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CostBasisMethod",
+              "default": "fifo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioAnalyticsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Portfolio Analytics"
+      }
+    },
     "/v1/portfolios/{portfolio_id}/archive": {
       "post": {
         "operationId": "archivePortfolio",
@@ -7926,6 +8596,187 @@
           }
         },
         "summary": "List Portfolio Lots"
+      }
+    },
+    "/v1/portfolios/{portfolio_id}/performance": {
+      "get": {
+        "operationId": "getPortfolioPerformance",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "portfolio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Portfolio Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start_at",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Start At",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_at",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "End At",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "point_count",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "maximum": 32,
+              "minimum": 2,
+              "title": "Point Count",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cost_basis_method",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CostBasisMethod",
+              "default": "fifo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerformanceSeriesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Portfolio Performance"
       }
     },
     "/v1/portfolios/{portfolio_id}/valuation-status": {

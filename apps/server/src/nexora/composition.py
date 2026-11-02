@@ -12,6 +12,7 @@ from nexora.adapters.postgresql import (
     DurableWorkRepository,
     HoldingsProjectionRepository,
     ImportReconciliationRepository,
+    PortfolioPerformanceRepository,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
     TransactionJournalRepository,
@@ -82,6 +83,7 @@ class ApplicationContainer:
     import_reconciliation_repository: ImportReconciliationRepository | None = None
     holdings_projection_repository: HoldingsProjectionRepository | None = None
     valuation_evidence_repository: ValuationEvidenceRepository | None = None
+    portfolio_performance_repository: PortfolioPerformanceRepository | None = None
     security: SecuritySettings | None = None
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
@@ -167,6 +169,7 @@ def compose_private_application(
         import_reconciliation_repository=ImportReconciliationRepository(session_factory),
         holdings_projection_repository=HoldingsProjectionRepository(session_factory),
         valuation_evidence_repository=ValuationEvidenceRepository(session_factory),
+        portfolio_performance_repository=PortfolioPerformanceRepository(session_factory),
         security=security,
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),

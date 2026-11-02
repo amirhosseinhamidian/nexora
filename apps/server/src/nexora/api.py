@@ -12,7 +12,7 @@ from urllib.parse import quote
 from uuid import UUID, uuid4
 
 import uvicorn
-from fastapi import FastAPI, Header, Request, Response
+from fastapi import FastAPI, Header, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -24,6 +24,7 @@ from nexora.adapters.postgresql import (
     HoldingsProjectionRepository,
     HoldingsProjectionView,
     ImportReconciliationRepository,
+    PortfolioPerformanceRepository,
     PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
     TransactionJournalRepository,
@@ -98,6 +99,19 @@ from nexora.observability import (
     load_observability_settings,
 )
 from nexora.overload import InteractiveRequestGate
+from nexora.performance import (
+    AnalyticsNotFound,
+    AnalyticsValidationError,
+    PerformanceSeries,
+    PortfolioAnalyticsSnapshot,
+)
+from nexora.performance_contracts import (
+    PerformancePointResponse,
+    PerformanceSeriesResponse,
+    PortfolioAnalyticsResponse,
+    PositionValuationResponse,
+    RealizedPnlEventResponse,
+)
 from nexora.portfolio_contracts import (
     AccountListResponse,
     AccountResponse,
@@ -299,6 +313,79 @@ def _holdings_response(view: HoldingsProjectionView) -> HoldingsProjectionRespon
         holdings=holdings,
         lots=lots,
         consumptions=consumptions,
+    )
+
+
+def _analytics_response(snapshot: PortfolioAnalyticsSnapshot) -> PortfolioAnalyticsResponse:
+    return PortfolioAnalyticsResponse(
+        portfolio_id=snapshot.portfolio_id,
+        base_asset_id=snapshot.base_asset_id,
+        as_of=snapshot.as_of,
+        cost_basis_method=snapshot.cost_basis_method,
+        policy_version=snapshot.policy_version,
+        journal_sha256=snapshot.journal_sha256,
+        journal_transaction_count=snapshot.journal_transaction_count,
+        state=snapshot.state,
+        nav=_optional_quantity(snapshot.nav),
+        priced_value=canonical_quantity(snapshot.priced_value),
+        realized_pnl=_optional_quantity(snapshot.realized_pnl),
+        unrealized_pnl=_optional_quantity(snapshot.unrealized_pnl),
+        positions=[
+            PositionValuationResponse(
+                account_id=item.account_id,
+                asset_id=item.asset_id,
+                quantity=canonical_quantity(item.quantity),
+                state=item.valuation.state,
+                evidence_kind=item.valuation.evidence_kind,
+                unit_value=_optional_quantity(item.valuation.unit_value),
+                evidence_ids=list(item.valuation.evidence_ids),
+                evidence_at=item.valuation.evidence_at,
+                valid_until=item.valuation.valid_until,
+                source_references=list(item.valuation.source_references),
+                market_value=_optional_quantity(item.market_value),
+                basis_status=item.basis_status,
+                cost_basis_asset_id=item.cost_basis_asset_id,
+                cost_basis=_optional_quantity(item.cost_basis),
+                cost_basis_in_base=_optional_quantity(item.cost_basis_in_base),
+                unrealized_pnl=_optional_quantity(item.unrealized_pnl),
+            )
+            for item in snapshot.positions
+        ],
+        realized_events=[
+            RealizedPnlEventResponse(
+                transaction_id=item.transaction_id,
+                occurred_at=item.occurred_at,
+                proceeds_in_base=_optional_quantity(item.proceeds_in_base),
+                cost_basis_in_base=_optional_quantity(item.cost_basis_in_base),
+                realized_pnl=_optional_quantity(item.realized_pnl),
+                state=item.state,
+                reason_code=item.reason_code,
+            )
+            for item in snapshot.realized_events
+        ],
+    )
+
+
+def _performance_response(series: PerformanceSeries) -> PerformanceSeriesResponse:
+    return PerformanceSeriesResponse(
+        portfolio_id=series.portfolio_id,
+        base_asset_id=series.base_asset_id,
+        cost_basis_method=series.cost_basis_method,
+        policy_version=series.policy_version,
+        start_at=series.start_at,
+        end_at=series.end_at,
+        points=[
+            PerformancePointResponse(
+                as_of=item.as_of,
+                nav=_optional_quantity(item.nav),
+                external_flow=_optional_quantity(item.external_flow),
+                period_return=_optional_quantity(item.period_return),
+                cumulative_return=_optional_quantity(item.cumulative_return),
+                state=item.state,
+                reason_code=item.reason_code,
+            )
+            for item in series.points
+        ],
     )
 
 
@@ -654,6 +741,24 @@ def create_app(
             message="valuation evidence validation failed",
         )
 
+    @application.exception_handler(AnalyticsNotFound)
+    async def analytics_not_found(request: Request, _: AnalyticsNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="PORTFOLIO_ANALYTICS_NOT_FOUND",
+            message="portfolio analytics resource is unavailable",
+        )
+
+    @application.exception_handler(AnalyticsValidationError)
+    async def analytics_validation(request: Request, _: AnalyticsValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="PORTFOLIO_ANALYTICS_VALIDATION_FAILED",
+            message="portfolio analytics request violates a bounded calculation policy",
+        )
+
     @application.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
         return _error_response(
@@ -828,6 +933,12 @@ def create_app(
         repository = resolved_container.valuation_evidence_repository
         if repository is None:
             raise CeremonyUnavailable("valuation evidence runtime is not configured")
+        return repository
+
+    def portfolio_performance() -> PortfolioPerformanceRepository:
+        repository = resolved_container.portfolio_performance_repository
+        if repository is None:
+            raise CeremonyUnavailable("portfolio analytics runtime is not configured")
         return repository
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
@@ -1702,6 +1813,50 @@ def create_app(
                 for item in statuses
             ],
         )
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}/analytics",
+        response_model=PortfolioAnalyticsResponse,
+        operation_id="getPortfolioAnalytics",
+    )
+    def get_portfolio_analytics(
+        portfolio_id: UUID,
+        request: Request,
+        as_of: datetime,
+        cost_basis_method: CostBasisMethod = CostBasisMethod.FIFO,
+    ) -> PortfolioAnalyticsResponse:
+        _, session = require_session(request)
+        snapshot = portfolio_performance().snapshot(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            as_of=aware_utc(as_of),
+            cost_basis_method=cost_basis_method,
+        )
+        return _analytics_response(snapshot)
+
+    @application.get(
+        "/v1/portfolios/{portfolio_id}/performance",
+        response_model=PerformanceSeriesResponse,
+        operation_id="getPortfolioPerformance",
+    )
+    def get_portfolio_performance(
+        portfolio_id: UUID,
+        request: Request,
+        start_at: datetime,
+        end_at: datetime,
+        point_count: int = Query(default=2, ge=2, le=32),
+        cost_basis_method: CostBasisMethod = CostBasisMethod.FIFO,
+    ) -> PerformanceSeriesResponse:
+        _, session = require_session(request)
+        series = portfolio_performance().performance_series(
+            owner_id=session.owner_id,
+            portfolio_id=portfolio_id,
+            start_at=aware_utc(start_at),
+            end_at=aware_utc(end_at),
+            point_count=point_count,
+            cost_basis_method=cost_basis_method,
+        )
+        return _performance_response(series)
 
     @application.get(
         "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",

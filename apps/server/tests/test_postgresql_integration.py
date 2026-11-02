@@ -25,6 +25,7 @@ from nexora.adapters.postgresql import (
     LeaseLost,
     OutboxEvent,
     OutboxMessage,
+    PaperShadowProjectionRepository,
     PortfolioPerformanceRepository,
     PortfolioRecord,
     PortfolioRegistryRepository,
@@ -39,6 +40,7 @@ from nexora.adapters.postgresql import (
 )
 from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
+from nexora.paper_shadow_projection import canonical_json_sha256
 from nexora.performance import AnalyticsState, PerformancePointState
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
@@ -113,6 +115,111 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
+
+
+def test_paper_shadow_projection_rebuilds_from_owner_scoped_immutable_evidence(engine: Engine) -> None:
+    owner_id = uuid4()
+    other_owner_id = uuid4()
+    observed_at = datetime(2026, 11, 2, 9, tzinfo=UTC)
+    portfolio = {
+        "schema_version": "trd-paper-shadow-portfolio-v1",
+        "paper_shadow_portfolio_id": "postgres-portfolio-1",
+        "mode": "paper",
+        "name": "PostgreSQL paper portfolio",
+        "base_asset_symbol": "USDT",
+        "status": "active",
+        "aggregate_version": 1,
+        "as_of": "2026-11-02T09:00:00Z",
+    }
+    position = {
+        "schema_version": "trd-paper-shadow-position-v1",
+        "paper_shadow_position_id": "postgres-position-1",
+        "paper_shadow_portfolio_id": "postgres-portfolio-1",
+        "mode": "paper",
+        "asset_symbol": "BTC",
+        "quantity": "0.50000000",
+        "average_entry_price": "61000.00",
+        "status": "open",
+        "aggregate_version": 1,
+        "as_of": "2026-11-02T09:00:00Z",
+    }
+    connection = engine.connect()
+    outer = connection.begin()
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        for entity_type, entity_id, payload in (
+            ("snapshot.paper_shadow_portfolio", "postgres-portfolio-1", portfolio),
+            ("snapshot.paper_shadow_position", "postgres-position-1", position),
+        ):
+            reference_id = uuid4()
+            checksum = canonical_json_sha256(payload)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO nexora.source_references (
+                        source_reference_id, owner_id, source_system, source_entity_type,
+                        source_entity_id, source_schema_version, source_version,
+                        source_observed_at, correlation_id, payload_sha256
+                    ) VALUES (
+                        :reference_id, :owner_id, 'trd_bot', :entity_type,
+                        :entity_id, :schema_version, :source_version,
+                        :observed_at, :correlation_id, :checksum
+                    )
+                    """
+                ),
+                {
+                    "reference_id": reference_id,
+                    "owner_id": owner_id,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "schema_version": payload["schema_version"],
+                    "source_version": f"0.3.1:{checksum[:16]}",
+                    "observed_at": observed_at,
+                    "correlation_id": uuid4(),
+                    "checksum": checksum,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO nexora.immutable_source_evidence (
+                        evidence_id, owner_id, source_reference_id, payload, payload_sha256
+                    ) VALUES (
+                        :evidence_id, :owner_id, :reference_id, CAST(:payload AS jsonb), :checksum
+                    )
+                    """
+                ),
+                {
+                    "evidence_id": uuid4(),
+                    "owner_id": owner_id,
+                    "reference_id": reference_id,
+                    "payload": json.dumps(payload),
+                    "checksum": checksum,
+                },
+            )
+        factory = sessionmaker(
+            bind=connection,
+            class_=Session,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
+        repository = PaperShadowProjectionRepository(factory)
+
+        projected = repository.rebuild(owner_id=owner_id)
+        isolated = repository.rebuild(owner_id=other_owner_id)
+
+        assert projected.complete is True
+        assert projected.portfolios[0].portfolio_id == "postgres-portfolio-1"
+        assert projected.positions[0].position_id == "postgres-position-1"
+        assert projected.positions[0].quantity == Decimal("0.50000000")
+        assert isolated.complete is False
+        assert isolated.issues[0].code == "NO_EVIDENCE"
+    finally:
+        outer.rollback()
+        connection.close()
 
 
 def test_owner_scope_source_identity_and_database_immutability(engine: Engine) -> None:

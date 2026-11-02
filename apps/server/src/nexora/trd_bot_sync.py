@@ -19,6 +19,11 @@ from nexora.adapters.postgresql import (
 )
 from nexora.adapters.trd_bot import CONTRACT_VERSION, CursorExpiredError, EventPage, ResourceType, SnapshotPage
 from nexora.adapters.trd_bot.models import CapabilitiesResponse
+from nexora.paper_shadow_projection import (
+    EVENT_PAYLOAD_SCHEMAS,
+    validate_projection_event,
+    validate_projection_snapshot,
+)
 
 EVENT_SYNC_JOB_TYPE: Final = "trd_bot.event_sync"
 SNAPSHOT_SYNC_JOB_TYPE: Final = "trd_bot.snapshot_sync"
@@ -133,6 +138,13 @@ class TrdBotSyncHandlers:
             envelope_hash = canonical_json_sha256(envelope)
             supported_schema = SUPPORTED_PAYLOAD_SCHEMAS.get(event.event_type.value)
             is_supported = supported_schema == event.payload_schema
+            reason_code = None if is_supported else "UNSUPPORTED_PAYLOAD_SCHEMA"
+            if is_supported and event.event_type in EVENT_PAYLOAD_SCHEMAS:
+                try:
+                    validate_projection_event(event)
+                except ValueError:
+                    is_supported = False
+                    reason_code = "INVALID_PROJECTION_PAYLOAD"
             receipts.append(
                 SyncReceiptWrite(
                     event_id=event.event_id,
@@ -140,7 +152,7 @@ class TrdBotSyncHandlers:
                     payload_schema=event.payload_schema,
                     provider_version=capabilities.provider_version,
                     status="applied" if is_supported else "quarantined",
-                    reason_code=None if is_supported else "UNSUPPORTED_PAYLOAD_SCHEMA",
+                    reason_code=reason_code,
                     envelope=envelope,
                     envelope_sha256=envelope_hash,
                 )
@@ -214,25 +226,63 @@ class TrdBotSyncHandlers:
         capabilities = self._client.negotiate()
         page = self._client.list_snapshots(job.resource_type, cursor=job.cursor, limit=job.page_limit)
         evidence: list[SourceEvidenceWrite] = []
+        applied = 0
+        quarantined = 0
+        projection_resource = job.resource_type in {
+            ResourceType.PAPER_SHADOW_PORTFOLIO,
+            ResourceType.PAPER_SHADOW_POSITION,
+        }
         for item in page.items:
             schema = item.get("schema_version")
-            if not isinstance(schema, str) or not schema:
-                raise ValueError("snapshot item schema_version is required")
             digest = canonical_json_sha256(item)
             entity_id = self._snapshot_entity_id(job.resource_type, item, digest)
+            if not isinstance(schema, str) or not schema:
+                if projection_resource:
+                    quarantined += 1
+                    evidence.append(
+                        self._snapshot_evidence(
+                            claim,
+                            capabilities,
+                            job.resource_type,
+                            item,
+                            digest,
+                            entity_id,
+                            schema="missing",
+                            quarantined=True,
+                        )
+                    )
+                    continue
+                raise ValueError("snapshot item schema_version is required")
+            try:
+                validate_projection_snapshot(job.resource_type, item)
+            except ValueError:
+                if projection_resource:
+                    quarantined += 1
+                    evidence.append(
+                        self._snapshot_evidence(
+                            claim,
+                            capabilities,
+                            job.resource_type,
+                            item,
+                            digest,
+                            entity_id,
+                            schema=schema,
+                            quarantined=True,
+                        )
+                    )
+                    continue
+                raise
+            applied += 1
             evidence.append(
-                SourceEvidenceWrite(
-                    source_entity_type=f"snapshot.{job.resource_type.value}",
-                    source_entity_id=entity_id,
-                    source_schema_version=schema,
-                    source_version=f"{capabilities.provider_version}:{digest[:16]}",
-                    source_observed_at=capabilities.generated_at,
-                    correlation_id=uuid5(
-                        NAMESPACE_URL,
-                        f"nexora:{claim.owner_id}:{job.resource_type.value}:{digest}",
-                    ),
-                    payload=dict(item),
-                    payload_sha256=digest,
+                self._snapshot_evidence(
+                    claim,
+                    capabilities,
+                    job.resource_type,
+                    item,
+                    digest,
+                    entity_id,
+                    schema=schema,
+                    quarantined=False,
                 )
             )
 
@@ -289,6 +339,30 @@ class TrdBotSyncHandlers:
                         payload=payload,
                     )
                 )
+        outbox = (
+            (
+                OutboxMessage(
+                    event_type="trd_bot.sync.projection_snapshot.completed.v1",
+                    aggregate_type="trd_bot_projection_snapshot",
+                    aggregate_id=job.resource_type.value,
+                    idempotency_key=_job_key(
+                        "trd-projection-snapshot-page",
+                        job.resource_type.value,
+                        job.cursor,
+                        str(job.resume_event_checkpoint_version),
+                    ),
+                    payload={
+                        "schema_version": "nexora-trd-bot-projection-snapshot-result-v1",
+                        "resource_type": job.resource_type.value,
+                        "applied": applied,
+                        "quarantined": quarantined,
+                        "has_more": page.has_more,
+                    },
+                ),
+            )
+            if projection_resource
+            else ()
+        )
         return JobCompletion(
             checkpoint=CheckpointAdvance(
                 consumer_name=SYNC_CONSUMER,
@@ -301,6 +375,7 @@ class TrdBotSyncHandlers:
             ),
             source_evidence=tuple(evidence),
             enqueue=tuple(follow_up),
+            outbox=outbox,
         )
 
     def _cursor_expired_completion(
@@ -359,3 +434,30 @@ class TrdBotSyncHandlers:
             if isinstance(value, str) and value:
                 return value[:128]
         return f"snapshot-{digest[:40]}"
+
+    @staticmethod
+    def _snapshot_evidence(
+        claim: JobClaim,
+        capabilities: CapabilitiesResponse,
+        resource_type: ResourceType,
+        item: dict[str, Any],
+        digest: str,
+        entity_id: str,
+        *,
+        schema: str,
+        quarantined: bool,
+    ) -> SourceEvidenceWrite:
+        prefix = "quarantine.snapshot" if quarantined else "snapshot"
+        return SourceEvidenceWrite(
+            source_entity_type=f"{prefix}.{resource_type.value}",
+            source_entity_id=entity_id,
+            source_schema_version=schema,
+            source_version=f"{capabilities.provider_version}:{digest[:16]}",
+            source_observed_at=capabilities.generated_at,
+            correlation_id=uuid5(
+                NAMESPACE_URL,
+                f"nexora:{claim.owner_id}:{resource_type.value}:{digest}",
+            ),
+            payload=dict(item),
+            payload_sha256=digest,
+        )

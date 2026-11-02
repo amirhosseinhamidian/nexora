@@ -1,0 +1,128 @@
+{
+  "schema_version": "nexora-trd-bot-paper-shadow-projection-contract-v1",
+  "decision_id": "NEX-P2-08",
+  "decision_date": "2026-11-02",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-07",
+    "frozen": true,
+    "freeze_commit_sha": "c2bda7c3e1ec8407ad3ed50698e87d2c3c5c8ec8",
+    "accepted_candidate_commit_sha": "fbdc2999af83352af6379f05438feba4a1723ec5",
+    "freeze_record_path": "artifacts/p2-07/nav-pnl-performance-freeze.json",
+    "freeze_record_checksum": "1b87efa133beec050bec2ffd0e145cb302863f43448396da205c66bc3486fa67"
+  },
+  "scope": {
+    "entities": [
+      "paper_shadow_portfolio_projection",
+      "paper_shadow_position_projection",
+      "projection_lineage",
+      "projection_issue"
+    ],
+    "modes": [
+      "paper",
+      "shadow"
+    ],
+    "live_mode_included": false,
+    "public_api_included": false,
+    "export_included": false,
+    "journal_mutation_included": false,
+    "nav_or_pnl_mutation_included": false
+  },
+  "source_contract": {
+    "provider": "trd_bot",
+    "minimum_provider_version": "0.3.1",
+    "integration_contract": "nexora-trd-integration-v1",
+    "snapshot_resources": [
+      "paper_shadow_portfolio",
+      "paper_shadow_position"
+    ],
+    "snapshot_schemas": [
+      "trd-paper-shadow-portfolio-v1",
+      "trd-paper-shadow-position-v1"
+    ],
+    "event_types": [
+      "simulation.position.opened.v1",
+      "simulation.position.updated.v1",
+      "simulation.position.closed.v1"
+    ],
+    "event_payload_schemas": [
+      "simulation-position-opened-v1",
+      "simulation-position-updated-v1",
+      "simulation-position-closed-v1"
+    ],
+    "unknown_schema_behavior": "quarantine_without_projection",
+    "direct_database_access": false
+  },
+  "projection_invariants": {
+    "version": "nexora-trd-bot-paper-shadow-projection-v1",
+    "owner_scope_required": true,
+    "derived_from_immutable_source_evidence": true,
+    "fully_rebuildable": true,
+    "deterministic_ordering": true,
+    "deterministic_checksum": true,
+    "source_reference_lineage_required": true,
+    "source_payload_sha256_verified": true,
+    "financial_decimal_strings_required": true,
+    "binary_float_forbidden": true,
+    "portfolio_mode_must_match_position_mode": true,
+    "contiguous_position_aggregate_versions_required": true,
+    "gap_preserves_last_verified_state": true,
+    "gap_marks_projection_incomplete": true,
+    "invalid_transition_marks_projection_incomplete": true,
+    "unknown_portfolio_marks_projection_incomplete": true,
+    "projection_is_authoritative_accounting_source": false,
+    "projection_writes_transaction_journal": false,
+    "projection_changes_frozen_nav_or_pnl": false
+  },
+  "durable_sync": {
+    "event_job_type": "trd_bot.event_sync",
+    "snapshot_job_type": "trd_bot.snapshot_sync",
+    "strict_event_payload_validation": true,
+    "invalid_projection_event_reason_code": "INVALID_PROJECTION_PAYLOAD",
+    "projection_snapshot_completion_outbox": "trd_bot.sync.projection_snapshot.completed.v1",
+    "unknown_projection_snapshot_is_quarantined": true,
+    "quarantined_snapshot_evidence_preserved": true,
+    "event_checkpoint_and_evidence_atomic": true,
+    "at_least_once_delivery": true
+  },
+  "persistence": {
+    "read_model_rebuilt_on_demand": true,
+    "existing_tables": [
+      "nexora.source_references",
+      "nexora.immutable_source_evidence",
+      "nexora.trd_bot_sync_receipts",
+      "nexora.projection_checkpoints"
+    ],
+    "new_tables": [],
+    "new_migration_required": false,
+    "mutable_projection_cache": false
+  },
+  "runtime_boundary": {
+    "repository_composed": true,
+    "new_http_operations": [],
+    "owner_id_accepted_from_request": false,
+    "external_provider_smoke_claimed": false,
+    "incompatible_provider_remains_disabled": true,
+    "portfolio_api_deferred_to": "NEX-P2-09",
+    "portfolio_export_deferred_to": "NEX-P2-09"
+  },
+  "security_boundary": {
+    "public_internet_deployment": false,
+    "multi_user": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "direct_trd_bot_database_access": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-08-FREEZE",
+    "post_freeze_stage": "NEX-P2-09",
+    "freeze_before_portfolio_api_and_export": true
+  }
+}

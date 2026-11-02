@@ -13,6 +13,7 @@ from nexora.trd_bot_sync import (
     EVENT_SYNC_JOB_TYPE,
     SNAPSHOT_SYNC_JOB_TYPE,
     TrdBotSyncHandlers,
+    canonical_json_sha256,
     initial_event_sync_payload,
 )
 
@@ -77,6 +78,43 @@ def _event_page(*, has_more: bool = False, schema: str = "decision-evaluation-co
     )
 
 
+def _projection_event_page(*, quantity: object = "1.25") -> EventPage:
+    event = _json("decision-event.json")
+    payload = {
+        "position_id": "position-1",
+        "portfolio_id": "portfolio-1",
+        "mode": "shadow",
+        "asset_symbol": "BTC",
+        "quantity": quantity,
+        "average_entry_price": "62000.00",
+    }
+    event.update(
+        {
+            "event_id": "evt_projection_000000000001",
+            "event_type": "simulation.position.opened.v1",
+            "source": {
+                **event["source"],
+                "resource_type": "paper_shadow_position",
+                "resource_id": "position-1",
+                "resource_schema_version": "trd-paper-shadow-position-v1",
+            },
+            "aggregate": {"type": "paper_shadow_position", "id": "position-1", "version": 1},
+            "idempotency_key": "projection-position-1-version-1",
+            "payload_schema": "simulation-position-opened-v1",
+            "payload": payload,
+            "payload_checksum": f"sha256:{canonical_json_sha256(payload)}",
+        }
+    )
+    return EventPage.model_validate(
+        {
+            "schema_version": "trd-integration-event-page-v1",
+            "events": [event],
+            "next_cursor": None,
+            "has_more": False,
+        }
+    )
+
+
 def test_event_page_creates_atomic_evidence_checkpoint_outbox_and_continuation() -> None:
     completion = TrdBotSyncHandlers(FakeClient(event_page=_event_page(has_more=True))).sync_events(
         _claim(initial_event_sync_payload())
@@ -107,6 +145,26 @@ def test_unknown_payload_schema_is_quarantined_without_projection_evidence() -> 
     assert completion.sync_receipts[0].status == "quarantined"
     assert completion.sync_receipts[0].reason_code == "UNSUPPORTED_PAYLOAD_SCHEMA"
     assert completion.outbox[0].payload["quarantined"] == 1
+
+
+def test_valid_projection_event_is_persisted_as_immutable_evidence() -> None:
+    completion = TrdBotSyncHandlers(FakeClient(event_page=_projection_event_page())).sync_events(
+        _claim(initial_event_sync_payload())
+    )
+
+    assert completion.sync_receipts[0].status == "applied"
+    assert completion.source_evidence[0].source_entity_type == "simulation.position.opened.v1"
+    assert completion.outbox[0].payload["applied"] == 1
+
+
+def test_invalid_projection_event_is_quarantined_without_evidence() -> None:
+    completion = TrdBotSyncHandlers(FakeClient(event_page=_projection_event_page(quantity=1.25))).sync_events(
+        _claim(initial_event_sync_payload())
+    )
+
+    assert completion.source_evidence == ()
+    assert completion.sync_receipts[0].status == "quarantined"
+    assert completion.sync_receipts[0].reason_code == "INVALID_PROJECTION_PAYLOAD"
 
 
 def test_expired_cursor_resets_checkpoint_and_starts_ordered_snapshot_chain() -> None:
@@ -179,6 +237,50 @@ def test_completed_snapshot_resource_enqueues_the_next_resource_before_event_res
 
     assert completion.enqueue[0].job_type == SNAPSHOT_SYNC_JOB_TYPE
     assert completion.enqueue[0].payload["resource_index"] == 1
+
+
+def test_projection_snapshot_quarantines_unknown_schema_and_records_counts() -> None:
+    valid = {
+        "schema_version": "trd-paper-shadow-portfolio-v1",
+        "paper_shadow_portfolio_id": "portfolio-1",
+        "mode": "paper",
+        "name": "Paper portfolio",
+        "base_asset_symbol": "USDT",
+        "status": "active",
+        "aggregate_version": 1,
+        "as_of": "2026-10-22T12:00:00Z",
+    }
+    page = SnapshotPage.model_validate(
+        {
+            "schema_version": "nexora-source-snapshot-page-v1",
+            "items": [valid, {**valid, "schema_version": "future-paper-shadow-v9"}, {"mode": "paper"}],
+            "next_cursor": None,
+            "has_more": False,
+        }
+    )
+    resource = ResourceType.PAPER_SHADOW_PORTFOLIO
+    payload = {
+        "schema_version": "nexora-trd-bot-snapshot-sync-job-v1",
+        "resource_type": resource.value,
+        "resource_index": tuple(ResourceType).index(resource),
+        "cursor": None,
+        "expected_checkpoint_version": None,
+        "resume_event_checkpoint_version": 8,
+        "page_limit": 100,
+    }
+    completion = TrdBotSyncHandlers(FakeClient(event_page=_event_page(), snapshot_page=page)).sync_snapshot(
+        _claim(payload, job_type=SNAPSHOT_SYNC_JOB_TYPE)
+    )
+
+    assert len(completion.source_evidence) == 3
+    assert completion.source_evidence[0].source_entity_id == "portfolio-1"
+    assert [item.source_entity_type for item in completion.source_evidence] == [
+        "snapshot.paper_shadow_portfolio",
+        "quarantine.snapshot.paper_shadow_portfolio",
+        "quarantine.snapshot.paper_shadow_portfolio",
+    ]
+    assert completion.outbox[0].payload["applied"] == 1
+    assert completion.outbox[0].payload["quarantined"] == 2
 
 
 def test_sync_payload_rejects_unknown_fields() -> None:

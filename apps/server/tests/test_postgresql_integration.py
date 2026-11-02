@@ -54,7 +54,7 @@ from nexora.transaction_journal import (
 )
 from nexora.valuation import ValuationConflict, ValuationSourceKind, ValuationValidationError
 from sqlalchemy import Engine, delete, inspect, select, text
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, InvalidRequestError
 from sqlalchemy.orm import Session, sessionmaker
 
 pytestmark = pytest.mark.integration
@@ -81,7 +81,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
 
 def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
     owner_id = uuid4()
-    connection = engine.connect()
+    connection = engine.connect().execution_options(isolation_level="REPEATABLE READ")
     outer = connection.begin()
     factory = sessionmaker(
         bind=connection,
@@ -140,6 +140,33 @@ def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: 
         assert len(ai_safe.datasets["performance_series"][0]["points"]) == 31  # type: ignore[arg-type]
         assert ai_safe.uncertainty["paper_shadow_complete"] is False
         assert "accounts.external_reference" in ai_safe.excluded_fields
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_portfolio_export_rejects_existing_non_repeatable_read_transaction(
+    engine: Engine,
+) -> None:
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    try:
+        source = PostgreSQLPortfolioExportSource(factory)
+        with pytest.raises(
+            InvalidRequestError,
+            match=r"existing transaction.*REPEATABLE READ",
+        ):
+            source.snapshot(
+                owner_id=uuid4(),
+                profile=PortfolioExportProfile.AI_SAFE,
+                captured_at=datetime(2026, 11, 2, 12, tzinfo=UTC),
+            )
     finally:
         outer.rollback()
         connection.close()

@@ -9,6 +9,8 @@ from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.engine import Connection
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session, sessionmaker
 
 from nexora.adapters.postgresql.models import (
@@ -211,6 +213,18 @@ def _performance_record(series: PerformanceSeries) -> JsonRecord:
     }
 
 
+def _repeatable_read_connection(session: Session) -> Connection:
+    bind = session.get_bind()
+    if isinstance(bind, Connection) and bind.in_transaction():
+        isolation_level = bind.get_isolation_level().upper().replace("_", " ")
+        if isolation_level != "REPEATABLE READ":
+            raise InvalidRequestError(
+                "portfolio export cannot join an existing transaction unless its isolation level is REPEATABLE READ"
+            )
+        return session.connection()
+    return session.connection(execution_options={"isolation_level": "REPEATABLE READ"})
+
+
 class PostgreSQLPortfolioExportSource:
     """Capture one repeatable-read, owner-scoped financial export snapshot."""
 
@@ -229,7 +243,7 @@ class PostgreSQLPortfolioExportSource:
         datasets: dict[str, tuple[JsonRecord, ...]] = {}
         total = 0
         with self._session_factory() as session:
-            connection = session.connection(execution_options={"isolation_level": "REPEATABLE READ"})
+            connection = _repeatable_read_connection(session)
             snapshot_factory = sessionmaker(
                 bind=connection,
                 class_=Session,

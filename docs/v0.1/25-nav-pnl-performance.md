@@ -41,3 +41,11 @@
 ## موارد خارج از مرحله
 
 Paper/Shadow projection، سفارش زنده، انتقال وجه، credential صرافی، کلید یا signing کیف پول، اتصال مستقیم به دیتابیس TRD Bot، SaaS/multi-user، اجرای خودکار AI، ML و هر نوع توصیهٔ مالی یا مالیاتی وارد P2-07 نشده‌اند. ورود به P2-08 تنها بعد از Freeze مستقل P2-07 مجاز است.
+
+## Freeze مرحلهٔ P2-07
+
+پیاده‌سازی پذیرفته‌شده با commit `fbdc2999af83352af6379f05438feba4a1723ec5` و tree `63046ec1f6248032fb2b048bc0f4e5867e1bfcf7` فریز شده است. شواهد اجرای همان commit شامل ۲۲ workflow موفق و ۷۲ job موفق است و در `artifacts/p2-07/nav-pnl-performance-freeze.json` نگهداری می‌شود.
+
+قرارداد `contracts/nexora-v0.1-nav-pnl-performance.json` با checksum برابر `a38a42e10066b7d1276f988883c0cc54f48483833bcea7b04231a048881b563b` قفل شده و Freeze مرحلهٔ P2-06 با commit `6b5b696a8d370c6aed6fb47fb22c02407f89b450` پیش‌نیاز معتبر آن باقی می‌ماند.
+
+این Freeze فقط point-in-time NAV، realized/unrealized P&L، سری performance محدود و تبدیل مستقیم یک‌مرحله‌ای FX را تأیید می‌کند. Paper/Shadow projection و production readiness همچنان خارج از این مرحله‌اند و هیچ قابلیت ممنوع امنیتی یا مالی وارد scope نشده است. تنها مرحلهٔ مجاز بعدی `NEX-P2-08` است.

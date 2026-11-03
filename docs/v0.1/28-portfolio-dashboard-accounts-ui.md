@@ -1,6 +1,6 @@
 # NEX-P2-10 — Portfolio Dashboard and Accounts UI
 
-Status: candidate
+Status: frozen
 
 Decision date: 2026-11-03
 
@@ -54,5 +54,22 @@ pnpm build
 pnpm --filter @nexora/web test:e2e
 ```
 
-The only next stage is `NEX-P2-10-FREEZE`. After that Freeze, `NEX-P2-11` may
-begin the transaction, holdings and reconciliation experience.
+The Freeze boundary is satisfied. The only allowed next stage is `NEX-P2-11`.
+
+## P2-10 Freeze
+
+P2-10 starts from the frozen P2-09 commit
+`bb5b500b67a6291df25c80f1f17fdceb9e20b14a` and is frozen at candidate commit
+`949643fc3cd945c0c25b1089428c4c72ce794b3b` with tree
+`981fb2190c740d3d362fa530e05b3aa893d3ebad`.
+
+The accepted candidate has 25 successful push workflows and 82 successful jobs
+on attempt 1. This evidence includes the dedicated P2-10 Web build, backend
+regression, contract and Chromium browser acceptance jobs and is recorded in
+`artifacts/p2-10/portfolio-dashboard-accounts-ui-freeze.json`.
+
+The Freeze confirms the bilingual responsive dashboard, owner-scoped portfolio
+selection, exact-decimal presentation, visible valuation uncertainty,
+priced-position allocation and read-only account registry. Account mutation,
+transactions, holdings, lots, import review and reconciliation remain deferred
+to later scope. The only allowed next implementation stage is `NEX-P2-11`.

@@ -180,8 +180,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
         "candidate SHA does not match accepted P1-01 evidence",
     )
     _require(
-        record.get("candidate_commit_message")
-        == "feat(nexora): bootstrap P1-01 runtime and design foundation",
+        record.get("candidate_commit_message") == "feat(nexora): bootstrap P1-01 runtime and design foundation",
         "candidate commit message does not match accepted evidence",
     )
 
@@ -189,8 +188,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(isinstance(actions, dict), "github_actions must be an object")
     _require(actions.get("run_id") == 40182361689, "invalid GitHub Actions run ID")
     _require(
-        actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40182361689",
+        actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40182361689",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(actions.get("head_branch") == "feature/v0.1-foundation", "invalid GitHub Actions branch")

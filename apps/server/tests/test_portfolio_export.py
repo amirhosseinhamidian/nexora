@@ -165,7 +165,10 @@ def test_service_publishes_owner_scoped_immutable_artifact_idempotently(tmp_path
                 excluded_fields=("accounts.external_reference",),
             )
 
-    storage = LocalFilesystemArtifactStorage(ArtifactStorageSettings(root=tmp_path / "artifacts"))
+    storage = LocalFilesystemArtifactStorage(
+        ArtifactStorageSettings(root=tmp_path / "artifacts"),
+        disk_usage=lambda _: (1_000_000, 0, 1_000_000),
+    )
     service = PortfolioExportService(Source(), storage, clock=lambda: CAPTURED_AT)
     first = service.create(
         owner_id=OWNER_ID,

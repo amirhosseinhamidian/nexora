@@ -5,7 +5,6 @@ import importlib.util
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
     "verify_technical_baseline",
@@ -88,9 +87,7 @@ class TechnicalBaselineTests(unittest.TestCase):
     def test_layout_cannot_drop_contract_package(self) -> None:
         changed = copy.deepcopy(self.contract)
         changed["repository_layout"] = [
-            entry
-            for entry in changed["repository_layout"]
-            if entry["path"] != "packages/contracts"
+            entry for entry in changed["repository_layout"] if entry["path"] != "packages/contracts"
         ]
         with self.assertRaisesRegex(MODULE.TechnicalBaselineError, "repository layout"):
             MODULE.validate_contract(changed)

@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "contracts" / "integration" / "v1"
 CONTRACT_PATH = BASE / "integration-contract.json"
@@ -197,8 +196,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
         "candidate SHA does not match accepted P0-03 evidence",
     )
     _require(
-        record.get("candidate_commit_message")
-        == "docs(nexora): establish P0-03 integration contracts",
+        record.get("candidate_commit_message") == "docs(nexora): establish P0-03 integration contracts",
         "candidate commit message does not match accepted evidence",
     )
 
@@ -206,8 +204,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(isinstance(github_actions, dict), "github_actions must be an object")
     _require(github_actions.get("run_id") == 40077691014, "invalid GitHub Actions run ID")
     _require(
-        github_actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40077691014",
+        github_actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40077691014",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(
@@ -247,8 +244,13 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(integration_job.get("job_id") == 120824515546, "invalid integration-contract job ID")
     _require(integration_job.get("name") == "integration-contract", "invalid integration-contract job name")
     _require(integration_job.get("conclusion") == "success", "integration-contract job was not successful")
-    _require(integration_job.get("scope_prerequisite_passed") is True, "integration scope prerequisite was not confirmed")
-    _require(integration_job.get("baseline_prerequisite_passed") is True, "integration baseline prerequisite was not confirmed")
+    _require(
+        integration_job.get("scope_prerequisite_passed") is True, "integration scope prerequisite was not confirmed"
+    )
+    _require(
+        integration_job.get("baseline_prerequisite_passed") is True,
+        "integration baseline prerequisite was not confirmed",
+    )
     _require(integration_job.get("integration_verifier_passed") is True, "integration verifier was not confirmed")
     _require(integration_job.get("contract_tests_passed") is True, "integration contract tests not confirmed")
 
@@ -270,8 +272,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(baseline_prerequisite.get("decision_id") == "NEX-P0-02", "invalid technical baseline prerequisite")
     _require(baseline_prerequisite.get("frozen") is True, "technical baseline prerequisite is not frozen")
     _require(
-        baseline_prerequisite.get("contract_checksum")
-        == baseline_module.canonical_checksum(baseline_contract),
+        baseline_prerequisite.get("contract_checksum") == baseline_module.canonical_checksum(baseline_contract),
         "technical baseline prerequisite checksum mismatch",
     )
 
@@ -282,8 +283,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(scope_prerequisite.get("decision_id") == "NEX-P0-01", "invalid scope prerequisite")
     _require(scope_prerequisite.get("frozen") is True, "scope prerequisite is not frozen")
     _require(
-        scope_prerequisite.get("contract_checksum")
-        == scope_module.canonical_checksum(scope_contract),
+        scope_prerequisite.get("contract_checksum") == scope_module.canonical_checksum(scope_contract),
         "scope prerequisite checksum mismatch",
     )
 
@@ -397,8 +397,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "retryable status inventory is invalid",
     )
     _require(
-        set(retry.get("non_retryable_statuses", []))
-        == {400, 401, 403, 404, 409, 410, 412, 422},
+        set(retry.get("non_retryable_statuses", [])) == {400, 401, 403, 404, 409, 410, 412, 422},
         "non-retryable status inventory is invalid",
     )
     _require(
@@ -451,7 +450,9 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
     gaps = contract.get("provider_gaps")
     _require(isinstance(gaps, list) and len(gaps) == 4, "four blocking provider gaps are required")
-    _require({gap.get("id") for gap in gaps} == {f"TRD-NEX-GAP-00{i}" for i in range(1, 5)}, "provider gap IDs are invalid")
+    _require(
+        {gap.get("id") for gap in gaps} == {f"TRD-NEX-GAP-00{i}" for i in range(1, 5)}, "provider gap IDs are invalid"
+    )
     for gap in gaps:
         _require(gap.get("release") == "0.3.0", "provider gap release must be 0.3.0")
         _require(gap.get("required_release") == "0.3.1", "provider gaps must target 0.3.1")
@@ -474,7 +475,9 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 
 def validate_matrix(matrix: dict[str, Any]) -> None:
-    _require(matrix.get("schema_version") == "nexora-trd-compatibility-matrix-v1", "invalid compatibility matrix schema")
+    _require(
+        matrix.get("schema_version") == "nexora-trd-compatibility-matrix-v1", "invalid compatibility matrix schema"
+    )
     _require(matrix.get("decision_id") == "NEX-P0-03", "invalid matrix decision")
     _require(matrix.get("contract") == "nexora-trd-integration-v1", "invalid matrix contract")
     entries = matrix.get("entries")
@@ -486,14 +489,26 @@ def validate_matrix(matrix: dict[str, Any]) -> None:
         by_release["0.3.0"].get("runtime_action") == "show_incompatible_and_do_not_sync",
         "TRD Bot 0.3.0 must not sync",
     )
-    _require(by_release[">=0.3.1,<0.4.0"].get("status") == "compatible_if_capabilities_match", "0.3.1 compatibility must be negotiated")
-    _require(by_release[">=0.4.0"].get("runtime_action") == "fail_closed", "unknown major/minor releases must fail closed")
+    _require(
+        by_release[">=0.3.1,<0.4.0"].get("status") == "compatible_if_capabilities_match",
+        "0.3.1 compatibility must be negotiated",
+    )
+    _require(
+        by_release[">=0.4.0"].get("runtime_action") == "fail_closed", "unknown major/minor releases must fail closed"
+    )
     capabilities = matrix.get("required_capabilities")
     _require(isinstance(capabilities, dict), "required_capabilities must be an object")
     _require(capabilities.get("contract_versions") == ["nexora-trd-integration-v1"], "invalid required contract")
-    _require(capabilities.get("event_envelopes") == ["trd-integration-event-envelope-v1"], "invalid event envelope capability")
-    _require(capabilities.get("export_manifests") == ["nexora-export-manifest-v1"], "invalid export manifest capability")
-    _require(capabilities.get("source_references") == ["nexora-source-reference-v1"], "invalid source reference capability")
+    _require(
+        capabilities.get("event_envelopes") == ["trd-integration-event-envelope-v1"],
+        "invalid event envelope capability",
+    )
+    _require(
+        capabilities.get("export_manifests") == ["nexora-export-manifest-v1"], "invalid export manifest capability"
+    )
+    _require(
+        capabilities.get("source_references") == ["nexora-source-reference-v1"], "invalid source reference capability"
+    )
     _require(set(capabilities.get("commands", [])) == EXPECTED_COMMAND_TYPES, "invalid command capabilities")
     negotiation = matrix.get("negotiation")
     _require(isinstance(negotiation, dict), "negotiation must be an object")
@@ -504,7 +519,9 @@ def validate_matrix(matrix: dict[str, Any]) -> None:
 
 
 def validate_inventory(inventory: dict[str, Any]) -> None:
-    _require(inventory.get("schema_version") == "trd-bot-nexora-source-inventory-v1", "invalid provider inventory schema")
+    _require(
+        inventory.get("schema_version") == "trd-bot-nexora-source-inventory-v1", "invalid provider inventory schema"
+    )
     _require(inventory.get("provider") == "TRD Bot", "invalid inventory provider")
     _require(inventory.get("provider_version") == "0.3.0", "inventory must describe TRD Bot 0.3.0")
     endpoints = inventory.get("read_endpoints")
@@ -550,24 +567,24 @@ def validate_openapi(openapi: dict[str, Any], contract: dict[str, Any]) -> None:
                     "#/components/parameters/IdempotencyKey" in parameters,
                     f"OpenAPI POST requires Idempotency-Key: {path}",
                 )
-                _require(operation.get("requestBody", {}).get("required") is True, f"OpenAPI POST requires a body: {path}")
+                _require(
+                    operation.get("requestBody", {}).get("required") is True, f"OpenAPI POST requires a body: {path}"
+                )
             responses = operation.get("responses")
             _require(isinstance(responses, dict), f"OpenAPI operation requires responses: {path}")
             success_codes = [code for code in responses if code.startswith("2")]
             _require(len(success_codes) == 1, f"OpenAPI operation requires one success response: {path}")
             success = responses[success_codes[0]]
             _require(isinstance(success, dict), f"invalid OpenAPI success response: {path}")
-            _require("application/json" in success.get("content", {}), f"OpenAPI success response requires JSON: {path}")
             _require(
-                set(success.get("headers", {}))
-                == {"X-Correlation-ID", "X-TRD-Bot-Version", "X-Contract-Version"},
+                "application/json" in success.get("content", {}), f"OpenAPI success response requires JSON: {path}"
+            )
+            _require(
+                set(success.get("headers", {})) == {"X-Correlation-ID", "X-TRD-Bot-Version", "X-Contract-Version"},
                 f"OpenAPI success response headers are incomplete: {path}",
             )
     _require(actual == EXPECTED_OPERATIONS, "OpenAPI operation inventory does not match the contract")
-    contract_operations = {
-        (entry["method"], entry["path"], entry["operation_id"])
-        for entry in contract["operations"]
-    }
+    contract_operations = {(entry["method"], entry["path"], entry["operation_id"]) for entry in contract["operations"]}
     _require(actual == contract_operations, "OpenAPI operations and contract operations disagree")
     serialized = json.dumps(openapi, sort_keys=True).lower()
     for forbidden in ("/orders", "/wallet", "exchange_credential", "live_order"):
@@ -583,10 +600,14 @@ def validate_schemas(schemas: dict[str, dict[str, Any]]) -> None:
     }
     _require(set(schemas) == expected, "JSON Schema inventory does not match")
     for name, schema in schemas.items():
-        _require(schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", f"invalid schema dialect: {name}")
+        _require(
+            schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", f"invalid schema dialect: {name}"
+        )
         _require(schema.get("type") == "object", f"root schema must be an object: {name}")
         _require(schema.get("additionalProperties") is False, f"root schema must be closed: {name}")
-        _require(isinstance(schema.get("required"), list) and schema["required"], f"schema requires explicit fields: {name}")
+        _require(
+            isinstance(schema.get("required"), list) and schema["required"], f"schema requires explicit fields: {name}"
+        )
     event_enum = schemas["event-envelope.schema.json"]["properties"]["event_type"]["enum"]
     _require(set(event_enum) == EXPECTED_EVENT_TYPES, "event schema types do not match")
     _require(
@@ -618,10 +639,22 @@ def _validate_source_reference(reference: Any) -> None:
     _require(set(reference) == required, "source reference fields do not match")
     _require(reference.get("schema_version") == "nexora-source-reference-v1", "invalid source reference schema")
     _require(reference.get("source_product") == "trd_bot", "invalid source product")
-    _require(isinstance(reference.get("source_version"), str) and SEMVER.fullmatch(reference["source_version"]) is not None, "invalid source version")
-    _require(all(isinstance(reference.get(key), str) and reference[key] for key in ("resource_type", "resource_id", "resource_schema_version")), "source identity is incomplete")
+    _require(
+        isinstance(reference.get("source_version"), str) and SEMVER.fullmatch(reference["source_version"]) is not None,
+        "invalid source version",
+    )
+    _require(
+        all(
+            isinstance(reference.get(key), str) and reference[key]
+            for key in ("resource_type", "resource_id", "resource_schema_version")
+        ),
+        "source identity is incomplete",
+    )
     _validate_timestamp(reference.get("observed_at"), "source observed_at")
-    _require(isinstance(reference.get("checksum"), str) and SOURCE_CHECKSUM.fullmatch(reference["checksum"]) is not None, "invalid source checksum")
+    _require(
+        isinstance(reference.get("checksum"), str) and SOURCE_CHECKSUM.fullmatch(reference["checksum"]) is not None,
+        "invalid source checksum",
+    )
 
 
 def _reject_secret_keys(value: Any, path: str = "fixture") -> None:
@@ -664,17 +697,30 @@ def validate_fixtures(fixtures: dict[str, dict[str, Any]], contract: dict[str, A
     aggregate = event.get("aggregate")
     _require(isinstance(aggregate, dict) and set(aggregate) == {"type", "id", "version"}, "invalid event aggregate")
     _require(isinstance(aggregate.get("version"), int) and aggregate["version"] >= 1, "invalid aggregate version")
-    _require(isinstance(event.get("idempotency_key"), str) and len(event["idempotency_key"]) >= 16, "invalid event idempotency key")
-    _require(isinstance(event.get("payload_checksum"), str) and SOURCE_CHECKSUM.fullmatch(event["payload_checksum"]) is not None, "invalid payload checksum")
-    expected_payload_checksum = "sha256:" + hashlib.sha256(
-        json.dumps(
-            event.get("payload"),
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
-    ).hexdigest()
-    _require(event.get("payload_checksum") == expected_payload_checksum, "payload checksum does not match the canonical payload")
+    _require(
+        isinstance(event.get("idempotency_key"), str) and len(event["idempotency_key"]) >= 16,
+        "invalid event idempotency key",
+    )
+    _require(
+        isinstance(event.get("payload_checksum"), str)
+        and SOURCE_CHECKSUM.fullmatch(event["payload_checksum"]) is not None,
+        "invalid payload checksum",
+    )
+    expected_payload_checksum = (
+        "sha256:"
+        + hashlib.sha256(
+            json.dumps(
+                event.get("payload"),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+    )
+    _require(
+        event.get("payload_checksum") == expected_payload_checksum,
+        "payload checksum does not match the canonical payload",
+    )
 
     command = fixtures["decision-review-command.json"]
     _require(command.get("schema_version") == "nexora-decision-review-command-v1", "invalid decision-review fixture")
@@ -687,7 +733,10 @@ def validate_fixtures(fixtures: dict[str, dict[str, Any]], contract: dict[str, A
     _require(receipt.get("schema_version") == "nexora-command-receipt-v1", "invalid command receipt")
     _require(receipt.get("command_type") in EXPECTED_COMMAND_TYPES, "invalid receipt command type")
     _require(receipt.get("status") in {"accepted", "duplicate"}, "invalid command receipt status")
-    _require(isinstance(receipt.get("idempotency_key"), str) and receipt["idempotency_key"], "receipt requires idempotency key")
+    _require(
+        isinstance(receipt.get("idempotency_key"), str) and receipt["idempotency_key"],
+        "receipt requires idempotency key",
+    )
     _validate_timestamp(receipt.get("accepted_at"), "command accepted_at")
 
     manifest = fixtures["export-manifest.json"]
@@ -703,7 +752,10 @@ def validate_fixtures(fixtures: dict[str, dict[str, Any]], contract: dict[str, A
     _require(isinstance(files, list) and files, "export manifest requires at least one file")
     for entry in files:
         _require(isinstance(entry, dict), "manifest file entry must be an object")
-        _require(isinstance(entry.get("sha256"), str) and SHA256.fullmatch(entry["sha256"]) is not None, "invalid manifest file checksum")
+        _require(
+            isinstance(entry.get("sha256"), str) and SHA256.fullmatch(entry["sha256"]) is not None,
+            "invalid manifest file checksum",
+        )
         _require(isinstance(entry.get("row_count"), int) and entry["row_count"] >= 0, "invalid manifest row count")
         _require(isinstance(entry.get("size_bytes"), int) and entry["size_bytes"] >= 0, "invalid manifest file size")
 

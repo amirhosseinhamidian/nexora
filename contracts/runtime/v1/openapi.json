@@ -803,6 +803,84 @@
         "title": "CreateManualValuationRequest",
         "type": "object"
       },
+      "CreatePortfolioExportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "formats": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioExportFormat"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Formats",
+            "type": "array"
+          },
+          "pinned": {
+            "default": false,
+            "title": "Pinned",
+            "type": "boolean"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PortfolioExportProfile"
+          }
+        },
+        "required": [
+          "profile",
+          "formats"
+        ],
+        "title": "CreatePortfolioExportRequest",
+        "type": "object"
+      },
+      "CreatePortfolioExportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Artifact Sha256",
+            "type": "string"
+          },
+          "artifact_size_bytes": {
+            "minimum": 0.0,
+            "title": "Artifact Size Bytes",
+            "type": "integer"
+          },
+          "artifact_version": {
+            "title": "Artifact Version",
+            "type": "string"
+          },
+          "download_path": {
+            "title": "Download Path",
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/PortfolioExportManifestResponse"
+          },
+          "retention_class": {
+            "enum": [
+              "pinned_export",
+              "unpinned_export"
+            ],
+            "title": "Retention Class",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-export-publication-v1",
+            "default": "nexora-portfolio-export-publication-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "manifest",
+          "artifact_version",
+          "artifact_sha256",
+          "artifact_size_bytes",
+          "retention_class",
+          "download_path"
+        ],
+        "title": "CreatePortfolioExportResponse",
+        "type": "object"
+      },
       "CreatePortfolioRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1533,6 +1611,41 @@
         "title": "JournalSourceKind",
         "type": "string"
       },
+      "JsonScalar": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "JsonValue": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/JsonScalar"
+          },
+          {
+            "items": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "array"
+          },
+          {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object"
+          }
+        ]
+      },
       "LifecycleRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1891,6 +2004,195 @@
         "title": "ManualValuationResponse",
         "type": "object"
       },
+      "PaperShadowPortfolioResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_version": {
+            "minimum": 1.0,
+            "title": "Aggregate Version",
+            "type": "integer"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "base_asset_symbol": {
+            "title": "Base Asset Symbol",
+            "type": "string"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/ProjectionLineageResponse"
+          },
+          "mode": {
+            "enum": [
+              "paper",
+              "shadow"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "portfolio_id",
+          "mode",
+          "name",
+          "base_asset_symbol",
+          "status",
+          "aggregate_version",
+          "as_of",
+          "lineage"
+        ],
+        "title": "PaperShadowPortfolioResponse",
+        "type": "object"
+      },
+      "PaperShadowPositionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_version": {
+            "minimum": 1.0,
+            "title": "Aggregate Version",
+            "type": "integer"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "asset_symbol": {
+            "title": "Asset Symbol",
+            "type": "string"
+          },
+          "average_entry_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Entry Price"
+          },
+          "lineage": {
+            "$ref": "#/components/schemas/ProjectionLineageResponse"
+          },
+          "mode": {
+            "enum": [
+              "paper",
+              "shadow"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "title": "Portfolio Id",
+            "type": "string"
+          },
+          "position_id": {
+            "title": "Position Id",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position_id",
+          "portfolio_id",
+          "mode",
+          "asset_symbol",
+          "quantity",
+          "average_entry_price",
+          "status",
+          "aggregate_version",
+          "as_of",
+          "lineage"
+        ],
+        "title": "PaperShadowPositionResponse",
+        "type": "object"
+      },
+      "PaperShadowProjectionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "evidence_count": {
+            "minimum": 0.0,
+            "title": "Evidence Count",
+            "type": "integer"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectionIssueResponse"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "portfolios": {
+            "items": {
+              "$ref": "#/components/schemas/PaperShadowPortfolioResponse"
+            },
+            "title": "Portfolios",
+            "type": "array"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/PaperShadowPositionResponse"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "projection_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Projection Sha256",
+            "type": "string"
+          },
+          "projection_version": {
+            "const": "nexora-trd-bot-paper-shadow-projection-v1",
+            "title": "Projection Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "projection_version",
+          "complete",
+          "evidence_count",
+          "portfolios",
+          "positions",
+          "issues",
+          "projection_sha256"
+        ],
+        "title": "PaperShadowProjectionResponse",
+        "type": "object"
+      },
       "PerformancePointResponse": {
         "additionalProperties": false,
         "properties": {
@@ -2153,6 +2455,173 @@
         ],
         "title": "PortfolioAnalyticsResponse",
         "type": "object"
+      },
+      "PortfolioExportFileResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/PortfolioExportFormat"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          },
+          "size_bytes": {
+            "minimum": 0.0,
+            "title": "Size Bytes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path",
+          "format",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "PortfolioExportFileResponse",
+        "type": "object"
+      },
+      "PortfolioExportFormat": {
+        "enum": [
+          "json",
+          "csv",
+          "parquet"
+        ],
+        "title": "PortfolioExportFormat",
+        "type": "string"
+      },
+      "PortfolioExportManifestResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "complete": {
+            "const": true,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "content_formats": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioExportFormat"
+            },
+            "title": "Content Formats",
+            "type": "array"
+          },
+          "dataset_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Dataset Counts",
+            "type": "object"
+          },
+          "delivery_format": {
+            "const": "zip_bundle",
+            "title": "Delivery Format",
+            "type": "string"
+          },
+          "excluded_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded Fields",
+            "type": "array"
+          },
+          "export_id": {
+            "pattern": "^pex_[0-9a-f]{24}$",
+            "title": "Export Id",
+            "type": "string"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioExportFileResponse"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "lineage": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Lineage",
+            "type": "object"
+          },
+          "owner_scope_checksum": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Owner Scope Checksum",
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PortfolioExportProfile"
+          },
+          "public_download": {
+            "const": false,
+            "title": "Public Download",
+            "type": "boolean"
+          },
+          "record_count": {
+            "minimum": 0.0,
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-export-manifest-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "uncertainty": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Uncertainty",
+            "type": "object"
+          }
+        },
+        "required": [
+          "schema_version",
+          "export_id",
+          "profile",
+          "delivery_format",
+          "content_formats",
+          "generated_at",
+          "owner_scope_checksum",
+          "complete",
+          "record_count",
+          "dataset_counts",
+          "snapshot_sha256",
+          "lineage",
+          "uncertainty",
+          "excluded_fields",
+          "files",
+          "public_download"
+        ],
+        "title": "PortfolioExportManifestResponse",
+        "type": "object"
+      },
+      "PortfolioExportProfile": {
+        "enum": [
+          "private_complete",
+          "ai_safe"
+        ],
+        "title": "PortfolioExportProfile",
+        "type": "string"
       },
       "PortfolioKind": {
         "enum": [
@@ -2622,6 +3091,97 @@
           "rebuilt_at"
         ],
         "title": "ProjectionCheckpointResponse",
+        "type": "object"
+      },
+      "ProjectionIssueResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "source_entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entity Id"
+          },
+          "source_reference_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Reference Id"
+          }
+        },
+        "required": [
+          "code",
+          "source_reference_id",
+          "source_entity_id",
+          "message"
+        ],
+        "title": "ProjectionIssueResponse",
+        "type": "object"
+      },
+      "ProjectionLineageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "payload_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Payload Sha256",
+            "type": "string"
+          },
+          "source_entity_id": {
+            "title": "Source Entity Id",
+            "type": "string"
+          },
+          "source_entity_type": {
+            "title": "Source Entity Type",
+            "type": "string"
+          },
+          "source_observed_at": {
+            "format": "date-time",
+            "title": "Source Observed At",
+            "type": "string"
+          },
+          "source_reference_id": {
+            "format": "uuid",
+            "title": "Source Reference Id",
+            "type": "string"
+          },
+          "source_schema_version": {
+            "title": "Source Schema Version",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_reference_id",
+          "source_entity_type",
+          "source_entity_id",
+          "source_schema_version",
+          "source_version",
+          "source_observed_at",
+          "payload_sha256"
+        ],
+        "title": "ProjectionLineageResponse",
         "type": "object"
       },
       "RealizedPnlEventResponse": {
@@ -7437,6 +7997,144 @@
         "summary": "Review Import Batch"
       }
     },
+    "/v1/portfolio-exports": {
+      "post": {
+        "operationId": "createPortfolioExport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePortfolioExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePortfolioExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Portfolio Export"
+      }
+    },
     "/v1/portfolios": {
       "get": {
         "operationId": "listPortfolios",
@@ -9963,6 +10661,134 @@
           }
         },
         "summary": "Supersede Transaction"
+      }
+    },
+    "/v1/trd-bot/paper-shadow-projection": {
+      "get": {
+        "operationId": "getPaperShadowProjection",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperShadowProjectionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Paper Shadow Projection"
       }
     },
     "/v1/valuation/fx-rate-observations": {

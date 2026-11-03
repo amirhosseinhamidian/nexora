@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-scope.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "00-scope-and-system-boundary.md"
@@ -98,8 +97,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require_exact_set(export, "required_metadata", required_export_metadata)
     forbidden_export_fields = set(export.get("forbidden_fields", []))
     _require(
-        {"password_hash", "session_token", "api_secret", "encryption_key"}
-        <= forbidden_export_fields,
+        {"password_hash", "session_token", "api_secret", "encryption_key"} <= forbidden_export_fields,
         "export secret denylist is incomplete",
     )
 
@@ -132,8 +130,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(required_forbidden <= forbidden, "security capability denylist is incomplete")
 
     _require(
-        contract.get("phase_zero")
-        == ["NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"],
+        contract.get("phase_zero") == ["NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"],
         "Phase 0 order is not frozen",
     )
     _require(contract.get("next_allowed_stage") == "NEX-P0-02", "invalid next stage")
@@ -191,8 +188,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     run_id = github_actions.get("run_id")
     _require(run_id == 39763668108, "invalid GitHub Actions run ID")
     _require(
-        github_actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/39763668108",
+        github_actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/39763668108",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(github_actions.get("job_name") == "scope-contract", "invalid workflow job")

@@ -17,6 +17,7 @@ SPEC.loader.exec_module(MODULE)
 class PortfolioApiExportContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze = MODULE.load_freeze_record()
 
     def test_frozen_p2_08_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p2_08()
@@ -28,6 +29,28 @@ class PortfolioApiExportContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze, self.contract)
+        MODULE.validate_workflow()
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PortfolioApiExportContractError, "candidate SHA"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_failed_check(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["checks"][0]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PortfolioApiExportContractError, "check evidence"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p2_10(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["next_allowed_stage"] = "NEX-P2-11"
+        with self.assertRaisesRegex(MODULE.PortfolioApiExportContractError, "next stage"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
     def test_public_download_cannot_be_enabled(self) -> None:
         changed = copy.deepcopy(self.contract)

@@ -1,6 +1,6 @@
 # NEX-P2-09 — Portfolio API and deterministic export
 
-Status: candidate
+Status: frozen
 
 Decision date: 2026-11-02
 
@@ -51,4 +51,24 @@ Synchronous export is bounded to 100,000 source records and 128 MiB of canonical
 
 The P2-09 workflow verifies the frozen P2-08 evidence, the candidate contract checksum, runtime markers, strict API/session/CSRF behavior, deterministic JSON/CSV/Parquet/ZIP content, immutable artifact publication, owner isolation, AI-safe exclusions, PostgreSQL 17 integration, migration head stability, formatting, lint, typing, and the complete non-integration suite.
 
-The only next stage before dashboard work is `NEX-P2-09-FREEZE`. After that freeze, `NEX-P2-10` may begin.
+The Freeze boundary is satisfied. The only allowed next stage is `NEX-P2-10`.
+
+## Freeze مرحلهٔ P2-09
+
+پیاده‌سازی P2-09 از Freeze مرحلهٔ P2-08 در commit
+`37866ad1f3635bcbdeb7569366140e21b23485bc` آغاز شده و با lineage سه‌کامیتی شامل
+implementation اصلی، اصلاح repeatable-read و هم‌ترازی نهایی CI/OpenAPI در commit
+`13704691a091497d7cc26a09e3403b18246b0ec7` و tree
+`d1a301eb0118ed1fda7568643d276627a0faf5b2` فریز شده است.
+
+شواهد همان candidate شامل ۲۴ workflow موفق و ۷۸ job موفق است و در
+`artifacts/p2-09/portfolio-api-export-freeze.json` نگهداری می‌شود. قرارداد
+`contracts/nexora-v0.1-portfolio-api-export.json` با checksum برابر
+`108303ee0b61d7b2778a26cb719e7a27c3ceeed59618db03b132765a66932766`
+قفل شده است.
+
+این Freeze فقط API خواندنی Paper/Shadow، export کامل و قطعی با پروفایل‌های
+`private_complete` و `ai_safe`، snapshot مبتنی بر repeatable-read، انتشار artifact
+خصوصی و immutable، دانلود owner-scoped و lineage/uncertainty/checksumها را تأیید می‌کند.
+Dashboard، public download، live trading، external provider smoke و production readiness
+همچنان خارج از این مرحله‌اند. تنها مرحلهٔ مجاز بعدی `NEX-P2-10` است.

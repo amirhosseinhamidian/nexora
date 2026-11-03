@@ -39,9 +39,9 @@
     "failed": "Authentication could not be completed. No credential was stored in the browser."
   },
   "shell": {
-    "eyebrow": "NEX-P1-11",
-    "title": "Private financial workspace",
-    "description": "Authenticated access to service health, secure exports and the future portfolio workspace.",
+    "eyebrow": "NEX-P2-10",
+    "title": "Portfolio dashboard",
+    "description": "Owner-scoped portfolio value, valuation health, allocation and account registry in one private workspace.",
     "authenticated": "Owner session active",
     "owner": "Owner",
     "logout": "Sign out",
@@ -51,15 +51,75 @@
     "artifacts": "Artifact storage",
     "ready": "Ready",
     "limited": "Unavailable",
-    "phaseTwo": "Available from Phase 2",
-    "emptyTitle": "Portfolio workspace is intentionally empty",
-    "emptyDescription": "Portfolio, holdings, transaction and analytics features begin in Phase 2. This shell currently proves secure access and runtime state only.",
+    "phaseTwo": "Planned for a later phase",
     "securityTitle": "Current security boundary",
     "securityItems": {
       "private": "Private single-owner deployment",
       "passkey": "Passkey and server-side session",
       "paper": "Research, Paper and Shadow only",
       "forbidden": "No live trading, wallet or exchange credentials"
+    }
+  },
+  "portfolioDashboard": {
+    "eyebrow": "OWNER-SCOPED PORTFOLIO",
+    "title": "Portfolio overview",
+    "selectPortfolio": "Select portfolio",
+    "loadingTitle": "Loading portfolio registry",
+    "loadingDescription": "Reading owner-scoped portfolio data without caching financial state.",
+    "loadingAnalytics": "Calculating the selected portfolio snapshot…",
+    "errorTitle": "Portfolio data is unavailable",
+    "errorDescription": "The private API could not return the portfolio registry. No data was changed.",
+    "analyticsError": "The selected portfolio analytics or valuation evidence could not be calculated.",
+    "retry": "Try again",
+    "emptyTitle": "No portfolio is registered yet",
+    "emptyDescription": "Create the first owner-scoped portfolio through the registry API before using this dashboard.",
+    "nav": "Net asset value",
+    "unrealizedPnl": "Unrealized P&L",
+    "realizedPnl": "Realized P&L",
+    "accounts": "Accounts",
+    "activeAccounts": "Active accounts",
+    "valuationHealth": "Valuation health",
+    "freshEvidence": "positions have fresh evidence",
+    "asOf": "As of",
+    "evidence": "EVIDENCE STATUS",
+    "pricedPositions": "PRICED POSITIONS ONLY",
+    "allocation": "Allocation",
+    "noAllocation": "No priced position is available for allocation.",
+    "valuationFootnote": "Stale and missing evidence stays visible and keeps NAV explicitly incomplete.",
+    "registry": "OWNER-SCOPED REGISTRY",
+    "accountRegistry": "Account registry",
+    "noAccounts": "No account belongs to this portfolio.",
+    "institution": "Institution",
+    "accountKey": "Registry key",
+    "manualAccount": "Manual / private",
+    "kind": {
+      "personal": "Personal",
+      "paper": "Paper",
+      "shadow": "Shadow"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived",
+      "closed": "Closed",
+      "inactive": "Inactive"
+    },
+    "valuationState": {
+      "fresh": "Fresh",
+      "stale": "Stale",
+      "missing": "Missing"
+    },
+    "analyticsState": {
+      "stale": "NAV includes stale valuation evidence. Review timestamps before using this snapshot.",
+      "missing": "NAV is incomplete because one or more positions have no valid valuation evidence."
+    },
+    "accountKind": {
+      "exchange": "Exchange registry (no credentials)",
+      "wallet_watch_only": "Watch-only wallet",
+      "cash": "Cash account",
+      "brokerage_manual": "Manual brokerage",
+      "paper": "Paper account",
+      "shadow": "Shadow account",
+      "other_manual": "Other manual account"
     }
   },
   "states": {

@@ -2,7 +2,6 @@
 
 import type { ActionResponse, SessionResponse } from "@nexora/contracts";
 import {
-  Activity,
   Bell,
   BookOpen,
   BriefcaseBusiness,
@@ -18,6 +17,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { FoundationControls } from "@/components/foundation-controls";
+import { PortfolioDashboard } from "@/components/portfolio-dashboard";
 import { StatePanel } from "@/components/state-panel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -147,11 +147,11 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
               const Icon = navigationIcons[index];
               return (
                 <li key={label}>
-                  {index === 0 ? (
+                  {index <= 1 ? (
                     <Link
-                      aria-current="page"
-                      className="navigation-link active"
-                      href={`/${locale}`}
+                      aria-current={index === 0 ? "page" : undefined}
+                      className={`navigation-link ${index === 0 ? "active" : ""}`}
+                      href={index === 0 ? `/${locale}` : "#accounts"}
                     >
                       <Icon aria-hidden="true" size={19} />
                       <span>{label}</span>
@@ -179,8 +179,8 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
 
       <div className="workspace">
         <header className="topbar">
-          <div className="environment-pill">
-            <span className="status-dot" />
+          <div className="environment-pill" title={status}>
+            <span className={`status-dot ${servicesReady ? "" : "limited"}`} />
             {dictionary.header.environment}
           </div>
           <div className="topbar-actions">
@@ -210,34 +210,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
             </div>
           </div>
 
-          <section aria-label={dictionary.shell.serviceStatus} className="metric-grid">
-            {[
-              [dictionary.shell.api, Activity],
-              [dictionary.shell.identity, ShieldCheck],
-              [dictionary.shell.artifacts, Download],
-            ].map(([label, Icon]) => (
-              <article className="metric-card" key={String(label)}>
-                <div className="metric-card-heading">
-                  <span>{String(label)}</span>
-                  <Icon aria-hidden="true" size={20} />
-                </div>
-                <strong>{status}</strong>
-                <p>
-                  {servicesReady
-                    ? dictionary.shell.authenticated
-                    : dictionary.states.offlineDescription}
-                </p>
-              </article>
-            ))}
-          </section>
-
-          <section className="empty-state-card">
-            <BriefcaseBusiness aria-hidden="true" size={32} />
-            <div>
-              <h2>{dictionary.shell.emptyTitle}</h2>
-              <p>{dictionary.shell.emptyDescription}</p>
-            </div>
-          </section>
+          <PortfolioDashboard dictionary={dictionary} locale={locale} />
 
           <section className="boundary-card">
             <div className="boundary-heading">

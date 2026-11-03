@@ -26,14 +26,18 @@ describe("AuthenticatedShell", () => {
         rotation_required: false,
       })
       .mockResolvedValueOnce({ status: "ready" })
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ items: [] })
       .mockResolvedValueOnce({ status: "completed" });
 
     render(<AuthenticatedShell dictionary={en} locale="en" />);
-    expect(
-      await screen.findByRole("heading", { name: "Private financial workspace" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Portfolio dashboard" })).toBeInTheDocument();
     expect(screen.getByText("113f777b…")).toBeInTheDocument();
-    expect(screen.getAllByText("Ready")).toHaveLength(3);
+    expect(screen.getByTitle("Ready")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "No portfolio is registered yet" }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await waitFor(() =>

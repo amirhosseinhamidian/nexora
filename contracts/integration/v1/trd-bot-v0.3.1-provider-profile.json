@@ -1,0 +1,237 @@
+{
+  "schema_version": "nexora-trd-bot-v031-provider-profile-v1",
+  "profile_id": "nexora-trd-bot-v0.3.1",
+  "contract_version": "nexora-trd-integration-v1",
+  "provider": {
+    "product": "TRD Bot",
+    "minimum_release": "0.3.1",
+    "accepted_release_range": ">=0.3.1,<0.4.0",
+    "release_0_3_0_compatible": false
+  },
+  "transport": {
+    "namespace": "/api/v1/integration/nexora",
+    "media_type": "application/json",
+    "canonical_timezone": "UTC",
+    "redirects_allowed": false,
+    "required_request_headers": [
+      "Accept",
+      "Authorization",
+      "X-Correlation-ID"
+    ],
+    "required_command_headers": [
+      "Content-Type",
+      "Idempotency-Key"
+    ],
+    "required_response_headers": [
+      "Content-Type",
+      "X-Contract-Version",
+      "X-Correlation-ID",
+      "X-TRD-Bot-Version"
+    ]
+  },
+  "service_authentication": {
+    "scheme": "bearer_service_token",
+    "authorization_header": "Authorization",
+    "token_prefix": "Bearer ",
+    "minimum_token_entropy_bytes": 32,
+    "constant_time_comparison_required": true,
+    "token_source": "absolute_private_file",
+    "consumer_file_environment_variable": "NEXORA_TRD_BOT_TOKEN_FILE",
+    "provider_file_environment_variable": "TRD_BOT_NEXORA_SERVICE_TOKEN_FILE",
+    "production_transport": "https",
+    "development_http_scope": "loopback_only",
+    "query_parameter_allowed": false,
+    "cookie_allowed": false,
+    "browser_delivery_allowed": false,
+    "logging_allowed": false,
+    "export_allowed": false,
+    "missing_or_invalid_status": 401,
+    "insufficient_scope_status": 403
+  },
+  "operations": [
+    "GET /capabilities",
+    "GET /snapshots/{resource_type}",
+    "GET /events",
+    "GET /events/{event_id}",
+    "POST /commands/decision-reviews",
+    "POST /exports",
+    "GET /exports/{export_id}",
+    "GET /exports/{export_id}/manifest"
+  ],
+  "capability_negotiation": {
+    "endpoint": "/api/v1/integration/nexora/capabilities",
+    "schema_version": "nexora-integration-capabilities-v1",
+    "contract_versions": [
+      "nexora-trd-integration-v1"
+    ],
+    "event_envelopes": [
+      "trd-integration-event-envelope-v1"
+    ],
+    "export_manifests": [
+      "nexora-export-manifest-v1"
+    ],
+    "source_references": [
+      "nexora-source-reference-v1"
+    ],
+    "commands": [
+      "decision_review.accept.v1",
+      "decision_review.reject.v1",
+      "decision_review.defer.v1"
+    ],
+    "cache_ttl_seconds": 300,
+    "provider_version_change_action": "invalidate_and_fail_closed",
+    "missing_or_unknown_capability_action": "fail_closed",
+    "precondition_failed_status": 412,
+    "precondition_failed_action": "renegotiate"
+  },
+  "snapshot_groups": {
+    "portfolio": [
+      "paper_shadow_portfolio",
+      "paper_shadow_position",
+      "portfolio_intelligence",
+      "simulation_outcome"
+    ],
+    "decision": [
+      "market_context",
+      "decision_evaluation",
+      "candidate",
+      "risk_gate"
+    ],
+    "alert": [
+      "alert",
+      "alert_outcome"
+    ]
+  },
+  "snapshot_protocol": {
+    "page_schema_version": "nexora-source-snapshot-page-v1",
+    "page_limit_default": 100,
+    "page_limit_maximum": 500,
+    "cursor": "opaque_stable_cursor",
+    "cursor_must_not_contain_credentials": true,
+    "first_page_without_cursor_starts_stable_scan": true,
+    "continuation_pages_share_one_snapshot_boundary": true,
+    "deterministic_order_required": true,
+    "each_item_requires_source_reference": true,
+    "source_reference_schema_version": "nexora-source-reference-v1",
+    "expired_cursor_status": 410,
+    "expired_cursor_action": "full_snapshot_resync",
+    "silent_cursor_reset_allowed": false
+  },
+  "event_feed": {
+    "page_schema_version": "trd-integration-event-page-v1",
+    "envelope_schema_version": "trd-integration-event-envelope-v1",
+    "delivery_semantics": "at_least_once",
+    "ordering_scope": "per_aggregate",
+    "gap_detection": "aggregate_version",
+    "deduplication_keys": [
+      "event_id",
+      "idempotency_key"
+    ],
+    "cursor": "opaque_stable_cursor",
+    "cursor_must_not_contain_credentials": true,
+    "long_polling": false,
+    "acknowledgement_required": false,
+    "unknown_schema_action": "quarantine_and_degrade",
+    "checksum_mismatch_action": "reject_and_alert",
+    "gap_action": "pause_projection_and_backfill",
+    "expired_cursor_status": 410,
+    "expired_cursor_action": "full_snapshot_resync",
+    "exactly_once_claimed": false
+  },
+  "full_resync": {
+    "triggers": [
+      "cursor_expired_response",
+      "aggregate_version_gap",
+      "checksum_mismatch"
+    ],
+    "steps": [
+      "pause_projection_publication",
+      "scan_all_snapshot_resources",
+      "validate_source_references_and_checksums",
+      "replay_available_events_with_deduplication",
+      "verify_contiguous_aggregate_versions",
+      "publish_projection_and_checkpoint_atomically"
+    ],
+    "partial_snapshot_publish_allowed": false,
+    "stale_or_degraded_state_must_be_visible": true,
+    "operator_intervention_required_when_gap_remains": true
+  },
+  "decision_review_command": {
+    "schema_version": "nexora-decision-review-command-v1",
+    "receipt_schema_version": "nexora-command-receipt-v1",
+    "actions": [
+      "accept",
+      "reject",
+      "defer"
+    ],
+    "command_types": {
+      "accept": "decision_review.accept.v1",
+      "reject": "decision_review.reject.v1",
+      "defer": "decision_review.defer.v1"
+    },
+    "idempotency_header": "Idempotency-Key",
+    "idempotency_required": true,
+    "same_key_same_payload_returns": "duplicate_receipt",
+    "same_key_different_payload_status": 409,
+    "source_evidence_checksum_required": true,
+    "optimistic_concurrency": {
+      "enforced_by": "nexora_local_owner_review",
+      "expected_version_required_locally": true,
+      "provider_guard": "immutable_source_evidence_checksum",
+      "provider_expected_version_field_required": false
+    },
+    "paper_shadow_only": true,
+    "local_owner_review_source_of_truth": "nexora",
+    "provider_command_purpose": "paper_shadow_feedback_only",
+    "execution_authorization": false,
+    "creates_live_order": false,
+    "posts_portfolio_transaction": false
+  },
+  "export_protocol": {
+    "request_schema_version": "nexora-export-request-v1",
+    "status_schema_version": "nexora-export-status-v1",
+    "manifest_schema_version": "nexora-export-manifest-v1",
+    "profiles": [
+      "private",
+      "ai_safe"
+    ],
+    "accepted_completion_status": "complete",
+    "partial_export_accepted": false,
+    "checksums_required": true,
+    "source_lineage_required": true,
+    "secret_fields_forbidden": true
+  },
+  "acceptance_smoke": {
+    "required_before": "NEX-P3-03-FREEZE",
+    "fixture_contract_tests_required": true,
+    "real_provider_required": true,
+    "external_network_required": false,
+    "required_scenarios": [
+      "missing_service_token_returns_401",
+      "invalid_service_token_returns_401",
+      "capabilities_match_exactly",
+      "portfolio_decision_and_alert_snapshots_page_stably",
+      "event_cursor_replay_is_at_least_once_and_deduplicable",
+      "event_lookup_matches_feed_envelope",
+      "expired_cursor_returns_410_and_triggers_full_resync",
+      "review_command_replay_returns_duplicate_receipt",
+      "review_idempotency_conflict_returns_409",
+      "local_review_expected_version_conflict_is_rejected_before_provider_command",
+      "complete_export_manifest_verifies_all_checksums",
+      "secrets_never_appear_in_payload_log_or_export"
+    ]
+  },
+  "forbidden": [
+    "direct_database_access",
+    "shared_database",
+    "browser_service_token",
+    "query_parameter_token",
+    "silent_cursor_reset",
+    "unversioned_payload_acceptance",
+    "exactly_once_delivery_claim",
+    "partial_export_acceptance",
+    "live_order_command",
+    "wallet_command",
+    "exchange_credential_command"
+  ]
+}

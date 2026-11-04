@@ -349,6 +349,9 @@ NEX_P3_00_PHASE_THREE_ROADMAP=PASS
 NEX_P3_00_FREEZE=PASS
 NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS
 NEX_P3_01_FREEZE=PASS
+NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS
+NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT
+NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
 ```
 
 ## Documents
@@ -387,6 +390,7 @@ NEX_P3_01_FREEZE=PASS
 - [`docs/v0.1/31-server-deployment-acceptance.md`](docs/v0.1/31-server-deployment-acceptance.md)
 - [`docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md`](docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md)
 - [`docs/v0.1/33-decision-review-journal-domain.md`](docs/v0.1/33-decision-review-journal-domain.md)
+- [`docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md`](docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -416,6 +420,7 @@ NEX_P3_01_FREEZE=PASS
 - [`contracts/nexora-v0.1-price-fx-manual-valuation.json`](contracts/nexora-v0.1-price-fx-manual-valuation.json)
 - [`contracts/nexora-v0.1-phase-three-roadmap.json`](contracts/nexora-v0.1-phase-three-roadmap.json)
 - [`contracts/nexora-v0.1-decision-review-journal-domain.json`](contracts/nexora-v0.1-decision-review-journal-domain.json)
+- [`contracts/nexora-v0.1-trd-bot-v031-integration.json`](contracts/nexora-v0.1-trd-bot-v031-integration.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

@@ -1,0 +1,154 @@
+{
+  "schema_version": "nexora-trd-bot-v031-integration-v1",
+  "decision_id": "NEX-P3-02",
+  "decision_date": "2026-11-04",
+  "status": "candidate",
+  "title": "TRD Bot v0.3.1 integration contract",
+  "p3_01_prerequisite": {
+    "decision_id": "NEX-P3-01",
+    "frozen": true,
+    "freeze_commit_sha": "9e84bc0c64bed12ff928c18f035df870bb31f5a3",
+    "accepted_candidate_commit_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+    "freeze_record_path": "artifacts/p3-01/decision-review-journal-domain-freeze.json",
+    "freeze_record_canonical_checksum": "d8535def20eefd0490f9bb06cc55b8bb90c9e3937e68f5997d4540bf48ae3e89",
+    "source_evidence_immutable": true,
+    "human_review_source_of_truth": "nexora",
+    "review_is_execution_authorization": false
+  },
+  "frozen_p0_contract_baseline": {
+    "decision_id": "NEX-P0-03",
+    "contract_path": "contracts/integration/v1/integration-contract.json",
+    "contract_canonical_checksum": "435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52c6d78c88",
+    "openapi_path": "contracts/integration/v1/openapi.json",
+    "openapi_canonical_checksum": "3c02fc3c47e8fb53e4a8f4f25fec2e5fbdd126e2b9d8c8318f05f6fd7c2b77e1",
+    "contract_version": "nexora-trd-integration-v1",
+    "api_namespace": "/api/v1/integration/nexora",
+    "modified_by_p3_02": false
+  },
+  "provider_profile": {
+    "path": "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json",
+    "schema_version": "nexora-trd-bot-v031-provider-profile-v1",
+    "canonical_checksum": "48cfcd61b8f2cb866e4c921d31f5c61db83d3f08e5123d690a069a57c3aba109"
+  },
+  "provider_baseline": {
+    "repository": "amirhosseinhamidian/trd-bot-v2",
+    "inspected_commit_sha": "bbb9fd4fbc25e25aa512a9fde1dda912321cdd33",
+    "inspected_release": "0.3.0",
+    "compatible": false,
+    "runtime_negotiation_allowed": false,
+    "direct_database_fallback_allowed": false,
+    "blocking_gaps": [
+      "dedicated_nexora_namespace_absent",
+      "service_to_service_auth_absent",
+      "versioned_capabilities_absent",
+      "stable_snapshot_paging_absent",
+      "external_cursor_event_feed_absent",
+      "idempotent_review_command_absent",
+      "versioned_export_manifest_absent",
+      "full_resync_smoke_absent"
+    ]
+  },
+  "target_provider": {
+    "release": "0.3.1",
+    "accepted_release_range": ">=0.3.1,<0.4.0",
+    "compatibility_status_before_smoke": "contract_candidate_only",
+    "capability_match_required": true,
+    "provider_implementation_required_in_trd_bot_repository": true,
+    "provider_release_claim_allowed_in_nexora": false
+  },
+  "contract_boundary": {
+    "capabilities_frozen": true,
+    "portfolio_decision_alert_snapshots_frozen": true,
+    "durable_event_feed_frozen": true,
+    "event_cursor_and_pagination_frozen": true,
+    "source_references_and_checksums_frozen": true,
+    "versioned_event_envelope_frozen": true,
+    "human_decision_review_commands_frozen": true,
+    "idempotency_frozen": true,
+    "export_job_and_manifest_frozen": true,
+    "full_resync_and_gap_recovery_frozen": true,
+    "service_to_service_auth_frozen": true,
+    "contract_and_real_smoke_acceptance_frozen": true
+  },
+  "compatibility": {
+    "provider_0_3_0_status": "legacy_read_only_blocked",
+    "provider_0_3_0_action": "show_incompatible_and_do_not_sync",
+    "provider_0_3_1_status": "compatible_only_after_exact_capability_match_and_smoke",
+    "unknown_release_action": "fail_closed",
+    "unknown_schema_action": "quarantine_and_degrade",
+    "provider_version_change_action": "invalidate_negotiation_and_fail_closed",
+    "precondition_failed_action": "renegotiate_before_next_operation"
+  },
+  "resync_invariants": {
+    "snapshot_scans_are_stable": true,
+    "all_three_snapshot_groups_required": true,
+    "event_delivery_is_at_least_once": true,
+    "duplicate_delivery_is_idempotent": true,
+    "aggregate_version_detects_gaps": true,
+    "expired_cursor_requires_full_resync": true,
+    "partial_resync_publish_allowed": false,
+    "checkpoint_and_projection_publish_atomically": true,
+    "unresolved_gap_requires_operator_intervention": true
+  },
+  "review_boundary": {
+    "owner_actions": [
+      "accept",
+      "reject",
+      "defer"
+    ],
+    "nexora_remains_owner_review_source_of_truth": true,
+    "provider_command_is_paper_shadow_feedback_only": true,
+    "provider_command_replaces_local_review_record": false,
+    "idempotency_required": true,
+    "conflicting_replay_rejected": true,
+    "source_evidence_checksum_required": true,
+    "execution_authorization": false,
+    "live_order_capability": false,
+    "portfolio_transaction_posted": false
+  },
+  "implementation_boundary": {
+    "contract_and_fixtures_only": true,
+    "nexora_database_tables_added": false,
+    "nexora_runtime_behavior_added": false,
+    "provider_runtime_registered": false,
+    "provider_implementation_deferred_to_trd_bot_v0_3_1": true,
+    "nexora_projection_deferred_to": "NEX-P3-03",
+    "fixture_backed_development_allowed": true,
+    "p3_02_freeze_requires_live_provider": false,
+    "p3_03_freeze_requires_live_provider_smoke": true
+  },
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "required_before": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-02-FREEZE",
+    "post_freeze_stage": "TRD-BOT-v0.3.1-INTEGRATION-IMPLEMENTATION",
+    "nexora_stage_after_compatible_provider": "NEX-P3-03",
+    "candidate_commit_message": "docs(nexora): freeze TRD Bot v0.3.1 integration contract",
+    "freeze_before_provider_implementation": true,
+    "requires_successful_ci_on_candidate_sha": true
+  }
+}

@@ -1,0 +1,168 @@
+name: Phase 2 final acceptance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P2-11 prerequisite
+        run: python3 scripts/verify_transactions_holdings_reconciliation_ui.py
+      - name: Verify P2-12 final acceptance tooling
+        run: python3 scripts/verify_phase_two_final_acceptance.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and acceptance format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/run_phase_two_final_acceptance.py
+          scripts/verify_phase_two_final_acceptance.py
+          tests/test_phase_two_final_acceptance.py
+      - name: Lint backend and acceptance tooling
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/run_phase_two_final_acceptance.py
+          scripts/verify_phase_two_final_acceptance.py
+          tests/test_phase_two_final_acceptance.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run backend tests
+        run: uv run pytest -m "not integration" -q
+      - name: Check generated runtime contracts
+        run: uv run python scripts/generate_runtime_contracts.py --check
+
+  postgresql-17:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:17.6-alpine
+        env:
+          POSTGRES_DB: nexora_phase_two_acceptance
+          POSTGRES_USER: nexora
+          POSTGRES_PASSWORD: nexora_ci_fixture_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexora -d nexora_phase_two_acceptance"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      NEXORA_MIGRATION_DATABASE_DSN_FILE: /tmp/nexora-phase-two-acceptance.dsn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Create private acceptance DSN fixture
+        run: |
+          umask 077
+          printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_phase_two_acceptance' > "$NEXORA_MIGRATION_DATABASE_DSN_FILE"
+      - name: Upgrade repository head
+        run: uv run alembic upgrade head
+      - name: Run PostgreSQL accounting and concurrency tests
+        run: uv run pytest -m integration -q
+      - name: Downgrade to base
+        run: uv run alembic downgrade base
+      - name: Rebuild repository head
+        run: uv run alembic upgrade head
+      - name: Check migration drift
+        run: uv run alembic check
+
+  security-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen scope boundary
+        run: python3 scripts/verify_scope_contract.py
+      - name: Verify security inventory
+        run: python3 scripts/verify_security_boundary.py
+      - name: Verify Phase 2 domain boundary
+        run: python3 scripts/verify_phase_two_portfolio_domain.py
+      - name: Verify complete P2-11 boundary
+        run: python3 scripts/verify_transactions_holdings_reconciliation_ui.py
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Build Web
+        run: pnpm build
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Test complete Phase 2 browser acceptance
+        run: pnpm --filter @nexora/web test:e2e

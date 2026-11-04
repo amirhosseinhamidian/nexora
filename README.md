@@ -183,14 +183,17 @@ contains only its checksummed artifact. Phase 2 is complete. The private German
 VPS acceptance gate remains deferred and continues to block production
 deployment and v0.1 release.
 
-`NEX-P3-00` is the current candidate. It opens bounded local development of the
-Decision Intelligence Experience while preserving the deferred
-`NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate. Phase 3 covers explainable
-Decision/Candidate evidence, Risk reasons, bounded Portfolio impact, explicit
-human review, alerts, watchlists, outcome journal and complete export coverage.
-TRD Bot `0.3.0` remains incompatible; fixture-backed work may continue, but the
-durable projection cannot freeze before a compatible `0.3.1` provider passes a
-real integration smoke. Production readiness remains unclaimed.
+`NEX-P3-00` is frozen. Candidate
+`d4478b400d5bcadf9984a4eb89dc346d73d94fb4` passed the dedicated Phase 3
+roadmap workflow and all 28 regression workflows on the same SHA. It opens
+bounded local development of the Decision Intelligence Experience while
+preserving the deferred `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate. Phase 3
+covers explainable Decision/Candidate evidence, Risk reasons, bounded Portfolio
+impact, explicit human review, alerts, watchlists, outcome journal and complete
+export coverage. TRD Bot `0.3.0` remains incompatible; fixture-backed work may
+continue, but the durable projection cannot freeze before a compatible `0.3.1`
+provider passes a real integration smoke. Production readiness remains
+unclaimed. The only opened implementation stage is `NEX-P3-01`.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -333,7 +336,7 @@ NEX_P2_12_READY_FOR_CANDIDATE=PASS
 NEX_V0_1_SERVER_DEPLOYMENT_ACCEPTANCE_TOOLING=PASS
 NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED
 NEX_P3_00_PHASE_THREE_ROADMAP=PASS
-NEX_P3_00_READY_FOR_CANDIDATE=PASS
+NEX_P3_00_FREEZE=PASS
 ```
 
 ## Documents
@@ -425,3 +428,4 @@ NEX_P3_00_READY_FOR_CANDIDATE=PASS
 - [`artifacts/p2-03/transaction-journal-freeze.json`](artifacts/p2-03/transaction-journal-freeze.json)
 - [`artifacts/p2-04/import-reconciliation-freeze.json`](artifacts/p2-04/import-reconciliation-freeze.json)
 - [`artifacts/p2-05/holdings-projection-freeze.json`](artifacts/p2-05/holdings-projection-freeze.json)
+- [`artifacts/p3-00/phase-three-roadmap-freeze.json`](artifacts/p3-00/phase-three-roadmap-freeze.json)

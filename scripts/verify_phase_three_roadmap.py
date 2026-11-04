@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-three-roadmap.json"
 P2_ACCEPTANCE_PATH = ROOT / "artifacts/p2-12/phase-two-final-acceptance.json"
 SERVER_CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-server-deployment-acceptance.json"
+FREEZE_PATH = ROOT / "artifacts/p3-00/phase-three-roadmap-freeze.json"
 
 CONTRACT_CHECKSUM = "a4906ed219d57e67e147fe55198329ac534fb3be9b6191955a4d9e632edc6951"
 P2_ACCEPTANCE_CANONICAL_CHECKSUM = "1fcf0bacdf223c3b5186e0bc2a1f8e763dc66a2c3e532d76f8073386456049e9"
@@ -17,6 +18,42 @@ P2_ACCEPTANCE_RECORD_CHECKSUM = "114a660b358ba58e16cc3f2b885c20cc72d0b20e0d425f5
 P2_CANDIDATE_SHA = "f71ef1840c09b12259ef519bd27ffd508b1913f2"
 P2_FREEZE_SHA = "ffe5b1b50c6eb7b09bfe052ad96038de47b779df"
 SERVER_CONTRACT_CHECKSUM = "7f80d36b857fe1921d25c0fd78f2b394c0a61d93868b761390e6930f710288ad"
+CANDIDATE_SHA = "d4478b400d5bcadf9984a4eb89dc346d73d94fb4"
+CANDIDATE_TREE_SHA = "c9f7db0256f10cd0a6d14462812dc2de5c487635"
+CANDIDATE_PREDECESSOR_SHA = "6fbdc567245a8790a6dcabd09e16cac0121077b6"
+CANDIDATE_MESSAGE = "docs(nexora): define Phase 3 roadmap and defer VPS gate"
+PRIMARY_RUN_ID = 41855005092
+
+EXPECTED_REGRESSION_RUNS = {
+    "application_composition": 41855004797,
+    "artifact_export_storage": 41855004658,
+    "audit_observability": 41855004992,
+    "authenticated_web_shell": 41855005005,
+    "contracts": 41855004835,
+    "durable_jobs_outbox": 41855004904,
+    "holdings_projection": 41855004674,
+    "import_reconciliation": 41855004555,
+    "nav_pnl_performance": 41855004450,
+    "paper_shadow_projection": 41855004813,
+    "phase_one_final_acceptance": 41855004844,
+    "phase_one_readiness": 41855004883,
+    "phase_two_final_acceptance": 41855004638,
+    "phase_two_portfolio_domain": 41855004531,
+    "portfolio_api_export": 41855005100,
+    "portfolio_dashboard_accounts": 41855004731,
+    "portfolio_registry": 41855004693,
+    "postgresql_schema": 41855004696,
+    "private_deployment_operations": 41855004927,
+    "runtime_api_auth": 41855004831,
+    "runtime_foundation": 41855004642,
+    "server_deployment_acceptance": 41855004651,
+    "single_owner_identity_runtime": 41855004730,
+    "transaction_journal": 41855004724,
+    "transactions_holdings_reconciliation_ui": 41855004931,
+    "trd_bot_adapter": 41855004708,
+    "trd_bot_sync_runtime": 41855005108,
+    "valuation_evidence": 41855004767,
+}
 
 EXPECTED_STAGES = [f"NEX-P3-{number:02d}" for number in range(14)]
 EXPECTED_REVIEW_ACTIONS = {"accept", "reject", "defer"}
@@ -58,6 +95,10 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -210,9 +251,139 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(transition.get("requires_successful_ci_on_candidate_sha") is True, "candidate CI gate removed")
 
 
+def _validate_workflow(workflow: object, *, label: str, run_id: int) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"{label} run ID drift")
+    _require(
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"{label} run URL drift",
+    )
+    _require(workflow.get("head_sha") == CANDIDATE_SHA, f"{label} workflow head SHA drift")
+    _require(
+        workflow.get("head_branch") == "feature/v0.1-decision-intelligence",
+        f"{label} workflow branch drift",
+    )
+    _require(workflow.get("event") == "push", f"{label} workflow must be a push run")
+    _require(workflow.get("attempt") == 1, f"{label} workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict) and jobs, f"{label} job inventory must be non-empty")
+    for job_name, job in jobs.items():
+        _require(isinstance(job, dict), f"{label}/{job_name} must be an object")
+        _require(isinstance(job.get("job_id"), int), f"{label}/{job_name} job ID missing")
+        _require(job.get("conclusion") == "success", f"{label}/{job_name} did not succeed")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-phase-three-roadmap-freeze-v1",
+        "invalid freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P3-00", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_tree_sha") == CANDIDATE_TREE_SHA, "candidate tree drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate message drift")
+    _require(
+        record.get("candidate_predecessor_sha") == CANDIDATE_PREDECESSOR_SHA,
+        "candidate predecessor drift",
+    )
+
+    primary = record.get("github_actions")
+    _validate_workflow(primary, label="phase three roadmap", run_id=PRIMARY_RUN_ID)
+    _require(primary.get("workflow_path") == ".github/workflows/phase-three-roadmap.yml", "workflow path drift")
+    jobs = primary["jobs"]
+    _require(
+        set(jobs) == {"phase_three_roadmap_contract", "backend_regression", "web_regression"},
+        "primary job inventory mismatch",
+    )
+    _require(jobs["phase_three_roadmap_contract"].get("job_id") == 126661131756, "contract job ID drift")
+    _require(jobs["backend_regression"].get("job_id") == 126661132480, "backend job ID drift")
+    _require(jobs["web_regression"].get("job_id") == 126661132222, "web job ID drift")
+    for marker in (
+        "phase_two_prerequisite_passed",
+        "server_deployment_gate_preserved",
+        "phase_three_roadmap_verifier_passed",
+        "phase_three_roadmap_tests_passed",
+        "repository_contract_tests_passed",
+    ):
+        _require(jobs["phase_three_roadmap_contract"].get(marker) is True, f"contract job missing {marker}")
+    for job_name in ("backend_regression", "web_regression"):
+        for marker in (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "tests_passed",
+        ):
+            _require(jobs[job_name].get(marker) is True, f"{job_name} missing {marker}")
+    _require(jobs["web_regression"].get("build_passed") is True, "Web build evidence missing")
+
+    regressions = record.get("regression_workflows")
+    _require(isinstance(regressions, dict), "regression workflow evidence must be an object")
+    _require(set(regressions) == set(EXPECTED_REGRESSION_RUNS), "regression workflow inventory mismatch")
+    for label, run_id in EXPECTED_REGRESSION_RUNS.items():
+        _validate_workflow(regressions[label], label=label, run_id=run_id)
+
+    evidence = record.get("phase_three_roadmap_contract")
+    _require(isinstance(evidence, dict), "Phase 3 contract evidence must be an object")
+    _require(evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(
+        evidence.get("path") == "contracts/nexora-v0.1-phase-three-roadmap.json",
+        "contract path drift",
+    )
+    _require(evidence.get("checksum") == CONTRACT_CHECKSUM, "recorded contract checksum drift")
+    _require(evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("phase_two_prerequisite")
+    _require(isinstance(prerequisite, dict), "Phase 2 prerequisite evidence must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P2-12", "Phase 2 prerequisite drift")
+    _require(prerequisite.get("frozen") is True, "Phase 2 prerequisite is not frozen")
+    _require(prerequisite.get("freeze_commit_sha") == P2_FREEZE_SHA, "Phase 2 Freeze commit drift")
+    _require(
+        prerequisite.get("accepted_candidate_commit_sha") == P2_CANDIDATE_SHA,
+        "Phase 2 candidate drift",
+    )
+    _require(
+        prerequisite.get("acceptance_record_canonical_checksum") == P2_ACCEPTANCE_CANONICAL_CHECKSUM,
+        "Phase 2 artifact checksum drift",
+    )
+    _require(
+        prerequisite.get("acceptance_record_checksum") == P2_ACCEPTANCE_RECORD_CHECKSUM,
+        "Phase 2 record checksum drift",
+    )
+
+    _require(record.get("recorded_on") == "2026-11-04", "invalid freeze record date")
+    _require(record.get("frozen") is True, "P3-00 is not frozen")
+    _require(record.get("local_development_may_continue") is True, "local development was not authorized")
+    _require(
+        record.get("local_acceptance_is_production_acceptance") is False,
+        "local acceptance cannot claim production acceptance",
+    )
+    _require(record.get("phase_three_implementation_started") is False, "implementation started before Freeze")
+    _require(record.get("phase_three_product_complete") is False, "P3-00 cannot claim product completion")
+    _require(record.get("production_readiness_claimed") is False, "production readiness remains deferred")
+
+    server = record.get("server_deployment_acceptance")
+    _require(isinstance(server, dict), "server gate evidence must be an object")
+    _require(server.get("gate_id") == "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE", "server gate ID drift")
+    _require(server.get("debt_id") == "NEX-DEBT-P1-13-001", "server debt drift")
+    _require(server.get("status") == "deferred_until_private_vps_available", "server gate status drift")
+    _require(server.get("removed") is False, "server gate was removed")
+    _require(server.get("bypassed") is False, "server gate was bypassed")
+    _require(server.get("required_evidence_unchanged") is True, "server evidence was weakened")
+    _require(set(server.get("blocks", [])) == EXPECTED_RELEASE_BLOCKERS, "server blockers drift")
+
+    for key in FORBIDDEN_CAPABILITIES:
+        _require(record.get(key) is False, f"freeze record cannot enable {key}")
+    _require(record.get("trd_bot_0_3_0_compatible") is False, "TRD Bot 0.3.0 remains incompatible")
+    _require(record.get("target_trd_bot_release") == "0.3.1", "TRD Bot target release drift")
+    _require(record.get("next_allowed_stage") == "NEX-P3-01", "post-Freeze stage drift")
+
+
 def validate_files_and_markers() -> None:
     expected = {
-        "README.md": "`NEX-P3-00` is the current candidate",
+        "README.md": "`NEX-P3-00` is frozen.",
         "docs/v0.1/30-phase-two-final-acceptance.md": "`NEX-P3-00`; continuing bounded local development",
         "docs/v0.1/31-server-deployment-acceptance.md": "# NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
         "docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md": "# NEX-P3-00",
@@ -230,6 +401,7 @@ def main() -> int:
     contract = load_contract()
     validate_contract(contract)
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P3-00 contract checksum drift")
+    validate_freeze_record(load_freeze_record(), contract)
     validate_files_and_markers()
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
@@ -237,7 +409,8 @@ def main() -> int:
     print("NEX_P2_12_PREREQUISITE=PASS")
     print("NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED")
     print("NEX_P3_00_PHASE_THREE_ROADMAP=PASS")
-    print("NEX_P3_00_READY_FOR_CANDIDATE=PASS")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print("NEX_P3_00_FREEZE=PASS")
     return 0
 
 

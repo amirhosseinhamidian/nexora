@@ -1,6 +1,6 @@
 # NEX-P3-00 — Phase 3 Roadmap and Deferred Deployment Amendment
 
-Status: **Candidate — freeze before Phase 3 implementation**
+Status: **Frozen — `NEX-P3-01` is the only opened implementation stage**
 
 Phase 2 is complete and frozen. Nexora may continue bounded local development
 without a VPS, but the existing `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate is
@@ -24,6 +24,19 @@ Freeze commit:
 - `phase_two_scope_accepted=true`;
 - `ready_to_freeze_phase_two=true`;
 - `production_readiness_claimed=false`.
+
+## Freeze evidence
+
+Candidate `d4478b400d5bcadf9984a4eb89dc346d73d94fb4` with tree
+`c9f7db0256f10cd0a6d14462812dc2de5c487635` passed the dedicated Phase 3
+roadmap workflow and all 28 regression workflows on the same SHA. The primary
+push run is
+`https://github.com/amirhosseinhamidian/nexora/actions/runs/41855005092`.
+
+The checksummed evidence is recorded in
+`artifacts/p3-00/phase-three-roadmap-freeze.json`. This Freeze authorizes only
+the bounded local development described here. It does not pass the deferred
+server gate or claim production readiness.
 
 ## Phase 3 objective
 
@@ -177,6 +190,6 @@ uv run python scripts/verify_phase_three_roadmap.py
 uv run python -m unittest tests/test_phase_three_roadmap.py -v
 ```
 
-The candidate must pass its dedicated workflow and repository regressions on
-one SHA. After an artifact-only `NEX-P3-00` Freeze, the only opened
-implementation stage is `NEX-P3-01`.
+The accepted candidate passed its dedicated workflow and all repository
+regressions on one SHA. `NEX-P3-00` is frozen; the only opened implementation
+stage is `NEX-P3-01`.

@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class PhaseThreeRoadmapContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_phase_two_prerequisite_is_valid(self) -> None:
         MODULE.validate_phase_two_prerequisite()
@@ -32,6 +33,9 @@ class PhaseThreeRoadmapContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_phase_two_freeze_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)
@@ -137,6 +141,66 @@ class PhaseThreeRoadmapContractTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P3-01"
         with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "next stage drift"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_candidate_tree(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_tree_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "candidate tree drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_primary_ci(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_regression_workflows(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"].pop("contracts")
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "workflow inventory mismatch"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_remove_server_gate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["server_deployment_acceptance"]["removed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "server gate was removed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_bypass_server_gate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["server_deployment_acceptance"]["bypassed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "server gate was bypassed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_claim_production_readiness(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "production readiness"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_enable_live_orders(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["live_order_capability"] = True
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "live_order_capability"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p3_01(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P3-02"
+        with self.assertRaisesRegex(MODULE.PhaseThreeRoadmapError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

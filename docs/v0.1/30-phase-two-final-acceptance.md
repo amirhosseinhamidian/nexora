@@ -121,5 +121,8 @@ logs, DSNs, certificates, browser traces, databases or secret material. If any
 gate fails, do not commit the failed record; fix the cause and rerun.
 
 The artifact-only Freeze completes Phase 2, but it does not deploy, tag or
-release v0.1. The only next operational stage is the deferred private-VPS
-`NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate.
+release v0.1. The private-VPS `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate
+remains the only next deployment stage and continues to block production
+deployment and release. Under the separately frozen P3-00 amendment, the next
+local development stage is `NEX-P3-00`; continuing bounded local development
+does not pass, remove or bypass the server gate.

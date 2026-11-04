@@ -18,6 +18,7 @@ SPEC.loader.exec_module(MODULE)
 class TransactionsHoldingsReconciliationUiContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze = MODULE.load_freeze_record()
 
     def test_frozen_p2_10_prerequisite_is_valid(self) -> None:
         MODULE.validate_frozen_p2_10()
@@ -29,6 +30,42 @@ class TransactionsHoldingsReconciliationUiContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze, self.contract)
+        MODULE.validate_workflow()
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(
+            MODULE.TransactionsHoldingsReconciliationUiContractError,
+            "candidate SHA",
+        ):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_failed_browser_job(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        browser = next(
+            item
+            for item in changed["checks"]
+            if item["run_id"] == MODULE.P2_11_WORKFLOW_RUN_ID and item["name"] == "browser"
+        )
+        browser["conclusion"] = "failure"
+        with self.assertRaisesRegex(
+            MODULE.TransactionsHoldingsReconciliationUiContractError,
+            "check evidence",
+        ):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p2_12(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["next_allowed_stage"] = "NEX-P2-13"
+        with self.assertRaisesRegex(
+            MODULE.TransactionsHoldingsReconciliationUiContractError,
+            "next stage",
+        ):
+            MODULE.validate_freeze_record(changed, self.contract)
 
     def test_owner_override_cannot_be_enabled(self) -> None:
         changed = copy.deepcopy(self.contract)

@@ -1,6 +1,6 @@
 # NEX-P2-11 — Transactions, Holdings and Reconciliation UI
 
-Status: candidate
+Status: frozen
 
 Decision date: 2026-11-04
 
@@ -57,5 +57,14 @@ pnpm build
 pnpm --filter @nexora/web test:e2e
 ```
 
-The only next stage opened by this candidate is `NEX-P2-11-FREEZE`. After that
-Freeze, `NEX-P2-12 — Acceptance, Hardening and Freeze` may begin.
+## Freeze
+
+Commit `ef65e02e2d257b0f69277db19e96d23443b77ef2` is the accepted P2-11
+implementation candidate. Its 26 push workflows and all 86 jobs succeeded on
+their first attempt, including the dedicated Chromium browser acceptance job.
+The immutable evidence is recorded in
+`artifacts/p2-11/transactions-holdings-reconciliation-ui-freeze.json`.
+
+P2-11 is frozen. The only next stage opened by this Freeze is
+`NEX-P2-12 — Acceptance, Hardening and Freeze`; no production-readiness or
+Phase 2 acceptance claim is made here.

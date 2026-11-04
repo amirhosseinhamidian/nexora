@@ -1,0 +1,373 @@
+{
+  "acceptance_profile": "local_reference_portfolio",
+  "branch": "feature/v0.1-portfolio-core",
+  "candidate_commit_sha": "f71ef1840c09b12259ef519bd27ffd508b1913f2",
+  "capacity": {
+    "artifact_checksum": "f5767b12e79519dd784f690324acc19b656a55058c70548add88de165a02418e",
+    "candidate_commit_sha": "f71ef1840c09b12259ef519bd27ffd508b1913f2",
+    "deployment_network_mode": "loopback_only",
+    "environment_label": "macbook-pro-reference",
+    "generated_at": "2026-11-04T08:56:39.089971Z",
+    "passed": true
+  },
+  "ci": {
+    "conclusion": "success",
+    "head_sha": "f71ef1840c09b12259ef519bd27ffd508b1913f2",
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41794275416"
+  },
+  "environment_label": "macbook-pro-reference",
+  "failed_gates": [],
+  "freeze_commit_policy": "acceptance-artifact-only",
+  "gates": [
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_two_final_acceptance.py"
+          ],
+          "duration_ms": 82,
+          "exit_code": 0,
+          "label": "P2-12 contract verifier",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-q"
+          ],
+          "duration_ms": 1272,
+          "exit_code": 0,
+          "label": "Repository contract tests",
+          "passed": true
+        }
+      ],
+      "gate_id": "repository_contract",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "ruff",
+            "format",
+            "--check",
+            "apps/server",
+            "alembic",
+            "scripts/run_phase_two_final_acceptance.py",
+            "scripts/verify_phase_two_final_acceptance.py",
+            "tests/test_phase_two_final_acceptance.py"
+          ],
+          "duration_ms": 66,
+          "exit_code": 0,
+          "label": "Backend format",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "ruff",
+            "check",
+            "apps/server",
+            "alembic",
+            "scripts/run_phase_two_final_acceptance.py",
+            "scripts/verify_phase_two_final_acceptance.py",
+            "tests/test_phase_two_final_acceptance.py"
+          ],
+          "duration_ms": 65,
+          "exit_code": 0,
+          "label": "Backend lint",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "mypy"
+          ],
+          "duration_ms": 475,
+          "exit_code": 0,
+          "label": "Backend typing",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "not integration",
+            "-q"
+          ],
+          "duration_ms": 9794,
+          "exit_code": 0,
+          "label": "Backend tests",
+          "passed": true
+        }
+      ],
+      "gate_id": "backend",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "upgrade",
+            "head"
+          ],
+          "duration_ms": 1124,
+          "exit_code": 0,
+          "label": "Alembic upgrade",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "downgrade",
+            "base"
+          ],
+          "duration_ms": 1507,
+          "exit_code": 0,
+          "label": "Alembic downgrade",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "upgrade",
+            "head"
+          ],
+          "duration_ms": 1576,
+          "exit_code": 0,
+          "label": "Alembic rebuild",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "check"
+          ],
+          "duration_ms": 1816,
+          "exit_code": 0,
+          "label": "Alembic drift",
+          "passed": true
+        }
+      ],
+      "gate_id": "migration_cycle",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "integration",
+            "-q"
+          ],
+          "duration_ms": 3935,
+          "exit_code": 0,
+          "label": "PostgreSQL accounting and concurrency",
+          "passed": true
+        }
+      ],
+      "gate_id": "postgresql_accounting",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_scope_contract.py"
+          ],
+          "duration_ms": 57,
+          "exit_code": 0,
+          "label": "Scope boundary",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_security_boundary.py"
+          ],
+          "duration_ms": 76,
+          "exit_code": 0,
+          "label": "Security boundary",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_two_portfolio_domain.py"
+          ],
+          "duration_ms": 56,
+          "exit_code": 0,
+          "label": "Phase 2 domain",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_transactions_holdings_reconciliation_ui.py"
+          ],
+          "duration_ms": 88,
+          "exit_code": 0,
+          "label": "Transactions holdings reconciliation UI",
+          "passed": true
+        }
+      ],
+      "gate_id": "security_inventory",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "pnpm",
+            "install",
+            "--frozen-lockfile"
+          ],
+          "duration_ms": 850,
+          "exit_code": 0,
+          "label": "Frontend install",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "format:check"
+          ],
+          "duration_ms": 3634,
+          "exit_code": 0,
+          "label": "Frontend format",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "lint"
+          ],
+          "duration_ms": 6297,
+          "exit_code": 0,
+          "label": "Frontend lint",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "typecheck"
+          ],
+          "duration_ms": 4664,
+          "exit_code": 0,
+          "label": "Frontend typecheck",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "test"
+          ],
+          "duration_ms": 4982,
+          "exit_code": 0,
+          "label": "Frontend tests",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "build"
+          ],
+          "duration_ms": 9263,
+          "exit_code": 0,
+          "label": "Frontend build",
+          "passed": true
+        }
+      ],
+      "gate_id": "frontend",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "pnpm",
+            "--filter",
+            "@nexora/web",
+            "test:e2e"
+          ],
+          "duration_ms": 11474,
+          "exit_code": 0,
+          "label": "Portfolio browser acceptance",
+          "passed": true
+        }
+      ],
+      "gate_id": "browser",
+      "passed": true
+    }
+  ],
+  "generated_at": "2026-11-04T09:03:10.440297Z",
+  "manual": {
+    "deterministic_accounting_fixture_review": "pass",
+    "import_reconciliation_atomicity_review": "pass",
+    "no_forbidden_capabilities": "pass",
+    "owner_scope_and_immutability_review": "pass",
+    "projection_rebuild_and_export_review": "pass",
+    "responsive_bilingual_portfolio_review": "pass"
+  },
+  "phase_two_scope_accepted": true,
+  "prior_freeze": {
+    "p2_11_commit_sha": "df6e05aa4d71a9f8b844e4c1b333449223e7dff3",
+    "p2_11_ready": true,
+    "p2_11_record_checksum": "e8070032a9579a0545847994e9bb0b426310f110ec6c3a0983db2a755d36be1c"
+  },
+  "production_readiness_claimed": false,
+  "ready_to_freeze_phase_two": true,
+  "record_checksum": "114a660b358ba58e16cc3f2b885c20cc72d0b20e0d425f5c266dd2120c0daedb",
+  "schema_version": "nexora-phase-two-final-acceptance-record-v1",
+  "security_boundary": {
+    "autonomous_ai_execution": false,
+    "direct_trd_bot_database_access": false,
+    "exchange_credentials": false,
+    "financial_advice": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "ml_training_or_inference": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "saas": false,
+    "tax_advice": false,
+    "wallet_private_keys_or_signing": false
+  },
+  "server_deployment_acceptance": {
+    "blocks": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "planned_country_code": "DE",
+    "planned_host_type": "private_vps",
+    "production_readiness_claimed": false,
+    "status": "deferred_to_server_deployment"
+  }
+}

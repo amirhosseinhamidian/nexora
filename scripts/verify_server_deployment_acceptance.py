@@ -222,7 +222,7 @@ def validate_files_and_markers() -> None:
         "apps/server/tests/test_server_deployment_acceptance.py": "def test_acceptance_record_round_trip",
         "docs/v0.1/31-server-deployment-acceptance.md": "# NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
         "scripts/run_server_deployment_acceptance.py": "def main() -> int:",
-        "tests/test_server_deployment_acceptance.py": "class ServerDeploymentAcceptanceContractTests",
+        "tests/test_server_deployment_acceptance_contract.py": "class ServerDeploymentAcceptanceContractTests",
     }
     for relative, marker in expected.items():
         path = ROOT / relative

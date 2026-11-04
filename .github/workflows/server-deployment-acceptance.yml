@@ -47,7 +47,7 @@ jobs:
           apps/server/tests/test_server_deployment_acceptance.py
           scripts/run_server_deployment_acceptance.py
           scripts/verify_server_deployment_acceptance.py
-          tests/test_server_deployment_acceptance.py
+          tests/test_server_deployment_acceptance_contract.py
       - name: Lint server acceptance tooling
         run: >-
           uv run ruff check
@@ -55,7 +55,7 @@ jobs:
           apps/server/tests/test_server_deployment_acceptance.py
           scripts/run_server_deployment_acceptance.py
           scripts/verify_server_deployment_acceptance.py
-          tests/test_server_deployment_acceptance.py
+          tests/test_server_deployment_acceptance_contract.py
       - name: Typecheck backend
         run: uv run mypy
       - name: Run server acceptance unit tests

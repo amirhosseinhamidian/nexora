@@ -1,0 +1,84 @@
+name: Decision review journal domain
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  decision-review-journal-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P3-00 prerequisite
+        run: python3 scripts/verify_phase_three_roadmap.py
+      - name: Verify P3-01 domain
+        run: python3 scripts/verify_decision_review_journal_domain.py
+      - name: Run P3-01 contract tests
+        run: python3 -m unittest tests/test_decision_review_journal_domain.py -v
+      - name: Run repository contract regressions
+        run: python3 -m unittest discover -s tests -v
+
+  backend-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check P3-01 format
+        run: >-
+          uv run ruff format --check
+          scripts/verify_decision_review_journal_domain.py
+          tests/test_decision_review_journal_domain.py
+      - name: Lint P3-01
+        run: >-
+          uv run ruff check
+          scripts/verify_decision_review_journal_domain.py
+          tests/test_decision_review_journal_domain.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run backend tests
+        run: uv run pytest -m "not integration" -q
+
+  web-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Build Web
+        run: pnpm build

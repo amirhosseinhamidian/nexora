@@ -195,6 +195,14 @@ continue, but the durable projection cannot freeze before a compatible `0.3.1`
 provider passes a real integration smoke. Production readiness remains
 unclaimed. The only opened implementation stage is `NEX-P3-01`.
 
+`NEX-P3-01` is the current candidate. It freezes the Decision, owner Review,
+Portfolio-impact, Alert, Watchlist and Outcome Journal domain before any
+persistence or UI implementation. Provider evidence remains immutable; reviews
+and Journal corrections preserve history through supersession. Accept never
+creates an OrderIntent or Portfolio transaction, and What-if remains advisory.
+The server gate stays deferred, TRD Bot `0.3.0` stays incompatible and only the
+P3-01 Freeze is opened.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -246,6 +254,7 @@ uv run python scripts/verify_transactions_holdings_reconciliation_ui.py
 uv run python scripts/verify_phase_two_final_acceptance.py
 uv run python scripts/verify_server_deployment_acceptance.py
 uv run python scripts/verify_phase_three_roadmap.py
+uv run python scripts/verify_decision_review_journal_domain.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -337,6 +346,8 @@ NEX_V0_1_SERVER_DEPLOYMENT_ACCEPTANCE_TOOLING=PASS
 NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED
 NEX_P3_00_PHASE_THREE_ROADMAP=PASS
 NEX_P3_00_FREEZE=PASS
+NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS
+NEX_P3_01_READY_FOR_FREEZE=PASS
 ```
 
 ## Documents
@@ -374,6 +385,7 @@ NEX_P3_00_FREEZE=PASS
 - [`docs/v0.1/30-phase-two-final-acceptance.md`](docs/v0.1/30-phase-two-final-acceptance.md)
 - [`docs/v0.1/31-server-deployment-acceptance.md`](docs/v0.1/31-server-deployment-acceptance.md)
 - [`docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md`](docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md)
+- [`docs/v0.1/33-decision-review-journal-domain.md`](docs/v0.1/33-decision-review-journal-domain.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -402,6 +414,7 @@ NEX_P3_00_FREEZE=PASS
 - [`contracts/nexora-v0.1-holdings-lots-cost-basis.json`](contracts/nexora-v0.1-holdings-lots-cost-basis.json)
 - [`contracts/nexora-v0.1-price-fx-manual-valuation.json`](contracts/nexora-v0.1-price-fx-manual-valuation.json)
 - [`contracts/nexora-v0.1-phase-three-roadmap.json`](contracts/nexora-v0.1-phase-three-roadmap.json)
+- [`contracts/nexora-v0.1-decision-review-journal-domain.json`](contracts/nexora-v0.1-decision-review-journal-domain.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

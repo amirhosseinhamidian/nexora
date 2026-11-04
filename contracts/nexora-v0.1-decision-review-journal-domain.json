@@ -1,0 +1,307 @@
+{
+  "schema_version": "nexora-decision-review-journal-domain-v1",
+  "decision_id": "NEX-P3-01",
+  "decision_date": "2026-11-04",
+  "status": "candidate",
+  "title": "Decision, review and journal domain freeze",
+  "p3_00_prerequisite": {
+    "decision_id": "NEX-P3-00",
+    "frozen": true,
+    "freeze_commit_sha": "adfe6291490a03f7be2f3f9e9261b5d2454dd8b3",
+    "accepted_candidate_commit_sha": "d4478b400d5bcadf9984a4eb89dc346d73d94fb4",
+    "freeze_record_path": "artifacts/p3-00/phase-three-roadmap-freeze.json",
+    "freeze_record_canonical_checksum": "5479912ecd162738b2a742e86c1b5f9d64802509cd40e1784c5d3b54c2c1b0de",
+    "phase_three_roadmap_frozen": true,
+    "server_deployment_gate_preserved": true,
+    "production_readiness_claimed": false
+  },
+  "domain_boundary": {
+    "owner_model": "single_owner",
+    "primary_purpose": "explainable_owner_reviewed_decision_history",
+    "source_of_truth": {
+      "trd_bot": "market_strategy_candidate_and_risk_evidence",
+      "nexora": "owner_review_alert_state_watchlist_and_outcome_journal"
+    },
+    "direct_trd_bot_database_access": false,
+    "provider_evidence_mutation": false,
+    "review_is_execution_authorization": false,
+    "review_posts_portfolio_transaction": false,
+    "portfolio_impact_is_advisory": true,
+    "paper_shadow_only": true,
+    "financial_advice_claimed": false
+  },
+  "source_evidence": {
+    "immutable": true,
+    "owner_scoped_projection": true,
+    "required_identity_fields": [
+      "provider_id",
+      "provider_release",
+      "schema_version",
+      "source_record_id"
+    ],
+    "required_lineage_fields": [
+      "source_event_id",
+      "occurred_at",
+      "observed_at",
+      "payload_checksum"
+    ],
+    "optional_governance_fields_preserved_when_present": [
+      "policy_id",
+      "policy_version",
+      "policy_checksum",
+      "model_id",
+      "model_version",
+      "model_checksum"
+    ],
+    "canonical_time": "utc",
+    "unknown_schema_action": "quarantine",
+    "checksum_mismatch_action": "reject_and_quarantine",
+    "provider_degraded_state_visible": true,
+    "missing_evidence_state_visible": true,
+    "stale_evidence_state_visible": true
+  },
+  "decision_projection": {
+    "aggregate": "decision_record",
+    "source_mutation": "forbidden",
+    "local_state_is_derived": true,
+    "decision_kinds": [
+      "candidate",
+      "risk_assessment",
+      "portfolio_assessment",
+      "monitoring_alert"
+    ],
+    "local_states": [
+      "review_pending",
+      "accepted",
+      "rejected",
+      "deferred",
+      "expired",
+      "superseded"
+    ],
+    "references": [
+      "dataset",
+      "experiment",
+      "signal",
+      "candidate",
+      "risk_assessment",
+      "portfolio_assessment",
+      "simulated_position",
+      "alert"
+    ],
+    "latest_state_from_append_only_reviews": true,
+    "optimistic_projection_version_required": true,
+    "duplicate_source_delivery_idempotent": true,
+    "expired_cursor_requires_full_resync": true
+  },
+  "human_review": {
+    "aggregate": "decision_review",
+    "actions": [
+      "accept",
+      "reject",
+      "defer"
+    ],
+    "owner_actor_required": true,
+    "decision_reference_required": true,
+    "source_evidence_checksum_required": true,
+    "reason_code_required": true,
+    "reason_note_optional": true,
+    "reviewed_at_required": true,
+    "recorded_at_required": true,
+    "idempotency_key_required": true,
+    "expected_version_required": true,
+    "optimistic_concurrency_required": true,
+    "mutation_after_recording": "forbidden",
+    "correction": "superseding_review",
+    "latest_review_is_derived": true,
+    "defer_revisit_at_optional": true,
+    "accept_creates_order_intent": false,
+    "accept_posts_transaction": false,
+    "provider_reason_codes_remain_namespaced": true,
+    "owner_reason_codes_remain_namespaced": true,
+    "owner_reason_code_namespaces": {
+      "accept": [
+        "owner.accept.evidence_sufficient",
+        "owner.accept.portfolio_fit",
+        "owner.accept.risk_within_policy",
+        "owner.accept.observe_in_paper_shadow",
+        "owner.accept.other_with_note"
+      ],
+      "reject": [
+        "owner.reject.stale_context",
+        "owner.reject.low_confidence",
+        "owner.reject.data_quality",
+        "owner.reject.regime_mismatch",
+        "owner.reject.exposure",
+        "owner.reject.concentration",
+        "owner.reject.policy_limit",
+        "owner.reject.uncertainty",
+        "owner.reject.portfolio_conflict",
+        "owner.reject.other_with_note"
+      ],
+      "defer": [
+        "owner.defer.evidence_pending",
+        "owner.defer.market_context_pending",
+        "owner.defer.valuation_missing",
+        "owner.defer.provider_degraded",
+        "owner.defer.review_later",
+        "owner.defer.other_with_note"
+      ]
+    },
+    "other_reason_requires_note": true
+  },
+  "portfolio_impact": {
+    "aggregate": "portfolio_candidate_impact",
+    "advisory_only": true,
+    "portfolio_snapshot_reference_required": true,
+    "candidate_reference_required": true,
+    "calculation_version_required": true,
+    "input_checksums_required": true,
+    "uncertainty_required": true,
+    "supported_initial_measures": [
+      "exposure_delta",
+      "concentration_delta",
+      "risk_budget_delta",
+      "simulated_allocation_delta"
+    ],
+    "what_if_persists_accounting_transaction": false,
+    "what_if_submits_order": false,
+    "future_correlation_and_scenario_extension_allowed": true
+  },
+  "alert_domain": {
+    "aggregate": "owner_alert_state",
+    "source_alert_immutable": true,
+    "local_states": [
+      "open",
+      "acknowledged",
+      "snoozed",
+      "resolved",
+      "expired"
+    ],
+    "acknowledgement_is_idempotent": true,
+    "snooze_until_required_when_snoozed": true,
+    "state_history_append_only": true,
+    "source_alert_deletion_forbidden": true,
+    "notification_delivery_deferred": true
+  },
+  "watchlist_domain": {
+    "aggregate": "watchlist",
+    "owner_scoped": true,
+    "item_kinds": [
+      "asset",
+      "market",
+      "strategy",
+      "candidate_source"
+    ],
+    "monitoring_preferences_bounded": true,
+    "optimistic_concurrency_required": true,
+    "duplicate_item_idempotent": true,
+    "creates_trade_instruction": false,
+    "provider_subscription_management_deferred": true
+  },
+  "outcome_journal": {
+    "aggregate": "outcome_journal_entry",
+    "append_only": true,
+    "owner_scoped": true,
+    "decision_reference_required": true,
+    "review_reference_optional": true,
+    "portfolio_reference_optional": true,
+    "simulated_position_reference_optional": true,
+    "entry_kinds": [
+      "owner_note",
+      "review_rationale",
+      "observed_outcome",
+      "expectation_comparison",
+      "lesson",
+      "correction"
+    ],
+    "occurred_at_required": true,
+    "recorded_at_required": true,
+    "source_lineage_required_for_observed_outcome": true,
+    "uncertainty_visible": true,
+    "mutation_after_recording": "forbidden",
+    "correction": "superseding_entry",
+    "deletion": "forbidden_except_future_explicit_retention_policy",
+    "ai_generated_entry_allowed": false,
+    "human_note_rewritten_by_provider_sync": false
+  },
+  "export_policy": {
+    "export_first": true,
+    "profiles": [
+      "private_complete",
+      "ai_safe"
+    ],
+    "required_domains": [
+      "decision_records",
+      "source_references",
+      "human_reviews",
+      "portfolio_impacts",
+      "alert_state_history",
+      "watchlists",
+      "outcome_journal",
+      "lineage",
+      "uncertainty"
+    ],
+    "schema_version_required": true,
+    "generated_at_required": true,
+    "owner_scope_required": true,
+    "checksums_required": true,
+    "ai_safe_excludes": [
+      "credentials",
+      "tokens",
+      "session_identifiers",
+      "recovery_material",
+      "private_keys",
+      "raw_security_context"
+    ],
+    "public_download": false
+  },
+  "persistence_boundary": {
+    "schema_and_migrations_deferred_to": "NEX-P3-03",
+    "api_and_ui_implementation_allowed_in_p3_01": false,
+    "provider_runtime_registration_allowed_in_p3_01": false,
+    "database_tables_added_in_p3_01": false,
+    "runtime_behavior_added_in_p3_01": false
+  },
+  "trd_bot_dependency": {
+    "current_release": "0.3.0",
+    "current_release_compatible": false,
+    "target_release": "0.3.1",
+    "integration_contract_deferred_to": "NEX-P3-02",
+    "compatible_provider_required_before_projection_freeze": true,
+    "fixtures_may_be_defined_before_provider": true,
+    "direct_database_access": false
+  },
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "required_before": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-01-FREEZE",
+    "post_freeze_stage": "NEX-P3-02",
+    "candidate_commit_message": "docs(nexora): freeze decision review journal domain",
+    "freeze_before_implementation": true,
+    "requires_successful_ci_on_candidate_sha": true
+  }
+}

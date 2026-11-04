@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class DecisionReviewJournalDomainTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_p3_00_prerequisite_is_valid(self) -> None:
         MODULE.validate_p3_00_prerequisite()
@@ -29,6 +30,9 @@ class DecisionReviewJournalDomainTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
 
     def test_p3_00_freeze_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)
@@ -173,6 +177,66 @@ class DecisionReviewJournalDomainTests(unittest.TestCase):
         changed["transition"]["next_allowed_stage"] = "NEX-P3-02"
         with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "next stage drift"):
             MODULE.validate_contract(changed)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_a_different_candidate_tree(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_tree_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "candidate tree drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_primary_ci(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_all_regression_workflows(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"].pop("contracts")
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "workflow inventory mismatch"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_rejects_regression_sha_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["regression_workflows"]["contracts"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_turn_review_into_execution_authorization(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["review_is_execution_authorization"] = True
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "execution authorization"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_create_order_intent(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["accept_creates_order_intent"] = True
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "OrderIntent"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_remove_server_gate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["server_deployment_acceptance"]["removed"] = True
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "server gate was removed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_claim_production_readiness(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["production_readiness_claimed"] = True
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "production readiness"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p3_02(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P3-03"
+        with self.assertRaisesRegex(MODULE.DecisionReviewJournalDomainError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
 
 if __name__ == "__main__":

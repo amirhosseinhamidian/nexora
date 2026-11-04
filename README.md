@@ -195,13 +195,14 @@ continue, but the durable projection cannot freeze before a compatible `0.3.1`
 provider passes a real integration smoke. Production readiness remains
 unclaimed. The only opened implementation stage is `NEX-P3-01`.
 
-`NEX-P3-01` is the current candidate. It freezes the Decision, owner Review,
-Portfolio-impact, Alert, Watchlist and Outcome Journal domain before any
-persistence or UI implementation. Provider evidence remains immutable; reviews
-and Journal corrections preserve history through supersession. Accept never
-creates an OrderIntent or Portfolio transaction, and What-if remains advisory.
-The server gate stays deferred, TRD Bot `0.3.0` stays incompatible and only the
-P3-01 Freeze is opened.
+`NEX-P3-01` is frozen. Candidate
+`ffa4acd39806e72f7e53d16af7e9937c12e669c5` passed the dedicated Decision,
+Review and Journal workflow and all 29 regression workflows on the same SHA.
+The frozen contract keeps provider evidence immutable, preserves Review and
+Journal correction history through supersession, and forbids Accept or What-if
+from creating an OrderIntent or Portfolio transaction. It adds no database
+table, API, UI or runtime behavior. The server gate stays deferred, TRD Bot
+`0.3.0` stays incompatible and only `NEX-P3-02` is opened.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -347,7 +348,7 @@ NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED
 NEX_P3_00_PHASE_THREE_ROADMAP=PASS
 NEX_P3_00_FREEZE=PASS
 NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS
-NEX_P3_01_READY_FOR_FREEZE=PASS
+NEX_P3_01_FREEZE=PASS
 ```
 
 ## Documents
@@ -442,3 +443,4 @@ NEX_P3_01_READY_FOR_FREEZE=PASS
 - [`artifacts/p2-04/import-reconciliation-freeze.json`](artifacts/p2-04/import-reconciliation-freeze.json)
 - [`artifacts/p2-05/holdings-projection-freeze.json`](artifacts/p2-05/holdings-projection-freeze.json)
 - [`artifacts/p3-00/phase-three-roadmap-freeze.json`](artifacts/p3-00/phase-three-roadmap-freeze.json)
+- [`artifacts/p3-01/decision-review-journal-domain-freeze.json`](artifacts/p3-01/decision-review-journal-domain-freeze.json)

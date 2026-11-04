@@ -1,0 +1,984 @@
+{
+  "schema_version": "nexora-decision-review-journal-domain-freeze-v1",
+  "decision_id": "NEX-P3-01",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+  "candidate_tree_sha": "b21956943411f7b7a4d6d333a4953c093be562ed",
+  "candidate_commit_message": "docs(nexora): freeze decision review journal domain",
+  "candidate_predecessor_sha": "adfe6291490a03f7be2f3f9e9261b5d2454dd8b3",
+  "github_actions": {
+    "workflow_name": "Decision review journal domain",
+    "workflow_path": ".github/workflows/decision-review-journal-domain.yml",
+    "run_id": 41859051343,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051343",
+    "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "backend_regression": {
+        "job_id": 126675485254,
+        "name": "backend-regression",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true
+      },
+      "decision_review_journal_contract": {
+        "job_id": 126675486244,
+        "name": "decision-review-journal-contract",
+        "conclusion": "success",
+        "p3_00_prerequisite_passed": true,
+        "decision_review_journal_verifier_passed": true,
+        "decision_review_journal_tests_passed": true,
+        "repository_contract_tests_passed": true
+      },
+      "web_regression": {
+        "job_id": 126675485699,
+        "name": "web-regression",
+        "conclusion": "success",
+        "locked_dependencies_installed": true,
+        "format_passed": true,
+        "lint_passed": true,
+        "typecheck_passed": true,
+        "tests_passed": true,
+        "build_passed": true
+      }
+    }
+  },
+  "regression_workflows": {
+    "application_composition": {
+      "workflow_name": "Application composition",
+      "workflow_path": ".github/workflows/application-composition.yml",
+      "run_id": 41859050955,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050955",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675483787,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "composition_contract": {
+          "job_id": 126675484451,
+          "name": "composition-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "artifact_export_storage": {
+      "workflow_name": "Artifact and export storage",
+      "workflow_path": ".github/workflows/artifact-export-storage.yml",
+      "run_id": 41859051124,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051124",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675485996,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "storage_contract": {
+          "job_id": 126675486602,
+          "name": "storage-contract",
+          "conclusion": "success"
+        },
+        "storage_runtime": {
+          "job_id": 126675485365,
+          "name": "storage-runtime",
+          "conclusion": "success"
+        }
+      }
+    },
+    "audit_observability": {
+      "workflow_name": "Audit and observability",
+      "workflow_path": ".github/workflows/audit-observability.yml",
+      "run_id": 41859050440,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050440",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675482527,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "observability_contract": {
+          "job_id": 126675483219,
+          "name": "observability-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483695,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "authenticated_web_shell": {
+      "workflow_name": "Authenticated Web shell",
+      "workflow_path": ".github/workflows/authenticated-web-shell.yml",
+      "run_id": 41859050519,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050519",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675485345,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126675485030,
+          "name": "browser",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675485482,
+          "name": "web",
+          "conclusion": "success"
+        },
+        "web_shell_contract": {
+          "job_id": 126675485439,
+          "name": "web-shell-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "contracts": {
+      "workflow_name": "Contracts",
+      "workflow_path": ".github/workflows/contracts.yml",
+      "run_id": 41859051131,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051131",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "integration_contract": {
+          "job_id": 126675485968,
+          "name": "integration-contract",
+          "conclusion": "success"
+        },
+        "phase_zero_acceptance": {
+          "job_id": 126675486847,
+          "name": "phase-zero-acceptance",
+          "conclusion": "success"
+        },
+        "scope_contract": {
+          "job_id": 126675486427,
+          "name": "scope-contract",
+          "conclusion": "success"
+        },
+        "security_boundary": {
+          "job_id": 126675486435,
+          "name": "security-boundary",
+          "conclusion": "success"
+        },
+        "technical_baseline": {
+          "job_id": 126675486671,
+          "name": "technical-baseline",
+          "conclusion": "success"
+        }
+      }
+    },
+    "durable_jobs_outbox": {
+      "workflow_name": "Durable jobs and outbox",
+      "workflow_path": ".github/workflows/durable-jobs-outbox.yml",
+      "run_id": 41859050830,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050830",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675484541,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "durable_contract": {
+          "job_id": 126675484530,
+          "name": "durable-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483542,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "holdings_projection": {
+      "workflow_name": "Holdings, lots and cost basis",
+      "workflow_path": ".github/workflows/holdings-projection.yml",
+      "run_id": 41859051305,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051305",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675486739,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "holdings_contract": {
+          "job_id": 126675486920,
+          "name": "holdings-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675486366,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "import_reconciliation": {
+      "workflow_name": "Import and reconciliation runtime",
+      "workflow_path": ".github/workflows/import-reconciliation.yml",
+      "run_id": 41859050831,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050831",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675485246,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "import_contract": {
+          "job_id": 126675484413,
+          "name": "import-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675485524,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "nav_pnl_performance": {
+      "workflow_name": "NAV, P&L and bounded performance",
+      "workflow_path": ".github/workflows/nav-pnl-performance.yml",
+      "run_id": 41859050754,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050754",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "analytics_contract": {
+          "job_id": 126675483005,
+          "name": "analytics-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126675483369,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483431,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "paper_shadow_projection": {
+      "workflow_name": "TRD Bot Paper and Shadow projection",
+      "workflow_path": ".github/workflows/paper-shadow-projection.yml",
+      "run_id": 41859050599,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050599",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675483152,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483687,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "projection_contract": {
+          "job_id": 126675483859,
+          "name": "projection-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_one_final_acceptance": {
+      "workflow_name": "Phase 1 final acceptance",
+      "workflow_path": ".github/workflows/phase-one-final-acceptance.yml",
+      "run_id": 41859050814,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050814",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "acceptance_contract": {
+          "job_id": 126675484975,
+          "name": "acceptance-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126675484349,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126675484963,
+          "name": "browser",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675485144,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "private_topology": {
+          "job_id": 126675485552,
+          "name": "private-topology",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675485279,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_one_readiness": {
+      "workflow_name": "Phase 1 roadmap reconciliation",
+      "workflow_path": ".github/workflows/phase-one-readiness.yml",
+      "run_id": 41859050746,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050746",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675484480,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "readiness_contract": {
+          "job_id": 126675484111,
+          "name": "readiness-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675484733,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_three_roadmap": {
+      "workflow_name": "Phase 3 roadmap",
+      "workflow_path": ".github/workflows/phase-three-roadmap.yml",
+      "run_id": 41859050811,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050811",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend_regression": {
+          "job_id": 126675484568,
+          "name": "backend-regression",
+          "conclusion": "success"
+        },
+        "phase_three_roadmap_contract": {
+          "job_id": 126675484423,
+          "name": "phase-three-roadmap-contract",
+          "conclusion": "success"
+        },
+        "web_regression": {
+          "job_id": 126675484071,
+          "name": "web-regression",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_two_final_acceptance": {
+      "workflow_name": "Phase 2 final acceptance",
+      "workflow_path": ".github/workflows/phase-two-final-acceptance.yml",
+      "run_id": 41859050833,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050833",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "acceptance_contract": {
+          "job_id": 126675484281,
+          "name": "acceptance-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126675484228,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126675484105,
+          "name": "browser",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483562,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "security_inventory": {
+          "job_id": 126675483957,
+          "name": "security-inventory",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675483937,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_two_portfolio_domain": {
+      "workflow_name": "Phase 2 portfolio domain",
+      "workflow_path": ".github/workflows/phase-two-portfolio-domain.yml",
+      "run_id": 41859051414,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051414",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend_regression": {
+          "job_id": 126675487018,
+          "name": "backend-regression",
+          "conclusion": "success"
+        },
+        "portfolio_domain_contract": {
+          "job_id": 126675485692,
+          "name": "portfolio-domain-contract",
+          "conclusion": "success"
+        },
+        "web_regression": {
+          "job_id": 126675486148,
+          "name": "web-regression",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_api_export": {
+      "workflow_name": "Portfolio API and deterministic export",
+      "workflow_path": ".github/workflows/portfolio-api-export.yml",
+      "run_id": 41859050999,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050999",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675484682,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "portfolio_api_export_contract": {
+          "job_id": 126675484037,
+          "name": "portfolio-api-export-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675484769,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_dashboard_accounts": {
+      "workflow_name": "Portfolio dashboard and accounts UI",
+      "workflow_path": ".github/workflows/portfolio-dashboard-accounts.yml",
+      "run_id": 41859050852,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050852",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend_regression": {
+          "job_id": 126675484927,
+          "name": "backend-regression",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126675484054,
+          "name": "browser",
+          "conclusion": "success"
+        },
+        "portfolio_dashboard_contract": {
+          "job_id": 126675485008,
+          "name": "portfolio-dashboard-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675484731,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_registry": {
+      "workflow_name": "Portfolio registry",
+      "workflow_path": ".github/workflows/portfolio-registry.yml",
+      "run_id": 41859051047,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051047",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675486779,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675486684,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "registry_contract": {
+          "job_id": 126675487056,
+          "name": "registry-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "postgresql_schema": {
+      "workflow_name": "PostgreSQL schema",
+      "workflow_path": ".github/workflows/postgresql-schema.yml",
+      "run_id": 41859051031,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051031",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675484918,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "database_contract": {
+          "job_id": 126675484342,
+          "name": "database-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675484989,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "private_deployment_operations": {
+      "workflow_name": "Private deployment and operations",
+      "workflow_path": ".github/workflows/private-deployment-operations.yml",
+      "run_id": 41859051236,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051236",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675491280,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "operations_contract": {
+          "job_id": 126675490364,
+          "name": "operations-contract",
+          "conclusion": "success"
+        },
+        "private_topology": {
+          "job_id": 126675490913,
+          "name": "private-topology",
+          "conclusion": "success"
+        }
+      }
+    },
+    "runtime_api_auth": {
+      "workflow_name": "Runtime API authentication and contracts",
+      "workflow_path": ".github/workflows/runtime-api-auth.yml",
+      "run_id": 41859050914,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050914",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675484590,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "cross_language_contract": {
+          "job_id": 126675484702,
+          "name": "cross-language-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675484153,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "runtime_contract": {
+          "job_id": 126675484698,
+          "name": "runtime-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "runtime_foundation": {
+      "workflow_name": "Runtime foundation",
+      "workflow_path": ".github/workflows/runtime-foundation.yml",
+      "run_id": 41859050467,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050467",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675483136,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "foundation_contract": {
+          "job_id": 126675483004,
+          "name": "foundation-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675482916,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "server_deployment_acceptance": {
+      "workflow_name": "Server deployment acceptance",
+      "workflow_path": ".github/workflows/server-deployment-acceptance.yml",
+      "run_id": 41859050853,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050853",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "acceptance_contract": {
+          "job_id": 126675482808,
+          "name": "acceptance-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126675483528,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "security_boundary": {
+          "job_id": 126675483682,
+          "name": "security-boundary",
+          "conclusion": "success"
+        }
+      }
+    },
+    "single_owner_identity_runtime": {
+      "workflow_name": "Single-owner identity runtime",
+      "workflow_path": ".github/workflows/single-owner-identity-runtime.yml",
+      "run_id": 41859050821,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050821",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675483910,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "identity_contract": {
+          "job_id": 126675482969,
+          "name": "identity-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483510,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "private_topology": {
+          "job_id": 126675483812,
+          "name": "private-topology",
+          "conclusion": "success"
+        }
+      }
+    },
+    "transaction_journal": {
+      "workflow_name": "Immutable transaction journal",
+      "workflow_path": ".github/workflows/transaction-journal.yml",
+      "run_id": 41859050892,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050892",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675483555,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "journal_contract": {
+          "job_id": 126675484486,
+          "name": "journal-contract",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675484181,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        }
+      }
+    },
+    "transactions_holdings_reconciliation_ui": {
+      "workflow_name": "Transactions holdings and reconciliation UI",
+      "workflow_path": ".github/workflows/transactions-holdings-reconciliation-ui.yml",
+      "run_id": 41859050973,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050973",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend_regression": {
+          "job_id": 126675483582,
+          "name": "backend-regression",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126675484133,
+          "name": "browser",
+          "conclusion": "success"
+        },
+        "portfolio_operations_contract": {
+          "job_id": 126675483907,
+          "name": "portfolio-operations-contract",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126675483862,
+          "name": "web",
+          "conclusion": "success"
+        }
+      }
+    },
+    "trd_bot_adapter": {
+      "workflow_name": "TRD Bot adapter",
+      "workflow_path": ".github/workflows/trd-bot-adapter.yml",
+      "run_id": 41859050703,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050703",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "adapter_contract": {
+          "job_id": 126675483483,
+          "name": "adapter-contract",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126675482987,
+          "name": "backend",
+          "conclusion": "success"
+        }
+      }
+    },
+    "trd_bot_sync_runtime": {
+      "workflow_name": "TRD Bot sync runtime",
+      "workflow_path": ".github/workflows/trd-bot-sync-runtime.yml",
+      "run_id": 41859051032,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051032",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675485275,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675485749,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "sync_contract": {
+          "job_id": 126675484634,
+          "name": "sync-contract",
+          "conclusion": "success"
+        }
+      }
+    },
+    "valuation_evidence": {
+      "workflow_name": "Price, FX and manual valuation evidence",
+      "workflow_path": ".github/workflows/valuation-evidence.yml",
+      "run_id": 41859050433,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41859050433",
+      "head_sha": "ffa4acd39806e72f7e53d16af7e9937c12e669c5",
+      "head_branch": "feature/v0.1-decision-intelligence",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126675482948,
+          "name": "backend",
+          "conclusion": "success"
+        },
+        "postgresql_17": {
+          "job_id": 126675483261,
+          "name": "postgresql-17",
+          "conclusion": "success"
+        },
+        "valuation_contract": {
+          "job_id": 126675482347,
+          "name": "valuation-contract",
+          "conclusion": "success"
+        }
+      }
+    }
+  },
+  "decision_review_journal_contract": {
+    "schema_version": "nexora-decision-review-journal-domain-v1",
+    "path": "contracts/nexora-v0.1-decision-review-journal-domain.json",
+    "checksum": "8eb6721183a2ba5ea3965abfb0c7ab60fce4c04e26b834f67948a21041afcb03"
+  },
+  "p3_00_prerequisite": {
+    "decision_id": "NEX-P3-00",
+    "frozen": true,
+    "freeze_commit_sha": "adfe6291490a03f7be2f3f9e9261b5d2454dd8b3",
+    "accepted_candidate_commit_sha": "d4478b400d5bcadf9984a4eb89dc346d73d94fb4",
+    "freeze_record_path": "artifacts/p3-00/phase-three-roadmap-freeze.json",
+    "freeze_record_canonical_checksum": "5479912ecd162738b2a742e86c1b5f9d64802509cd40e1784c5d3b54c2c1b0de"
+  },
+  "recorded_on": "2026-11-04",
+  "frozen": true,
+  "domain_contract_only": true,
+  "database_tables_added": false,
+  "runtime_behavior_added": false,
+  "api_or_ui_added": false,
+  "provider_runtime_registered": false,
+  "decision_source_evidence_immutable": true,
+  "human_review_actions": [
+    "accept",
+    "reject",
+    "defer"
+  ],
+  "review_is_execution_authorization": false,
+  "accept_creates_order_intent": false,
+  "accept_posts_portfolio_transaction": false,
+  "portfolio_impact_advisory_only": true,
+  "what_if_submits_order": false,
+  "outcome_journal_append_only": true,
+  "correction_preserves_history": true,
+  "provider_sync_rewrites_human_notes": false,
+  "phase_three_product_complete": false,
+  "production_readiness_claimed": false,
+  "server_deployment_acceptance": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "removed": false,
+    "bypassed": false,
+    "required_evidence_unchanged": true,
+    "blocks": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ]
+  },
+  "saas": false,
+  "public_internet_deployment": false,
+  "multi_user": false,
+  "exchange_credentials": false,
+  "wallet_private_keys_or_signing": false,
+  "fund_transfer": false,
+  "live_order_capability": false,
+  "autonomous_ai_execution": false,
+  "ml_training_or_inference": false,
+  "financial_advice": false,
+  "tax_advice": false,
+  "direct_trd_bot_database_access": false,
+  "trd_bot_0_3_0_compatible": false,
+  "target_trd_bot_release": "0.3.1",
+  "next_allowed_stage": "NEX-P3-02"
+}

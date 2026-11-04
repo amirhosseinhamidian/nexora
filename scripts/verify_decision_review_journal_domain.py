@@ -9,11 +9,49 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-decision-review-journal-domain.json"
 P3_00_FREEZE_PATH = ROOT / "artifacts/p3-00/phase-three-roadmap-freeze.json"
+FREEZE_PATH = ROOT / "artifacts/p3-01/decision-review-journal-domain-freeze.json"
 
 CONTRACT_CHECKSUM = "8eb6721183a2ba5ea3965abfb0c7ab60fce4c04e26b834f67948a21041afcb03"
 P3_00_FREEZE_CANONICAL_CHECKSUM = "5479912ecd162738b2a742e86c1b5f9d64802509cd40e1784c5d3b54c2c1b0de"
 P3_00_FREEZE_COMMIT = "adfe6291490a03f7be2f3f9e9261b5d2454dd8b3"
 P3_00_CANDIDATE_COMMIT = "d4478b400d5bcadf9984a4eb89dc346d73d94fb4"
+CANDIDATE_SHA = "ffa4acd39806e72f7e53d16af7e9937c12e669c5"
+CANDIDATE_TREE_SHA = "b21956943411f7b7a4d6d333a4953c093be562ed"
+CANDIDATE_PREDECESSOR_SHA = P3_00_FREEZE_COMMIT
+CANDIDATE_MESSAGE = "docs(nexora): freeze decision review journal domain"
+PRIMARY_RUN_ID = 41859051343
+
+EXPECTED_REGRESSION_RUNS = {
+    "application_composition": 41859050955,
+    "artifact_export_storage": 41859051124,
+    "audit_observability": 41859050440,
+    "authenticated_web_shell": 41859050519,
+    "contracts": 41859051131,
+    "durable_jobs_outbox": 41859050830,
+    "holdings_projection": 41859051305,
+    "import_reconciliation": 41859050831,
+    "nav_pnl_performance": 41859050754,
+    "paper_shadow_projection": 41859050599,
+    "phase_one_final_acceptance": 41859050814,
+    "phase_one_readiness": 41859050746,
+    "phase_three_roadmap": 41859050811,
+    "phase_two_final_acceptance": 41859050833,
+    "phase_two_portfolio_domain": 41859051414,
+    "portfolio_api_export": 41859050999,
+    "portfolio_dashboard_accounts": 41859050852,
+    "portfolio_registry": 41859051047,
+    "postgresql_schema": 41859051031,
+    "private_deployment_operations": 41859051236,
+    "runtime_api_auth": 41859050914,
+    "runtime_foundation": 41859050467,
+    "server_deployment_acceptance": 41859050853,
+    "single_owner_identity_runtime": 41859050821,
+    "transaction_journal": 41859050892,
+    "transactions_holdings_reconciliation_ui": 41859050973,
+    "trd_bot_adapter": 41859050703,
+    "trd_bot_sync_runtime": 41859051032,
+    "valuation_evidence": 41859050433,
+}
 
 EXPECTED_REVIEW_ACTIONS = {"accept", "reject", "defer"}
 EXPECTED_DECISION_KINDS = {
@@ -88,6 +126,10 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -311,9 +353,155 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(transition.get("requires_successful_ci_on_candidate_sha") is True, "candidate CI gate removed")
 
 
+def _validate_workflow(workflow: object, *, label: str, run_id: int) -> None:
+    _require(isinstance(workflow, dict), f"{label} workflow evidence must be an object")
+    _require(workflow.get("run_id") == run_id, f"{label} run ID drift")
+    _require(
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{run_id}",
+        f"{label} run URL drift",
+    )
+    _require(workflow.get("head_sha") == CANDIDATE_SHA, f"{label} workflow head SHA drift")
+    _require(
+        workflow.get("head_branch") == "feature/v0.1-decision-intelligence",
+        f"{label} workflow branch drift",
+    )
+    _require(workflow.get("event") == "push", f"{label} workflow must be a push run")
+    _require(workflow.get("attempt") == 1, f"{label} workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", f"{label} workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict) and jobs, f"{label} job inventory must be non-empty")
+    for job_name, job in jobs.items():
+        _require(isinstance(job, dict), f"{label}/{job_name} must be an object")
+        _require(isinstance(job.get("job_id"), int), f"{label}/{job_name} job ID missing")
+        _require(job.get("conclusion") == "success", f"{label}/{job_name} did not succeed")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-decision-review-journal-domain-freeze-v1",
+        "invalid freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P3-01", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "repository drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_tree_sha") == CANDIDATE_TREE_SHA, "candidate tree drift")
+    _require(record.get("candidate_commit_message") == CANDIDATE_MESSAGE, "candidate message drift")
+    _require(
+        record.get("candidate_predecessor_sha") == CANDIDATE_PREDECESSOR_SHA,
+        "candidate predecessor drift",
+    )
+
+    primary = record.get("github_actions")
+    _validate_workflow(primary, label="decision review journal domain", run_id=PRIMARY_RUN_ID)
+    _require(
+        primary.get("workflow_path") == ".github/workflows/decision-review-journal-domain.yml",
+        "workflow path drift",
+    )
+    jobs = primary["jobs"]
+    _require(
+        set(jobs) == {"decision_review_journal_contract", "backend_regression", "web_regression"},
+        "primary job inventory mismatch",
+    )
+    _require(
+        jobs["decision_review_journal_contract"].get("job_id") == 126675486244,
+        "contract job ID drift",
+    )
+    _require(jobs["backend_regression"].get("job_id") == 126675485254, "backend job ID drift")
+    _require(jobs["web_regression"].get("job_id") == 126675485699, "web job ID drift")
+    for marker in (
+        "p3_00_prerequisite_passed",
+        "decision_review_journal_verifier_passed",
+        "decision_review_journal_tests_passed",
+        "repository_contract_tests_passed",
+    ):
+        _require(
+            jobs["decision_review_journal_contract"].get(marker) is True,
+            f"contract job missing {marker}",
+        )
+    for job_name in ("backend_regression", "web_regression"):
+        for marker in (
+            "locked_dependencies_installed",
+            "format_passed",
+            "lint_passed",
+            "typecheck_passed",
+            "tests_passed",
+        ):
+            _require(jobs[job_name].get(marker) is True, f"{job_name} missing {marker}")
+    _require(jobs["web_regression"].get("build_passed") is True, "Web build evidence missing")
+
+    regressions = record.get("regression_workflows")
+    _require(isinstance(regressions, dict), "regression workflow evidence must be an object")
+    _require(set(regressions) == set(EXPECTED_REGRESSION_RUNS), "regression workflow inventory mismatch")
+    for label, run_id in EXPECTED_REGRESSION_RUNS.items():
+        _validate_workflow(regressions[label], label=label, run_id=run_id)
+
+    evidence = record.get("decision_review_journal_contract")
+    _require(isinstance(evidence, dict), "domain contract evidence must be an object")
+    _require(evidence.get("schema_version") == contract.get("schema_version"), "contract schema mismatch")
+    _require(
+        evidence.get("path") == "contracts/nexora-v0.1-decision-review-journal-domain.json",
+        "contract path drift",
+    )
+    _require(evidence.get("checksum") == CONTRACT_CHECKSUM, "recorded contract checksum drift")
+    _require(evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    prerequisite = record.get("p3_00_prerequisite")
+    _require(isinstance(prerequisite, dict), "P3-00 prerequisite evidence must be an object")
+    _require(prerequisite.get("decision_id") == "NEX-P3-00", "P3-00 prerequisite drift")
+    _require(prerequisite.get("frozen") is True, "P3-00 prerequisite is not frozen")
+    _require(prerequisite.get("freeze_commit_sha") == P3_00_FREEZE_COMMIT, "P3-00 Freeze commit drift")
+    _require(
+        prerequisite.get("accepted_candidate_commit_sha") == P3_00_CANDIDATE_COMMIT,
+        "P3-00 candidate drift",
+    )
+    _require(
+        prerequisite.get("freeze_record_canonical_checksum") == P3_00_FREEZE_CANONICAL_CHECKSUM,
+        "P3-00 artifact checksum drift",
+    )
+
+    _require(record.get("recorded_on") == "2026-11-04", "invalid freeze record date")
+    _require(record.get("frozen") is True, "P3-01 is not frozen")
+    _require(record.get("domain_contract_only") is True, "P3-01 must remain contract-only")
+    for key in (
+        "database_tables_added",
+        "runtime_behavior_added",
+        "api_or_ui_added",
+        "provider_runtime_registered",
+    ):
+        _require(record.get(key) is False, f"P3-01 cannot add {key}")
+    _require(record.get("decision_source_evidence_immutable") is True, "source evidence immutability drift")
+    _require(set(record.get("human_review_actions", [])) == EXPECTED_REVIEW_ACTIONS, "review actions drift")
+    _require(record.get("review_is_execution_authorization") is False, "review became execution authorization")
+    _require(record.get("accept_creates_order_intent") is False, "Accept creates an OrderIntent")
+    _require(record.get("accept_posts_portfolio_transaction") is False, "Accept posts a Portfolio transaction")
+    _require(record.get("portfolio_impact_advisory_only") is True, "Portfolio impact is not advisory")
+    _require(record.get("what_if_submits_order") is False, "What-if submits an order")
+    _require(record.get("outcome_journal_append_only") is True, "Outcome Journal is not append-only")
+    _require(record.get("correction_preserves_history") is True, "correction history was weakened")
+    _require(record.get("provider_sync_rewrites_human_notes") is False, "provider sync rewrites human notes")
+    _require(record.get("phase_three_product_complete") is False, "P3-01 cannot claim product completion")
+    _require(record.get("production_readiness_claimed") is False, "production readiness remains deferred")
+
+    server = record.get("server_deployment_acceptance")
+    _require(isinstance(server, dict), "server gate evidence must be an object")
+    _require(server.get("gate_id") == "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE", "server gate ID drift")
+    _require(server.get("debt_id") == "NEX-DEBT-P1-13-001", "server debt drift")
+    _require(server.get("status") == "deferred_until_private_vps_available", "server gate status drift")
+    _require(server.get("removed") is False, "server gate was removed")
+    _require(server.get("bypassed") is False, "server gate was bypassed")
+    _require(server.get("required_evidence_unchanged") is True, "server evidence was weakened")
+    _require(set(server.get("blocks", [])) == EXPECTED_RELEASE_BLOCKERS, "server blockers drift")
+
+    for key in FORBIDDEN_CAPABILITIES:
+        _require(record.get(key) is False, f"freeze record cannot enable {key}")
+    _require(record.get("trd_bot_0_3_0_compatible") is False, "TRD Bot 0.3.0 remains incompatible")
+    _require(record.get("target_trd_bot_release") == "0.3.1", "TRD Bot target release drift")
+    _require(record.get("next_allowed_stage") == "NEX-P3-02", "post-Freeze stage drift")
+
+
 def validate_files_and_markers() -> None:
     expected = {
-        "README.md": "`NEX-P3-01` is the current candidate",
+        "README.md": "`NEX-P3-01` is frozen.",
         "docs/v0.1/33-decision-review-journal-domain.md": "# NEX-P3-01",
         ".github/workflows/decision-review-journal-domain.yml": "name: Decision review journal domain",
         "tests/test_decision_review_journal_domain.py": "class DecisionReviewJournalDomainTests",
@@ -328,13 +516,15 @@ def main() -> int:
     contract = load_contract()
     validate_contract(contract)
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P3-01 contract checksum drift")
+    validate_freeze_record(load_freeze_record(), contract)
     validate_files_and_markers()
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P3_00_PREREQUISITE=PASS")
     print("NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS")
-    print("NEX_P3_01_READY_FOR_FREEZE=PASS")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print("NEX_P3_01_FREEZE=PASS")
     return 0
 
 

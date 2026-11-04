@@ -1,6 +1,6 @@
 # NEX-P3-01 — Decision, Review and Journal Domain Freeze
 
-Status: **Candidate — freeze before persistence or UI implementation**
+Status: **Frozen — `NEX-P3-02` is the only opened stage**
 
 P3-01 freezes the domain language and invariants for explainable decision
 evidence, explicit owner review and an append-oriented outcome journal. It adds
@@ -17,6 +17,19 @@ TRD Bot owns market, Strategy, Signal, Candidate and Risk evidence. Nexora owns
 the owner's review, local alert state, watchlist and outcome journal. Neither
 system reads the other's database. Nexora stores versioned references and
 checksums and never edits the provider's evidence.
+
+## Freeze evidence
+
+Candidate `ffa4acd39806e72f7e53d16af7e9937c12e669c5` with tree
+`b21956943411f7b7a4d6d333a4953c093be562ed` passed the dedicated Decision,
+Review and Journal workflow plus all 29 regression workflows on the same SHA.
+The primary push run is
+`https://github.com/amirhosseinhamidian/nexora/actions/runs/41859051343`.
+
+The checksummed evidence is recorded in
+`artifacts/p3-01/decision-review-journal-domain-freeze.json`. The Freeze adds no
+database table, API, UI or runtime behavior and does not pass the deferred
+server gate.
 
 ## Source evidence
 
@@ -141,5 +154,5 @@ uv run python scripts/verify_decision_review_journal_domain.py
 uv run python -m unittest tests/test_decision_review_journal_domain.py -v
 ```
 
-The candidate must pass its dedicated workflow and all repository regressions
-on one SHA. After P3-01 Freeze, the only opened stage is `NEX-P3-02`.
+The accepted candidate passed its dedicated workflow and every repository
+regression on one SHA. P3-01 is frozen; the only opened stage is `NEX-P3-02`.

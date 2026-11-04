@@ -1,0 +1,93 @@
+{
+  "schema_version": "nexora-server-deployment-acceptance-v1",
+  "decision_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+  "decision_date": "2026-11-04",
+  "status": "candidate",
+  "p2_12_prerequisite": {
+    "decision_id": "NEX-P2-12",
+    "frozen": true,
+    "freeze_commit_sha": "ffe5b1b50c6eb7b09bfe052ad96038de47b779df",
+    "acceptance_record_path": "artifacts/p2-12/phase-two-final-acceptance.json",
+    "acceptance_record_checksum": "114a660b358ba58e16cc3f2b885c20cc72d0b20e0d425f5c266dd2120c0daedb"
+  },
+  "closes_debts": [
+    "NEX-DEBT-P1-13-001"
+  ],
+  "deployment": {
+    "host_type": "private_vps",
+    "country_code": "DE",
+    "profile": "private_single_owner_v0.1",
+    "network_mode": "authenticated_private_overlay",
+    "public_network_exposure": false,
+    "only_application_host_port": 443,
+    "tls_minimum": "1.3"
+  },
+  "evidence": {
+    "maximum_age_days": 7,
+    "same_candidate_sha_required": true,
+    "same_environment_label_required": true,
+    "github_actions_success_required": true,
+    "operations_drill_schema": "nexora-private-operations-drill-v1",
+    "capacity_report_schema": "nexora-private-runtime-benchmark-v1",
+    "final_record_schema": "nexora-server-deployment-acceptance-record-v1",
+    "checksums_required": true
+  },
+  "required_evidence": [
+    "authenticated_private_network_or_equivalent_hardened_access",
+    "encrypted_runtime_backup",
+    "independent_off_host_backup_copy",
+    "restore_drill_within_rto",
+    "retention_dry_run",
+    "server_capacity_and_overload_benchmark",
+    "worker_restart_and_reclaim",
+    "post_restore_session_and_service_token_revocation"
+  ],
+  "backup_and_restore": {
+    "runtime_copy_counts_as_off_host": false,
+    "minimum_independent_off_host_copies": 1,
+    "recovery_point_objective_hours": 24,
+    "recovery_time_objective_hours": 4,
+    "sessions_revoked_after_restore": true,
+    "service_tokens_revoked_after_restore": true,
+    "service_token_rotation_required": true
+  },
+  "capacity_and_overload": {
+    "minimum_completed_samples": 1000,
+    "minimum_throughput_per_second": 10,
+    "latency_p95_budget_ms": 300,
+    "http_429_required": true,
+    "retry_after_required_on_all_429": true,
+    "transport_or_5xx_failures_allowed": false,
+    "immutable_evidence_dropped": false
+  },
+  "manual_evidence": [
+    "host_identity_and_country",
+    "firewall_and_private_access",
+    "ssh_hardening",
+    "off_host_administration_separation",
+    "clock_synchronization",
+    "secret_file_permissions",
+    "no_forbidden_capabilities"
+  ],
+  "acceptance_boundary": {
+    "private_v0_1_release_may_be_unblocked": true,
+    "production_readiness_scope": "private_single_owner_v0.1",
+    "public_internet_production_readiness_claimed": false,
+    "high_availability_claimed": false,
+    "freeze_commit_policy": "acceptance-artifact-only",
+    "freeze_does_not_deploy_or_tag": true
+  },
+  "security_boundary": {
+    "public_internet_profile": false,
+    "live_execution_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "autonomous_ai_execution": false,
+    "multi_user_identity": false
+  },
+  "transition": {
+    "ready_for_acceptance_candidate": true,
+    "next_allowed_stage": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "post_freeze_stage": "NEX-V0.1-RELEASE-CANDIDATE"
+  }
+}

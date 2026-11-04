@@ -1,0 +1,79 @@
+name: Server deployment acceptance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen Phase 2 prerequisite
+        run: python3 scripts/verify_phase_two_final_acceptance.py
+      - name: Verify server deployment acceptance tooling
+        run: python3 scripts/verify_server_deployment_acceptance.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check server acceptance format
+        run: >-
+          uv run ruff format --check
+          apps/server/src/nexora/server_deployment_acceptance.py
+          apps/server/tests/test_server_deployment_acceptance.py
+          scripts/run_server_deployment_acceptance.py
+          scripts/verify_server_deployment_acceptance.py
+          tests/test_server_deployment_acceptance.py
+      - name: Lint server acceptance tooling
+        run: >-
+          uv run ruff check
+          apps/server/src/nexora/server_deployment_acceptance.py
+          apps/server/tests/test_server_deployment_acceptance.py
+          scripts/run_server_deployment_acceptance.py
+          scripts/verify_server_deployment_acceptance.py
+          tests/test_server_deployment_acceptance.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run server acceptance unit tests
+        run: uv run pytest apps/server/tests/test_server_deployment_acceptance.py -q
+
+  security-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify scope boundary
+        run: python3 scripts/verify_scope_contract.py
+      - name: Verify security boundary
+        run: python3 scripts/verify_security_boundary.py
+      - name: Verify private deployment operations
+        run: python3 scripts/verify_private_deployment_operations.py
+      - name: Verify server acceptance boundary
+        run: python3 scripts/verify_server_deployment_acceptance.py

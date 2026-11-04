@@ -39,9 +39,9 @@
     "failed": "Authentication could not be completed. No credential was stored in the browser."
   },
   "shell": {
-    "eyebrow": "NEX-P2-10",
-    "title": "Portfolio dashboard",
-    "description": "Owner-scoped portfolio value, valuation health, allocation and account registry in one private workspace.",
+    "eyebrow": "NEX-P2-11",
+    "title": "Portfolio operations",
+    "description": "Owner-scoped portfolio value, immutable journal evidence, holdings and bounded reconciliation workflows in one private workspace.",
     "authenticated": "Owner session active",
     "owner": "Owner",
     "logout": "Sign out",
@@ -51,7 +51,7 @@
     "artifacts": "Artifact storage",
     "ready": "Ready",
     "limited": "Unavailable",
-    "phaseTwo": "Planned for a later phase",
+    "phaseTwo": "Not included in the current stage",
     "securityTitle": "Current security boundary",
     "securityItems": {
       "private": "Private single-owner deployment",
@@ -120,6 +120,124 @@
       "paper": "Paper account",
       "shadow": "Shadow account",
       "other_manual": "Other manual account"
+    }
+  },
+  "portfolioOperations": {
+    "eyebrow": "DETERMINISTIC ACCOUNTING WORKSPACE",
+    "title": "Journal, holdings and reconciliation",
+    "description": "Review immutable evidence, rebuild derived projections and complete bounded import decisions without weakening the owner boundary.",
+    "noPortfolio": "Select or register a portfolio before opening its accounting workspace.",
+    "loading": "Loading owner-scoped journal and projection evidence…",
+    "loadError": "The accounting workspace could not be loaded. No data was changed.",
+    "retry": "Try again",
+    "actionSucceeded": "The requested transition completed and its evidence is now visible.",
+    "actionFailed": "The requested transition was rejected safely",
+    "reason": "Owner reason",
+    "reasonRequired": "Enter an owner reason of at least 8 characters.",
+    "reauthenticationRequired": "Recent passkey authentication is required before this sensitive transition.",
+    "tabs": {
+      "label": "Portfolio accounting views",
+      "journal": "Journal",
+      "holdings": "Holdings & lots",
+      "imports": "Import preview",
+      "reconciliation": "Reconciliation"
+    },
+    "journal": {
+      "title": "Immutable transaction journal",
+      "description": "Balanced entries are read from the owner-scoped append-only ledger. Corrections remain explicit reversals or supersessions.",
+      "empty": "No transaction belongs to this portfolio.",
+      "noMemo": "No memo was recorded.",
+      "external": "External boundary"
+    },
+    "holdings": {
+      "title": "Rebuildable holdings and lots",
+      "description": "Derived positions remain tied to an exact journal checksum and cost-basis policy.",
+      "method": "Cost-basis method",
+      "fifo": "FIFO",
+      "weightedAverage": "Weighted average",
+      "rebuild": "Rebuild projection",
+      "notBuilt": "No projection exists for this method. Rebuild from the immutable journal to continue.",
+      "version": "Projection version",
+      "transactions": "Journal transactions",
+      "positions": "Holdings",
+      "lots": "Open lots",
+      "empty": "The projection contains no holding.",
+      "noLots": "The projection contains no open lot.",
+      "account": "Account",
+      "quantity": "Exact quantity",
+      "costBasis": "Cost basis",
+      "acquired": "Acquired at",
+      "remaining": "Remaining quantity"
+    },
+    "imports": {
+      "title": "Dry-run import preview",
+      "description": "CSV and Nexora JSON are normalized deterministically before any publication is allowed.",
+      "format": "Source format",
+      "content": "Import content",
+      "placeholder": "Paste bounded CSV or Nexora JSON content",
+      "dryRunNotice": "Preview is mandatory. Quarantined rows and duplicates stay visible; partial publication is forbidden.",
+      "preview": "Create dry-run preview",
+      "rows": "Rows",
+      "ready": "Ready",
+      "duplicates": "Duplicates",
+      "quarantined": "Quarantined",
+      "showRows": "Review normalized rows",
+      "review": "Approve reviewed batch",
+      "publish": "Publish atomically",
+      "empty": "No import preview has been created yet."
+    },
+    "reconciliation": {
+      "title": "Reconciliation cases",
+      "description": "Every difference requires an explicit, version-checked owner decision; no automatic journal correction is available.",
+      "empty": "No reconciliation case requires review.",
+      "decision": "Decision",
+      "apply": "Record decision"
+    },
+    "transactionKind": {
+      "buy": "Buy",
+      "sell": "Sell",
+      "deposit": "Deposit",
+      "withdrawal": "Withdrawal",
+      "transfer": "Transfer",
+      "fee": "Fee",
+      "income": "Income",
+      "reward": "Reward",
+      "airdrop": "Airdrop",
+      "adjustment": "Adjustment",
+      "opening_balance": "Opening balance"
+    },
+    "correctionKind": {
+      "reversal": "Reversal",
+      "supersession": "Supersession"
+    },
+    "sourceKind": {
+      "manual": "Manual evidence",
+      "import": "Import evidence",
+      "trd_bot": "TRD Bot Paper/Shadow"
+    },
+    "basisStatus": {
+      "known": "Known basis",
+      "mixed": "Mixed basis",
+      "unknown": "Unknown basis"
+    },
+    "importStatus": {
+      "dry_run": "Dry run",
+      "reviewed": "Reviewed",
+      "published": "Published",
+      "quarantined": "Quarantined"
+    },
+    "importRowStatus": {
+      "ready": "Ready",
+      "duplicate": "Duplicate",
+      "quarantined": "Quarantined",
+      "published": "Published"
+    },
+    "reconciliationState": {
+      "open": "Open",
+      "matched": "Matched",
+      "accepted_difference": "Accepted difference",
+      "resolved": "Resolved",
+      "ignored_with_reason": "Ignored with reason"
     }
   },
   "states": {

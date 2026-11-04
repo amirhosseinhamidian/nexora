@@ -218,8 +218,8 @@ def validate_runtime_markers() -> None:
     for marker in (
         "export function PortfolioDashboard",
         'apiRequest<ListResponse<Portfolio>>("/api/v1/portfolios"',
-        'apiRequest<ListResponse<Account>>("/api/v1/accounts"',
-        'apiRequest<ListResponse<Asset>>("/api/v1/assets"',
+        '"/api/v1/accounts"',
+        '"/api/v1/assets"',
         "/analytics?as_of=",
         "/valuation-status?as_of=",
         "function parseDecimal",
@@ -231,8 +231,8 @@ def validate_runtime_markers() -> None:
         _require(marker in component, f"dashboard runtime marker missing: {marker}")
     for forbidden in ("external_reference", 'method: "POST"', "owner_id"):
         _require(forbidden not in component, f"dashboard renders or sends forbidden field: {forbidden}")
-    _require("<PortfolioDashboard dictionary={dictionary} locale={locale} />" in shell, "dashboard is not composed")
-    _require('href={index === 0 ? `/${locale}` : "#accounts"}' in shell, "account navigation is not enabled")
+    _require("<PortfolioDashboard" in shell, "dashboard is not composed")
+    _require('"#accounts"' in shell, "account navigation is not enabled")
     for marker in ('cache: "no-store"', 'credentials: "same-origin"', "signal: options.signal"):
         _require(marker in client, f"API client marker missing: {marker}")
     for marker in (".portfolio-metric-grid", ".portfolio-detail-grid", ".account-grid", "min-height: 2.75rem"):

@@ -17,7 +17,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { FoundationControls } from "@/components/foundation-controls";
-import { PortfolioDashboard } from "@/components/portfolio-dashboard";
+import {
+  PortfolioDashboard,
+  type PortfolioWorkspaceContext,
+} from "@/components/portfolio-dashboard";
+import { PortfolioOperations } from "@/components/portfolio-operations";
 import { StatePanel } from "@/components/state-panel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -44,6 +48,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
   const [state, setState] = useState<ShellState>("loading");
   const [session, setSession] = useState<SessionResponse>();
   const [servicesReady, setServicesReady] = useState(false);
+  const [portfolioContext, setPortfolioContext] = useState<PortfolioWorkspaceContext>();
 
   const restore = useCallback(async () => {
     try {
@@ -147,11 +152,17 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
               const Icon = navigationIcons[index];
               return (
                 <li key={label}>
-                  {index <= 1 ? (
+                  {index <= 1 || index === 4 ? (
                     <Link
                       aria-current={index === 0 ? "page" : undefined}
                       className={`navigation-link ${index === 0 ? "active" : ""}`}
-                      href={index === 0 ? `/${locale}` : "#accounts"}
+                      href={
+                        index === 0
+                          ? `/${locale}`
+                          : index === 1
+                            ? "#accounts"
+                            : "#portfolio-operations"
+                      }
                     >
                       <Icon aria-hidden="true" size={19} />
                       <span>{label}</span>
@@ -210,7 +221,18 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
             </div>
           </div>
 
-          <PortfolioDashboard dictionary={dictionary} locale={locale} />
+          <PortfolioDashboard
+            dictionary={dictionary}
+            locale={locale}
+            onWorkspaceChange={setPortfolioContext}
+          />
+
+          <PortfolioOperations
+            context={portfolioContext}
+            dictionary={dictionary}
+            locale={locale}
+            recentlyReauthenticated={session.recently_reauthenticated}
+          />
 
           <section className="boundary-card">
             <div className="boundary-heading">

@@ -39,9 +39,9 @@
     "failed": "احراز هویت تکمیل نشد و هیچ اعتبارنامه‌ای در مرورگر ذخیره نشد."
   },
   "shell": {
-    "eyebrow": "NEX-P2-10",
-    "title": "داشبورد پورتفولیو",
-    "description": "ارزش پورتفولیو، سلامت ارزش‌گذاری، تخصیص دارایی و حساب‌های مالک در یک فضای کاری خصوصی.",
+    "eyebrow": "NEX-P2-11",
+    "title": "عملیات پورتفولیو",
+    "description": "ارزش پورتفولیو، شواهد immutable ژورنال، دارایی‌ها و workflow محدود تطبیق در یک فضای کاری خصوصی.",
     "authenticated": "نشست مالک فعال است",
     "owner": "مالک",
     "logout": "خروج امن",
@@ -51,7 +51,7 @@
     "artifacts": "ذخیره‌سازی فایل",
     "ready": "آماده",
     "limited": "در دسترس نیست",
-    "phaseTwo": "برای مرحله‌ای بعد برنامه‌ریزی شده است",
+    "phaseTwo": "در مرحلهٔ فعلی قرار ندارد",
     "securityTitle": "مرز امنیتی فعلی",
     "securityItems": {
       "private": "استقرار خصوصی تک‌مالک",
@@ -120,6 +120,124 @@
       "paper": "حساب Paper",
       "shadow": "حساب Shadow",
       "other_manual": "حساب دستی دیگر"
+    }
+  },
+  "portfolioOperations": {
+    "eyebrow": "فضای کاری حسابداری قطعی",
+    "title": "ژورنال، دارایی‌ها و تطبیق",
+    "description": "شواهد immutable را بررسی، projectionهای مشتق‌شده را بازسازی و تصمیم‌های محدود import را بدون تضعیف مرز مالک تکمیل کنید.",
+    "noPortfolio": "پیش از بازکردن فضای حسابداری، یک پورتفولیو انتخاب یا ثبت کنید.",
+    "loading": "در حال بارگذاری ژورنال و شواهد projection محدود به مالک…",
+    "loadError": "فضای حسابداری بارگذاری نشد و هیچ داده‌ای تغییر نکرد.",
+    "retry": "تلاش دوباره",
+    "actionSucceeded": "گذار درخواستی تکمیل شد و شواهد آن اکنون قابل مشاهده است.",
+    "actionFailed": "گذار درخواستی به‌شکل امن رد شد",
+    "reason": "دلیل مالک",
+    "reasonRequired": "یک دلیل مالک با حداقل ۸ نویسه وارد کنید.",
+    "reauthenticationRequired": "پیش از این گذار حساس، احراز هویت مجدد و تازه با Passkey لازم است.",
+    "tabs": {
+      "label": "نماهای حسابداری پورتفولیو",
+      "journal": "ژورنال",
+      "holdings": "دارایی‌ها و لات‌ها",
+      "imports": "پیش‌نمایش ورود",
+      "reconciliation": "تطبیق"
+    },
+    "journal": {
+      "title": "ژورنال immutable تراکنش‌ها",
+      "description": "سندهای تراز از دفتر append-only محدود به مالک خوانده می‌شوند و اصلاح‌ها به‌صورت reversal یا supersession صریح باقی می‌مانند.",
+      "empty": "هیچ تراکنشی به این پورتفولیو تعلق ندارد.",
+      "noMemo": "یادداشتی ثبت نشده است.",
+      "external": "مرز بیرونی"
+    },
+    "holdings": {
+      "title": "دارایی‌ها و لات‌های قابل بازسازی",
+      "description": "موقعیت‌های مشتق‌شده به checksum دقیق ژورنال و سیاست بهای تمام‌شده متصل می‌مانند.",
+      "method": "روش بهای تمام‌شده",
+      "fifo": "FIFO",
+      "weightedAverage": "میانگین موزون",
+      "rebuild": "بازسازی projection",
+      "notBuilt": "برای این روش projection وجود ندارد. برای ادامه آن را از ژورنال immutable بازسازی کنید.",
+      "version": "نسخه projection",
+      "transactions": "تراکنش‌های ژورنال",
+      "positions": "دارایی‌ها",
+      "lots": "لات‌های باز",
+      "empty": "این projection هیچ دارایی ندارد.",
+      "noLots": "این projection هیچ لات بازی ندارد.",
+      "account": "حساب",
+      "quantity": "مقدار دقیق",
+      "costBasis": "بهای تمام‌شده",
+      "acquired": "زمان تحصیل",
+      "remaining": "مقدار باقی‌مانده"
+    },
+    "imports": {
+      "title": "پیش‌نمایش dry-run ورود داده",
+      "description": "CSV و Nexora JSON پیش از هرگونه انتشار به‌شکل قطعی نرمال می‌شوند.",
+      "format": "قالب منبع",
+      "content": "محتوای ورود",
+      "placeholder": "محتوای محدود CSV یا Nexora JSON را وارد کنید",
+      "dryRunNotice": "پیش‌نمایش اجباری است. ردیف‌های قرنطینه و تکراری قابل مشاهده می‌مانند و انتشار ناقص ممنوع است.",
+      "preview": "ساخت پیش‌نمایش dry-run",
+      "rows": "ردیف‌ها",
+      "ready": "آماده",
+      "duplicates": "تکراری",
+      "quarantined": "قرنطینه",
+      "showRows": "بررسی ردیف‌های نرمال‌شده",
+      "review": "تأیید batch بررسی‌شده",
+      "publish": "انتشار اتمیک",
+      "empty": "هنوز پیش‌نمایش ورودی ساخته نشده است."
+    },
+    "reconciliation": {
+      "title": "پرونده‌های تطبیق",
+      "description": "هر اختلاف به تصمیم صریح و version-checked مالک نیاز دارد و اصلاح خودکار ژورنال وجود ندارد.",
+      "empty": "هیچ پروندهٔ تطبیقی نیازمند بررسی نیست.",
+      "decision": "تصمیم",
+      "apply": "ثبت تصمیم"
+    },
+    "transactionKind": {
+      "buy": "خرید",
+      "sell": "فروش",
+      "deposit": "واریز",
+      "withdrawal": "برداشت",
+      "transfer": "انتقال",
+      "fee": "کارمزد",
+      "income": "درآمد",
+      "reward": "پاداش",
+      "airdrop": "ایردراپ",
+      "adjustment": "تعدیل",
+      "opening_balance": "مانده افتتاحیه"
+    },
+    "correctionKind": {
+      "reversal": "سند معکوس",
+      "supersession": "جایگزینی"
+    },
+    "sourceKind": {
+      "manual": "شواهد دستی",
+      "import": "شواهد ورود داده",
+      "trd_bot": "TRD Bot Paper/Shadow"
+    },
+    "basisStatus": {
+      "known": "مبنای مشخص",
+      "mixed": "مبنای ترکیبی",
+      "unknown": "مبنای نامشخص"
+    },
+    "importStatus": {
+      "dry_run": "Dry run",
+      "reviewed": "بررسی‌شده",
+      "published": "منتشرشده",
+      "quarantined": "قرنطینه"
+    },
+    "importRowStatus": {
+      "ready": "آماده",
+      "duplicate": "تکراری",
+      "quarantined": "قرنطینه",
+      "published": "منتشرشده"
+    },
+    "reconciliationState": {
+      "open": "باز",
+      "matched": "تطبیق‌یافته",
+      "accepted_difference": "اختلاف پذیرفته‌شده",
+      "resolved": "حل‌شده",
+      "ignored_with_reason": "نادیده‌گرفته‌شده با دلیل"
     }
   },
   "states": {

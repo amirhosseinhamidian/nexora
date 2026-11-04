@@ -32,7 +32,7 @@ type Portfolio = {
   status: RegistryStatus;
 };
 
-type Account = {
+export type PortfolioWorkspaceAccount = {
   account_id: string;
   account_key: string;
   institution_name: string | null;
@@ -49,7 +49,7 @@ type Account = {
   status: RegistryStatus;
 };
 
-type Asset = {
+export type PortfolioWorkspaceAsset = {
   asset_id: string;
   name: string;
   status: RegistryStatus;
@@ -81,9 +81,16 @@ type ListResponse<T> = { items: T[] };
 type ValuationResponse = { as_of: string; items: ValuationStatus[] };
 
 type RegistryData = {
-  accounts: Account[];
-  assets: Asset[];
+  accounts: PortfolioWorkspaceAccount[];
+  assets: PortfolioWorkspaceAsset[];
   portfolios: Portfolio[];
+};
+
+export type PortfolioWorkspaceContext = {
+  accounts: PortfolioWorkspaceAccount[];
+  assets: PortfolioWorkspaceAsset[];
+  portfolioId: string;
+  portfolioName: string;
 };
 
 type DetailData = {
@@ -153,7 +160,7 @@ export function formatExactDecimal(
   return localizeDigits(`${negative ? "−" : ""}${grouped}${decimal}`, locale);
 }
 
-function allocationRows(positions: Position[], assets: Map<string, Asset>) {
+function allocationRows(positions: Position[], assets: Map<string, PortfolioWorkspaceAsset>) {
   const grouped = new Map<string, ExactDecimal>();
   for (const position of positions) {
     if (position.market_value === null) continue;
@@ -198,9 +205,11 @@ function formatTimestamp(value: string, locale: Locale): string {
 export function PortfolioDashboard({
   dictionary,
   locale,
+  onWorkspaceChange,
 }: {
   dictionary: Dictionary;
   locale: Locale;
+  onWorkspaceChange?: (context?: PortfolioWorkspaceContext) => void;
 }) {
   const copy = dictionary.portfolioDashboard;
   const [registryState, setRegistryState] = useState<"error" | "loading" | "ready">("loading");
@@ -222,8 +231,12 @@ export function PortfolioDashboard({
       try {
         const [portfolioResponse, accountResponse, assetResponse] = await Promise.all([
           apiRequest<ListResponse<Portfolio>>("/api/v1/portfolios", { signal: controller.signal }),
-          apiRequest<ListResponse<Account>>("/api/v1/accounts", { signal: controller.signal }),
-          apiRequest<ListResponse<Asset>>("/api/v1/assets", { signal: controller.signal }),
+          apiRequest<ListResponse<PortfolioWorkspaceAccount>>("/api/v1/accounts", {
+            signal: controller.signal,
+          }),
+          apiRequest<ListResponse<PortfolioWorkspaceAsset>>("/api/v1/assets", {
+            signal: controller.signal,
+          }),
         ]);
         if (controller.signal.aborted) return;
         const next = {
@@ -287,8 +300,9 @@ export function PortfolioDashboard({
   const selectedPortfolio = registry.portfolios.find(
     (item) => item.portfolio_id === selectedPortfolioId,
   );
-  const selectedAccounts = registry.accounts.filter(
-    (item) => item.portfolio_id === selectedPortfolioId,
+  const selectedAccounts = useMemo(
+    () => registry.accounts.filter((item) => item.portfolio_id === selectedPortfolioId),
+    [registry.accounts, selectedPortfolioId],
   );
   const assets = useMemo(
     () => new Map(registry.assets.map((asset) => [asset.asset_id, asset])),
@@ -299,6 +313,22 @@ export function PortfolioDashboard({
     [assets, details?.analytics.positions],
   );
   const retryRegistry = useCallback(() => setRegistryRevision((revision) => revision + 1), []);
+  const workspaceContext = useMemo<PortfolioWorkspaceContext | undefined>(
+    () =>
+      selectedPortfolio
+        ? {
+            accounts: selectedAccounts,
+            assets: registry.assets,
+            portfolioId: selectedPortfolio.portfolio_id,
+            portfolioName: selectedPortfolio.name,
+          }
+        : undefined,
+    [registry.assets, selectedAccounts, selectedPortfolio],
+  );
+
+  useEffect(() => {
+    onWorkspaceChange?.(workspaceContext);
+  }, [onWorkspaceChange, workspaceContext]);
 
   if (registryState === "loading") {
     return (

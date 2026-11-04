@@ -32,7 +32,9 @@ describe("AuthenticatedShell", () => {
       .mockResolvedValueOnce({ status: "completed" });
 
     render(<AuthenticatedShell dictionary={en} locale="en" />);
-    expect(await screen.findByRole("heading", { name: "Portfolio dashboard" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Portfolio operations" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("113f777b…")).toBeInTheDocument();
     expect(screen.getByTitle("Ready")).toBeInTheDocument();
     expect(

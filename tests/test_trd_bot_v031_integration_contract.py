@@ -20,11 +20,55 @@ class TrdBotV031IntegrationContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
         self.profile = MODULE.load_profile()
+        self.freeze = MODULE.load_freeze_record()
 
     def test_frozen_prerequisites_and_candidate_are_valid(self) -> None:
         MODULE.validate_prerequisites()
         MODULE.validate_profile(self.profile)
         MODULE.validate_contract(self.contract, self.profile)
+        MODULE.validate_freeze_record(self.freeze, self.contract, self.profile)
+
+    def test_freeze_candidate_cannot_drift(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
+
+    def test_freeze_regression_inventory_cannot_shrink(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["regression_workflows"].pop("contracts")
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
+
+    def test_freeze_cannot_accept_failed_primary_job(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["primary_workflow"]["jobs"]["backend-regression"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
+
+    def test_freeze_detects_contract_drift(self) -> None:
+        changed_contract = copy.deepcopy(self.contract)
+        changed_contract["decision_date"] = "2026-11-05"
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "frozen contract drift"):
+            MODULE.validate_freeze_record(self.freeze, changed_contract, self.profile)
+
+    def test_freeze_cannot_claim_provider_implementation(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["acceptance"]["target_trd_bot_0_3_1_implemented"] = True
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
+
+    def test_freeze_cannot_open_p3_03_early(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["acceptance"]["p3_03_opened"] = True
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
+
+    def test_freeze_cannot_bypass_server_gate(self) -> None:
+        changed = copy.deepcopy(self.freeze)
+        changed["acceptance"]["server_deployment_gate_preserved"] = False
+        with self.assertRaisesRegex(MODULE.TrdBotV031IntegrationContractError, "Freeze artifact drift"):
+            MODULE.validate_freeze_record(changed, self.contract, self.profile)
 
     def test_profile_checksum_is_deterministic(self) -> None:
         reversed_profile = dict(reversed(list(self.profile.items())))

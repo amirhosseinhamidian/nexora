@@ -1,0 +1,793 @@
+{
+  "schema_version": "nexora-trd-bot-v031-integration-contract-freeze-v1",
+  "decision_id": "NEX-P3-02",
+  "decision_date": "2026-11-04",
+  "status": "frozen",
+  "frozen": true,
+  "repository": "amirhosseinhamidian/nexora",
+  "branch": "feature/v0.1-decision-intelligence",
+  "candidate_commit_sha": "c32e2d6ef923413bb159615f8f980ca52207663b",
+  "candidate_tree_sha": "5cc823d27f768609d0bd408b2f496ec730bb3287",
+  "parent_commit_sha": "9e84bc0c64bed12ff928c18f035df870bb31f5a3",
+  "candidate_commit_message": "docs(nexora): freeze TRD Bot v0.3.1 integration contract",
+  "contract": {
+    "path": "contracts/nexora-v0.1-trd-bot-v031-integration.json",
+    "canonical_checksum": "e0c0cee635c27e52825501fd36de68cb07a6e3feeb70b8fdefeb5e5fcbbbf753"
+  },
+  "provider_profile": {
+    "path": "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json",
+    "canonical_checksum": "48cfcd61b8f2cb866e4c921d31f5c61db83d3f08e5123d690a069a57c3aba109"
+  },
+  "primary_workflow": {
+    "name": "TRD Bot v0.3.1 integration contract",
+    "path": ".github/workflows/trd-bot-v031-integration-contract.yml",
+    "run_id": 41866030157,
+    "run_attempt": 1,
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/41866030157",
+    "jobs": {
+      "trd-bot-v031-contract": {
+        "job_id": 126700325531,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "backend-regression": {
+        "job_id": 126700325932,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "web-regression": {
+        "job_id": 126700326237,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    "verified_markers": [
+      "NEX_P3_01_PREREQUISITE=PASS",
+      "NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS",
+      "NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT",
+      "NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED",
+      "NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED"
+    ]
+  },
+  "regression_workflows": {
+    "application_composition": {
+      "run_id": 41866030145,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "composition-contract": {
+          "job_id": 126700325859,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326445,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "artifact_export_storage": {
+      "run_id": 41866030184,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126700326528,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "storage-runtime": {
+          "job_id": 126700326977,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "storage-contract": {
+          "job_id": 126700327755,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "audit_observability": {
+      "run_id": 41866030001,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "observability-contract": {
+          "job_id": 126700326511,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700327066,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700327673,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "authenticated_web_shell": {
+      "run_id": 41866029839,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "browser": {
+          "job_id": 126700325345,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web-shell-contract": {
+          "job_id": 126700325642,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700325678,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126700325839,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "contracts": {
+      "run_id": 41866029925,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "scope-contract": {
+          "job_id": 126700327137,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "security-boundary": {
+          "job_id": 126700327501,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "phase-zero-acceptance": {
+          "job_id": 126700327590,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "technical-baseline": {
+          "job_id": 126700327666,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "integration-contract": {
+          "job_id": 126700327891,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "decision_review_journal_domain": {
+      "run_id": 41866030390,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "decision-review-journal-contract": {
+          "job_id": 126700327360,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend-regression": {
+          "job_id": 126700327772,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web-regression": {
+          "job_id": 126700328055,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "durable_jobs_outbox": {
+      "run_id": 41866030194,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "durable-contract": {
+          "job_id": 126700326554,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700326618,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326703,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "holdings_projection": {
+      "run_id": 41866029885,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126700324998,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "holdings-contract": {
+          "job_id": 126700325523,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700325924,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "import_reconciliation": {
+      "run_id": 41866030160,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "import-contract": {
+          "job_id": 126700326193,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326878,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700326921,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "nav_pnl_performance": {
+      "run_id": 41866029995,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700325265,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700325712,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "analytics-contract": {
+          "job_id": 126700325732,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "paper_shadow_projection": {
+      "run_id": 41866030208,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700325911,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "projection-contract": {
+          "job_id": 126700326435,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326475,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_one_final_acceptance": {
+      "run_id": 41866029872,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "private-topology": {
+          "job_id": 126700325249,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "acceptance-contract": {
+          "job_id": 126700325537,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126700325686,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700325719,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126700325730,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700325757,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_one_readiness": {
+      "run_id": 41866030144,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126700325375,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "readiness-contract": {
+          "job_id": 126700326080,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126700326082,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_three_roadmap": {
+      "run_id": 41866029912,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend-regression": {
+          "job_id": 126700325299,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web-regression": {
+          "job_id": 126700325646,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "phase-three-roadmap-contract": {
+          "job_id": 126700325854,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_two_final_acceptance": {
+      "run_id": 41866030034,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "browser": {
+          "job_id": 126700325938,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700326212,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126700326253,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326427,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "acceptance-contract": {
+          "job_id": 126700326647,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "security-inventory": {
+          "job_id": 126700326845,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "phase_two_portfolio_domain": {
+      "run_id": 41866029811,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend-regression": {
+          "job_id": 126700324444,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "portfolio-domain-contract": {
+          "job_id": 126700324945,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web-regression": {
+          "job_id": 126700325048,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_api_export": {
+      "run_id": 41866029993,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700326079,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "portfolio-api-export-contract": {
+          "job_id": 126700326665,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326771,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_dashboard_accounts": {
+      "run_id": 41866030255,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "web": {
+          "job_id": 126700326695,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "portfolio-dashboard-contract": {
+          "job_id": 126700327232,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126700327291,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend-regression": {
+          "job_id": 126700327293,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "portfolio_registry": {
+      "run_id": 41866030074,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700325334,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "registry-contract": {
+          "job_id": 126700325897,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326072,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "postgresql_schema": {
+      "run_id": 41866030192,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "database-contract": {
+          "job_id": 126700327832,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700328046,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700328397,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "private_deployment_operations": {
+      "run_id": 41866030096,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend": {
+          "job_id": 126700326245,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "operations-contract": {
+          "job_id": 126700326426,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "private-topology": {
+          "job_id": 126700326579,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "runtime_api_auth": {
+      "run_id": 41866030078,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700326337,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "cross-language-contract": {
+          "job_id": 126700326864,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "runtime-contract": {
+          "job_id": 126700326960,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700327444,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "runtime_foundation": {
+      "run_id": 41866030104,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "web": {
+          "job_id": 126700325893,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326213,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "foundation-contract": {
+          "job_id": 126700327090,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "server_deployment_acceptance": {
+      "run_id": 41866029769,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "acceptance-contract": {
+          "job_id": 126700324414,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700324912,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "security-boundary": {
+          "job_id": 126700324948,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "single_owner_identity_runtime": {
+      "run_id": 41866029820,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700326086,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "identity-contract": {
+          "job_id": 126700326442,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "private-topology": {
+          "job_id": 126700326678,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326778,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "transaction_journal": {
+      "run_id": 41866030056,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700327886,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700328458,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "journal-contract": {
+          "job_id": 126700328835,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "transactions_holdings_reconciliation_ui": {
+      "run_id": 41866029821,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "backend-regression": {
+          "job_id": 126700325014,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "portfolio-operations-contract": {
+          "job_id": 126700325357,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "browser": {
+          "job_id": 126700325687,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "web": {
+          "job_id": 126700325974,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "trd_bot_adapter": {
+      "run_id": 41866030551,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "adapter-contract": {
+          "job_id": 126700327339,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700327949,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "trd_bot_sync_runtime": {
+      "run_id": 41866030122,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "postgresql-17": {
+          "job_id": 126700325230,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "sync-contract": {
+          "job_id": 126700325756,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326164,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    },
+    "valuation_evidence": {
+      "run_id": 41866030093,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "valuation-contract": {
+          "job_id": 126700326089,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "postgresql-17": {
+          "job_id": 126700326515,
+          "status": "completed",
+          "conclusion": "success"
+        },
+        "backend": {
+          "job_id": 126700326770,
+          "status": "completed",
+          "conclusion": "success"
+        }
+      }
+    }
+  },
+  "acceptance": {
+    "workflow_count": 31,
+    "failed_workflows": [],
+    "contract_only_freeze": true,
+    "nexora_database_tables_added": false,
+    "nexora_runtime_behavior_added": false,
+    "provider_runtime_registered": false,
+    "trd_bot_0_3_0_compatible": false,
+    "target_trd_bot_0_3_1_implemented": false,
+    "live_provider_smoke_passed": false,
+    "p3_03_opened": false,
+    "server_deployment_gate_preserved": true,
+    "production_deployment_claimed": false,
+    "production_release_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "TRD-BOT-v0.3.1-INTEGRATION-IMPLEMENTATION",
+    "nexora_next_stage": "NEX-P3-03",
+    "nexora_next_stage_blocked_until": "compatible_provider_and_real_smoke",
+    "server_deployment_acceptance_deferred_until": "private_vps_available"
+  }
+}

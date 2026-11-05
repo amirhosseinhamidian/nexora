@@ -350,11 +350,14 @@ NEX_P3_00_FREEZE=PASS
 NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS
 NEX_P3_01_FREEZE=PASS
 NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS
+NEX_P3_02_FREEZE=PASS
 NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT
 NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
 ```
 
 ## Documents
+
+P3-02 Freeze evidence: [`artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json`](artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)

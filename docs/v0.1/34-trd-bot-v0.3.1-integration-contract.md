@@ -1,6 +1,6 @@
 # NEX-P3-02 — TRD Bot v0.3.1 Integration Contract
 
-وضعیت: **Candidate**
+وضعیت: **Frozen**
 تاریخ تصمیم: ۲۰۲۶-۱۱-۰۴
 
 ## نتیجه
@@ -91,7 +91,25 @@ provider واقعی تمام سناریوهای auth، capability، سه گرو�
 `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` همچنان برقرار و deferred است و production
 deployment یا release `v0.1` ادعا نمی‌شود.
 
-## معیار پذیرش candidate
+## شواهد Freeze
+
+قرارداد روی candidate زیر فریز شده است:
+
+- commit: `c32e2d6ef923413bb159615f8f980ca52207663b`؛
+- tree: `5cc823d27f768609d0bd408b2f496ec730bb3287`؛
+- workflow اصلی: `TRD Bot v0.3.1 integration contract`، run
+  [`41866030157`](https://github.com/amirhosseinhamidian/nexora/actions/runs/41866030157)،
+  attempt 1، نتیجه `success`؛
+- jobهای اصلی contract، backend regression و web regression همگی موفق؛
+- هر ۳۰ workflow رگرسیون repository موفق و run/job IDهای آن‌ها در
+  `artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json` ثبت شده‌اند.
+
+این Freeze فقط قرارداد و provider profile را قطعی می‌کند. هیچ migration، رفتار
+runtime یا provider registration به Nexora اضافه نشده و smoke provider واقعی هنوز
+انجام نشده است. در نتیجه TRD Bot `0.3.0` ناسازگار باقی می‌ماند و `NEX-P3-03`
+تا ارائه‌ی provider سازگار `0.3.1` و smoke واقعی بسته است.
+
+## معیار پذیرش Freeze
 
 ```bash
 python scripts/verify_decision_review_journal_domain.py
@@ -109,11 +127,11 @@ git diff --check
 ```text
 NEX_P3_01_PREREQUISITE=PASS
 NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS
+NEX_P3_02_FREEZE=PASS
 NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT
 NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
 NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED
 ```
 
-مرحله‌ی بعد فقط `NEX-P3-02-FREEZE` است. پس از CI سبز و Freeze، کار به پیاده‌سازی
-integration در TRD Bot `0.3.1` منتقل می‌شود؛ `NEX-P3-03` تنها بعد از provider
-سازگار و smoke واقعی باز می‌شود.
+مرحله‌ی بعد، پیاده‌سازی integration در repository مربوط به TRD Bot با release هدف
+`0.3.1` است. `NEX-P3-03` تنها بعد از provider سازگار و smoke واقعی باز می‌شود.

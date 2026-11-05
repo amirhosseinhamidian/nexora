@@ -9,6 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-trd-bot-v031-integration.json"
 PROFILE_PATH = ROOT / "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json"
+FREEZE_PATH = ROOT / "artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json"
 P3_01_FREEZE_PATH = ROOT / "artifacts/p3-01/decision-review-journal-domain-freeze.json"
 P0_CONTRACT_PATH = ROOT / "contracts/integration/v1/integration-contract.json"
 P0_OPENAPI_PATH = ROOT / "contracts/integration/v1/openapi.json"
@@ -20,6 +21,51 @@ P0_CONTRACT_CHECKSUM = "435e96fc928b71c5c98ebcb6f4e41a928f9f32e073c30ab567246f52
 P0_OPENAPI_CHECKSUM = "3c02fc3c47e8fb53e4a8f4f25fec2e5fbdd126e2b9d8c8318f05f6fd7c2b77e1"
 PROFILE_CHECKSUM = "48cfcd61b8f2cb866e4c921d31f5c61db83d3f08e5123d690a069a57c3aba109"
 TRD_BOT_V030_COMMIT = "bbb9fd4fbc25e25aa512a9fde1dda912321cdd33"
+P3_02_CANDIDATE_COMMIT = "c32e2d6ef923413bb159615f8f980ca52207663b"
+P3_02_CANDIDATE_TREE = "5cc823d27f768609d0bd408b2f496ec730bb3287"
+P3_02_FREEZE_CHECKSUM = "720b7fbf735882f1660e623743f24d49f2587ed48ccbba64bef3ea0c00309c4f"
+P3_02_PRIMARY_RUN_ID = 41866030157
+
+EXPECTED_REGRESSION_RUNS = {
+    "application_composition": 41866030145,
+    "artifact_export_storage": 41866030184,
+    "audit_observability": 41866030001,
+    "authenticated_web_shell": 41866029839,
+    "contracts": 41866029925,
+    "decision_review_journal_domain": 41866030390,
+    "durable_jobs_outbox": 41866030194,
+    "holdings_projection": 41866029885,
+    "import_reconciliation": 41866030160,
+    "nav_pnl_performance": 41866029995,
+    "paper_shadow_projection": 41866030208,
+    "phase_one_final_acceptance": 41866029872,
+    "phase_one_readiness": 41866030144,
+    "phase_three_roadmap": 41866029912,
+    "phase_two_final_acceptance": 41866030034,
+    "phase_two_portfolio_domain": 41866029811,
+    "portfolio_api_export": 41866029993,
+    "portfolio_dashboard_accounts": 41866030255,
+    "portfolio_registry": 41866030074,
+    "postgresql_schema": 41866030192,
+    "private_deployment_operations": 41866030096,
+    "runtime_api_auth": 41866030078,
+    "runtime_foundation": 41866030104,
+    "server_deployment_acceptance": 41866029769,
+    "single_owner_identity_runtime": 41866029820,
+    "transaction_journal": 41866030056,
+    "transactions_holdings_reconciliation_ui": 41866029821,
+    "trd_bot_adapter": 41866030551,
+    "trd_bot_sync_runtime": 41866030122,
+    "valuation_evidence": 41866030093,
+}
+
+EXPECTED_FREEZE_MARKERS = {
+    "NEX_P3_01_PREREQUISITE=PASS",
+    "NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS",
+    "NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT",
+    "NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED",
+    "NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED",
+}
 
 EXPECTED_OPERATIONS = {
     "GET /capabilities",
@@ -95,6 +141,108 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
 
 def load_profile(path: Path = PROFILE_PATH) -> dict[str, Any]:
     return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def validate_freeze_record(
+    record: dict[str, Any],
+    contract: dict[str, Any],
+    profile: dict[str, Any],
+) -> None:
+    _require(canonical_checksum(record) == P3_02_FREEZE_CHECKSUM, "P3-02 Freeze artifact drift")
+    _require(
+        record.get("schema_version") == "nexora-trd-bot-v031-integration-contract-freeze-v1",
+        "P3-02 Freeze schema drift",
+    )
+    _require(record.get("decision_id") == "NEX-P3-02", "P3-02 Freeze decision drift")
+    _require(record.get("status") == "frozen" and record.get("frozen") is True, "P3-02 is not frozen")
+    _require(record.get("candidate_commit_sha") == P3_02_CANDIDATE_COMMIT, "P3-02 candidate drift")
+    _require(record.get("candidate_tree_sha") == P3_02_CANDIDATE_TREE, "P3-02 candidate tree drift")
+
+    contract_ref = record.get("contract")
+    profile_ref = record.get("provider_profile")
+    _require(isinstance(contract_ref, dict), "Freeze contract reference must be an object")
+    _require(isinstance(profile_ref, dict), "Freeze profile reference must be an object")
+    _require(contract_ref.get("canonical_checksum") == canonical_checksum(contract), "frozen contract drift")
+    _require(profile_ref.get("canonical_checksum") == canonical_checksum(profile), "frozen provider profile drift")
+
+    primary = record.get("primary_workflow")
+    _require(isinstance(primary, dict), "primary workflow evidence must be an object")
+    _require(primary.get("run_id") == P3_02_PRIMARY_RUN_ID, "primary workflow run drift")
+    _require(primary.get("run_attempt") == 1, "primary workflow attempt drift")
+    _require(primary.get("event") == "push", "primary workflow event drift")
+    _require(primary.get("status") == "completed", "primary workflow did not complete")
+    _require(primary.get("conclusion") == "success", "primary workflow failed")
+    _require(set(primary.get("verified_markers", [])) == EXPECTED_FREEZE_MARKERS, "workflow markers drift")
+    jobs = primary.get("jobs")
+    _require(isinstance(jobs, dict), "primary workflow jobs must be an object")
+    expected_primary_jobs = {
+        "trd-bot-v031-contract": 126700325531,
+        "backend-regression": 126700325932,
+        "web-regression": 126700326237,
+    }
+    _require(set(jobs) == set(expected_primary_jobs), "primary workflow job inventory drift")
+    for name, job_id in expected_primary_jobs.items():
+        job = jobs.get(name)
+        _require(isinstance(job, dict), f"primary workflow job missing: {name}")
+        _require(job.get("job_id") == job_id, f"primary workflow job ID drift: {name}")
+        _require(job.get("status") == "completed", f"primary workflow job incomplete: {name}")
+        _require(job.get("conclusion") == "success", f"primary workflow job failed: {name}")
+
+    regressions = record.get("regression_workflows")
+    _require(isinstance(regressions, dict), "regression workflow evidence must be an object")
+    _require(set(regressions) == set(EXPECTED_REGRESSION_RUNS), "regression workflow inventory drift")
+    seen_job_ids: set[int] = set()
+    for name, run_id in EXPECTED_REGRESSION_RUNS.items():
+        workflow = regressions.get(name)
+        _require(isinstance(workflow, dict), f"regression workflow missing: {name}")
+        _require(workflow.get("run_id") == run_id, f"regression workflow run drift: {name}")
+        _require(workflow.get("status") == "completed", f"regression workflow incomplete: {name}")
+        _require(workflow.get("conclusion") == "success", f"regression workflow failed: {name}")
+        workflow_jobs = workflow.get("jobs")
+        _require(isinstance(workflow_jobs, dict) and workflow_jobs, f"regression jobs missing: {name}")
+        for job_name, job in workflow_jobs.items():
+            _require(isinstance(job, dict), f"invalid regression job: {name}/{job_name}")
+            job_id = job.get("job_id")
+            _require(isinstance(job_id, int) and job_id > 0, f"invalid regression job ID: {name}/{job_name}")
+            _require(job_id not in seen_job_ids, f"duplicate regression job ID: {job_id}")
+            seen_job_ids.add(job_id)
+            _require(job.get("status") == "completed", f"regression job incomplete: {name}/{job_name}")
+            _require(job.get("conclusion") == "success", f"regression job failed: {name}/{job_name}")
+
+    acceptance = record.get("acceptance")
+    _require(isinstance(acceptance, dict), "Freeze acceptance must be an object")
+    _require(acceptance.get("workflow_count") == 31, "Freeze workflow count drift")
+    _require(acceptance.get("failed_workflows") == [], "Freeze contains failed workflows")
+    for key in ("contract_only_freeze", "server_deployment_gate_preserved"):
+        _require(acceptance.get(key) is True, f"Freeze acceptance invariant disabled: {key}")
+    for key in (
+        "nexora_database_tables_added",
+        "nexora_runtime_behavior_added",
+        "provider_runtime_registered",
+        "trd_bot_0_3_0_compatible",
+        "target_trd_bot_0_3_1_implemented",
+        "live_provider_smoke_passed",
+        "p3_03_opened",
+        "production_deployment_claimed",
+        "production_release_claimed",
+    ):
+        _require(acceptance.get(key) is False, f"premature Freeze claim: {key}")
+
+    transition = record.get("transition")
+    _require(isinstance(transition, dict), "Freeze transition must be an object")
+    _require(
+        transition.get("next_allowed_stage") == "TRD-BOT-v0.3.1-INTEGRATION-IMPLEMENTATION",
+        "post-Freeze provider stage drift",
+    )
+    _require(transition.get("nexora_next_stage") == "NEX-P3-03", "Nexora continuation drift")
+    _require(
+        transition.get("nexora_next_stage_blocked_until") == "compatible_provider_and_real_smoke",
+        "P3-03 opened before compatible provider smoke",
+    )
 
 
 def validate_prerequisites() -> None:
@@ -362,10 +510,13 @@ def validate_contract(contract: dict[str, Any], profile: dict[str, Any]) -> None
 def main() -> int:
     validate_prerequisites()
     profile = load_profile()
+    contract = load_contract()
     validate_profile(profile)
-    validate_contract(load_contract(), profile)
+    validate_contract(contract, profile)
+    validate_freeze_record(load_freeze_record(), contract, profile)
     print("NEX_P3_01_PREREQUISITE=PASS")
     print("NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS")
+    print("NEX_P3_02_FREEZE=PASS")
     print("NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT")
     print("NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED")
     print("NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED")

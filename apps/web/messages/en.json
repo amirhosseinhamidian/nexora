@@ -240,6 +240,40 @@
       "ignored_with_reason": "Ignored with reason"
     }
   },
+  "decisionFeed": {
+    "eyebrow": "OWNER-SCOPED DECISION EVIDENCE",
+    "title": "Decision feed and Candidate details",
+    "description": "Inspect compatible TRD Bot Decisions and Candidates with their complete immutable source lineage.",
+    "loading": "Loading the active decision projection…",
+    "loadingDetail": "Validating Candidate evidence…",
+    "error": "Decision evidence could not be loaded. No provider or portfolio state was changed.",
+    "retry": "Try again",
+    "providerDegraded": "Provider evidence is degraded",
+    "providerStates": {
+      "degraded": "No valid active projection is available. Evidence remains unavailable until synchronization recovers.",
+      "disabled_incompatible": "TRD Bot integration is disabled because the configured provider is incompatible. Historical evidence may be shown read-only.",
+      "ready": "The compatible provider projection is ready."
+    },
+    "emptyTitle": "No Decision or Candidate evidence",
+    "emptyDescription": "The active owner-scoped projection contains no Decision or Candidate records.",
+    "listLabel": "Decision and Candidate evidence",
+    "loadMore": "Load more evidence",
+    "resourceTypes": {
+      "candidate": "Candidate",
+      "decision_evaluation": "Decision"
+    },
+    "detailEyebrow": "IMMUTABLE SOURCE EVIDENCE",
+    "detailTitle": "Decision evidence details",
+    "reviewPending": "Review pending",
+    "observedAt": "Observed at",
+    "providerVersion": "Provider release",
+    "sourceSchema": "Source schema",
+    "aggregateVersion": "Aggregate version",
+    "sourceChecksum": "Source checksum",
+    "evidenceChecksum": "Evidence checksum",
+    "evidenceTitle": "Provider evidence",
+    "advisoryBoundary": "Read-only research evidence. This view cannot submit an order, move funds or authorize execution."
+  },
   "states": {
     "loadingTitle": "Restoring secure session",
     "loadingDescription": "Checking the private runtime without exposing session material.",

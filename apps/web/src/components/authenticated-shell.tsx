@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { FoundationControls } from "@/components/foundation-controls";
+import { DecisionFeed } from "@/components/decision-feed";
 import {
   PortfolioDashboard,
   type PortfolioWorkspaceContext,
@@ -152,7 +153,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
               const Icon = navigationIcons[index];
               return (
                 <li key={label}>
-                  {index <= 1 || index === 4 ? (
+                  {index <= 2 || index === 4 ? (
                     <Link
                       aria-current={index === 0 ? "page" : undefined}
                       className={`navigation-link ${index === 0 ? "active" : ""}`}
@@ -161,7 +162,9 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
                           ? `/${locale}`
                           : index === 1
                             ? "#accounts"
-                            : "#portfolio-operations"
+                            : index === 2
+                              ? "#decisions"
+                              : "#portfolio-operations"
                       }
                     >
                       <Icon aria-hidden="true" size={19} />
@@ -226,6 +229,8 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
             locale={locale}
             onWorkspaceChange={setPortfolioContext}
           />
+
+          <DecisionFeed dictionary={dictionary} locale={locale} />
 
           <PortfolioOperations
             context={portfolioContext}

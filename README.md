@@ -205,13 +205,17 @@ table, API, UI or runtime behavior. The server gate stays deferred, TRD Bot
 `0.3.0` stays incompatible and only `NEX-P3-02` is opened.
 
 `NEX-P3-02` is frozen at `1e114b58b1a9cfc4ef91280c6506aa58bb2f53e8`.
-TRD Bot `0.3.1` is now available at
+TRD Bot `0.3.1` is available at
 `3097276ed77cd212101797654452456b7fbc61de` with the required real local
-provider smoke evidence. `NEX-P3-03` is the current candidate: it adds the
-owner-scoped durable Decision/Event projection, strict source-reference
-validation, idempotent replay, quarantine, aggregate-gap recovery and atomic
-generation publication. It does not open the Decision Feed, human review or
-any execution capability. `NEX-P3-04` remains blocked until P3-03 acceptance.
+provider smoke evidence. `NEX-P3-03` is accepted at
+`7b5d7014655320a750e94245d96847ddf799414f`; it provides the owner-scoped
+durable Decision/Event projection, strict source-reference validation,
+idempotent replay, quarantine, aggregate-gap recovery and atomic generation
+publication. `NEX-P3-04` is the current candidate. It exposes only active,
+owner-scoped Decision and Candidate evidence through bounded authenticated APIs
+and a bilingual read-only experience with complete source lineage and explicit
+provider/degraded states. Risk explanation, human review and every execution
+capability remain outside this stage.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains

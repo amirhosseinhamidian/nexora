@@ -240,6 +240,40 @@
       "ignored_with_reason": "نادیده‌گرفته‌شده با دلیل"
     }
   },
+  "decisionFeed": {
+    "eyebrow": "شواهد تصمیم محدود به مالک",
+    "title": "فهرست تصمیم‌ها و جزئیات Candidate",
+    "description": "تصمیم‌ها و Candidateهای سازگار TRD Bot را همراه با زنجیره کامل و immutable منبع بررسی کنید.",
+    "loading": "در حال بارگذاری projection فعال تصمیم‌ها…",
+    "loadingDetail": "در حال اعتبارسنجی شواهد Candidate…",
+    "error": "شواهد تصمیم بارگذاری نشد و هیچ وضعیت provider یا پورتفولیویی تغییر نکرد.",
+    "retry": "تلاش دوباره",
+    "providerDegraded": "شواهد provider در وضعیت محدود است",
+    "providerStates": {
+      "degraded": "projection فعال و معتبر در دسترس نیست؛ شواهد تا بازیابی همگام‌سازی نمایش داده نمی‌شوند.",
+      "disabled_incompatible": "اتصال TRD Bot به‌دلیل ناسازگاری provider غیرفعال است؛ شواهد تاریخی ممکن است فقط‌خواندنی نمایش داده شوند.",
+      "ready": "projection مربوط به provider سازگار آماده است."
+    },
+    "emptyTitle": "شواهدی برای Decision یا Candidate وجود ندارد",
+    "emptyDescription": "projection فعال محدود به مالک هیچ رکورد Decision یا Candidate ندارد.",
+    "listLabel": "شواهد Decision و Candidate",
+    "loadMore": "بارگذاری شواهد بیشتر",
+    "resourceTypes": {
+      "candidate": "Candidate",
+      "decision_evaluation": "Decision"
+    },
+    "detailEyebrow": "شواهد IMMUTABLE منبع",
+    "detailTitle": "جزئیات شواهد تصمیم",
+    "reviewPending": "در انتظار بررسی",
+    "observedAt": "زمان مشاهده",
+    "providerVersion": "نسخه provider",
+    "sourceSchema": "schema منبع",
+    "aggregateVersion": "نسخه aggregate",
+    "sourceChecksum": "checksum منبع",
+    "evidenceChecksum": "checksum شواهد",
+    "evidenceTitle": "شواهد provider",
+    "advisoryBoundary": "این شواهد پژوهشی فقط‌خواندنی است و امکان ثبت سفارش، انتقال وجه یا صدور مجوز اجرا ندارد."
+  },
   "states": {
     "loadingTitle": "بازیابی نشست امن",
     "loadingDescription": "Runtime خصوصی بدون نمایش اطلاعات نشست بررسی می‌شود.",

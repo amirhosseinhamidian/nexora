@@ -25,6 +25,15 @@ class ActiveProjectionGeneration:
     contract_version: str
 
 
+@dataclass(frozen=True, slots=True)
+class ActiveDecisionProjection:
+    generation: int
+    trigger: str
+    provider_version: str
+    contract_version: str
+    projection: dict[str, Any]
+
+
 class DecisionEventProjectionRepository:
     """Read only atomically published owner-scoped decision generations."""
 
@@ -46,6 +55,25 @@ class DecisionEventProjectionRepository:
             trigger=row.trigger,
             provider_version=row.provider_version,
             contract_version=row.contract_version,
+        )
+
+    def active_snapshot(self, owner_id: UUID) -> ActiveDecisionProjection | None:
+        """Read generation metadata and projection in one database snapshot."""
+        with self._session_factory() as session:
+            row = session.execute(
+                select(DecisionProjectionState).where(
+                    DecisionProjectionState.owner_id == owner_id,
+                    DecisionProjectionState.status == "active",
+                )
+            ).scalar_one_or_none()
+        if row is None:
+            return None
+        return ActiveDecisionProjection(
+            generation=row.generation,
+            trigger=row.trigger,
+            provider_version=row.provider_version,
+            contract_version=row.contract_version,
+            projection=dict(row.projection),
         )
 
     def aggregate_state(

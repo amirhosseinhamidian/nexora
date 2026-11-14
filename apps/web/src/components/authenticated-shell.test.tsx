@@ -8,6 +8,9 @@ import { AuthenticatedShell } from "./authenticated-shell";
 vi.mock("@/components/foundation-controls", () => ({
   FoundationControls: () => <div>controls</div>,
 }));
+vi.mock("@/components/decision-feed", () => ({
+  DecisionFeed: () => <section>decision feed</section>,
+}));
 vi.mock("@/lib/api-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-client")>("@/lib/api-client");
   return { ...actual, apiRequest: vi.fn() };

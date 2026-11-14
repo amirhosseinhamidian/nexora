@@ -12,7 +12,7 @@ from urllib.parse import quote
 from uuid import UUID, uuid4
 
 import uvicorn
-from fastapi import FastAPI, Header, Query, Request, Response
+from fastapi import FastAPI, Header, Path, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -50,6 +50,14 @@ from nexora.composition import (
     compose_private_application,
 )
 from nexora.config import RuntimeSettings, load_settings
+from nexora.decision_feed import (
+    CandidateDetailResponse,
+    DecisionEvidenceNotFound,
+    DecisionFeedConflict,
+    DecisionFeedResponse,
+    DecisionFeedService,
+    DecisionFeedValidationError,
+)
 from nexora.holdings_contracts import (
     HoldingListResponse,
     HoldingResponse,
@@ -728,6 +736,33 @@ def create_app(
             message="journal cannot be projected under the selected cost-basis policy",
         )
 
+    @application.exception_handler(DecisionEvidenceNotFound)
+    async def decision_evidence_not_found(request: Request, _: DecisionEvidenceNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="DECISION_EVIDENCE_NOT_FOUND",
+            message="decision evidence is unavailable",
+        )
+
+    @application.exception_handler(DecisionFeedConflict)
+    async def decision_feed_conflict(request: Request, _: DecisionFeedConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="DECISION_FEED_SNAPSHOT_CHANGED",
+            message="decision evidence changed; restart pagination",
+        )
+
+    @application.exception_handler(DecisionFeedValidationError)
+    async def decision_feed_validation(request: Request, _: DecisionFeedValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="DECISION_FEED_VALIDATION_FAILED",
+            message="decision feed request is invalid",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1011,6 +1046,12 @@ def create_app(
         if service is None:
             raise CeremonyUnavailable("portfolio export runtime is not configured")
         return service
+
+    def decision_feed() -> DecisionFeedService:
+        repository = resolved_container.decision_event_projection_repository
+        if repository is None:
+            raise CeremonyUnavailable("decision projection runtime is not configured")
+        return DecisionFeedService(repository, resolved_container.trd_bot_integration_mode)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1316,6 +1357,27 @@ def create_app(
             precision=payload.precision,
         )
         return AssetResponse.model_validate(created)
+
+    @application.get("/v1/decisions", response_model=DecisionFeedResponse, operation_id="listDecisionFeed")
+    def list_decision_feed(
+        request: Request,
+        limit: int = Query(default=25, ge=1, le=100),
+        cursor: str | None = Query(default=None, min_length=1, max_length=512),
+    ) -> DecisionFeedResponse:
+        _, session = require_session(request)
+        return decision_feed().list_feed(session.owner_id, limit=limit, cursor=cursor)
+
+    @application.get(
+        "/v1/candidates/{candidate_id}",
+        response_model=CandidateDetailResponse,
+        operation_id="getCandidateDetail",
+    )
+    def get_candidate_detail(
+        request: Request,
+        candidate_id: str = Path(min_length=1, max_length=160),
+    ) -> CandidateDetailResponse:
+        _, session = require_session(request)
+        return decision_feed().candidate_detail(session.owner_id, candidate_id)
 
     @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")
     def list_assets(request: Request) -> AssetListResponse:

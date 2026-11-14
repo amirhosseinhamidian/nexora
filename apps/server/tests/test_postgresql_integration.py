@@ -44,7 +44,12 @@ from nexora.adapters.postgresql import (
     create_session_factory,
     load_database_settings,
 )
-from nexora.decision_event_projection import PROJECTED_RESOURCES
+from nexora.adapters.trd_bot import ResourceType
+from nexora.decision_event_projection import (
+    PROJECTED_RESOURCES,
+    DecisionKind,
+    DecisionProjectionRecord,
+)
 from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.paper_shadow_projection import canonical_json_sha256
@@ -100,6 +105,23 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
     durable = DurableWorkRepository(factory)
     projection = DecisionEventProjectionRepository(factory)
     worker_id = "decision-projection-test-worker"
+    candidate_payload = {
+        "resource_schema_version": "trd-bot-candidate-v1",
+        "candidate_id": "candidate-owner-scoped",
+        "offline_only": True,
+        "external_order_submission_allowed": False,
+    }
+    candidate_record = DecisionProjectionRecord(
+        resource_type=ResourceType.CANDIDATE,
+        resource_id="candidate-owner-scoped",
+        decision_kind=DecisionKind.CANDIDATE,
+        provider_release="0.3.1",
+        source_schema_version="trd-bot-candidate-v1",
+        source_observed_at=datetime(2026, 11, 14, 10, tzinfo=UTC),
+        source_checksum="sha256:" + "a" * 64,
+        payload=candidate_payload,
+        payload_sha256=canonical_json_sha256(candidate_payload),
+    )
 
     def complete_generation(generation: int, *, quarantine_candidate: bool) -> None:
         resources = tuple(PROJECTED_RESOURCES)
@@ -145,9 +167,12 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
                         provider_version="0.3.1",
                         contract_version="nexora-trd-integration-v1",
                         resource_type=resource.value,
-                        resource_item_count=1 if is_quarantined else 0,
+                        resource_item_count=1 if resource is ResourceType.CANDIDATE else 0,
                         resource_quarantine_count=1 if is_quarantined else 0,
                         resource_completed=True,
+                        snapshots=(candidate_record,)
+                        if resource is ResourceType.CANDIDATE and not is_quarantined
+                        else (),
                         quarantine=quarantined,
                         activate=final,
                     ),
@@ -173,6 +198,10 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
         active = projection.active_generation(owner_id)
         assert active is not None
         assert active.generation == 1
+        snapshot = projection.active_snapshot(owner_id)
+        assert snapshot is not None
+        assert snapshot.projection["candidate:candidate-owner-scoped"]["resource_id"] == "candidate-owner-scoped"
+        assert projection.active_snapshot(uuid4()) is None
 
         complete_generation(2, quarantine_candidate=True)
         active = projection.active_generation(owner_id)

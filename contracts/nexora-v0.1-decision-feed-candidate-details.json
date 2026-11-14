@@ -1,0 +1,70 @@
+{
+  "schema_version": "nexora-decision-feed-candidate-details-v1",
+  "decision_id": "NEX-P3-04",
+  "decision_date": "2026-11-14",
+  "status": "candidate",
+  "title": "Decision Feed and Candidate Details",
+  "prerequisites": {
+    "p3_03_accepted_commit_sha": "7b5d7014655320a750e94245d96847ddf799414f",
+    "projection_schema_version": "nexora-decision-event-projection-v1",
+    "provider_release": "0.3.1"
+  },
+  "api": {
+    "schema_version": "nexora-decision-feed-v1",
+    "feed_route": "/v1/decisions",
+    "candidate_detail_route": "/v1/candidates/{candidate_id}",
+    "owner_scoped": true,
+    "active_generation_only": true,
+    "staging_generation_visible": false,
+    "maximum_page_size": 100,
+    "cursor_bound_to_generation": true,
+    "cursor_bound_to_evidence_sha256": true,
+    "invalid_projection_action": "degraded_empty_fail_closed",
+    "missing_candidate_action": "not_found",
+    "complete_source_reference": true
+  },
+  "provider_states": [
+    "ready",
+    "degraded",
+    "disabled_incompatible"
+  ],
+  "visible_resource_types": [
+    "decision_evaluation",
+    "candidate"
+  ],
+  "web": {
+    "bilingual": true,
+    "responsive": true,
+    "loading_state": true,
+    "empty_state": true,
+    "error_state": true,
+    "degraded_state": true,
+    "source_checksums_visible": true,
+    "execution_boundary_visible": true
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "service_token_exposed": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "review_is_execution_authorization": false,
+    "portfolio_transaction_posted": false,
+    "production_readiness_claimed": false
+  },
+  "scope": {
+    "risk_gate_explanation_added": false,
+    "portfolio_impact_added": false,
+    "human_review_workflow_added": false,
+    "alert_lifecycle_added": false,
+    "provider_evidence_mutated": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-04-FREEZE",
+    "post_freeze_stage": "NEX-P3-05",
+    "requires_successful_ci_on_candidate_sha": true,
+    "requires_owner_scope_and_security_tests": true,
+    "requires_provider_compatibility_to_remain_valid": true
+  }
+}

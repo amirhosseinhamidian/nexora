@@ -72,6 +72,8 @@ APPROVED_EXTENSION_OPERATIONS = {
     "GET /v1/valuation/manual-valuations",
     "GET /v1/trd-bot/paper-shadow-projection",
     "POST /v1/portfolio-exports",
+    "GET /v1/decisions",
+    "GET /v1/candidates/{candidate_id}",
 }
 
 

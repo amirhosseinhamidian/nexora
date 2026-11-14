@@ -523,6 +523,36 @@
         "title": "BootstrapOptionsRequest",
         "type": "object"
       },
+      "CandidateDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionFeedItemResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ProviderStatusResponse"
+          },
+          "schema_version": {
+            "const": "nexora-decision-feed-v1",
+            "default": "nexora-decision-feed-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "candidate"
+        ],
+        "title": "CandidateDetailResponse",
+        "type": "object"
+      },
       "CorrectionKind": {
         "enum": [
           "reversal",
@@ -1042,6 +1072,100 @@
         ],
         "title": "CreateTransactionRequest",
         "type": "object"
+      },
+      "DecisionFeedItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_kind": {
+            "$ref": "#/components/schemas/DecisionKind"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "evidence_sha256": {
+            "title": "Evidence Sha256",
+            "type": "string"
+          },
+          "local_state": {
+            "$ref": "#/components/schemas/LocalDecisionState"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_type": {
+            "enum": [
+              "decision_evaluation",
+              "candidate"
+            ],
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceReferenceResponse"
+          }
+        },
+        "required": [
+          "resource_type",
+          "resource_id",
+          "decision_kind",
+          "local_state",
+          "source",
+          "evidence",
+          "evidence_sha256"
+        ],
+        "title": "DecisionFeedItemResponse",
+        "type": "object"
+      },
+      "DecisionFeedResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionFeedItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ProviderStatusResponse"
+          },
+          "schema_version": {
+            "const": "nexora-decision-feed-v1",
+            "default": "nexora-decision-feed-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "items"
+        ],
+        "title": "DecisionFeedResponse",
+        "type": "object"
+      },
+      "DecisionKind": {
+        "enum": [
+          "candidate",
+          "risk_assessment",
+          "portfolio_assessment",
+          "monitoring_alert"
+        ],
+        "title": "DecisionKind",
+        "type": "string"
       },
       "ErrorDetail": {
         "additionalProperties": false,
@@ -1683,6 +1807,13 @@
         ],
         "title": "LivenessResponse",
         "type": "object"
+      },
+      "LocalDecisionState": {
+        "enum": [
+          "review_pending"
+        ],
+        "title": "LocalDecisionState",
+        "type": "string"
       },
       "LotConsumptionResponse": {
         "additionalProperties": false,
@@ -3184,6 +3315,74 @@
         "title": "ProjectionLineageResponse",
         "type": "object"
       },
+      "ProviderState": {
+        "enum": [
+          "ready",
+          "degraded",
+          "disabled_incompatible"
+        ],
+        "title": "ProviderState",
+        "type": "string"
+      },
+      "ProviderStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "contract_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contract Version"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation"
+          },
+          "provider_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Version"
+          },
+          "reason_code": {
+            "enum": [
+              "ACTIVE_PROJECTION_READY",
+              "ACTIVE_PROJECTION_UNAVAILABLE",
+              "PROJECTION_EVIDENCE_INVALID",
+              "PROVIDER_DISABLED_INCOMPATIBLE",
+              "PROVIDER_RUNTIME_UNCONFIGURED"
+            ],
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ProviderState"
+          }
+        },
+        "required": [
+          "state",
+          "reason_code"
+        ],
+        "title": "ProviderStatusResponse",
+        "type": "object"
+      },
       "RealizedPnlEventResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3698,6 +3897,106 @@
           "recently_reauthenticated"
         ],
         "title": "SessionResponse",
+        "type": "object"
+      },
+      "SourceReferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Id"
+          },
+          "aggregate_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Type"
+          },
+          "aggregate_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Version"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_schema_version": {
+            "title": "Resource Schema Version",
+            "type": "string"
+          },
+          "resource_type": {
+            "enum": [
+              "decision_evaluation",
+              "candidate"
+            ],
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-source-reference-v1",
+            "default": "nexora-source-reference-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_product": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Source Product",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version",
+          "resource_type",
+          "resource_id",
+          "resource_schema_version",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "SourceReferenceResponse",
         "type": "object"
       },
       "SupersedeTransactionRequest": {
@@ -7289,6 +7588,307 @@
           }
         },
         "summary": "Rotate Session"
+      }
+    },
+    "/v1/candidates/{candidate_id}": {
+      "get": {
+        "operationId": "getCandidateDetail",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Candidate Detail"
+      }
+    },
+    "/v1/decisions": {
+      "get": {
+        "operationId": "listDecisionFeed",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionFeedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Decision Feed"
       }
     },
     "/v1/imports": {

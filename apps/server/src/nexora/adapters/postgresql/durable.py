@@ -21,7 +21,7 @@ from nexora.adapters.postgresql.models import (
     SourceReference,
     TrdBotSyncReceipt,
 )
-from nexora.decision_event_projection import DecisionProjectionRecord, PROJECTED_RESOURCES
+from nexora.decision_event_projection import PROJECTED_RESOURCES, DecisionProjectionRecord
 
 
 class DurableWorkError(RuntimeError):
@@ -814,8 +814,7 @@ class DurableWorkRepository:
                 raise IdempotencyConflict("aggregate version was replayed with different evidence")
             if record.aggregate_version != current_version + 1:
                 raise CheckpointConflict(
-                    f"decision aggregate gap: expected {current_version + 1}, "
-                    f"received {record.aggregate_version}"
+                    f"decision aggregate gap: expected {current_version + 1}, received {record.aggregate_version}"
                 )
             projection[f"{record.resource_type.value}:{record.resource_id}"] = record.model_dump(mode="json")
             aggregates[aggregate_key] = {
@@ -833,8 +832,7 @@ class DurableWorkRepository:
                 prior = {}
             progress[mutation.resource_type] = {
                 "items": int(prior.get("items", 0)) + mutation.resource_item_count,
-                "quarantined": int(prior.get("quarantined", 0))
-                + mutation.resource_quarantine_count,
+                "quarantined": int(prior.get("quarantined", 0)) + mutation.resource_quarantine_count,
                 "complete": mutation.resource_completed,
             }
 
@@ -877,8 +875,7 @@ class DurableWorkRepository:
             return False
         required = {resource.value for resource in PROJECTED_RESOURCES}
         if set(progress) != required or any(
-            not isinstance(progress[name], dict) or progress[name].get("complete") is not True
-            for name in required
+            not isinstance(progress[name], dict) or progress[name].get("complete") is not True for name in required
         ):
             raise DurableWorkError("decision projection activation is missing completed snapshot resources")
         if quarantine or any(progress[name].get("quarantined", 0) for name in required):
@@ -893,8 +890,6 @@ class DurableWorkRepository:
             .values(status="superseded", updated_at=now)
         )
         state.status = "active"
-        state.projection_sha256 = canonical_payload_sha256(
-            {key: projection[key] for key in sorted(projection)}
-        )
+        state.projection_sha256 = canonical_payload_sha256({key: projection[key] for key in sorted(projection)})
         state.activated_at = now
         return True

@@ -164,9 +164,7 @@ def _decision_snapshot_item() -> dict[str, Any]:
             "checksum": "sha256:" + "0" * 64,
         }
     )
-    reference = reference.model_copy(
-        update={"checksum": source_reference_checksum(reference, payload)}
-    )
+    reference = reference.model_copy(update={"checksum": source_reference_checksum(reference, payload)})
     return {"source_reference": reference.model_dump(mode="json"), "payload": payload}
 
 
@@ -185,9 +183,7 @@ def _valid_decision_event_page(*, version: int) -> EventPage:
             "checksum": "sha256:" + "0" * 64,
         }
     )
-    reference = reference.model_copy(
-        update={"checksum": source_reference_checksum(reference, payload)}
-    )
+    reference = reference.model_copy(update={"checksum": source_reference_checksum(reference, payload)})
     event.update(
         {
             "event_id": f"evt_decision_projection_{version:04d}",

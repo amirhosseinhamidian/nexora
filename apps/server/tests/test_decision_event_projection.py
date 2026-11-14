@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
 from nexora.adapters.trd_bot.models import EventEnvelope, ResourceType, SourceReference
 from nexora.decision_event_projection import (
     DecisionKind,
@@ -37,9 +36,7 @@ def snapshot_item(
         observed_at=NOW,
         checksum="sha256:" + "0" * 64,
     )
-    reference = reference.model_copy(
-        update={"checksum": source_reference_checksum(reference, payload)}
-    )
+    reference = reference.model_copy(update={"checksum": source_reference_checksum(reference, payload)})
     return {"source_reference": reference.model_dump(mode="json"), "payload": payload}
 
 
@@ -59,9 +56,7 @@ def decision_event(*, version: int = 1, schema: str = "trd-bot-decision-evaluate
         observed_at=NOW,
         checksum="sha256:" + "0" * 64,
     )
-    reference = reference.model_copy(
-        update={"checksum": source_reference_checksum(reference, payload)}
-    )
+    reference = reference.model_copy(update={"checksum": source_reference_checksum(reference, payload)})
     return EventEnvelope.model_validate(
         {
             "schema_version": "trd-integration-event-envelope-v1",

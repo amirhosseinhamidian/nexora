@@ -146,11 +146,7 @@ class TrdBotSyncHandlers:
         job = EventSyncJob.model_validate(claim.payload)
         capabilities = self._client.negotiate()
         projection_reader = self._decision_projection
-        active_generation = (
-            None
-            if projection_reader is None
-            else projection_reader.active_generation(claim.owner_id)
-        )
+        active_generation = None if projection_reader is None else projection_reader.active_generation(claim.owner_id)
         if projection_reader is not None and active_generation is None:
             return self._full_resync_completion(
                 job,
@@ -213,9 +209,7 @@ class TrdBotSyncHandlers:
                         claim.owner_id, projected.aggregate_type, projected.aggregate_id
                     )
                     current = (
-                        (0, None, "")
-                        if stored is None
-                        else (stored.version, stored.event_id, stored.payload_sha256)
+                        (0, None, "") if stored is None else (stored.version, stored.event_id, stored.payload_sha256)
                     )
                 current_version, current_event_id, current_checksum = current
                 if projected.aggregate_version <= current_version:
@@ -539,9 +533,7 @@ class TrdBotSyncHandlers:
             else ()
         )
         activate_decision_projection = (
-            decision_resource
-            and job.resource_type is ResourceType.ALERT_OUTCOME
-            and not page.has_more
+            decision_resource and job.resource_type is ResourceType.ALERT_OUTCOME and not page.has_more
         )
         return JobCompletion(
             checkpoint=CheckpointAdvance(
@@ -555,9 +547,7 @@ class TrdBotSyncHandlers:
             ),
             source_evidence=tuple(evidence),
             enqueue=() if activate_decision_projection else tuple(follow_up),
-            enqueue_after_projection_activation=(
-                tuple(follow_up) if activate_decision_projection else ()
-            ),
+            enqueue_after_projection_activation=(tuple(follow_up) if activate_decision_projection else ()),
             decision_projection=(
                 None
                 if not decision_resource

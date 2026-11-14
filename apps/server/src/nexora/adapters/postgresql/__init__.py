@@ -14,6 +14,11 @@ from nexora.adapters.postgresql.config import (
     DatabaseSettings,
     load_database_settings,
 )
+from nexora.adapters.postgresql.decision_projection import (
+    ActiveProjectionGeneration,
+    AggregateProjectionState,
+    DecisionEventProjectionRepository,
+)
 from nexora.adapters.postgresql.durable import (
     CheckpointAdvance,
     CheckpointConflict,
@@ -32,11 +37,6 @@ from nexora.adapters.postgresql.durable import (
     SyncReceiptWrite,
     canonical_payload_sha256,
     retry_delay,
-)
-from nexora.adapters.postgresql.decision_projection import (
-    ActiveProjectionGeneration,
-    AggregateProjectionState,
-    DecisionEventProjectionRepository,
 )
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
 from nexora.adapters.postgresql.holdings_projection import HoldingsProjectionRepository, HoldingsProjectionView
@@ -92,6 +92,8 @@ __all__ = [
     "RUNTIME_DATABASE_DSN_FILE_ENV",
     "SCHEMA_NAME",
     "AccountRecord",
+    "ActiveProjectionGeneration",
+    "AggregateProjectionState",
     "AssetIdentifierRecord",
     "AssetRecord",
     "BackgroundJob",
@@ -102,8 +104,6 @@ __all__ = [
     "CheckpointConflict",
     "DatabaseConfigurationError",
     "DatabaseSettings",
-    "ActiveProjectionGeneration",
-    "AggregateProjectionState",
     "DecisionEventProjectionRepository",
     "DecisionProjectionMutation",
     "DecisionProjectionQuarantineWrite",

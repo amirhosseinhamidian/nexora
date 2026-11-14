@@ -17,11 +17,11 @@ from nexora.adapters.postgresql import (
     BackgroundJob,
     CheckpointAdvance,
     CheckpointConflict,
-    DurableWorkRepository,
     DecisionEventProjectionRepository,
     DecisionProjectionMutation,
     DecisionProjectionQuarantineWrite,
     DecisionProjectionState,
+    DurableWorkRepository,
     EnqueuedJob,
     HoldingsProjectionRepository,
     HoldingsRebuildIssueRecord,
@@ -44,8 +44,8 @@ from nexora.adapters.postgresql import (
     create_session_factory,
     load_database_settings,
 )
-from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.decision_event_projection import PROJECTED_RESOURCES
+from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.paper_shadow_projection import canonical_json_sha256
 from nexora.performance import AnalyticsState, PerformancePointState
@@ -120,16 +120,20 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
             is_quarantined = quarantine_candidate and resource.value == "candidate"
             quarantine_payload = {"schema_version": "future-candidate-v9"}
             quarantined = (
-                DecisionProjectionQuarantineWrite(
-                    resource_type=resource.value,
-                    resource_id="candidate-invalid",
-                    source_schema_version="future-candidate-v9",
-                    source_event_id=None,
-                    reason_code="INVALID_OR_UNSUPPORTED_SNAPSHOT",
-                    payload=quarantine_payload,
-                    payload_sha256=canonical_json_sha256(quarantine_payload),
-                ),
-            ) if is_quarantined else ()
+                (
+                    DecisionProjectionQuarantineWrite(
+                        resource_type=resource.value,
+                        resource_id="candidate-invalid",
+                        source_schema_version="future-candidate-v9",
+                        source_event_id=None,
+                        reason_code="INVALID_OR_UNSUPPORTED_SNAPSHOT",
+                        payload=quarantine_payload,
+                        payload_sha256=canonical_json_sha256(quarantine_payload),
+                    ),
+                )
+                if is_quarantined
+                else ()
+            )
             final = index == len(resources) - 1
             durable.complete_job(
                 job_id=job_id,
@@ -153,7 +157,9 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
                             idempotency_key=f"decision-event-resume-{generation:04d}",
                             payload={"generation": generation},
                         ),
-                    ) if final else (),
+                    )
+                    if final
+                    else (),
                 ),
             )
             assert claim.job_id == job_id
@@ -180,12 +186,15 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
                 )
             ).scalar_one()
             assert rejected.status == "rejected"
-            assert session.execute(
-                select(BackgroundJob).where(
-                    BackgroundJob.owner_id == owner_id,
-                    BackgroundJob.idempotency_key == "decision-event-resume-0002",
-                )
-            ).scalar_one_or_none() is None
+            assert (
+                session.execute(
+                    select(BackgroundJob).where(
+                        BackgroundJob.owner_id == owner_id,
+                        BackgroundJob.idempotency_key == "decision-event-resume-0002",
+                    )
+                ).scalar_one_or_none()
+                is None
+            )
     finally:
         outer.rollback()
         connection.close()

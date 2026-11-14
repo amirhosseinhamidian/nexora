@@ -73,8 +73,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
     require(isinstance(prerequisite, dict), "prerequisites must be an object")
     require(prerequisite.get("trd_bot_release") == "0.3.1", "provider release drift")
     require(
-        prerequisite.get("trd_bot_release_commit_sha")
-        == "3097276ed77cd212101797654452456b7fbc61de",
+        prerequisite.get("trd_bot_release_commit_sha") == "3097276ed77cd212101797654452456b7fbc61de",
         "provider commit drift",
     )
     require(

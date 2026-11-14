@@ -53,18 +53,12 @@ EVENT_SCHEMA_ALLOWLIST: Final = {
     EventType.CANDIDATE_STATE_CHANGED: frozenset(
         {"candidate-state-changed-v1", "trd-bot-candidate-state-changed-event-v1"}
     ),
-    EventType.RISK_GATE_COMPLETED: frozenset(
-        {"risk-gate-completed-v1", "trd-bot-risk-gate-completed-event-v1"}
-    ),
+    EventType.RISK_GATE_COMPLETED: frozenset({"risk-gate-completed-v1", "trd-bot-risk-gate-completed-event-v1"}),
     EventType.PORTFOLIO_INTELLIGENCE_COMPLETED: frozenset(
         {"portfolio-intelligence-completed-v1", "trd-bot-portfolio-intelligence-event-v1"}
     ),
-    EventType.ALERT_PUBLISHED: frozenset(
-        {"alert-published-v1", "trd-bot-alert-published-event-v1"}
-    ),
-    EventType.ALERT_LIFECYCLE_CHANGED: frozenset(
-        {"alert-lifecycle-changed-v1", "trd-bot-alert-lifecycle-event-v1"}
-    ),
+    EventType.ALERT_PUBLISHED: frozenset({"alert-published-v1", "trd-bot-alert-published-event-v1"}),
+    EventType.ALERT_LIFECYCLE_CHANGED: frozenset({"alert-lifecycle-changed-v1", "trd-bot-alert-lifecycle-event-v1"}),
 }
 EVENT_RESOURCE_TYPES: Final = {
     EventType.MARKET_CONTEXT_ASSESSED: ResourceType.MARKET_CONTEXT,
@@ -78,9 +72,7 @@ EVENT_RESOURCE_TYPES: Final = {
 
 
 def canonical_json_sha256(payload: object) -> str:
-    encoded = json.dumps(
-        payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True
-    ).encode()
+    encoded = json.dumps(payload, allow_nan=False, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode()
     return hashlib.sha256(encoded).hexdigest()
 
 

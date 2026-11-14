@@ -198,6 +198,7 @@ class TrdBotSyncHandlers:
                         trigger="checksum_mismatch",
                     )
             if projected is not None:
+                assert active_generation is not None
                 assert projected.aggregate_type is not None
                 assert projected.aggregate_id is not None
                 assert projected.aggregate_version is not None

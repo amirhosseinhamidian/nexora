@@ -18,6 +18,11 @@ from nexora.adapters.postgresql import (
     CheckpointAdvance,
     CheckpointConflict,
     DurableWorkRepository,
+    DecisionEventProjectionRepository,
+    DecisionProjectionMutation,
+    DecisionProjectionQuarantineWrite,
+    DecisionProjectionState,
+    EnqueuedJob,
     HoldingsProjectionRepository,
     HoldingsRebuildIssueRecord,
     ImportReconciliationRepository,
@@ -40,6 +45,7 @@ from nexora.adapters.postgresql import (
     load_database_settings,
 )
 from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
+from nexora.decision_event_projection import PROJECTED_RESOURCES
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.paper_shadow_projection import canonical_json_sha256
 from nexora.performance import AnalyticsState, PerformancePointState
@@ -76,7 +82,113 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261101_0010"
+    assert revision == "20261112_0011"
+
+
+def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
+    engine: Engine,
+) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    durable = DurableWorkRepository(factory)
+    projection = DecisionEventProjectionRepository(factory)
+    worker_id = "decision-projection-test-worker"
+
+    def complete_generation(generation: int, *, quarantine_candidate: bool) -> None:
+        resources = tuple(PROJECTED_RESOURCES)
+        for index, resource in enumerate(resources):
+            job_type = f"test.decision-projection.{generation}"
+            job_id = durable.enqueue_job(
+                owner_id=owner_id,
+                job_type=job_type,
+                idempotency_key=f"decision-projection-{generation}-{resource.value}",
+                payload={"resource": resource.value},
+            )
+            claim = durable.claim_jobs(
+                worker_id=worker_id,
+                job_types=(job_type,),
+                limit=1,
+                lease_seconds=30,
+            )[0]
+            is_quarantined = quarantine_candidate and resource.value == "candidate"
+            quarantine_payload = {"schema_version": "future-candidate-v9"}
+            quarantined = (
+                DecisionProjectionQuarantineWrite(
+                    resource_type=resource.value,
+                    resource_id="candidate-invalid",
+                    source_schema_version="future-candidate-v9",
+                    source_event_id=None,
+                    reason_code="INVALID_OR_UNSUPPORTED_SNAPSHOT",
+                    payload=quarantine_payload,
+                    payload_sha256=canonical_json_sha256(quarantine_payload),
+                ),
+            ) if is_quarantined else ()
+            final = index == len(resources) - 1
+            durable.complete_job(
+                job_id=job_id,
+                worker_id=worker_id,
+                completion=JobCompletion(
+                    decision_projection=DecisionProjectionMutation(
+                        generation=generation,
+                        trigger="cursor_expired",
+                        provider_version="0.3.1",
+                        contract_version="nexora-trd-integration-v1",
+                        resource_type=resource.value,
+                        resource_item_count=1 if is_quarantined else 0,
+                        resource_quarantine_count=1 if is_quarantined else 0,
+                        resource_completed=True,
+                        quarantine=quarantined,
+                        activate=final,
+                    ),
+                    enqueue_after_projection_activation=(
+                        EnqueuedJob(
+                            job_type="test.event-resume",
+                            idempotency_key=f"decision-event-resume-{generation:04d}",
+                            payload={"generation": generation},
+                        ),
+                    ) if final else (),
+                ),
+            )
+            assert claim.job_id == job_id
+
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        complete_generation(1, quarantine_candidate=False)
+        active = projection.active_generation(owner_id)
+        assert active is not None
+        assert active.generation == 1
+
+        complete_generation(2, quarantine_candidate=True)
+        active = projection.active_generation(owner_id)
+        assert active is not None
+        assert active.generation == 1
+        with factory() as session:
+            rejected = session.execute(
+                select(DecisionProjectionState).where(
+                    DecisionProjectionState.owner_id == owner_id,
+                    DecisionProjectionState.generation == 2,
+                )
+            ).scalar_one()
+            assert rejected.status == "rejected"
+            assert session.execute(
+                select(BackgroundJob).where(
+                    BackgroundJob.owner_id == owner_id,
+                    BackgroundJob.idempotency_key == "decision-event-resume-0002",
+                )
+            ).scalar_one_or_none() is None
+    finally:
+        outer.rollback()
+        connection.close()
 
 
 def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
@@ -207,6 +319,7 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "price_observations",
         "fx_rate_observations",
         "manual_valuations",
+        "decision_projection_states",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

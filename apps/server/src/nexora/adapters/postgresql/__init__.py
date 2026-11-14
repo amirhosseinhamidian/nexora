@@ -17,6 +17,8 @@ from nexora.adapters.postgresql.config import (
 from nexora.adapters.postgresql.durable import (
     CheckpointAdvance,
     CheckpointConflict,
+    DecisionProjectionMutation,
+    DecisionProjectionQuarantineWrite,
     DurableWorkError,
     DurableWorkRepository,
     EnqueuedJob,
@@ -31,6 +33,11 @@ from nexora.adapters.postgresql.durable import (
     canonical_payload_sha256,
     retry_delay,
 )
+from nexora.adapters.postgresql.decision_projection import (
+    ActiveProjectionGeneration,
+    AggregateProjectionState,
+    DecisionEventProjectionRepository,
+)
 from nexora.adapters.postgresql.engine import create_database_engine, create_session_factory, probe_database
 from nexora.adapters.postgresql.holdings_projection import HoldingsProjectionRepository, HoldingsProjectionView
 from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQLIdentityRepository
@@ -42,6 +49,7 @@ from nexora.adapters.postgresql.models import (
     BackgroundJob,
     BootstrapToken,
     BrowserSession,
+    DecisionProjectionState,
     FxRateObservationRecord,
     HoldingProjectionRecord,
     HoldingsRebuildIssueRecord,
@@ -94,6 +102,12 @@ __all__ = [
     "CheckpointConflict",
     "DatabaseConfigurationError",
     "DatabaseSettings",
+    "ActiveProjectionGeneration",
+    "AggregateProjectionState",
+    "DecisionEventProjectionRepository",
+    "DecisionProjectionMutation",
+    "DecisionProjectionQuarantineWrite",
+    "DecisionProjectionState",
     "DurableWorkError",
     "DurableWorkRepository",
     "EnqueuedJob",

@@ -16,6 +16,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -1171,6 +1172,46 @@ class ManualValuationRecord(Base):
     idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
     request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DecisionProjectionState(Base):
+    __tablename__ = "decision_projection_states"
+    __table_args__ = (
+        CheckConstraint("generation >= 1", name="generation_positive"),
+        CheckConstraint("status IN ('staging', 'active', 'superseded', 'rejected')", name="status_allowed"),
+        CheckConstraint("trigger IN ('cursor_expired', 'aggregate_gap', 'checksum_mismatch')", name="trigger_allowed"),
+        CheckConstraint("jsonb_typeof(projection) = 'object'", name="projection_object"),
+        CheckConstraint("jsonb_typeof(resource_progress) = 'object'", name="resource_progress_object"),
+        CheckConstraint("jsonb_typeof(aggregate_versions) = 'object'", name="aggregate_versions_object"),
+        CheckConstraint("jsonb_typeof(quarantine) = 'array'", name="quarantine_array"),
+        CheckConstraint("projection_sha256 IS NULL OR projection_sha256 ~ '^[0-9a-f]{64}$'", name="checksum_format"),
+        UniqueConstraint("owner_id", "generation", name="uq_decision_projection_states_owner_generation"),
+        Index(
+            "uq_decision_projection_states_owner_active",
+            "owner_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    projection_state_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="staging")
+    trigger: Mapped[str] = mapped_column(String(24), nullable=False)
+    provider_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    contract_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    projection: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    resource_progress: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    aggregate_versions: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    quarantine: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, server_default="[]")
+    projection_sha256: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ProjectionCheckpoint(Base):

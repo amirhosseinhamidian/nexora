@@ -204,6 +204,15 @@ from creating an OrderIntent or Portfolio transaction. It adds no database
 table, API, UI or runtime behavior. The server gate stays deferred, TRD Bot
 `0.3.0` stays incompatible and only `NEX-P3-02` is opened.
 
+`NEX-P3-02` is frozen at `1e114b58b1a9cfc4ef91280c6506aa58bb2f53e8`.
+TRD Bot `0.3.1` is now available at
+`3097276ed77cd212101797654452456b7fbc61de` with the required real local
+provider smoke evidence. `NEX-P3-03` is the current candidate: it adds the
+owner-scoped durable Decision/Event projection, strict source-reference
+validation, idempotent replay, quarantine, aggregate-gap recovery and atomic
+generation publication. It does not open the Decision Feed, human review or
+any execution capability. `NEX-P3-04` remains blocked until P3-03 acceptance.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -359,6 +368,8 @@ NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
 
 P3-02 Freeze evidence: [`artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json`](artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json)
 
+P3-03 candidate contract: [`contracts/nexora-v0.1-durable-decision-event-projection.json`](contracts/nexora-v0.1-durable-decision-event-projection.json)
+
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
 - [`docs/v0.1/02-api-event-export-contracts-and-compatibility.md`](docs/v0.1/02-api-event-export-contracts-and-compatibility.md)
@@ -394,6 +405,7 @@ P3-02 Freeze evidence: [`artifacts/p3-02/trd-bot-v031-integration-contract-freez
 - [`docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md`](docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md)
 - [`docs/v0.1/33-decision-review-journal-domain.md`](docs/v0.1/33-decision-review-journal-domain.md)
 - [`docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md`](docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md)
+- [`docs/v0.1/35-durable-decision-event-projection.md`](docs/v0.1/35-durable-decision-event-projection.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)

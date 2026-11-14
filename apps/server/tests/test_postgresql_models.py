@@ -40,6 +40,7 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.price_observations",
         "nexora.fx_rate_observations",
         "nexora.manual_valuations",
+        "nexora.decision_projection_states",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -56,6 +57,7 @@ def test_application_tables_are_owner_aware() -> None:
         "projection_checkpoints",
         "background_jobs",
         "outbox_events",
+        "decision_projection_states",
     ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c

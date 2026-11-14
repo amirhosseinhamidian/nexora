@@ -6,9 +6,10 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
-from nexora.adapters.postgresql import JobClaim
+from nexora.adapters.postgresql import ActiveProjectionGeneration, AggregateProjectionState, JobClaim
 from nexora.adapters.trd_bot import CursorExpiredError, EventPage, ResourceType, SnapshotPage
-from nexora.adapters.trd_bot.models import CapabilitiesResponse
+from nexora.adapters.trd_bot.models import CapabilitiesResponse, SourceReference
+from nexora.decision_event_projection import source_reference_checksum
 from nexora.trd_bot_sync import (
     EVENT_SYNC_JOB_TYPE,
     SNAPSHOT_SYNC_JOB_TYPE,
@@ -65,6 +66,35 @@ class FakeClient:
         return self.snapshot_page
 
 
+class FakeDecisionProjection:
+    def __init__(
+        self,
+        *,
+        active: bool = True,
+        aggregate: AggregateProjectionState | None = None,
+    ) -> None:
+        self.active = active
+        self.aggregate = aggregate
+
+    def active_generation(self, owner_id: object) -> ActiveProjectionGeneration | None:
+        assert owner_id is not None
+        if not self.active:
+            return None
+        return ActiveProjectionGeneration(
+            generation=7,
+            trigger="cursor_expired",
+            provider_version="0.3.1",
+            contract_version="nexora-trd-integration-v1",
+        )
+
+    def aggregate_state(
+        self, owner_id: object, aggregate_type: str, aggregate_id: str
+    ) -> AggregateProjectionState | None:
+        assert owner_id is not None
+        assert aggregate_type and aggregate_id
+        return self.aggregate
+
+
 def _event_page(*, has_more: bool = False, schema: str = "decision-evaluation-completed-v1") -> EventPage:
     event = _json("decision-event.json")
     event["payload_schema"] = schema
@@ -101,6 +131,70 @@ def _projection_event_page(*, quantity: object = "1.25") -> EventPage:
             "aggregate": {"type": "paper_shadow_position", "id": "position-1", "version": 1},
             "idempotency_key": "projection-position-1-version-1",
             "payload_schema": "simulation-position-opened-v1",
+            "payload": payload,
+            "payload_checksum": f"sha256:{canonical_json_sha256(payload)}",
+        }
+    )
+    return EventPage.model_validate(
+        {
+            "schema_version": "trd-integration-event-page-v1",
+            "events": [event],
+            "next_cursor": None,
+            "has_more": False,
+        }
+    )
+
+
+def _decision_snapshot_item() -> dict[str, Any]:
+    payload = {
+        "resource_schema_version": "trd-bot-decision-evaluation-v1",
+        "evaluation_id": "decision-1",
+        "offline_only": True,
+        "external_order_submission_allowed": False,
+    }
+    reference = SourceReference.model_validate(
+        {
+            "schema_version": "nexora-source-reference-v1",
+            "source_product": "trd_bot",
+            "source_version": "0.3.1",
+            "resource_type": "decision_evaluation",
+            "resource_id": "decision-1",
+            "resource_schema_version": "trd-bot-decision-evaluation-v1",
+            "observed_at": "2026-10-22T12:00:00Z",
+            "checksum": "sha256:" + "0" * 64,
+        }
+    )
+    reference = reference.model_copy(
+        update={"checksum": source_reference_checksum(reference, payload)}
+    )
+    return {"source_reference": reference.model_dump(mode="json"), "payload": payload}
+
+
+def _valid_decision_event_page(*, version: int) -> EventPage:
+    event = _json("decision-event.json")
+    payload = {
+        "decision": "defer",
+        "offline_only": True,
+        "external_order_submission_allowed": False,
+    }
+    reference = SourceReference.model_validate(
+        {
+            **event["source"],
+            "resource_id": "decision-1",
+            "resource_schema_version": "trd-bot-decision-evaluated-event-v1",
+            "checksum": "sha256:" + "0" * 64,
+        }
+    )
+    reference = reference.model_copy(
+        update={"checksum": source_reference_checksum(reference, payload)}
+    )
+    event.update(
+        {
+            "event_id": f"evt_decision_projection_{version:04d}",
+            "source": reference.model_dump(mode="json"),
+            "aggregate": {"type": "decision_evaluation", "id": "decision-1", "version": version},
+            "idempotency_key": f"decision-projection-version-{version:04d}",
+            "payload_schema": "trd-bot-decision-evaluated-event-v1",
             "payload": payload,
             "payload_checksum": f"sha256:{canonical_json_sha256(payload)}",
         }
@@ -184,11 +278,58 @@ def test_expired_cursor_resets_checkpoint_and_starts_ordered_snapshot_chain() ->
     assert completion.outbox[0].payload["reason_code"] == "CURSOR_EXPIRED"
 
 
+def test_initial_projection_sync_requires_snapshot_before_event_publication() -> None:
+    handlers = TrdBotSyncHandlers(
+        FakeClient(event_page=_event_page()),
+        FakeDecisionProjection(active=False),
+    )
+
+    completion = handlers.sync_events(_claim(initial_event_sync_payload()))
+
+    assert completion.enqueue[0].job_type == SNAPSHOT_SYNC_JOB_TYPE
+    assert completion.enqueue[0].payload["trigger"] == "cursor_expired"
+    assert completion.outbox[0].payload["reason_code"] == "INITIAL_SNAPSHOT_REQUIRED"
+
+
+def test_contiguous_decision_event_is_bound_to_atomic_projection_completion() -> None:
+    handlers = TrdBotSyncHandlers(
+        FakeClient(event_page=_valid_decision_event_page(version=1)),
+        FakeDecisionProjection(),
+    )
+
+    completion = handlers.sync_events(_claim(initial_event_sync_payload()))
+
+    assert completion.decision_projection is not None
+    assert completion.decision_projection.generation == 7
+    assert completion.decision_projection.events[0].aggregate_version == 1
+
+
+def test_aggregate_gap_is_quarantined_and_starts_full_resync() -> None:
+    handlers = TrdBotSyncHandlers(
+        FakeClient(event_page=_valid_decision_event_page(version=3)),
+        FakeDecisionProjection(
+            aggregate=AggregateProjectionState(
+                version=1,
+                event_id="evt_decision_projection_0001",
+                payload_sha256="0" * 64,
+            )
+        ),
+    )
+
+    completion = handlers.sync_events(_claim(initial_event_sync_payload()))
+
+    assert completion.sync_receipts[0].status == "quarantined"
+    assert completion.sync_receipts[0].reason_code == "AGGREGATE_VERSION_GAP"
+    assert completion.decision_projection is not None
+    assert completion.decision_projection.quarantine[0].reason_code == "AGGREGATE_VERSION_GAP"
+    assert completion.enqueue[0].payload["trigger"] == "aggregate_gap"
+
+
 def test_snapshot_page_persists_versioned_evidence_and_resumes_event_stream() -> None:
     page = SnapshotPage.model_validate(
         {
             "schema_version": "nexora-source-snapshot-page-v1",
-            "items": [{"schema_version": "decision-evaluation-v1", "decision_evaluation_id": "decision-1"}],
+            "items": [_decision_snapshot_item()],
             "next_cursor": None,
             "has_more": False,
         }

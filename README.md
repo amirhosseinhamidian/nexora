@@ -126,12 +126,92 @@ same SHA. Actual host benchmark and restore-drill evidence remain deferred to
 `NEX-P1-13`; production readiness is not claimed before that final acceptance
 and freeze.
 
-`NEX-P1-13` final-acceptance tooling is a candidate. It binds a current
-reference-host overload benchmark, encrypted backup/restore and protected
-retention drill, green GitHub Actions and the complete repository/backend/
-PostgreSQL/Web/browser gate set to one SHA and environment. The final Freeze
-commit is restricted to the checksummed acceptance artifact; it does not deploy,
-tag, enable public hosting or complete the Portfolio product.
+`NEX-P1-13` is frozen. Candidate
+`61c5eba2ecf2a3696b6b60c87ecb1afb6064d26d` binds the local reference-host
+capacity report, migration cycle, PostgreSQL integration, backend, Web and
+browser gates to successful CI. Freeze commit
+`5708a15d1c983c45885eeabdc4b3f77375cfc1d7` contains only the checksummed final
+acceptance artifact. Phase 1 is complete; production deployment and v0.1 release
+remain blocked by the deferred private German VPS acceptance gate.
+
+`NEX-P2-01` is frozen. It freezes the owner-scoped portfolio language,
+immutable transaction journal, derived holdings/lots, exact-decimal accounting,
+valuation evidence, import/reconciliation, export-first policy and the twelve
+stage Phase 2 delivery roadmap. It does not implement portfolio persistence or
+claim product completion. Candidate
+`5fad7e9f49a48fb3068634ee8ae6621af8cc6ec1` is bound to the successful primary
+workflow and fifteen regression workflows on the same SHA. The next allowed
+implementation stage is `NEX-P2-02`.
+
+`NEX-P2-02` is frozen. It adds owner-scoped asset and identifier,
+portfolio, and descriptive account registries with explicit lifecycle state,
+optimistic concurrency, PostgreSQL constraints, a reversible migration, and
+authenticated CSRF-protected APIs. It stores no exchange credential or wallet
+signing material and does not introduce the transaction journal. Accepted
+candidate `add7a7eec7226ecc62989b23cccf380c32e678d7` is bound to all 57
+successful checks across the primary workflow and sixteen regression
+workflows. The immutable transaction journal is now opened as `NEX-P2-03`.
+
+`NEX-P2-03` is frozen. It adds an owner-scoped append-only transaction
+journal with exact-decimal balanced legs, mandatory source lineage, canonical
+request checksums, idempotent posting, and explicit reversal/supersession
+corrections. PostgreSQL rejects journal updates and deletes. Holdings, lots,
+cost basis, valuation and P&L remain deferred. Accepted candidate
+`cf3ddd90eed968a4f672e78866338d97e68e3e25` is bound to all 60 successful
+checks across the primary workflow and seventeen regression workflows. Bounded
+import and reconciliation is now opened as `NEX-P2-04`.
+
+`NEX-P2-04` is frozen. It adds bounded CSV and Nexora JSON dry runs,
+deterministic row normalization and fingerprints, duplicate detection,
+quarantine, explicit reconciliation evidence, owner review and transactional
+all-or-nothing publication into the immutable journal. It adds no holdings,
+cost basis, valuation or trading capability. Accepted candidate
+`8e1f59f4084f902b4917d91f6ee9593217dbca1e` is bound to all 63 successful
+checks across the primary workflow and eighteen regression workflows.
+Rebuildable holdings, lots and cost basis are now opened as `NEX-P2-05`.
+
+`NEX-P2-05` through `NEX-P2-11` are frozen. Together they add rebuildable
+holdings and cost basis, immutable valuation evidence, point-in-time NAV/P&L,
+bounded performance, compatible Paper/Shadow projection, authenticated
+Portfolio APIs and exports, and the bilingual Portfolio, account, journal,
+holding, import and reconciliation experience.
+
+`NEX-P2-12` is frozen. Candidate
+`f71ef1840c09b12259ef519bd27ffd508b1913f2` passed the local reference
+acceptance and Freeze commit `ffe5b1b50c6eb7b09bfe052ad96038de47b779df`
+contains only its checksummed artifact. Phase 2 is complete. The private German
+VPS acceptance gate remains deferred and continues to block production
+deployment and v0.1 release.
+
+`NEX-P3-00` is frozen. Candidate
+`d4478b400d5bcadf9984a4eb89dc346d73d94fb4` passed the dedicated Phase 3
+roadmap workflow and all 28 regression workflows on the same SHA. It opens
+bounded local development of the Decision Intelligence Experience while
+preserving the deferred `NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE` gate. Phase 3
+covers explainable Decision/Candidate evidence, Risk reasons, bounded Portfolio
+impact, explicit human review, alerts, watchlists, outcome journal and complete
+export coverage. TRD Bot `0.3.0` remains incompatible; fixture-backed work may
+continue, but the durable projection cannot freeze before a compatible `0.3.1`
+provider passes a real integration smoke. Production readiness remains
+unclaimed. The only opened implementation stage is `NEX-P3-01`.
+
+`NEX-P3-01` is frozen. Candidate
+`ffa4acd39806e72f7e53d16af7e9937c12e669c5` passed the dedicated Decision,
+Review and Journal workflow and all 29 regression workflows on the same SHA.
+The frozen contract keeps provider evidence immutable, preserves Review and
+Journal correction history through supersession, and forbids Accept or What-if
+from creating an OrderIntent or Portfolio transaction. It adds no database
+table, API, UI or runtime behavior. The server gate stays deferred, TRD Bot
+`0.3.0` stays incompatible and only `NEX-P3-02` is opened.
+
+`NEX-P3-02` is frozen at `1e114b58b1a9cfc4ef91280c6506aa58bb2f53e8`.
+TRD Bot `0.3.1` is now available at
+`3097276ed77cd212101797654452456b7fbc61de` with the required real local
+provider smoke evidence. `NEX-P3-03` is the current candidate: it adds the
+owner-scoped durable Decision/Event projection, strict source-reference
+validation, idempotent replay, quarantine, aggregate-gap recovery and atomic
+generation publication. It does not open the Decision Feed, human review or
+any execution capability. `NEX-P3-04` remains blocked until P3-03 acceptance.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -143,9 +223,9 @@ The private runtime defaults to `disabled_incompatible_provider` for TRD Bot
 The versioned adapter remains fail-closed until a compatible provider release
 and capability negotiation are available.
 
-The repository now contains the Phase 1 runtime foundation, not the complete
-portfolio application. Portfolio-domain features and final production
-acceptance remain deliberately deferred.
+The repository contains the accepted Phase 1 runtime foundation and complete
+frozen Phase 2 Portfolio scope. Phase 3 is a local development program; it does
+not deploy, tag or release Nexora and cannot weaken the private-VPS gate.
 
 ## Verify the scope contract
 
@@ -170,6 +250,21 @@ uv run python scripts/verify_artifact_export_storage.py
 uv run python scripts/verify_authenticated_web_shell.py
 uv run python scripts/verify_private_deployment_operations.py
 uv run python scripts/verify_phase_one_final_acceptance.py
+uv run python scripts/verify_phase_two_portfolio_domain.py
+uv run python scripts/verify_portfolio_registry.py
+uv run python scripts/verify_transaction_journal.py
+uv run python scripts/verify_import_reconciliation.py
+uv run python scripts/verify_holdings_projection.py
+uv run python scripts/verify_valuation_evidence.py
+uv run python scripts/verify_nav_pnl_performance.py
+uv run python scripts/verify_paper_shadow_projection.py
+uv run python scripts/verify_portfolio_api_export.py
+uv run python scripts/verify_portfolio_dashboard_accounts.py
+uv run python scripts/verify_transactions_holdings_reconciliation_ui.py
+uv run python scripts/verify_phase_two_final_acceptance.py
+uv run python scripts/verify_server_deployment_acceptance.py
+uv run python scripts/verify_phase_three_roadmap.py
+uv run python scripts/verify_decision_review_journal_domain.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -230,9 +325,50 @@ NEX_P1_12_FREEZE=PASS
 NEX_P1_12_PREREQUISITE=PASS
 NEX_P1_13_FINAL_ACCEPTANCE_TOOLING=PASS
 NEX_P1_13_READY_FOR_CANDIDATE=PASS
+NEX_P1_13_PREREQUISITE=PASS
+NEX_P2_01_PORTFOLIO_DOMAIN=PASS
+NEX_P2_01_FREEZE=PASS
+NEX_P2_02_PORTFOLIO_REGISTRY=PASS
+NEX_P2_02_FREEZE=PASS
+NEX_P2_03_TRANSACTION_JOURNAL=PASS
+NEX_P2_03_FREEZE=PASS
+NEX_P2_03_PREREQUISITE=PASS
+NEX_P2_04_IMPORT_RECONCILIATION=PASS
+NEX_P2_04_FREEZE=PASS
+NEX_P2_04_PREREQUISITE=PASS
+NEX_P2_05_HOLDINGS_PROJECTION=PASS
+NEX_P2_05_FREEZE=PASS
+NEX_P2_05_PREREQUISITE=PASS
+NEX_P2_06_VALUATION_EVIDENCE=PASS
+NEX_P2_07_NAV_PNL_PERFORMANCE=PASS
+NEX_P2_07_FREEZE=PASS
+NEX_P2_08_PAPER_SHADOW_PROJECTION=PASS
+NEX_P2_08_FREEZE=PASS
+NEX_P2_09_PORTFOLIO_API_EXPORT=PASS
+NEX_P2_09_FREEZE=PASS
+NEX_P2_10_PORTFOLIO_DASHBOARD_ACCOUNTS_UI=PASS
+NEX_P2_10_FREEZE=PASS
+NEX_P2_11_TRANSACTIONS_HOLDINGS_RECONCILIATION_UI=PASS
+NEX_P2_11_FREEZE=PASS
+NEX_P2_12_FINAL_ACCEPTANCE_TOOLING=PASS
+NEX_P2_12_READY_FOR_CANDIDATE=PASS
+NEX_V0_1_SERVER_DEPLOYMENT_ACCEPTANCE_TOOLING=PASS
+NEX_V0_1_SERVER_DEPLOYMENT_GATE=PRESERVED_DEFERRED
+NEX_P3_00_PHASE_THREE_ROADMAP=PASS
+NEX_P3_00_FREEZE=PASS
+NEX_P3_01_DECISION_REVIEW_JOURNAL_DOMAIN=PASS
+NEX_P3_01_FREEZE=PASS
+NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS
+NEX_P3_02_FREEZE=PASS
+NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT
+NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
 ```
 
 ## Documents
+
+P3-02 Freeze evidence: [`artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json`](artifacts/p3-02/trd-bot-v031-integration-contract-freeze.json)
+
+P3-03 candidate contract: [`contracts/nexora-v0.1-durable-decision-event-projection.json`](contracts/nexora-v0.1-durable-decision-event-projection.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
@@ -253,6 +389,23 @@ NEX_P1_13_READY_FOR_CANDIDATE=PASS
 - [`docs/v0.1/16-authenticated-web-application-shell.md`](docs/v0.1/16-authenticated-web-application-shell.md)
 - [`docs/v0.1/17-private-deployment-and-operations.md`](docs/v0.1/17-private-deployment-and-operations.md)
 - [`docs/v0.1/18-phase-one-final-acceptance.md`](docs/v0.1/18-phase-one-final-acceptance.md)
+- [`docs/v0.1/19-phase-two-portfolio-domain-roadmap.md`](docs/v0.1/19-phase-two-portfolio-domain-roadmap.md)
+- [`docs/v0.1/20-portfolio-asset-account-registry.md`](docs/v0.1/20-portfolio-asset-account-registry.md)
+- [`docs/v0.1/21-immutable-transaction-journal.md`](docs/v0.1/21-immutable-transaction-journal.md)
+- [`docs/v0.1/22-import-and-reconciliation-runtime.md`](docs/v0.1/22-import-and-reconciliation-runtime.md)
+- [`docs/v0.1/23-holdings-lots-cost-basis.md`](docs/v0.1/23-holdings-lots-cost-basis.md)
+- [`docs/v0.1/24-price-fx-manual-valuation.md`](docs/v0.1/24-price-fx-manual-valuation.md)
+- [`docs/v0.1/25-nav-pnl-performance.md`](docs/v0.1/25-nav-pnl-performance.md)
+- [`docs/v0.1/26-trd-bot-paper-shadow-projection.md`](docs/v0.1/26-trd-bot-paper-shadow-projection.md)
+- [`docs/v0.1/27-portfolio-api-export.md`](docs/v0.1/27-portfolio-api-export.md)
+- [`docs/v0.1/28-portfolio-dashboard-accounts-ui.md`](docs/v0.1/28-portfolio-dashboard-accounts-ui.md)
+- [`docs/v0.1/29-transactions-holdings-reconciliation-ui.md`](docs/v0.1/29-transactions-holdings-reconciliation-ui.md)
+- [`docs/v0.1/30-phase-two-final-acceptance.md`](docs/v0.1/30-phase-two-final-acceptance.md)
+- [`docs/v0.1/31-server-deployment-acceptance.md`](docs/v0.1/31-server-deployment-acceptance.md)
+- [`docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md`](docs/v0.1/32-phase-three-roadmap-and-deferred-deployment.md)
+- [`docs/v0.1/33-decision-review-journal-domain.md`](docs/v0.1/33-decision-review-journal-domain.md)
+- [`docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md`](docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md)
+- [`docs/v0.1/35-durable-decision-event-projection.md`](docs/v0.1/35-durable-decision-event-projection.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -274,6 +427,15 @@ NEX_P1_13_READY_FOR_CANDIDATE=PASS
 - [`contracts/nexora-v0.1-authenticated-web-shell.json`](contracts/nexora-v0.1-authenticated-web-shell.json)
 - [`contracts/nexora-v0.1-private-deployment-operations.json`](contracts/nexora-v0.1-private-deployment-operations.json)
 - [`contracts/nexora-v0.1-phase-one-final-acceptance.json`](contracts/nexora-v0.1-phase-one-final-acceptance.json)
+- [`contracts/nexora-v0.1-phase-two-portfolio-domain.json`](contracts/nexora-v0.1-phase-two-portfolio-domain.json)
+- [`contracts/nexora-v0.1-portfolio-registry.json`](contracts/nexora-v0.1-portfolio-registry.json)
+- [`contracts/nexora-v0.1-transaction-journal.json`](contracts/nexora-v0.1-transaction-journal.json)
+- [`contracts/nexora-v0.1-import-reconciliation.json`](contracts/nexora-v0.1-import-reconciliation.json)
+- [`contracts/nexora-v0.1-holdings-lots-cost-basis.json`](contracts/nexora-v0.1-holdings-lots-cost-basis.json)
+- [`contracts/nexora-v0.1-price-fx-manual-valuation.json`](contracts/nexora-v0.1-price-fx-manual-valuation.json)
+- [`contracts/nexora-v0.1-phase-three-roadmap.json`](contracts/nexora-v0.1-phase-three-roadmap.json)
+- [`contracts/nexora-v0.1-decision-review-journal-domain.json`](contracts/nexora-v0.1-decision-review-journal-domain.json)
+- [`contracts/nexora-v0.1-trd-bot-v031-integration.json`](contracts/nexora-v0.1-trd-bot-v031-integration.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
@@ -294,3 +456,11 @@ NEX_P1_13_READY_FOR_CANDIDATE=PASS
 - [`artifacts/p1-10/artifact-export-storage-freeze.json`](artifacts/p1-10/artifact-export-storage-freeze.json)
 - [`artifacts/p1-11/authenticated-web-shell-freeze.json`](artifacts/p1-11/authenticated-web-shell-freeze.json)
 - [`artifacts/p1-12/private-deployment-operations-freeze.json`](artifacts/p1-12/private-deployment-operations-freeze.json)
+- [`artifacts/p1-13/phase-one-final-acceptance.json`](artifacts/p1-13/phase-one-final-acceptance.json)
+- [`artifacts/p2-01/portfolio-domain-roadmap-freeze.json`](artifacts/p2-01/portfolio-domain-roadmap-freeze.json)
+- [`artifacts/p2-02/portfolio-registry-freeze.json`](artifacts/p2-02/portfolio-registry-freeze.json)
+- [`artifacts/p2-03/transaction-journal-freeze.json`](artifacts/p2-03/transaction-journal-freeze.json)
+- [`artifacts/p2-04/import-reconciliation-freeze.json`](artifacts/p2-04/import-reconciliation-freeze.json)
+- [`artifacts/p2-05/holdings-projection-freeze.json`](artifacts/p2-05/holdings-projection-freeze.json)
+- [`artifacts/p3-00/phase-three-roadmap-freeze.json`](artifacts/p3-00/phase-three-roadmap-freeze.json)
+- [`artifacts/p3-01/decision-review-journal-domain-freeze.json`](artifacts/p3-01/decision-review-journal-domain-freeze.json)

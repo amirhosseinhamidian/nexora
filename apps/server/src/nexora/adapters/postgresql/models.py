@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -11,9 +12,11 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -319,6 +322,896 @@ class TrdBotSyncReceipt(Base):
     envelope: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     envelope_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class AssetRecord(Base):
+    __tablename__ = "assets"
+    __table_args__ = (
+        CheckConstraint("asset_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="asset_key_format"),
+        CheckConstraint("symbol ~ '^[A-Z0-9][A-Z0-9._-]{0,23}$'", name="symbol_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint(
+            "asset_class IN ('crypto', 'fiat', 'equity', 'fund', 'commodity', 'other')",
+            name="asset_class_allowed",
+        ),
+        CheckConstraint("precision BETWEEN 0 AND 30", name="precision_bounded"),
+        CheckConstraint("status IN ('active', 'inactive')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND deactivated_at IS NULL) OR (status = 'inactive' AND deactivated_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        UniqueConstraint("owner_id", "asset_key", name="uq_assets_owner_key"),
+        UniqueConstraint("owner_id", "asset_id", name="uq_assets_owner_asset"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    asset_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    asset_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(24), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    asset_class: Mapped[str] = mapped_column(String(16), nullable=False)
+    precision: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    deactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AssetIdentifierRecord(Base):
+    __tablename__ = "asset_identifiers"
+    __table_args__ = (
+        CheckConstraint(
+            "scheme IN ('iso_4217', 'ticker', 'coingecko', 'isin', 'cusip', 'figi', 'manual')",
+            name="scheme_allowed",
+        ),
+        CheckConstraint("char_length(value) BETWEEN 1 AND 160", name="value_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_asset_identifiers_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "scheme", "value", name="uq_asset_identifiers_owner_scheme_value"),
+        UniqueConstraint("owner_id", "asset_id", "scheme", name="uq_asset_identifiers_owner_asset_scheme"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    asset_identifier_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    scheme: Mapped[str] = mapped_column(String(24), nullable=False)
+    value: Mapped[str] = mapped_column(String(160), nullable=False)
+    is_primary: Mapped[bool] = mapped_column(nullable=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class PortfolioRecord(Base):
+    __tablename__ = "portfolios"
+    __table_args__ = (
+        CheckConstraint("portfolio_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="portfolio_key_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint("kind IN ('personal', 'paper', 'shadow')", name="kind_allowed"),
+        CheckConstraint("status IN ('active', 'archived')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND archived_at IS NULL) OR (status = 'archived' AND archived_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "base_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_portfolios_owner_base_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "portfolio_key", name="uq_portfolios_owner_key"),
+        UniqueConstraint("owner_id", "portfolio_id", name="uq_portfolios_owner_portfolio"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    portfolio_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    base_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    portfolio_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AccountRecord(Base):
+    __tablename__ = "accounts"
+    __table_args__ = (
+        CheckConstraint("account_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="account_key_format"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint(
+            "kind IN ('exchange', 'wallet_watch_only', 'cash', 'brokerage_manual', 'paper', 'shadow', 'other_manual')",
+            name="kind_allowed",
+        ),
+        CheckConstraint("status IN ('active', 'closed')", name="status_allowed"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        CheckConstraint(
+            "(status = 'active' AND closed_at IS NULL) OR (status = 'closed' AND closed_at IS NOT NULL)",
+            name="status_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_accounts_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "account_key", name="uq_accounts_owner_key"),
+        UniqueConstraint("owner_id", "account_id", name="uq_accounts_owner_account"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    account_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    institution_name: Mapped[str | None] = mapped_column(String(120))
+    external_reference: Mapped[str | None] = mapped_column(String(160))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="active")
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class TransactionRecord(Base):
+    __tablename__ = "transactions"
+    __table_args__ = (
+        CheckConstraint(
+            "transaction_kind IN ('buy', 'sell', 'deposit', 'withdrawal', 'transfer', 'fee', "
+            "'income', 'reward', 'airdrop', 'adjustment', 'opening_balance')",
+            name="transaction_kind_allowed",
+        ),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 16 AND 160", name="idempotency_key_length"),
+        CheckConstraint("idempotency_key !~ '[[:space:]]'", name="idempotency_key_no_whitespace"),
+        CheckConstraint("source_kind IN ('manual', 'import', 'trd_bot')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        CheckConstraint("memo IS NULL OR char_length(memo) BETWEEN 1 AND 500", name="memo_length"),
+        CheckConstraint(
+            "(correction_kind IS NULL AND correction_of_transaction_id IS NULL AND correction_reason IS NULL) OR "
+            "(correction_kind IN ('reversal', 'supersession') AND correction_of_transaction_id IS NOT NULL "
+            "AND char_length(correction_reason) BETWEEN 8 AND 500)",
+            name="correction_shape",
+        ),
+        CheckConstraint(
+            "correction_of_transaction_id IS NULL OR correction_of_transaction_id <> transaction_id",
+            name="no_self_correction",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_transactions_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "correction_of_transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_transactions_owner_correction_target",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "transaction_id", name="uq_transactions_owner_transaction"),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_transactions_owner_idempotency_key"),
+        UniqueConstraint("owner_id", "correction_of_transaction_id", name="uq_transactions_owner_correction_target"),
+        Index("ix_transactions_owner_portfolio_occurred", "owner_id", "portfolio_id", "occurred_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    transaction_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    memo: Mapped[str | None] = mapped_column(String(500))
+    correction_of_transaction_id: Mapped[UUID | None] = mapped_column()
+    correction_kind: Mapped[str | None] = mapped_column(String(16))
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+
+
+class TransactionLegRecord(Base):
+    __tablename__ = "transaction_legs"
+    __table_args__ = (
+        CheckConstraint("sequence >= 1", name="sequence_positive"),
+        CheckConstraint("quantity <> 0", name="quantity_nonzero"),
+        CheckConstraint(
+            "(account_id IS NOT NULL AND external_counterparty IS NULL) OR "
+            "(account_id IS NULL AND char_length(external_counterparty) BETWEEN 1 AND 160)",
+            name="account_boundary_shape",
+        ),
+        CheckConstraint("memo IS NULL OR char_length(memo) BETWEEN 1 AND 240", name="memo_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_transaction_legs_owner_transaction",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_transaction_legs_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_transaction_legs_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "transaction_id", "sequence", name="uq_transaction_legs_owner_sequence"),
+        Index("ix_transaction_legs_owner_asset", "owner_id", "asset_id"),
+        Index("ix_transaction_legs_owner_account", "owner_id", "account_id"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    transaction_leg_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    account_id: Mapped[UUID | None] = mapped_column()
+    external_counterparty: Mapped[str | None] = mapped_column(String(160))
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    memo: Mapped[str | None] = mapped_column(String(240))
+
+
+class ImportBatchRecord(Base):
+    __tablename__ = "import_batches"
+    __table_args__ = (
+        CheckConstraint("source_format IN ('csv', 'nexora_json')", name="source_format_allowed"),
+        CheckConstraint("content_sha256 ~ '^[0-9a-f]{64}$'", name="content_sha256_format"),
+        CheckConstraint("status IN ('dry_run', 'reviewed', 'published', 'quarantined')", name="status_allowed"),
+        CheckConstraint("row_count BETWEEN 1 AND 5000", name="row_count_bounded"),
+        CheckConstraint("ready_count >= 0 AND duplicate_count >= 0 AND quarantined_count >= 0", name="counts_positive"),
+        CheckConstraint("ready_count + duplicate_count + quarantined_count = row_count", name="counts_complete"),
+        CheckConstraint(
+            "review_reason IS NULL OR char_length(review_reason) BETWEEN 8 AND 500", name="review_reason_length"
+        ),
+        CheckConstraint(
+            "(status = 'dry_run' AND reviewed_at IS NULL AND published_at IS NULL) OR "
+            "(status = 'quarantined' AND reviewed_at IS NULL AND published_at IS NULL) OR "
+            "(status = 'reviewed' AND reviewed_at IS NOT NULL AND published_at IS NULL) OR "
+            "(status = 'published' AND reviewed_at IS NOT NULL AND published_at IS NOT NULL)",
+            name="status_timestamps_shape",
+        ),
+        UniqueConstraint("owner_id", "content_sha256", name="uq_import_batches_owner_content"),
+        UniqueConstraint("owner_id", "import_batch_id", name="uq_import_batches_owner_batch"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    import_batch_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    source_format: Mapped[str] = mapped_column(String(24), nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    ready_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    duplicate_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    quarantined_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    review_reason: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ImportRowRecord(Base):
+    __tablename__ = "import_rows"
+    __table_args__ = (
+        CheckConstraint("row_number BETWEEN 1 AND 5000", name="row_number_bounded"),
+        CheckConstraint(
+            "external_row_id IS NULL OR char_length(external_row_id) BETWEEN 1 AND 160", name="external_row_id_length"
+        ),
+        CheckConstraint(
+            "fingerprint_sha256 IS NULL OR fingerprint_sha256 ~ '^[0-9a-f]{64}$'", name="fingerprint_format"
+        ),
+        CheckConstraint("status IN ('ready', 'duplicate', 'quarantined', 'published')", name="status_allowed"),
+        CheckConstraint(
+            "(status IN ('ready', 'published') AND normalized_payload IS NOT NULL AND fingerprint_sha256 IS NOT NULL "
+            "AND reason_code IS NULL) OR (status IN ('duplicate', 'quarantined') AND reason_code IS NOT NULL)",
+            name="status_evidence_shape",
+        ),
+        CheckConstraint(
+            "normalized_payload IS NULL OR jsonb_typeof(normalized_payload) = 'object'", name="payload_object"
+        ),
+        CheckConstraint("reason_code IS NULL OR reason_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="reason_code_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "import_batch_id"],
+            [f"{SCHEMA_NAME}.import_batches.owner_id", f"{SCHEMA_NAME}.import_batches.import_batch_id"],
+            name="fk_import_rows_owner_batch",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "import_batch_id", "row_number", name="uq_import_rows_owner_batch_row"),
+        UniqueConstraint("owner_id", "import_row_id", name="uq_import_rows_owner_row"),
+        Index("ix_import_rows_owner_fingerprint", "owner_id", "fingerprint_sha256"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    import_row_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    import_batch_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    external_row_id: Mapped[str | None] = mapped_column(String(160))
+    fingerprint_sha256: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    normalized_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ReconciliationCaseRecord(Base):
+    __tablename__ = "reconciliation_cases"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('open', 'matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="state_allowed",
+        ),
+        CheckConstraint("difference_code ~ '^[A-Z][A-Z0-9_]{2,79}$'", name="difference_code_format"),
+        CheckConstraint("reason IS NULL OR char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        CheckConstraint("row_version >= 1", name="row_version_positive"),
+        ForeignKeyConstraint(
+            ["owner_id", "import_batch_id"],
+            [f"{SCHEMA_NAME}.import_batches.owner_id", f"{SCHEMA_NAME}.import_batches.import_batch_id"],
+            name="fk_reconciliation_cases_owner_batch",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "import_row_id"],
+            [f"{SCHEMA_NAME}.import_rows.owner_id", f"{SCHEMA_NAME}.import_rows.import_row_id"],
+            name="fk_reconciliation_cases_owner_row",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "transaction_id"],
+            [f"{SCHEMA_NAME}.transactions.owner_id", f"{SCHEMA_NAME}.transactions.transaction_id"],
+            name="fk_reconciliation_cases_owner_transaction",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "reconciliation_case_id", name="uq_reconciliation_cases_owner_case"),
+        UniqueConstraint("owner_id", "import_row_id", name="uq_reconciliation_cases_owner_row"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    reconciliation_case_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    import_batch_id: Mapped[UUID] = mapped_column(nullable=False)
+    import_row_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_id: Mapped[UUID | None] = mapped_column()
+    state: Mapped[str] = mapped_column(String(24), nullable=False)
+    difference_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(500))
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ReconciliationDecisionRecord(Base):
+    __tablename__ = "reconciliation_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "from_state IN ('open', 'matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="from_state_allowed",
+        ),
+        CheckConstraint(
+            "to_state IN ('matched', 'accepted_difference', 'resolved', 'ignored_with_reason')",
+            name="to_state_allowed",
+        ),
+        CheckConstraint("char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "reconciliation_case_id"],
+            [
+                f"{SCHEMA_NAME}.reconciliation_cases.owner_id",
+                f"{SCHEMA_NAME}.reconciliation_cases.reconciliation_case_id",
+            ],
+            name="fk_reconciliation_decisions_owner_case",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "reconciliation_decision_id", name="uq_reconciliation_decisions_owner_decision"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    reconciliation_decision_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    reconciliation_case_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    from_state: Mapped[str] = mapped_column(String(24), nullable=False)
+    to_state: Mapped[str] = mapped_column(String(24), nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class HoldingsRebuildRecord(Base):
+    __tablename__ = "holdings_rebuilds"
+    __table_args__ = (
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("status IN ('succeeded', 'rejected')", name="status_allowed"),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        CheckConstraint("journal_transaction_count >= 0", name="journal_transaction_count_nonnegative"),
+        CheckConstraint(
+            "(status = 'succeeded' AND reason_code IS NULL) OR "
+            "(status = 'rejected' AND reason_code = 'NEGATIVE_HOLDING_REJECTED')",
+            name="status_reason_shape",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_holdings_rebuilds_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "holdings_rebuild_id", name="uq_holdings_rebuilds_owner_rebuild"),
+        UniqueConstraint(
+            "owner_id",
+            "portfolio_id",
+            "cost_basis_method",
+            "projection_version",
+            "journal_sha256",
+            name="uq_holdings_rebuilds_owner_snapshot",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holdings_rebuild_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_transaction_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_transaction_id: Mapped[UUID | None] = mapped_column()
+    reason_code: Mapped[str | None] = mapped_column(String(80))
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class HoldingProjectionRecord(Base):
+    __tablename__ = "holding_projections"
+    __table_args__ = (
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND total_cost_basis IS NOT NULL "
+            "AND average_unit_cost IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL "
+            "AND total_cost_basis IS NULL AND average_unit_cost IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_holding_projections_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_holding_projections_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_holding_projections_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_holding_projections_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "owner_id", "portfolio_id", "account_id", "asset_id", "cost_basis_method", name="uq_holding_projection"
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holding_projection_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    total_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    average_unit_cost: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LotProjectionRecord(Base):
+    __tablename__ = "lot_projections"
+    __table_args__ = (
+        CheckConstraint("lot_key ~ '^[0-9a-f]{64}$'", name="lot_key_format"),
+        CheckConstraint("source_lot_key IS NULL OR source_lot_key ~ '^[0-9a-f]{64}$'", name="source_lot_key_format"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("original_quantity > 0", name="original_quantity_positive"),
+        CheckConstraint(
+            "remaining_quantity > 0 AND remaining_quantity <= original_quantity", name="remaining_quantity_bounded"
+        ),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND original_cost_basis IS NOT NULL "
+            "AND remaining_cost_basis IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL "
+            "AND original_cost_basis IS NULL AND remaining_cost_basis IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_lot_projections_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "account_id"],
+            [f"{SCHEMA_NAME}.accounts.owner_id", f"{SCHEMA_NAME}.accounts.account_id"],
+            name="fk_lot_projections_owner_account",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_projections_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_projections_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "cost_basis_method", "lot_key", name="uq_lot_projection_key"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    lot_projection_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    lot_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_lot_key: Mapped[str | None] = mapped_column(String(64))
+    acquisition_transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    acquisition_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    original_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    remaining_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    original_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    remaining_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class LotConsumptionRecord(Base):
+    __tablename__ = "lot_consumptions"
+    __table_args__ = (
+        CheckConstraint("consumption_key ~ '^[0-9a-f]{64}$'", name="consumption_key_format"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("sequence >= 1", name="sequence_positive"),
+        CheckConstraint("basis_status IN ('known', 'unknown', 'mixed')", name="basis_status_allowed"),
+        CheckConstraint(
+            "(basis_status = 'known' AND cost_basis_asset_id IS NOT NULL AND allocated_cost_basis IS NOT NULL) OR "
+            "(basis_status IN ('unknown', 'mixed') AND cost_basis_asset_id IS NULL AND allocated_cost_basis IS NULL)",
+            name="basis_shape",
+        ),
+        CheckConstraint("projection_version = 'nexora-holdings-projection-v1'", name="projection_version_allowed"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_lot_consumptions_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "cost_basis_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_lot_consumptions_owner_basis_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "cost_basis_method", "consumption_key", name="uq_lot_consumption_key"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    lot_consumption_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    consumption_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    disposal_transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    disposal_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    lot_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    cost_basis_asset_id: Mapped[UUID | None] = mapped_column()
+    allocated_cost_basis: Mapped[Decimal | None] = mapped_column(Numeric(60, 30))
+    basis_status: Mapped[str] = mapped_column(String(16), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    projection_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    rebuilt_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HoldingsRebuildIssueRecord(Base):
+    __tablename__ = "holdings_rebuild_issues"
+    __table_args__ = (
+        CheckConstraint("reason_code = 'NEGATIVE_HOLDING_REJECTED'", name="reason_code_allowed"),
+        CheckConstraint("cost_basis_method IN ('fifo', 'weighted_average')", name="cost_basis_method_allowed"),
+        CheckConstraint("requested_quantity > 0", name="requested_quantity_positive"),
+        CheckConstraint("available_quantity >= 0", name="available_quantity_nonnegative"),
+        CheckConstraint("journal_sha256 ~ '^[0-9a-f]{64}$'", name="journal_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "holdings_rebuild_id"],
+            [f"{SCHEMA_NAME}.holdings_rebuilds.owner_id", f"{SCHEMA_NAME}.holdings_rebuilds.holdings_rebuild_id"],
+            name="fk_holdings_rebuild_issues_owner_rebuild",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "holdings_rebuild_issue_id", name="uq_holdings_rebuild_issues_owner_issue"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    holdings_rebuild_issue_id: Mapped[UUID] = mapped_column(primary_key=True)
+    holdings_rebuild_id: Mapped[UUID] = mapped_column(nullable=False)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False)
+    cost_basis_method: Mapped[str] = mapped_column(String(24), nullable=False)
+    transaction_id: Mapped[UUID] = mapped_column(nullable=False)
+    transaction_leg_id: Mapped[UUID] = mapped_column(nullable=False)
+    account_id: Mapped[UUID] = mapped_column(nullable=False)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    requested_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    available_quantity: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(80), nullable=False)
+    journal_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class PriceObservationRecord(Base):
+    __tablename__ = "price_observations"
+    __table_args__ = (
+        CheckConstraint("price > 0", name="price_positive"),
+        CheckConstraint("asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > observed_at", name="validity_after_observation"),
+        CheckConstraint("source_kind IN ('provider', 'import')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_price_observations_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_price_observations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_price_observations_owner_idempotency"),
+        UniqueConstraint("owner_id", "price_observation_id", name="uq_price_observations_owner_observation"),
+        Index("ix_price_observations_owner_pair_time", "owner_id", "asset_id", "quote_asset_id", "observed_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    price_observation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class FxRateObservationRecord(Base):
+    __tablename__ = "fx_rate_observations"
+    __table_args__ = (
+        CheckConstraint("rate > 0", name="rate_positive"),
+        CheckConstraint("base_asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > observed_at", name="validity_after_observation"),
+        CheckConstraint("source_kind IN ('provider', 'import')", name="source_kind_allowed"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "base_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_fx_rate_observations_owner_base_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_fx_rate_observations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_fx_rate_observations_owner_idempotency"),
+        UniqueConstraint("owner_id", "fx_rate_observation_id", name="uq_fx_rate_observations_owner_observation"),
+        Index(
+            "ix_fx_rate_observations_owner_pair_time",
+            "owner_id",
+            "base_asset_id",
+            "quote_asset_id",
+            "observed_at",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    fx_rate_observation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    base_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    rate: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ManualValuationRecord(Base):
+    __tablename__ = "manual_valuations"
+    __table_args__ = (
+        CheckConstraint("unit_value > 0", name="unit_value_positive"),
+        CheckConstraint("asset_id <> quote_asset_id", name="asset_pair_distinct"),
+        CheckConstraint("valid_until > valued_at", name="validity_after_valuation"),
+        CheckConstraint("char_length(reason) BETWEEN 8 AND 500", name="reason_length"),
+        CheckConstraint("char_length(source_reference) BETWEEN 1 AND 160", name="source_reference_length"),
+        CheckConstraint("source_payload_sha256 ~ '^[0-9a-f]{64}$'", name="source_payload_sha256_format"),
+        CheckConstraint("char_length(idempotency_key) BETWEEN 1 AND 160", name="idempotency_key_length"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_sha256_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_manual_valuations_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_manual_valuations_owner_asset",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "quote_asset_id"],
+            [f"{SCHEMA_NAME}.assets.owner_id", f"{SCHEMA_NAME}.assets.asset_id"],
+            name="fk_manual_valuations_owner_quote_asset",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_manual_valuations_owner_idempotency"),
+        UniqueConstraint("owner_id", "manual_valuation_id", name="uq_manual_valuations_owner_valuation"),
+        Index(
+            "ix_manual_valuations_owner_portfolio_pair_time",
+            "owner_id",
+            "portfolio_id",
+            "asset_id",
+            "quote_asset_id",
+            "valued_at",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    manual_valuation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    portfolio_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    quote_asset_id: Mapped[UUID] = mapped_column(nullable=False)
+    unit_value: Mapped[Decimal] = mapped_column(Numeric(60, 30), nullable=False)
+    valued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    source_payload_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DecisionProjectionState(Base):
+    __tablename__ = "decision_projection_states"
+    __table_args__ = (
+        CheckConstraint("generation >= 1", name="generation_positive"),
+        CheckConstraint("status IN ('staging', 'active', 'superseded', 'rejected')", name="status_allowed"),
+        CheckConstraint("trigger IN ('cursor_expired', 'aggregate_gap', 'checksum_mismatch')", name="trigger_allowed"),
+        CheckConstraint("jsonb_typeof(projection) = 'object'", name="projection_object"),
+        CheckConstraint("jsonb_typeof(resource_progress) = 'object'", name="resource_progress_object"),
+        CheckConstraint("jsonb_typeof(aggregate_versions) = 'object'", name="aggregate_versions_object"),
+        CheckConstraint("jsonb_typeof(quarantine) = 'array'", name="quarantine_array"),
+        CheckConstraint("projection_sha256 IS NULL OR projection_sha256 ~ '^[0-9a-f]{64}$'", name="checksum_format"),
+        UniqueConstraint("owner_id", "generation", name="uq_decision_projection_states_owner_generation"),
+        Index(
+            "uq_decision_projection_states_owner_active",
+            "owner_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    projection_state_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="staging")
+    trigger: Mapped[str] = mapped_column(String(24), nullable=False)
+    provider_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    contract_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    projection: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    resource_progress: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    aggregate_versions: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="{}")
+    quarantine: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, server_default="[]")
+    projection_sha256: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ProjectionCheckpoint(Base):

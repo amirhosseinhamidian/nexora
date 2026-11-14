@@ -1,0 +1,90 @@
+{
+  "schema_version": "nexora-durable-decision-event-projection-v1",
+  "decision_id": "NEX-P3-03",
+  "decision_date": "2026-11-12",
+  "status": "candidate",
+  "title": "Durable Decision and Event Projection",
+  "prerequisites": {
+    "p3_02_freeze_commit_sha": "1e114b58b1a9cfc4ef91280c6506aa58bb2f53e8",
+    "trd_bot_release": "0.3.1",
+    "trd_bot_release_commit_sha": "3097276ed77cd212101797654452456b7fbc61de",
+    "trd_bot_release_workflow_run_id": 43210235551,
+    "real_local_provider_smoke_artifact_id": 13939958030,
+    "real_local_provider_smoke_digest": "sha256:d1ec79aa429891ae94a36a4d65d573c3b97550ceaffa343b3df8989286d3375d",
+    "provider_profile": "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json"
+  },
+  "persistence": {
+    "migration_revision": "20261112_0011",
+    "table": "nexora.decision_projection_states",
+    "owner_scoped": true,
+    "generation_staging": true,
+    "partial_generation_publish_allowed": false,
+    "checkpoint_and_projection_share_job_transaction": true,
+    "projection_checksum_required": true,
+    "source_evidence_immutable": true,
+    "quarantine_auditable": true
+  },
+  "projection": {
+    "schema_version": "nexora-decision-event-projection-v1",
+    "resource_types": [
+      "market_context",
+      "decision_evaluation",
+      "candidate",
+      "risk_gate",
+      "portfolio_intelligence",
+      "alert",
+      "alert_outcome"
+    ],
+    "decision_kinds": [
+      "candidate",
+      "risk_assessment",
+      "portfolio_assessment",
+      "monitoring_alert"
+    ],
+    "initial_local_state": "review_pending",
+    "source_reference_checksum_verified": true,
+    "provider_release_verified": true,
+    "unknown_schema_action": "quarantine_and_reject_generation",
+    "duplicate_event_action": "idempotent_noop",
+    "aggregate_gap_action": "quarantine_pause_and_full_resync",
+    "aggregate_version_conflict_action": "quarantine_pause_and_full_resync",
+    "expired_cursor_action": "full_resync"
+  },
+  "full_resync": {
+    "trigger_values": [
+      "cursor_expired",
+      "aggregate_gap",
+      "checksum_mismatch"
+    ],
+    "all_projected_resources_required": true,
+    "staging_generation_visible_to_owner": false,
+    "activation_requires_zero_quarantine": true,
+    "event_resume_enqueued_only_after_activation": true,
+    "previous_active_generation_preserved_on_rejection": true
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "service_token_persisted_in_projection": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "review_is_execution_authorization": false,
+    "portfolio_transaction_posted": false,
+    "production_readiness_claimed": false
+  },
+  "scope": {
+    "decision_feed_api_added": false,
+    "candidate_detail_ui_added": false,
+    "human_review_workflow_added": false,
+    "new_trd_bot_feature_added": false,
+    "next_stage_implemented": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-03-FREEZE",
+    "post_freeze_stage": "NEX-P3-04",
+    "requires_successful_ci_on_candidate_sha": true,
+    "requires_postgresql_migration_validation": true,
+    "requires_real_provider_compatibility_to_remain_valid": true
+  }
+}

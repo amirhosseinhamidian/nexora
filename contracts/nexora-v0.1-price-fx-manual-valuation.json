@@ -1,0 +1,114 @@
+{
+  "schema_version": "nexora-price-fx-manual-valuation-contract-v1",
+  "decision_id": "NEX-P2-06",
+  "decision_date": "2026-11-01",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-05",
+    "frozen": true,
+    "freeze_commit_sha": "bddee3b638e67d25aaeaa1b754352b78579e5d2a",
+    "accepted_candidate_commit_sha": "40fb21d10132260da98569018744b35697a5c3d4",
+    "freeze_record_path": "artifacts/p2-05/holdings-projection-freeze.json"
+  },
+  "scope": {
+    "entities": [
+      "price_observation",
+      "fx_rate_observation",
+      "manual_valuation",
+      "valuation_status"
+    ],
+    "nav_included": false,
+    "realized_pnl_included": false,
+    "unrealized_pnl_included": false,
+    "performance_included": false,
+    "tax_advice_included": false,
+    "financial_advice_included": false
+  },
+  "evidence_invariants": {
+    "price_observation_immutable": true,
+    "fx_rate_observation_immutable": true,
+    "manual_valuation_immutable": true,
+    "manual_valuation_requires_reason": true,
+    "owner_scope_required": true,
+    "source_lineage_required": true,
+    "source_payload_sha256_required": true,
+    "idempotency_required": true,
+    "canonical_request_sha256_required": true,
+    "utc_evidence_time_required": true,
+    "explicit_valid_until_required": true,
+    "exact_decimal_arithmetic": true,
+    "binary_float_forbidden": true,
+    "positive_values_required": true,
+    "fx_assets_must_be_fiat": true,
+    "manual_quote_matches_portfolio_base": true,
+    "future_evidence_excluded": true,
+    "no_silent_forward_fill": true,
+    "no_interpolation": true,
+    "stale_evidence_visible": true,
+    "missing_evidence_visible": true,
+    "deterministic_latest_at_or_before": true
+  },
+  "evidence_precedence": {
+    "order": [
+      "direct_price_observation",
+      "portfolio_manual_valuation",
+      "missing"
+    ],
+    "stale_direct_price_remains_selected_and_visible": true,
+    "manual_never_overwrites_observation": true,
+    "base_asset_identity_is_explicit": true,
+    "fx_cross_conversion_deferred_to_p2_07": true
+  },
+  "persistence": {
+    "migration_revision": "20261101_0010",
+    "tables": [
+      "nexora.price_observations",
+      "nexora.fx_rate_observations",
+      "nexora.manual_valuations"
+    ],
+    "append_only_trigger_required": true,
+    "composite_owner_foreign_keys": true,
+    "numeric_precision": 60,
+    "numeric_scale": 30,
+    "upgrade_downgrade_rebuild_drift_cycle_required": true
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "owner_id_accepted_from_request": false,
+    "csrf_for_writes": true,
+    "unknown_fields_rejected": true,
+    "decimal_values_encoded_as_strings": true,
+    "bounded_list_limit": 500,
+    "update_delete_operations": false,
+    "operations": [
+      "POST /v1/valuation/price-observations",
+      "GET /v1/valuation/price-observations",
+      "POST /v1/valuation/fx-rate-observations",
+      "GET /v1/valuation/fx-rate-observations",
+      "POST /v1/valuation/manual-valuations",
+      "GET /v1/valuation/manual-valuations",
+      "GET /v1/portfolios/{portfolio_id}/valuation-status"
+    ]
+  },
+  "security_boundary": {
+    "raw_exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-06-FREEZE",
+    "post_freeze_stage": "NEX-P2-07",
+    "freeze_before_nav_and_pnl": true
+  }
+}

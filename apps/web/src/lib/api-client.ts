@@ -29,6 +29,7 @@ function sameOriginApiPath(path: string): void {
 type ApiOptions = {
   body?: unknown;
   method?: "GET" | "POST";
+  signal?: AbortSignal;
   signalSessionExpiry?: boolean;
 };
 
@@ -47,6 +48,7 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
     credentials: "same-origin",
     headers,
     method,
+    signal: options.signal,
   });
   if (!response.ok) {
     let error: ErrorEnvelope | undefined;

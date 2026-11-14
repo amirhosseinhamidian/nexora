@@ -1,0 +1,616 @@
+{
+  "schema_version": "nexora-valuation-evidence-freeze-v1",
+  "decision_id": "NEX-P2-06",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "f88bf5f7f24ae807bb8d6820ea5e99e872af5224",
+  "candidate_tree_sha": "6b4a506451741f95a414f4cb3198c5d41e947863",
+  "candidate_commit_message": "fix(nexora): sync valuation runtime contract",
+  "candidate_predecessor_sha": "bddee3b638e67d25aaeaa1b754352b78579e5d2a",
+  "candidate_lineage": [
+    {
+      "sha": "502f1b174f0ddf4ea53d660efbfea47b9443419d",
+      "tree_sha": "c4bc0c807cbc155619854f005f4137563de43eb2",
+      "parent_sha": "bddee3b638e67d25aaeaa1b754352b78579e5d2a",
+      "message": "feat(nexora): add price fx and manual valuation evidence",
+      "purpose": "implementation_candidate"
+    },
+    {
+      "sha": "184fc9904fddb7cbcc6cc6231e5b92038c40926a",
+      "tree_sha": "a378ea19a86941245d7d31c743a7f3a2c1439b4c",
+      "parent_sha": "502f1b174f0ddf4ea53d660efbfea47b9443419d",
+      "message": "fix(nexora): isolate valuation integration transactions",
+      "purpose": "integration_transaction_isolation_fix"
+    },
+    {
+      "sha": "f88bf5f7f24ae807bb8d6820ea5e99e872af5224",
+      "tree_sha": "6b4a506451741f95a414f4cb3198c5d41e947863",
+      "parent_sha": "184fc9904fddb7cbcc6cc6231e5b92038c40926a",
+      "message": "fix(nexora): sync valuation runtime contract",
+      "purpose": "runtime_contract_sync"
+    }
+  ],
+  "workflow_runs": [
+    {
+      "run_id": 41330617422,
+      "name": "Application composition",
+      "path": ".github/workflows/application-composition.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617384,
+      "name": "Artifact and export storage",
+      "path": ".github/workflows/artifact-export-storage.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617517,
+      "name": "Audit and observability",
+      "path": ".github/workflows/audit-observability.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617557,
+      "name": "Authenticated Web shell",
+      "path": ".github/workflows/authenticated-web-shell.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617442,
+      "name": "Contracts",
+      "path": ".github/workflows/contracts.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617511,
+      "name": "Durable jobs and outbox",
+      "path": ".github/workflows/durable-jobs-outbox.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617531,
+      "name": "Holdings, lots and cost basis",
+      "path": ".github/workflows/holdings-projection.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617359,
+      "name": "Immutable transaction journal",
+      "path": ".github/workflows/transaction-journal.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617354,
+      "name": "Import and reconciliation runtime",
+      "path": ".github/workflows/import-reconciliation.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617411,
+      "name": "Phase 1 final acceptance",
+      "path": ".github/workflows/phase-one-final-acceptance.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617728,
+      "name": "Phase 1 roadmap reconciliation",
+      "path": ".github/workflows/phase-one-readiness.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617449,
+      "name": "Phase 2 portfolio domain",
+      "path": ".github/workflows/phase-two-portfolio-domain.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617375,
+      "name": "Portfolio registry",
+      "path": ".github/workflows/portfolio-registry.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617543,
+      "name": "PostgreSQL schema",
+      "path": ".github/workflows/postgresql-schema.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617419,
+      "name": "Price, FX and manual valuation evidence",
+      "path": ".github/workflows/valuation-evidence.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617416,
+      "name": "Private deployment and operations",
+      "path": ".github/workflows/private-deployment-operations.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617475,
+      "name": "Runtime API authentication and contracts",
+      "path": ".github/workflows/runtime-api-auth.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617334,
+      "name": "Runtime foundation",
+      "path": ".github/workflows/runtime-foundation.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617355,
+      "name": "Single-owner identity runtime",
+      "path": ".github/workflows/single-owner-identity-runtime.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617339,
+      "name": "TRD Bot adapter",
+      "path": ".github/workflows/trd-bot-adapter.yml",
+      "conclusion": "success"
+    },
+    {
+      "run_id": 41330617371,
+      "name": "TRD Bot sync runtime",
+      "path": ".github/workflows/trd-bot-sync-runtime.yml",
+      "conclusion": "success"
+    }
+  ],
+  "checks": [
+    {
+      "job_id": 124919727902,
+      "name": "backend",
+      "run_id": 41330617334,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728003,
+      "name": "foundation-contract",
+      "run_id": 41330617334,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728045,
+      "name": "web",
+      "run_id": 41330617334,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727929,
+      "name": "adapter-contract",
+      "run_id": 41330617339,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728263,
+      "name": "backend",
+      "run_id": 41330617339,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728104,
+      "name": "backend",
+      "run_id": 41330617354,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728382,
+      "name": "import-contract",
+      "run_id": 41330617354,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727991,
+      "name": "postgresql-17",
+      "run_id": 41330617354,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728185,
+      "name": "backend",
+      "run_id": 41330617355,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728180,
+      "name": "identity-contract",
+      "run_id": 41330617355,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728245,
+      "name": "postgresql-17",
+      "run_id": 41330617355,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727941,
+      "name": "private-topology",
+      "run_id": 41330617355,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727944,
+      "name": "backend",
+      "run_id": 41330617359,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727772,
+      "name": "journal-contract",
+      "run_id": 41330617359,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728008,
+      "name": "postgresql-17",
+      "run_id": 41330617359,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727913,
+      "name": "backend",
+      "run_id": 41330617371,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728271,
+      "name": "postgresql-17",
+      "run_id": 41330617371,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728114,
+      "name": "sync-contract",
+      "run_id": 41330617371,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728558,
+      "name": "backend",
+      "run_id": 41330617375,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728188,
+      "name": "postgresql-17",
+      "run_id": 41330617375,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728510,
+      "name": "registry-contract",
+      "run_id": 41330617375,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728292,
+      "name": "backend",
+      "run_id": 41330617384,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919727966,
+      "name": "storage-contract",
+      "run_id": 41330617384,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728216,
+      "name": "storage-runtime",
+      "run_id": 41330617384,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728628,
+      "name": "acceptance-contract",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728618,
+      "name": "backend",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728364,
+      "name": "browser",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728592,
+      "name": "postgresql-17",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728560,
+      "name": "private-topology",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728671,
+      "name": "web",
+      "run_id": 41330617411,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728074,
+      "name": "backend",
+      "run_id": 41330617416,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728555,
+      "name": "operations-contract",
+      "run_id": 41330617416,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728244,
+      "name": "private-topology",
+      "run_id": 41330617416,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728571,
+      "name": "backend",
+      "run_id": 41330617419,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728524,
+      "name": "postgresql-17",
+      "run_id": 41330617419,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728312,
+      "name": "valuation-contract",
+      "run_id": 41330617419,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728395,
+      "name": "backend",
+      "run_id": 41330617422,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728548,
+      "name": "composition-contract",
+      "run_id": 41330617422,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728493,
+      "name": "integration-contract",
+      "run_id": 41330617442,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728284,
+      "name": "phase-zero-acceptance",
+      "run_id": 41330617442,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728435,
+      "name": "scope-contract",
+      "run_id": 41330617442,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728467,
+      "name": "security-boundary",
+      "run_id": 41330617442,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728539,
+      "name": "technical-baseline",
+      "run_id": 41330617442,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728280,
+      "name": "backend-regression",
+      "run_id": 41330617449,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728373,
+      "name": "portfolio-domain-contract",
+      "run_id": 41330617449,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728161,
+      "name": "web-regression",
+      "run_id": 41330617449,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728609,
+      "name": "backend",
+      "run_id": 41330617475,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728580,
+      "name": "cross-language-contract",
+      "run_id": 41330617475,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728491,
+      "name": "postgresql-17",
+      "run_id": 41330617475,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728670,
+      "name": "runtime-contract",
+      "run_id": 41330617475,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728731,
+      "name": "backend",
+      "run_id": 41330617511,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728905,
+      "name": "durable-contract",
+      "run_id": 41330617511,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728581,
+      "name": "postgresql-17",
+      "run_id": 41330617511,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728721,
+      "name": "backend",
+      "run_id": 41330617517,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728607,
+      "name": "observability-contract",
+      "run_id": 41330617517,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728690,
+      "name": "postgresql-17",
+      "run_id": 41330617517,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728863,
+      "name": "backend",
+      "run_id": 41330617531,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728773,
+      "name": "holdings-contract",
+      "run_id": 41330617531,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728537,
+      "name": "postgresql-17",
+      "run_id": 41330617531,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728714,
+      "name": "backend",
+      "run_id": 41330617543,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728556,
+      "name": "database-contract",
+      "run_id": 41330617543,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728707,
+      "name": "postgresql-17",
+      "run_id": 41330617543,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728615,
+      "name": "backend",
+      "run_id": 41330617557,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728798,
+      "name": "browser",
+      "run_id": 41330617557,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919729283,
+      "name": "web",
+      "run_id": 41330617557,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919728744,
+      "name": "web-shell-contract",
+      "run_id": 41330617557,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919729765,
+      "name": "backend",
+      "run_id": 41330617728,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919729590,
+      "name": "readiness-contract",
+      "run_id": 41330617728,
+      "conclusion": "success"
+    },
+    {
+      "job_id": 124919729695,
+      "name": "web",
+      "run_id": 41330617728,
+      "conclusion": "success"
+    }
+  ],
+  "check_summary": {
+    "total": 69,
+    "successful": 69,
+    "failed": 0,
+    "pending": 0
+  },
+  "valuation_evidence_contract": {
+    "schema_version": "nexora-price-fx-manual-valuation-contract-v1",
+    "path": "contracts/nexora-v0.1-price-fx-manual-valuation.json",
+    "checksum": "3d3de09ac85d60b1701618d423e5d5d5ebec1fc1fdb7948da3960eda29edc67a"
+  },
+  "p2_05_prerequisite": {
+    "decision_id": "NEX-P2-05",
+    "frozen": true,
+    "freeze_commit_sha": "bddee3b638e67d25aaeaa1b754352b78579e5d2a",
+    "accepted_candidate_commit_sha": "40fb21d10132260da98569018744b35697a5c3d4",
+    "freeze_record_path": "artifacts/p2-05/holdings-projection-freeze.json",
+    "freeze_record_checksum": "3c6dc09b869048d84b513d79a318fea8aee2ca97b79383ec2be5f4fd676d0e04"
+  },
+  "recorded_on": "2026-11-01",
+  "frozen": true,
+  "price_fx_manual_valuation_complete": true,
+  "valuation_status_complete": true,
+  "nav_complete": false,
+  "realized_pnl_complete": false,
+  "unrealized_pnl_complete": false,
+  "performance_complete": false,
+  "production_readiness_claimed": false,
+  "public_internet_deployment": false,
+  "multi_user": false,
+  "exchange_credentials": false,
+  "wallet_private_keys_or_signing": false,
+  "fund_transfer": false,
+  "live_order_capability": false,
+  "autonomous_ai_execution": false,
+  "ml_training_or_inference": false,
+  "financial_advice": false,
+  "tax_advice": false,
+  "direct_trd_bot_database_access": false,
+  "next_allowed_stage": "NEX-P2-07"
+}

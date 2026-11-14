@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from nexora.adapters.postgresql import ALEMBIC_VERSION_SCHEMA, DATABASE_SESSION_OPTIONS, SCHEMA_NAME, Base
+from sqlalchemy import Numeric
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.schema import CreateTable
 
@@ -21,6 +22,25 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.webauthn_challenges",
         "nexora.webauthn_credentials",
         "nexora.trd_bot_sync_receipts",
+        "nexora.assets",
+        "nexora.asset_identifiers",
+        "nexora.portfolios",
+        "nexora.accounts",
+        "nexora.transactions",
+        "nexora.transaction_legs",
+        "nexora.import_batches",
+        "nexora.import_rows",
+        "nexora.reconciliation_cases",
+        "nexora.reconciliation_decisions",
+        "nexora.holdings_rebuilds",
+        "nexora.holding_projections",
+        "nexora.lot_projections",
+        "nexora.lot_consumptions",
+        "nexora.holdings_rebuild_issues",
+        "nexora.price_observations",
+        "nexora.fx_rate_observations",
+        "nexora.manual_valuations",
+        "nexora.decision_projection_states",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -37,6 +57,7 @@ def test_application_tables_are_owner_aware() -> None:
         "projection_checkpoints",
         "background_jobs",
         "outbox_events",
+        "decision_projection_states",
     ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c
@@ -108,3 +129,94 @@ def test_trd_bot_sync_receipts_are_owner_scoped_and_immutable_input_shaped() -> 
         "envelope_sha256",
     }.issubset(receipts.c.keys())
     assert isinstance(receipts.c.envelope.type, postgresql.JSONB)
+
+
+def test_portfolio_registry_is_owner_scoped_and_has_no_secret_columns() -> None:
+    assets = Base.metadata.tables["nexora.assets"]
+    identifiers = Base.metadata.tables["nexora.asset_identifiers"]
+    portfolios = Base.metadata.tables["nexora.portfolios"]
+    accounts = Base.metadata.tables["nexora.accounts"]
+    for table in (assets, identifiers, portfolios, accounts):
+        assert table.c.owner_id.nullable is False
+    assert {"status", "row_version", "deactivated_at"}.issubset(assets.c.keys())
+    assert {"base_asset_id", "status", "row_version", "archived_at"}.issubset(portfolios.c.keys())
+    assert {"portfolio_id", "kind", "status", "row_version", "closed_at"}.issubset(accounts.c.keys())
+    forbidden_columns = {"api_key", "api_secret", "private_key", "seed_phrase", "access_token"}
+    assert all(forbidden_columns.isdisjoint(table.c.keys()) for table in (assets, identifiers, portfolios, accounts))
+
+
+def test_transaction_journal_models_are_owner_scoped_exact_decimal_and_append_only_shaped() -> None:
+    transactions = Base.metadata.tables["nexora.transactions"]
+    legs = Base.metadata.tables["nexora.transaction_legs"]
+    assert transactions.c.owner_id.nullable is False
+    assert legs.c.owner_id.nullable is False
+    assert {"idempotency_key", "occurred_at", "recorded_at", "request_sha256"}.issubset(transactions.c.keys())
+    assert {"correction_of_transaction_id", "correction_kind", "correction_reason"}.issubset(transactions.c.keys())
+    assert {"account_id", "external_counterparty", "asset_id", "quantity", "sequence"}.issubset(legs.c.keys())
+    assert isinstance(legs.c.quantity.type, Numeric)
+    assert legs.c.quantity.type.precision == 60
+    assert legs.c.quantity.type.scale == 30
+    forbidden = {"balance", "holding", "cost_basis", "price", "pnl", "api_key", "private_key"}
+    assert forbidden.isdisjoint(transactions.c.keys())
+    assert forbidden.isdisjoint(legs.c.keys())
+
+
+def test_import_reconciliation_models_are_bounded_owner_scoped_and_evidence_shaped() -> None:
+    batches = Base.metadata.tables["nexora.import_batches"]
+    rows = Base.metadata.tables["nexora.import_rows"]
+    cases = Base.metadata.tables["nexora.reconciliation_cases"]
+    decisions = Base.metadata.tables["nexora.reconciliation_decisions"]
+    assert all(table.c.owner_id.nullable is False for table in (batches, rows, cases, decisions))
+    assert {"content_sha256", "status", "row_count", "quarantined_count"}.issubset(batches.c.keys())
+    assert {"fingerprint_sha256", "normalized_payload", "reason_code"}.issubset(rows.c.keys())
+    assert isinstance(rows.c.normalized_payload.type, postgresql.JSONB)
+    assert rows.c.normalized_payload.type.none_as_null is True
+    assert {"state", "difference_code", "reason", "row_version"}.issubset(cases.c.keys())
+    assert {"from_state", "to_state", "reason", "decided_at"}.issubset(decisions.c.keys())
+    forbidden = {"api_key", "private_key", "seed_phrase", "live_order_id"}
+    assert all(forbidden.isdisjoint(table.c.keys()) for table in (batches, rows, cases, decisions))
+
+
+def test_holdings_projection_models_use_exact_decimals_and_separate_rejection_evidence() -> None:
+    rebuilds = Base.metadata.tables["nexora.holdings_rebuilds"]
+    holdings = Base.metadata.tables["nexora.holding_projections"]
+    lots = Base.metadata.tables["nexora.lot_projections"]
+    consumptions = Base.metadata.tables["nexora.lot_consumptions"]
+    issues = Base.metadata.tables["nexora.holdings_rebuild_issues"]
+    for table in (rebuilds, holdings, lots, consumptions, issues):
+        assert table.c.owner_id.nullable is False
+    for column in (
+        holdings.c.quantity,
+        holdings.c.total_cost_basis,
+        holdings.c.average_unit_cost,
+        lots.c.original_quantity,
+        lots.c.remaining_quantity,
+        consumptions.c.quantity,
+        issues.c.requested_quantity,
+        issues.c.available_quantity,
+    ):
+        assert isinstance(column.type, Numeric)
+        assert column.type.precision == 60
+        assert column.type.scale == 30
+    assert {"journal_sha256", "projection_version", "journal_transaction_count"}.issubset(rebuilds.c.keys())
+    assert {"reason_code", "transaction_id", "transaction_leg_id", "available_quantity"}.issubset(issues.c.keys())
+
+
+def test_valuation_evidence_models_are_owner_scoped_exact_decimal_and_append_only_shaped() -> None:
+    prices = Base.metadata.tables["nexora.price_observations"]
+    rates = Base.metadata.tables["nexora.fx_rate_observations"]
+    manual = Base.metadata.tables["nexora.manual_valuations"]
+    for table in (prices, rates, manual):
+        assert table.c.owner_id.nullable is False
+        assert {"idempotency_key", "request_sha256", "source_reference", "source_payload_sha256"}.issubset(
+            table.c.keys()
+        )
+    for column in (prices.c.price, rates.c.rate, manual.c.unit_value):
+        assert isinstance(column.type, Numeric)
+        assert column.type.precision == 60
+        assert column.type.scale == 30
+    assert {"observed_at", "valid_until", "source_kind"}.issubset(prices.c.keys())
+    assert {"base_asset_id", "quote_asset_id", "observed_at", "valid_until"}.issubset(rates.c.keys())
+    assert {"portfolio_id", "valued_at", "valid_until", "reason"}.issubset(manual.c.keys())
+    forbidden = {"api_key", "private_key", "seed_phrase", "live_order_id", "nav", "pnl"}
+    assert all(forbidden.isdisjoint(table.c.keys()) for table in (prices, rates, manual))

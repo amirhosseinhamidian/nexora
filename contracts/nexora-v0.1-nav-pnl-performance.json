@@ -1,0 +1,107 @@
+{
+  "schema_version": "nexora-nav-pnl-performance-contract-v1",
+  "decision_id": "NEX-P2-07",
+  "decision_date": "2026-11-02",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-06",
+    "frozen": true,
+    "freeze_commit_sha": "6b5b696a8d370c6aed6fb47fb22c02407f89b450",
+    "accepted_candidate_commit_sha": "f88bf5f7f24ae807bb8d6820ea5e99e872af5224",
+    "freeze_record_path": "artifacts/p2-06/valuation-evidence-freeze.json",
+    "freeze_record_checksum": "d3d0eb9e155b210cf6d7e4a824f3b7ed5ceeacd04bae28ae7196d3f369de9f92"
+  },
+  "scope": {
+    "entities": [
+      "point_in_time_nav",
+      "realized_pnl",
+      "unrealized_pnl",
+      "bounded_performance_series"
+    ],
+    "paper_shadow_projection_included": false,
+    "tax_advice_included": false,
+    "financial_advice_included": false
+  },
+  "calculation_policy": {
+    "version": "nexora-nav-pnl-performance-v1",
+    "historical_holdings_rebuilt_from_journal_at_or_before_as_of": true,
+    "cost_basis_methods": [
+      "fifo",
+      "weighted_average"
+    ],
+    "exact_decimal_arithmetic": true,
+    "binary_float_forbidden": true,
+    "nav_is_null_when_any_position_is_unpriced": true,
+    "priced_value_remains_visible_when_nav_is_incomplete": true,
+    "unrealized_pnl_requires_known_basis_and_valuation": true,
+    "realized_pnl_requires_sell_base_proceeds_and_known_consumed_basis": true,
+    "non_sell_disposals_do_not_claim_realized_pnl": true,
+    "missing_and_stale_states_are_visible": true,
+    "performance_method": "chain_linked_flow_adjusted_simple_return",
+    "external_flow_kinds": [
+      "opening_balance",
+      "deposit",
+      "withdrawal"
+    ],
+    "performance_point_minimum": 2,
+    "performance_point_maximum": 32,
+    "performance_range_maximum_days": 366,
+    "unavailable_subperiod_breaks_cumulative_chain": true
+  },
+  "valuation_resolution": {
+    "precedence": [
+      "base_asset_identity",
+      "direct_price_observation",
+      "direct_fx_rate_for_fiat",
+      "price_observation_plus_one_direct_fx_hop",
+      "portfolio_manual_valuation",
+      "missing"
+    ],
+    "future_evidence_excluded": true,
+    "deterministic_latest_at_or_before": true,
+    "stale_evidence_remains_selected_and_visible": true,
+    "manual_never_overwrites_observation": true,
+    "implicit_fx_inversion": false,
+    "multi_hop_fx_graph": false,
+    "interpolation": false,
+    "silent_forward_fill": false,
+    "evidence_ids_and_source_references_returned": true
+  },
+  "persistence": {
+    "derived_on_demand_from_immutable_journal_and_evidence": true,
+    "new_tables": [],
+    "new_migration_required": false
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "owner_id_accepted_from_request": false,
+    "unknown_fields_rejected": true,
+    "decimal_values_encoded_as_strings": true,
+    "read_only": true,
+    "operations": [
+      "GET /v1/portfolios/{portfolio_id}/analytics",
+      "GET /v1/portfolios/{portfolio_id}/performance"
+    ]
+  },
+  "security_boundary": {
+    "raw_exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-07-FREEZE",
+    "post_freeze_stage": "NEX-P2-08",
+    "freeze_before_paper_shadow_projection": true
+  }
+}

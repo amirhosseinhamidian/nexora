@@ -125,7 +125,12 @@ def validate_contract(contract: dict[str, Any]) -> None:
         checkpoint.get("identity") == ["owner_id", "consumer_name", "stream_name"],
         "checkpoint identity drift",
     )
-    for key in ("optimistic_row_version", "cursor_nullable_for_initial_sync", "provider_version_required", "contract_version_required"):
+    for key in (
+        "optimistic_row_version",
+        "cursor_nullable_for_initial_sync",
+        "provider_version_required",
+        "contract_version_required",
+    ):
         _require(checkpoint.get(key) is True, f"checkpoint protocol requires {key}")
 
     outbox = contract.get("outbox_protocol")

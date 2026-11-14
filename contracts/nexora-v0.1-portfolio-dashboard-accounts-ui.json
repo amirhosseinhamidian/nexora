@@ -1,0 +1,117 @@
+{
+  "schema_version": "nexora-portfolio-dashboard-accounts-ui-contract-v1",
+  "decision_id": "NEX-P2-10",
+  "decision_date": "2026-11-03",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-09",
+    "frozen": true,
+    "freeze_commit_sha": "bb5b500b67a6291df25c80f1f17fdceb9e20b14a",
+    "accepted_candidate_commit_sha": "13704691a091497d7cc26a09e3403b18246b0ec7",
+    "freeze_record_path": "artifacts/p2-09/portfolio-api-export-freeze.json",
+    "freeze_record_checksum": "25fc43678af53b565857a87983c5bc58b8d3df60bc22d24202876e6a285e3b1f"
+  },
+  "scope": {
+    "experiences": [
+      "portfolio_overview",
+      "valuation_health",
+      "priced_position_allocation",
+      "account_registry"
+    ],
+    "locales": [
+      "fa",
+      "en"
+    ],
+    "persian_direction": "rtl",
+    "english_direction": "ltr",
+    "existing_authenticated_shell": true,
+    "responsive_desktop_tablet_mobile": true,
+    "read_only_financial_ui": true,
+    "transaction_ui_included": false,
+    "holdings_and_lots_ui_included": false,
+    "reconciliation_ui_included": false
+  },
+  "api_boundary": {
+    "operations": [
+      "GET /v1/assets",
+      "GET /v1/portfolios",
+      "GET /v1/accounts",
+      "GET /v1/portfolios/{portfolio_id}/analytics?as_of={utc_timestamp}",
+      "GET /v1/portfolios/{portfolio_id}/valuation-status?as_of={utc_timestamp}"
+    ],
+    "same_origin_api_only": true,
+    "session_authentication_required": true,
+    "owner_scope_derived_from_session": true,
+    "owner_id_accepted_from_browser": false,
+    "browser_cache_mode": "no-store",
+    "direct_database_access": false,
+    "direct_trd_bot_access": false,
+    "new_backend_route_required": false
+  },
+  "financial_presentation": {
+    "canonical_decimal_strings_are_source": true,
+    "binary_float_for_financial_amounts": false,
+    "exact_string_rounding_for_display": true,
+    "nav_state_is_visible": true,
+    "stale_state_is_visible": true,
+    "missing_state_is_visible": true,
+    "allocation_uses_priced_positions_only": true,
+    "unpriced_positions_cannot_be_implied_as_zero": true,
+    "as_of_timestamp_is_visible": true,
+    "synthetic_or_demo_financial_values": false
+  },
+  "account_registry_boundary": {
+    "selected_portfolio_filter": true,
+    "account_name": true,
+    "account_kind": true,
+    "institution_name": true,
+    "lifecycle_status": true,
+    "registry_key": true,
+    "external_account_reference_rendered": false,
+    "exchange_credentials_rendered": false,
+    "account_mutation_ui": false
+  },
+  "state_model": {
+    "states": [
+      "loading",
+      "ready",
+      "empty",
+      "error",
+      "stale",
+      "missing"
+    ],
+    "registry_failure_preserves_no_mutation": true,
+    "analytics_failure_keeps_account_registry_visible": true,
+    "portfolio_selection_reloads_owner_scoped_details": true,
+    "session_expiry_uses_existing_shell_recovery": true
+  },
+  "accessibility": {
+    "semantic_headings": true,
+    "labelled_portfolio_selector": true,
+    "keyboard_navigation": true,
+    "visible_focus": true,
+    "minimum_interactive_target_css_pixels": 44,
+    "status_not_conveyed_by_color_only": true,
+    "reduced_motion_respected": true,
+    "mobile_horizontal_page_overflow": false
+  },
+  "security_boundary": {
+    "public_internet_deployment": false,
+    "multi_user": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-10-FREEZE",
+    "post_freeze_stage": "NEX-P2-11",
+    "p2_11_before_transactions_holdings_reconciliation_ui": true
+  }
+}

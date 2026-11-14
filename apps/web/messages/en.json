@@ -39,9 +39,9 @@
     "failed": "Authentication could not be completed. No credential was stored in the browser."
   },
   "shell": {
-    "eyebrow": "NEX-P1-11",
-    "title": "Private financial workspace",
-    "description": "Authenticated access to service health, secure exports and the future portfolio workspace.",
+    "eyebrow": "NEX-P2-11",
+    "title": "Portfolio operations",
+    "description": "Owner-scoped portfolio value, immutable journal evidence, holdings and bounded reconciliation workflows in one private workspace.",
     "authenticated": "Owner session active",
     "owner": "Owner",
     "logout": "Sign out",
@@ -51,15 +51,193 @@
     "artifacts": "Artifact storage",
     "ready": "Ready",
     "limited": "Unavailable",
-    "phaseTwo": "Available from Phase 2",
-    "emptyTitle": "Portfolio workspace is intentionally empty",
-    "emptyDescription": "Portfolio, holdings, transaction and analytics features begin in Phase 2. This shell currently proves secure access and runtime state only.",
+    "phaseTwo": "Not included in the current stage",
     "securityTitle": "Current security boundary",
     "securityItems": {
       "private": "Private single-owner deployment",
       "passkey": "Passkey and server-side session",
       "paper": "Research, Paper and Shadow only",
       "forbidden": "No live trading, wallet or exchange credentials"
+    }
+  },
+  "portfolioDashboard": {
+    "eyebrow": "OWNER-SCOPED PORTFOLIO",
+    "title": "Portfolio overview",
+    "selectPortfolio": "Select portfolio",
+    "loadingTitle": "Loading portfolio registry",
+    "loadingDescription": "Reading owner-scoped portfolio data without caching financial state.",
+    "loadingAnalytics": "Calculating the selected portfolio snapshot…",
+    "errorTitle": "Portfolio data is unavailable",
+    "errorDescription": "The private API could not return the portfolio registry. No data was changed.",
+    "analyticsError": "The selected portfolio analytics or valuation evidence could not be calculated.",
+    "retry": "Try again",
+    "emptyTitle": "No portfolio is registered yet",
+    "emptyDescription": "Create the first owner-scoped portfolio through the registry API before using this dashboard.",
+    "nav": "Net asset value",
+    "unrealizedPnl": "Unrealized P&L",
+    "realizedPnl": "Realized P&L",
+    "accounts": "Accounts",
+    "activeAccounts": "Active accounts",
+    "valuationHealth": "Valuation health",
+    "freshEvidence": "positions have fresh evidence",
+    "asOf": "As of",
+    "evidence": "EVIDENCE STATUS",
+    "pricedPositions": "PRICED POSITIONS ONLY",
+    "allocation": "Allocation",
+    "noAllocation": "No priced position is available for allocation.",
+    "valuationFootnote": "Stale and missing evidence stays visible and keeps NAV explicitly incomplete.",
+    "registry": "OWNER-SCOPED REGISTRY",
+    "accountRegistry": "Account registry",
+    "noAccounts": "No account belongs to this portfolio.",
+    "institution": "Institution",
+    "accountKey": "Registry key",
+    "manualAccount": "Manual / private",
+    "kind": {
+      "personal": "Personal",
+      "paper": "Paper",
+      "shadow": "Shadow"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived",
+      "closed": "Closed",
+      "inactive": "Inactive"
+    },
+    "valuationState": {
+      "fresh": "Fresh",
+      "stale": "Stale",
+      "missing": "Missing"
+    },
+    "analyticsState": {
+      "stale": "NAV includes stale valuation evidence. Review timestamps before using this snapshot.",
+      "missing": "NAV is incomplete because one or more positions have no valid valuation evidence."
+    },
+    "accountKind": {
+      "exchange": "Exchange registry (no credentials)",
+      "wallet_watch_only": "Watch-only wallet",
+      "cash": "Cash account",
+      "brokerage_manual": "Manual brokerage",
+      "paper": "Paper account",
+      "shadow": "Shadow account",
+      "other_manual": "Other manual account"
+    }
+  },
+  "portfolioOperations": {
+    "eyebrow": "DETERMINISTIC ACCOUNTING WORKSPACE",
+    "title": "Journal, holdings and reconciliation",
+    "description": "Review immutable evidence, rebuild derived projections and complete bounded import decisions without weakening the owner boundary.",
+    "noPortfolio": "Select or register a portfolio before opening its accounting workspace.",
+    "loading": "Loading owner-scoped journal and projection evidence…",
+    "loadError": "The accounting workspace could not be loaded. No data was changed.",
+    "retry": "Try again",
+    "actionSucceeded": "The requested transition completed and its evidence is now visible.",
+    "actionFailed": "The requested transition was rejected safely",
+    "reason": "Owner reason",
+    "reasonRequired": "Enter an owner reason of at least 8 characters.",
+    "reauthenticationRequired": "Recent passkey authentication is required before this sensitive transition.",
+    "tabs": {
+      "label": "Portfolio accounting views",
+      "journal": "Journal",
+      "holdings": "Holdings & lots",
+      "imports": "Import preview",
+      "reconciliation": "Reconciliation"
+    },
+    "journal": {
+      "title": "Immutable transaction journal",
+      "description": "Balanced entries are read from the owner-scoped append-only ledger. Corrections remain explicit reversals or supersessions.",
+      "empty": "No transaction belongs to this portfolio.",
+      "noMemo": "No memo was recorded.",
+      "external": "External boundary"
+    },
+    "holdings": {
+      "title": "Rebuildable holdings and lots",
+      "description": "Derived positions remain tied to an exact journal checksum and cost-basis policy.",
+      "method": "Cost-basis method",
+      "fifo": "FIFO",
+      "weightedAverage": "Weighted average",
+      "rebuild": "Rebuild projection",
+      "notBuilt": "No projection exists for this method. Rebuild from the immutable journal to continue.",
+      "version": "Projection version",
+      "transactions": "Journal transactions",
+      "positions": "Holdings",
+      "lots": "Open lots",
+      "empty": "The projection contains no holding.",
+      "noLots": "The projection contains no open lot.",
+      "account": "Account",
+      "quantity": "Exact quantity",
+      "costBasis": "Cost basis",
+      "acquired": "Acquired at",
+      "remaining": "Remaining quantity"
+    },
+    "imports": {
+      "title": "Dry-run import preview",
+      "description": "CSV and Nexora JSON are normalized deterministically before any publication is allowed.",
+      "format": "Source format",
+      "content": "Import content",
+      "placeholder": "Paste bounded CSV or Nexora JSON content",
+      "dryRunNotice": "Preview is mandatory. Quarantined rows and duplicates stay visible; partial publication is forbidden.",
+      "preview": "Create dry-run preview",
+      "rows": "Rows",
+      "ready": "Ready",
+      "duplicates": "Duplicates",
+      "quarantined": "Quarantined",
+      "showRows": "Review normalized rows",
+      "review": "Approve reviewed batch",
+      "publish": "Publish atomically",
+      "empty": "No import preview has been created yet."
+    },
+    "reconciliation": {
+      "title": "Reconciliation cases",
+      "description": "Every difference requires an explicit, version-checked owner decision; no automatic journal correction is available.",
+      "empty": "No reconciliation case requires review.",
+      "decision": "Decision",
+      "apply": "Record decision"
+    },
+    "transactionKind": {
+      "buy": "Buy",
+      "sell": "Sell",
+      "deposit": "Deposit",
+      "withdrawal": "Withdrawal",
+      "transfer": "Transfer",
+      "fee": "Fee",
+      "income": "Income",
+      "reward": "Reward",
+      "airdrop": "Airdrop",
+      "adjustment": "Adjustment",
+      "opening_balance": "Opening balance"
+    },
+    "correctionKind": {
+      "reversal": "Reversal",
+      "supersession": "Supersession"
+    },
+    "sourceKind": {
+      "manual": "Manual evidence",
+      "import": "Import evidence",
+      "trd_bot": "TRD Bot Paper/Shadow"
+    },
+    "basisStatus": {
+      "known": "Known basis",
+      "mixed": "Mixed basis",
+      "unknown": "Unknown basis"
+    },
+    "importStatus": {
+      "dry_run": "Dry run",
+      "reviewed": "Reviewed",
+      "published": "Published",
+      "quarantined": "Quarantined"
+    },
+    "importRowStatus": {
+      "ready": "Ready",
+      "duplicate": "Duplicate",
+      "quarantined": "Quarantined",
+      "published": "Published"
+    },
+    "reconciliationState": {
+      "open": "Open",
+      "matched": "Matched",
+      "accepted_difference": "Accepted difference",
+      "resolved": "Resolved",
+      "ignored_with_reason": "Ignored with reason"
     }
   },
   "states": {

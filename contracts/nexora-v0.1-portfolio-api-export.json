@@ -1,0 +1,123 @@
+{
+  "schema_version": "nexora-portfolio-api-export-contract-v1",
+  "decision_id": "NEX-P2-09",
+  "decision_date": "2026-11-02",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-08",
+    "frozen": true,
+    "freeze_commit_sha": "37866ad1f3635bcbdeb7569366140e21b23485bc",
+    "accepted_candidate_commit_sha": "d53f0e90acaac2de3157e9c535f99070bfb73a9d",
+    "freeze_record_path": "artifacts/p2-08/trd-bot-paper-shadow-projection-freeze.json",
+    "freeze_record_checksum": "90d374d2bb5b81e491ebfd645f7cc320e1828c9bd5de88c0748b819e50f58d34"
+  },
+  "scope": {
+    "entities": [
+      "paper_shadow_projection_read_api",
+      "portfolio_export_request",
+      "portfolio_export_manifest",
+      "portfolio_export_bundle"
+    ],
+    "profiles": [
+      "private_complete",
+      "ai_safe"
+    ],
+    "content_formats": [
+      "json",
+      "csv",
+      "parquet"
+    ],
+    "delivery_format": "manifest_backed_zip",
+    "dashboard_included": false,
+    "public_download_included": false,
+    "live_trading_included": false
+  },
+  "api_boundary": {
+    "operations": [
+      "GET /v1/trd-bot/paper-shadow-projection",
+      "POST /v1/portfolio-exports",
+      "GET /v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download"
+    ],
+    "session_authentication_required": true,
+    "mutation_origin_and_csrf_required": true,
+    "owner_scope_derived_from_session": true,
+    "owner_id_accepted_from_request": false,
+    "strict_request_schema": true,
+    "authenticated_download_path_only": true,
+    "public_url_returned": false
+  },
+  "export_invariants": {
+    "snapshot_schema": "nexora-portfolio-export-v1",
+    "manifest_schema": "nexora-portfolio-export-manifest-v1",
+    "bundle_schema": "nexora-portfolio-export-bundle-v1",
+    "complete_export_required": true,
+    "partial_export_forbidden": true,
+    "deterministic_dataset_ordering": true,
+    "deterministic_record_ordering": true,
+    "deterministic_zip_metadata": true,
+    "canonical_json_required": true,
+    "analysis_ready_csv_required": true,
+    "real_parquet_required": true,
+    "snapshot_checksum_required": true,
+    "file_checksums_required": true,
+    "bundle_checksum_required": true,
+    "lineage_required": true,
+    "uncertainty_required": true,
+    "timestamp_required": true,
+    "financial_decimal_strings_required": true,
+    "binary_float_forbidden": true,
+    "maximum_records": 100000,
+    "maximum_uncompressed_bytes": 134217728,
+    "capacity_behavior": "fail_closed_without_partial_artifact"
+  },
+  "profile_boundary": {
+    "private_complete_contains_all_allowed_portfolio_fields": true,
+    "ai_safe_uses_explicit_exclusion_policy": true,
+    "ai_safe_excluded_categories": [
+      "credentials",
+      "tokens",
+      "recovery_codes",
+      "private_keys",
+      "session_identifiers",
+      "raw_security_audit_context",
+      "provider_raw_payloads",
+      "external_account_references",
+      "free_text_financial_context"
+    ],
+    "security_and_identity_tables_excluded_from_all_profiles": true,
+    "excluded_fields_declared_in_manifest": true
+  },
+  "persistence": {
+    "source_snapshot_is_repeatable_read": true,
+    "artifact_namespace": "export",
+    "artifact_type": "portfolio-export",
+    "immutable_artifact_publication": true,
+    "retention_classes": [
+      "pinned_export",
+      "unpinned_export"
+    ],
+    "existing_financial_tables_only": true,
+    "new_tables": [],
+    "new_migration_required": false,
+    "public_bucket": false
+  },
+  "security_boundary": {
+    "public_internet_deployment": false,
+    "multi_user": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-09-FREEZE",
+    "post_freeze_stage": "NEX-P2-10",
+    "freeze_before_dashboard": true
+  }
+}

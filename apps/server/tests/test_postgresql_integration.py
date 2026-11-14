@@ -1,27 +1,67 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from decimal import Decimal
+from threading import Barrier
+from uuid import UUID, uuid4
 
 import pytest
 from nexora.adapters.postgresql import (
+    AccountRecord,
+    AssetIdentifierRecord,
+    AssetRecord,
     BackgroundJob,
     CheckpointAdvance,
     CheckpointConflict,
     DurableWorkRepository,
+    DecisionEventProjectionRepository,
+    DecisionProjectionMutation,
+    DecisionProjectionQuarantineWrite,
+    DecisionProjectionState,
+    EnqueuedJob,
+    HoldingsProjectionRepository,
+    HoldingsRebuildIssueRecord,
+    ImportReconciliationRepository,
     JobCompletion,
     LeaseLost,
     OutboxEvent,
     OutboxMessage,
+    PaperShadowProjectionRepository,
+    PortfolioPerformanceRepository,
+    PortfolioRecord,
+    PortfolioRegistryRepository,
+    PostgreSQLPortfolioExportSource,
     ProjectionCheckpoint,
+    TransactionJournalRepository,
+    TransactionLegRecord,
+    TransactionRecord,
+    ValuationEvidenceRepository,
     create_database_engine,
     create_session_factory,
     load_database_settings,
 )
+from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHoldingRejected
+from nexora.decision_event_projection import PROJECTED_RESOURCES
+from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
+from nexora.paper_shadow_projection import canonical_json_sha256
+from nexora.performance import AnalyticsState, PerformancePointState
+from nexora.portfolio_export import PortfolioExportProfile
+from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
+from nexora.transaction_journal import (
+    CorrectionKind,
+    JournalSourceKind,
+    JournalValidationError,
+    TransactionKind,
+    TransactionLegInput,
+)
+from nexora.valuation import ValuationConflict, ValuationSourceKind, ValuationValidationError
 from sqlalchemy import Engine, delete, inspect, select, text
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.exc import DBAPIError, InvalidRequestError
+from sqlalchemy.orm import Session, sessionmaker
 
 pytestmark = pytest.mark.integration
 
@@ -42,7 +82,206 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261027_0005"
+    assert revision == "20261112_0011"
+
+
+def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
+    engine: Engine,
+) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    durable = DurableWorkRepository(factory)
+    projection = DecisionEventProjectionRepository(factory)
+    worker_id = "decision-projection-test-worker"
+
+    def complete_generation(generation: int, *, quarantine_candidate: bool) -> None:
+        resources = tuple(PROJECTED_RESOURCES)
+        for index, resource in enumerate(resources):
+            job_type = f"test.decision-projection.{generation}"
+            job_id = durable.enqueue_job(
+                owner_id=owner_id,
+                job_type=job_type,
+                idempotency_key=f"decision-projection-{generation}-{resource.value}",
+                payload={"resource": resource.value},
+            )
+            claim = durable.claim_jobs(
+                worker_id=worker_id,
+                job_types=(job_type,),
+                limit=1,
+                lease_seconds=30,
+            )[0]
+            is_quarantined = quarantine_candidate and resource.value == "candidate"
+            quarantine_payload = {"schema_version": "future-candidate-v9"}
+            quarantined = (
+                DecisionProjectionQuarantineWrite(
+                    resource_type=resource.value,
+                    resource_id="candidate-invalid",
+                    source_schema_version="future-candidate-v9",
+                    source_event_id=None,
+                    reason_code="INVALID_OR_UNSUPPORTED_SNAPSHOT",
+                    payload=quarantine_payload,
+                    payload_sha256=canonical_json_sha256(quarantine_payload),
+                ),
+            ) if is_quarantined else ()
+            final = index == len(resources) - 1
+            durable.complete_job(
+                job_id=job_id,
+                worker_id=worker_id,
+                completion=JobCompletion(
+                    decision_projection=DecisionProjectionMutation(
+                        generation=generation,
+                        trigger="cursor_expired",
+                        provider_version="0.3.1",
+                        contract_version="nexora-trd-integration-v1",
+                        resource_type=resource.value,
+                        resource_item_count=1 if is_quarantined else 0,
+                        resource_quarantine_count=1 if is_quarantined else 0,
+                        resource_completed=True,
+                        quarantine=quarantined,
+                        activate=final,
+                    ),
+                    enqueue_after_projection_activation=(
+                        EnqueuedJob(
+                            job_type="test.event-resume",
+                            idempotency_key=f"decision-event-resume-{generation:04d}",
+                            payload={"generation": generation},
+                        ),
+                    ) if final else (),
+                ),
+            )
+            assert claim.job_id == job_id
+
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        complete_generation(1, quarantine_candidate=False)
+        active = projection.active_generation(owner_id)
+        assert active is not None
+        assert active.generation == 1
+
+        complete_generation(2, quarantine_candidate=True)
+        active = projection.active_generation(owner_id)
+        assert active is not None
+        assert active.generation == 1
+        with factory() as session:
+            rejected = session.execute(
+                select(DecisionProjectionState).where(
+                    DecisionProjectionState.owner_id == owner_id,
+                    DecisionProjectionState.generation == 2,
+                )
+            ).scalar_one()
+            assert rejected.status == "rejected"
+            assert session.execute(
+                select(BackgroundJob).where(
+                    BackgroundJob.owner_id == owner_id,
+                    BackgroundJob.idempotency_key == "decision-event-resume-0002",
+                )
+            ).scalar_one_or_none() is None
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect().execution_options(isolation_level="REPEATABLE READ")
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    registry = PortfolioRegistryRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="export-usd",
+            symbol="USD",
+            name="Export US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="export-core",
+            name="Export Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="export-broker",
+            name="Export Broker",
+            kind=AccountKind.BROKERAGE_MANUAL,
+            institution_name="Private Broker",
+            external_reference="sensitive-account-reference",
+        )
+        source = PostgreSQLPortfolioExportSource(factory)
+        captured_at = datetime(2026, 11, 2, 12, tzinfo=UTC)
+
+        complete = source.snapshot(
+            owner_id=owner_id,
+            profile=PortfolioExportProfile.PRIVATE_COMPLETE,
+            captured_at=captured_at,
+        )
+        ai_safe = source.snapshot(
+            owner_id=owner_id,
+            profile=PortfolioExportProfile.AI_SAFE,
+            captured_at=captured_at,
+        )
+
+        assert complete.datasets["accounts"][0]["external_reference"] == "sensitive-account-reference"
+        assert "external_reference" not in ai_safe.datasets["accounts"][0]
+        assert "owner_id" not in complete.datasets["portfolios"][0]
+        assert ai_safe.datasets["portfolio_analytics"][0]["nav"] == "0"
+        assert len(ai_safe.datasets["performance_series"][0]["points"]) == 31  # type: ignore[arg-type]
+        assert ai_safe.uncertainty["paper_shadow_complete"] is False
+        assert "accounts.external_reference" in ai_safe.excluded_fields
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_portfolio_export_rejects_existing_non_repeatable_read_transaction(
+    engine: Engine,
+) -> None:
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    try:
+        source = PostgreSQLPortfolioExportSource(factory)
+        with pytest.raises(
+            InvalidRequestError,
+            match=r"existing transaction.*REPEATABLE READ",
+        ):
+            source.snapshot(
+                owner_id=uuid4(),
+                profile=PortfolioExportProfile.AI_SAFE,
+                captured_at=datetime(2026, 11, 2, 12, tzinfo=UTC),
+            )
+    finally:
+        outer.rollback()
+        connection.close()
 
 
 def test_expected_schema_and_tables_exist_without_security_sensitive_capabilities(engine: Engine) -> None:
@@ -62,9 +301,133 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "webauthn_challenges",
         "webauthn_credentials",
         "trd_bot_sync_receipts",
+        "assets",
+        "asset_identifiers",
+        "portfolios",
+        "accounts",
+        "transactions",
+        "transaction_legs",
+        "import_batches",
+        "import_rows",
+        "reconciliation_cases",
+        "reconciliation_decisions",
+        "holdings_rebuilds",
+        "holding_projections",
+        "lot_projections",
+        "lot_consumptions",
+        "holdings_rebuild_issues",
+        "price_observations",
+        "fx_rate_observations",
+        "manual_valuations",
+        "decision_projection_states",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))
+
+
+def test_paper_shadow_projection_rebuilds_from_owner_scoped_immutable_evidence(engine: Engine) -> None:
+    owner_id = uuid4()
+    other_owner_id = uuid4()
+    observed_at = datetime(2026, 11, 2, 9, tzinfo=UTC)
+    portfolio = {
+        "schema_version": "trd-paper-shadow-portfolio-v1",
+        "paper_shadow_portfolio_id": "postgres-portfolio-1",
+        "mode": "paper",
+        "name": "PostgreSQL paper portfolio",
+        "base_asset_symbol": "USDT",
+        "status": "active",
+        "aggregate_version": 1,
+        "as_of": "2026-11-02T09:00:00Z",
+    }
+    position = {
+        "schema_version": "trd-paper-shadow-position-v1",
+        "paper_shadow_position_id": "postgres-position-1",
+        "paper_shadow_portfolio_id": "postgres-portfolio-1",
+        "mode": "paper",
+        "asset_symbol": "BTC",
+        "quantity": "0.50000000",
+        "average_entry_price": "61000.00",
+        "status": "open",
+        "aggregate_version": 1,
+        "as_of": "2026-11-02T09:00:00Z",
+    }
+    connection = engine.connect()
+    outer = connection.begin()
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        for entity_type, entity_id, payload in (
+            ("snapshot.paper_shadow_portfolio", "postgres-portfolio-1", portfolio),
+            ("snapshot.paper_shadow_position", "postgres-position-1", position),
+        ):
+            reference_id = uuid4()
+            checksum = canonical_json_sha256(payload)
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO nexora.source_references (
+                        source_reference_id, owner_id, source_system, source_entity_type,
+                        source_entity_id, source_schema_version, source_version,
+                        source_observed_at, correlation_id, payload_sha256
+                    ) VALUES (
+                        :reference_id, :owner_id, 'trd_bot', :entity_type,
+                        :entity_id, :schema_version, :source_version,
+                        :observed_at, :correlation_id, :checksum
+                    )
+                    """
+                ),
+                {
+                    "reference_id": reference_id,
+                    "owner_id": owner_id,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "schema_version": payload["schema_version"],
+                    "source_version": f"0.3.1:{checksum[:16]}",
+                    "observed_at": observed_at,
+                    "correlation_id": uuid4(),
+                    "checksum": checksum,
+                },
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO nexora.immutable_source_evidence (
+                        evidence_id, owner_id, source_reference_id, payload, payload_sha256
+                    ) VALUES (
+                        :evidence_id, :owner_id, :reference_id, CAST(:payload AS jsonb), :checksum
+                    )
+                    """
+                ),
+                {
+                    "evidence_id": uuid4(),
+                    "owner_id": owner_id,
+                    "reference_id": reference_id,
+                    "payload": json.dumps(payload),
+                    "checksum": checksum,
+                },
+            )
+        factory = sessionmaker(
+            bind=connection,
+            class_=Session,
+            expire_on_commit=False,
+            join_transaction_mode="create_savepoint",
+        )
+        repository = PaperShadowProjectionRepository(factory)
+
+        projected = repository.rebuild(owner_id=owner_id)
+        isolated = repository.rebuild(owner_id=other_owner_id)
+
+        assert projected.complete is True
+        assert projected.portfolios[0].portfolio_id == "postgres-portfolio-1"
+        assert projected.positions[0].position_id == "postgres-position-1"
+        assert projected.positions[0].quantity == Decimal("0.50000000")
+        assert isolated.complete is False
+        assert isolated.issues[0].code == "NO_EVIDENCE"
+    finally:
+        outer.rollback()
+        connection.close()
 
 
 def test_owner_scope_source_identity_and_database_immutability(engine: Engine) -> None:
@@ -345,3 +708,858 @@ def test_durable_claim_reclaim_retry_checkpoint_and_outbox_are_atomic(engine: En
             session.execute(
                 text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"), {"owner_id": owner_id}
             )
+
+
+def test_portfolio_registry_lifecycle_is_owner_scoped_and_optimistically_locked(engine: Engine) -> None:
+    owner_id = uuid4()
+    factory = create_session_factory(engine)
+    repository = PortfolioRegistryRepository(factory)
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+    try:
+        asset = repository.create_asset(
+            owner_id=owner_id,
+            asset_key="usd",
+            symbol="USD",
+            name="US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        identifier = repository.add_asset_identifier(
+            owner_id=owner_id,
+            asset_id=asset.asset_id,
+            scheme=AssetIdentifierScheme.ISO_4217,
+            value="USD",
+            is_primary=True,
+        )
+        portfolio = repository.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="personal-core",
+            name="Personal Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = repository.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="manual-cash",
+            name="Manual Cash",
+            kind=AccountKind.CASH,
+        )
+
+        assert identifier.asset_id == asset.asset_id
+        assert repository.list_assets(owner_id=owner_id) == (asset,)
+        assert repository.list_portfolios(owner_id=owner_id) == (portfolio,)
+        assert repository.list_accounts(owner_id=owner_id, portfolio_id=portfolio.portfolio_id) == (account,)
+
+        closed = repository.close_account(
+            owner_id=owner_id,
+            account_id=account.account_id,
+            expected_row_version=1,
+        )
+        archived = repository.archive_portfolio(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            expected_row_version=1,
+        )
+        inactive = repository.deactivate_asset(
+            owner_id=owner_id,
+            asset_id=asset.asset_id,
+            expected_row_version=1,
+        )
+        assert (closed.status.value, archived.status.value, inactive.status.value) == (
+            "closed",
+            "archived",
+            "inactive",
+        )
+        with pytest.raises(RegistryConflict):
+            repository.archive_portfolio(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                expected_row_version=1,
+            )
+    finally:
+        with factory.begin() as session:
+            session.execute(delete(AccountRecord).where(AccountRecord.owner_id == owner_id))
+            session.execute(delete(PortfolioRecord).where(PortfolioRecord.owner_id == owner_id))
+            session.execute(delete(AssetIdentifierRecord).where(AssetIdentifierRecord.owner_id == owner_id))
+            session.execute(delete(AssetRecord).where(AssetRecord.owner_id == owner_id))
+            session.execute(
+                text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"), {"owner_id": owner_id}
+            )
+
+
+def test_transaction_journal_is_balanced_idempotent_correctable_and_database_immutable(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        asset = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="usd",
+            symbol="USD",
+            name="US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="personal-core",
+            name="Personal Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="manual-cash",
+            name="Manual Cash",
+            kind=AccountKind.CASH,
+        )
+        legs = (
+            TransactionLegInput(
+                account_id=account.account_id,
+                asset_id=asset.asset_id,
+                quantity=Decimal("100.00"),
+            ),
+            TransactionLegInput(
+                external_counterparty="Opening equity",
+                asset_id=asset.asset_id,
+                quantity=Decimal("-100.00"),
+            ),
+        )
+        occurred_at = datetime.now(UTC)
+        posted = journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="manual-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-entry-1",
+            source_payload_sha256="a" * 64,
+            legs=legs,
+        )
+        repeated = journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="manual-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-entry-1",
+            source_payload_sha256="a" * 64,
+            legs=legs,
+        )
+        assert repeated.transaction_id == posted.transaction_id
+
+        with pytest.raises(JournalValidationError, match="at least two legs"):
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=TransactionKind.ADJUSTMENT,
+                idempotency_key="manual-20261031-unbalanced",
+                occurred_at=datetime.now(UTC),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference="manual-entry-unbalanced",
+                source_payload_sha256="b" * 64,
+                legs=(legs[0],),
+            )
+
+        reversed_entry = journal.reverse_transaction(
+            owner_id=owner_id,
+            transaction_id=posted.transaction_id,
+            idempotency_key="manual-20261031-reversal",
+            occurred_at=datetime.now(UTC),
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="manual-reversal-1",
+            source_payload_sha256="c" * 64,
+            reason="Correct an owner-confirmed opening balance",
+        )
+        assert reversed_entry.correction_kind is CorrectionKind.REVERSAL
+        assert reversed_entry.correction_of_transaction_id == posted.transaction_id
+        assert [leg.quantity for leg in reversed_entry.legs] == [Decimal("-100.00"), Decimal("100.00")]
+
+        savepoint = connection.begin_nested()
+        with pytest.raises(DBAPIError, match="immutable"):
+            connection.execute(
+                text("UPDATE nexora.transactions SET memo = 'mutated' WHERE transaction_id = :transaction_id"),
+                {"transaction_id": posted.transaction_id},
+            )
+        savepoint.rollback()
+        assert len(journal.list_transactions(owner_id=owner_id, portfolio_id=portfolio.portfolio_id)) == 2
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_nav_pnl_and_bounded_performance_use_historical_journal_and_explicit_fx(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    valuation = ValuationEvidenceRepository(factory)
+    analytics = PortfolioPerformanceRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-usd",
+            symbol="USD",
+            name="Analytics US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        eur = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-eur",
+            symbol="EUR",
+            name="Analytics Euro",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="analytics-btc",
+            symbol="BTC",
+            name="Analytics Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="analytics-core",
+            name="Analytics Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="analytics-account",
+            name="Analytics Account",
+            kind=AccountKind.EXCHANGE,
+        )
+        start = datetime(2026, 11, 1, 8, tzinfo=UTC)
+
+        def post(sequence: int, kind: TransactionKind, legs: list[TransactionLegInput]) -> None:
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=kind,
+                idempotency_key=f"analytics-entry-{sequence:04d}",
+                occurred_at=start + timedelta(hours=sequence),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference=f"analytics-reference-{sequence}",
+                source_payload_sha256=hashlib.sha256(f"analytics-{sequence}".encode()).hexdigest(),
+                legs=legs,
+            )
+
+        post(
+            0,
+            TransactionKind.OPENING_BALANCE,
+            [
+                TransactionLegInput(usd.asset_id, Decimal("1000"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-1000"), external_counterparty="Opening equity"),
+            ],
+        )
+        post(
+            1,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("10"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-100"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-10"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("100"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            2,
+            TransactionKind.SELL,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("-2"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("40"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("2"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("-40"), external_counterparty="Market"),
+            ],
+        )
+        observed = start + timedelta(hours=2, minutes=30)
+        valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=eur.asset_id,
+            price="20",
+            observed_at=observed,
+            valid_until=observed + timedelta(hours=2),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="analytics-btc-eur",
+            source_payload_sha256="a" * 64,
+            idempotency_key="analytics-price-0001",
+        )
+        valuation.create_fx_rate_observation(
+            owner_id=owner_id,
+            base_asset_id=eur.asset_id,
+            quote_asset_id=usd.asset_id,
+            rate="1.1",
+            observed_at=observed,
+            valid_until=observed + timedelta(hours=2),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="analytics-eur-usd",
+            source_payload_sha256="b" * 64,
+            idempotency_key="analytics-fx-0001",
+        )
+        end = start + timedelta(hours=3)
+        snapshot = analytics.snapshot(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            as_of=end,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        btc_position = next(item for item in snapshot.positions if item.asset_id == btc.asset_id)
+        assert snapshot.state is AnalyticsState.COMPLETE
+        assert snapshot.nav == Decimal("1116.0")
+        assert snapshot.realized_pnl == Decimal("20")
+        assert snapshot.unrealized_pnl == Decimal("96.0")
+        assert btc_position.valuation.unit_value == Decimal("22.0")
+        assert len(btc_position.valuation.evidence_ids) == 2
+
+        series = analytics.performance_series(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            start_at=start,
+            end_at=end,
+            point_count=2,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        assert series.points[-1].state is PerformancePointState.AVAILABLE
+        assert series.points[-1].external_flow == 0
+        assert series.points[-1].period_return == Decimal("0.116")
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_concurrent_transaction_posting_converges_on_one_idempotent_record(engine: Engine) -> None:
+    owner_id = uuid4()
+    factory = create_session_factory(engine)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    with engine.begin() as connection:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+    asset = registry.create_asset(
+        owner_id=owner_id,
+        asset_key="usd",
+        symbol="USD",
+        name="US Dollar",
+        asset_class=AssetClass.FIAT,
+        precision=2,
+    )
+    portfolio = registry.create_portfolio(
+        owner_id=owner_id,
+        portfolio_key="concurrent-core",
+        name="Concurrent Core",
+        kind=PortfolioKind.PERSONAL,
+        base_asset_id=asset.asset_id,
+    )
+    account = registry.create_account(
+        owner_id=owner_id,
+        portfolio_id=portfolio.portfolio_id,
+        account_key="concurrent-cash",
+        name="Concurrent Cash",
+        kind=AccountKind.CASH,
+    )
+    occurred_at = datetime.now(UTC)
+    legs = (
+        TransactionLegInput(account_id=account.account_id, asset_id=asset.asset_id, quantity=Decimal("25.00")),
+        TransactionLegInput(
+            external_counterparty="Opening equity",
+            asset_id=asset.asset_id,
+            quantity=Decimal("-25.00"),
+        ),
+    )
+    barrier = Barrier(2)
+
+    def post_once() -> UUID:
+        barrier.wait(timeout=10)
+        return journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            transaction_kind=TransactionKind.OPENING_BALANCE,
+            idempotency_key="concurrent-20261031-0001",
+            occurred_at=occurred_at,
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="concurrent-manual-entry",
+            source_payload_sha256="d" * 64,
+            legs=legs,
+        ).transaction_id
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            transaction_ids = tuple(executor.map(lambda _: post_once(), range(2)))
+        assert transaction_ids[0] == transaction_ids[1]
+        with factory() as session:
+            count = len(
+                session.scalars(
+                    select(TransactionRecord).where(
+                        TransactionRecord.owner_id == owner_id,
+                        TransactionRecord.idempotency_key == "concurrent-20261031-0001",
+                    )
+                ).all()
+            )
+        assert count == 1
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE nexora.transaction_legs DISABLE TRIGGER trg_transaction_legs_immutable")
+            )
+            connection.execute(text("ALTER TABLE nexora.transactions DISABLE TRIGGER trg_transactions_immutable"))
+            connection.execute(delete(TransactionLegRecord).where(TransactionLegRecord.owner_id == owner_id))
+            connection.execute(delete(TransactionRecord).where(TransactionRecord.owner_id == owner_id))
+            connection.execute(text("ALTER TABLE nexora.transactions ENABLE TRIGGER trg_transactions_immutable"))
+            connection.execute(
+                text("ALTER TABLE nexora.transaction_legs ENABLE TRIGGER trg_transaction_legs_immutable")
+            )
+            connection.execute(delete(AccountRecord).where(AccountRecord.owner_id == owner_id))
+            connection.execute(delete(PortfolioRecord).where(PortfolioRecord.owner_id == owner_id))
+            connection.execute(delete(AssetRecord).where(AssetRecord.owner_id == owner_id))
+            connection.execute(
+                text("DELETE FROM nexora.owner_profiles WHERE owner_id = :owner_id"),
+                {"owner_id": owner_id},
+            )
+
+
+def test_import_dry_run_is_idempotent_and_publication_is_atomic(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    imports = ImportReconciliationRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        asset = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="import-usd",
+            symbol="USD",
+            name="Import US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="import-core",
+            name="Import Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=asset.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="import-cash",
+            name="Import Cash",
+            kind=AccountKind.CASH,
+        )
+        content = json.dumps(
+            {
+                "schema_version": "nexora-transaction-import-v1",
+                "rows": [
+                    {
+                        "row_id": "statement-1",
+                        "portfolio_id": str(portfolio.portfolio_id),
+                        "transaction_kind": "opening_balance",
+                        "occurred_at": "2026-10-31T12:00:00Z",
+                        "memo": "Imported opening balance",
+                        "legs": [
+                            {
+                                "account_id": str(account.account_id),
+                                "asset_id": str(asset.asset_id),
+                                "quantity": "25.00",
+                            },
+                            {
+                                "external_counterparty": "Opening equity",
+                                "asset_id": str(asset.asset_id),
+                                "quantity": "-25.00",
+                            },
+                        ],
+                    }
+                ],
+            }
+        )
+        preview = imports.create_dry_run(owner_id=owner_id, source_format=ImportFormat.NEXORA_JSON, content=content)
+        repeated = imports.create_dry_run(
+            owner_id=owner_id,
+            source_format=ImportFormat.NEXORA_JSON,
+            content=content,
+        )
+        assert repeated.import_batch_id == preview.import_batch_id
+        assert preview.rows[0].status is ImportRowStatus.READY
+        reviewed = imports.review_batch(
+            owner_id=owner_id,
+            import_batch_id=preview.import_batch_id,
+            reason="Owner reviewed the deterministic preview",
+        )
+        published = imports.publish_batch(owner_id=owner_id, import_batch_id=reviewed.import_batch_id)
+        assert published.rows[0].status is ImportRowStatus.PUBLISHED
+        assert (
+            connection.execute(
+                select(TransactionRecord.source_kind).where(TransactionRecord.owner_id == owner_id)
+            ).scalar_one()
+            == "import"
+        )
+
+        invalid = content.replace('"-25.00"', '"-24.00"')
+        quarantined = imports.create_dry_run(
+            owner_id=owner_id,
+            source_format=ImportFormat.NEXORA_JSON,
+            content=invalid,
+        )
+        with pytest.raises(ImportConflict):
+            imports.review_batch(
+                owner_id=owner_id,
+                import_batch_id=quarantined.import_batch_id,
+                reason="Owner cannot approve quarantined evidence",
+            )
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_holdings_rebuild_persists_fifo_weighted_average_and_rejection_evidence(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(bind=connection, class_=Session, expire_on_commit=False)
+    registry = PortfolioRegistryRepository(factory)
+    journal = TransactionJournalRepository(factory)
+    projections = HoldingsProjectionRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="projection-usd",
+            symbol="USD",
+            name="Projection US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="projection-btc",
+            symbol="BTC",
+            name="Projection Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="projection-core",
+            name="Projection Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            account_key="projection-account",
+            name="Projection Account",
+            kind=AccountKind.EXCHANGE,
+        )
+
+        def post(
+            sequence: int,
+            kind: TransactionKind,
+            legs: list[TransactionLegInput],
+        ) -> None:
+            journal.post_transaction(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                transaction_kind=kind,
+                idempotency_key=f"projection-entry-{sequence:04d}",
+                occurred_at=datetime(2026, 11, 1, sequence, tzinfo=UTC),
+                source_kind=JournalSourceKind.MANUAL,
+                source_reference=f"projection-reference-{sequence}",
+                source_payload_sha256=hashlib.sha256(str(sequence).encode()).hexdigest(),
+                legs=legs,
+            )
+
+        post(
+            1,
+            TransactionKind.OPENING_BALANCE,
+            [
+                TransactionLegInput(usd.asset_id, Decimal("1000"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-1000"), external_counterparty="Opening equity"),
+            ],
+        )
+        post(
+            2,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("10"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-100"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-10"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("100"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            3,
+            TransactionKind.BUY,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("5"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("-75"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("-5"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("75"), external_counterparty="Market"),
+            ],
+        )
+        post(
+            4,
+            TransactionKind.SELL,
+            [
+                TransactionLegInput(btc.asset_id, Decimal("-12"), account_id=account.account_id),
+                TransactionLegInput(usd.asset_id, Decimal("240"), account_id=account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("12"), external_counterparty="Market"),
+                TransactionLegInput(usd.asset_id, Decimal("-240"), external_counterparty="Market"),
+            ],
+        )
+
+        fifo = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        repeated = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.FIFO,
+        )
+        weighted = projections.rebuild(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            cost_basis_method=CostBasisMethod.WEIGHTED_AVERAGE,
+        )
+        fifo_btc = next(item for item in fifo.snapshot.holdings if item.asset_id == btc.asset_id)
+        weighted_btc = next(item for item in weighted.snapshot.holdings if item.asset_id == btc.asset_id)
+        assert repeated.holdings_rebuild_id == fifo.holdings_rebuild_id
+        assert (fifo_btc.quantity, fifo_btc.total_cost_basis) == (Decimal("3"), Decimal("45"))
+        assert (weighted_btc.quantity, weighted_btc.total_cost_basis) == (Decimal("3"), Decimal("35"))
+        assert fifo_btc.basis_status is BasisStatus.KNOWN
+
+        negative_portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="projection-negative",
+            name="Projection Negative",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        negative_account = registry.create_account(
+            owner_id=owner_id,
+            portfolio_id=negative_portfolio.portfolio_id,
+            account_key="projection-negative-account",
+            name="Projection Negative Account",
+            kind=AccountKind.EXCHANGE,
+        )
+        journal.post_transaction(
+            owner_id=owner_id,
+            portfolio_id=negative_portfolio.portfolio_id,
+            transaction_kind=TransactionKind.WITHDRAWAL,
+            idempotency_key="projection-negative-0001",
+            occurred_at=datetime(2026, 11, 1, 5, tzinfo=UTC),
+            source_kind=JournalSourceKind.MANUAL,
+            source_reference="projection-negative-reference",
+            source_payload_sha256="f" * 64,
+            legs=[
+                TransactionLegInput(btc.asset_id, Decimal("-1"), account_id=negative_account.account_id),
+                TransactionLegInput(btc.asset_id, Decimal("1"), external_counterparty="External wallet"),
+            ],
+        )
+        with pytest.raises(NegativeHoldingRejected):
+            projections.rebuild(
+                owner_id=owner_id,
+                portfolio_id=negative_portfolio.portfolio_id,
+                cost_basis_method=CostBasisMethod.FIFO,
+            )
+        reason_code = connection.execute(
+            select(HoldingsRebuildIssueRecord.reason_code).where(HoldingsRebuildIssueRecord.owner_id == owner_id)
+        ).scalar_one()
+        assert reason_code == "NEGATIVE_HOLDING_REJECTED"
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_valuation_evidence_is_idempotent_owner_scoped_and_append_only(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    registry = PortfolioRegistryRepository(factory)
+    valuation = ValuationEvidenceRepository(factory)
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        usd = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-usd",
+            symbol="USD",
+            name="Valuation US Dollar",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        btc = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-btc",
+            symbol="BTC",
+            name="Valuation Bitcoin",
+            asset_class=AssetClass.CRYPTO,
+            precision=8,
+        )
+        eur = registry.create_asset(
+            owner_id=owner_id,
+            asset_key="valuation-eur",
+            symbol="EUR",
+            name="Valuation Euro",
+            asset_class=AssetClass.FIAT,
+            precision=2,
+        )
+        portfolio = registry.create_portfolio(
+            owner_id=owner_id,
+            portfolio_key="valuation-core",
+            name="Valuation Core",
+            kind=PortfolioKind.PERSONAL,
+            base_asset_id=usd.asset_id,
+        )
+        observed = datetime(2026, 11, 1, 8, tzinfo=UTC)
+        price = valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            price="68123.4500",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="provider-price-1",
+            source_payload_sha256="a" * 64,
+            idempotency_key="valuation-price-0001",
+        )
+        repeated = valuation.create_price_observation(
+            owner_id=owner_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            price="68123.4500",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.PROVIDER,
+            source_reference="provider-price-1",
+            source_payload_sha256="a" * 64,
+            idempotency_key="valuation-price-0001",
+        )
+        assert repeated.price_observation_id == price.price_observation_id
+        with pytest.raises(ValuationConflict):
+            valuation.create_price_observation(
+                owner_id=owner_id,
+                asset_id=btc.asset_id,
+                quote_asset_id=usd.asset_id,
+                price="68124",
+                observed_at=observed,
+                valid_until=observed + timedelta(minutes=5),
+                source_kind=ValuationSourceKind.PROVIDER,
+                source_reference="provider-price-1",
+                source_payload_sha256="a" * 64,
+                idempotency_key="valuation-price-0001",
+            )
+        rate = valuation.create_fx_rate_observation(
+            owner_id=owner_id,
+            base_asset_id=eur.asset_id,
+            quote_asset_id=usd.asset_id,
+            rate="1.08",
+            observed_at=observed,
+            valid_until=observed + timedelta(minutes=5),
+            source_kind=ValuationSourceKind.IMPORT,
+            source_reference="fx-import-1",
+            source_payload_sha256="b" * 64,
+            idempotency_key="valuation-fx-0001",
+        )
+        with pytest.raises(ValuationValidationError, match="two fiat assets"):
+            valuation.create_fx_rate_observation(
+                owner_id=owner_id,
+                base_asset_id=btc.asset_id,
+                quote_asset_id=usd.asset_id,
+                rate="68123.45",
+                observed_at=observed,
+                valid_until=observed + timedelta(minutes=5),
+                source_kind=ValuationSourceKind.PROVIDER,
+                source_reference="invalid-crypto-fx",
+                source_payload_sha256="d" * 64,
+                idempotency_key="valuation-fx-invalid-0001",
+            )
+        manual = valuation.create_manual_valuation(
+            owner_id=owner_id,
+            portfolio_id=portfolio.portfolio_id,
+            asset_id=btc.asset_id,
+            quote_asset_id=usd.asset_id,
+            unit_value="68000",
+            valued_at=observed,
+            valid_until=observed + timedelta(hours=1),
+            reason="Owner reviewed illiquid market evidence",
+            source_reference="owner-note-1",
+            source_payload_sha256="c" * 64,
+            idempotency_key="valuation-manual-0001",
+        )
+        with pytest.raises(ValuationValidationError, match="portfolio base asset"):
+            valuation.create_manual_valuation(
+                owner_id=owner_id,
+                portfolio_id=portfolio.portfolio_id,
+                asset_id=btc.asset_id,
+                quote_asset_id=eur.asset_id,
+                unit_value="63000",
+                valued_at=observed,
+                valid_until=observed + timedelta(hours=1),
+                reason="Quote does not match portfolio base",
+                source_reference="invalid-owner-note",
+                source_payload_sha256="e" * 64,
+                idempotency_key="valuation-manual-invalid-0001",
+            )
+        assert rate.rate == Decimal("1.08")
+        assert manual.reason == "Owner reviewed illiquid market evidence"
+        assert valuation.list_price_observations(owner_id=owner_id)[0].price == Decimal("68123.4500")
+
+        nested = connection.begin_nested()
+        with pytest.raises(DBAPIError):
+            connection.execute(
+                text("UPDATE nexora.price_observations SET price = 1 WHERE price_observation_id = :observation_id"),
+                {"observation_id": price.price_observation_id},
+            )
+        nested.rollback()
+    finally:
+        outer.rollback()
+        connection.close()

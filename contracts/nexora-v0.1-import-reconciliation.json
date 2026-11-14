@@ -1,0 +1,98 @@
+{
+  "schema_version": "nexora-import-reconciliation-contract-v1",
+  "decision_id": "NEX-P2-04",
+  "decision_date": "2026-10-31",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-03",
+    "frozen": true,
+    "freeze_commit_sha": "35572e1fba3c023e512ef2e101749fc77df29e41",
+    "accepted_candidate_commit_sha": "cf3ddd90eed968a4f672e78866338d97e68e3e25",
+    "freeze_record_path": "artifacts/p2-03/transaction-journal-freeze.json",
+    "freeze_record_checksum": "5d1614ec2f48ea3c3ad2718f5bafbe466feaf6d924404a18122c482a0ccbe9d0"
+  },
+  "scope": {
+    "source_formats": ["csv", "nexora_json"],
+    "entities": ["import_batch", "import_row", "reconciliation_case", "reconciliation_decision"],
+    "maximum_content_bytes": 1048576,
+    "maximum_rows_per_batch": 5000,
+    "trd_bot_projection_included": false,
+    "holdings_projection_included": false,
+    "cost_basis_included": false,
+    "valuation_included": false
+  },
+  "import_invariants": {
+    "dry_run_required": true,
+    "deterministic_normalization": true,
+    "content_sha256_required": true,
+    "row_fingerprint_sha256_required": true,
+    "idempotent_reimport": true,
+    "duplicate_within_batch_detected": true,
+    "duplicate_across_batches_detected": true,
+    "unknown_fields_quarantined": true,
+    "unknown_schema_rejected": true,
+    "exact_decimal_strings_required": true,
+    "owner_scope_required": true,
+    "partial_publish_forbidden": true,
+    "quarantined_batch_publish_forbidden": true,
+    "owner_review_before_publish": true,
+    "publication_transactional": true
+  },
+  "reconciliation_policy": {
+    "states": ["open", "matched", "accepted_difference", "resolved", "ignored_with_reason"],
+    "append_only_decision_evidence": true,
+    "owner_reason_required_for_decisions": true,
+    "optimistic_concurrency": true,
+    "automatic_destructive_fix": false,
+    "automatic_journal_correction": false,
+    "journal_correction_requires_existing_reversal_or_supersession_flow": true
+  },
+  "persistence": {
+    "migration_revision": "20261031_0008",
+    "tables": [
+      "nexora.import_batches",
+      "nexora.import_rows",
+      "nexora.reconciliation_cases",
+      "nexora.reconciliation_decisions"
+    ],
+    "composite_owner_foreign_keys": true,
+    "reconciliation_decisions_immutable": true,
+    "upgrade_downgrade_rebuild_drift_cycle_required": true
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "owner_id_accepted_from_request": false,
+    "csrf_for_mutations": true,
+    "recent_reauthentication_for_publication_and_decisions": true,
+    "unknown_fields_rejected": true,
+    "operations": [
+      "POST /v1/imports/dry-runs",
+      "GET /v1/imports",
+      "GET /v1/imports/{import_batch_id}",
+      "POST /v1/imports/{import_batch_id}/reviews",
+      "POST /v1/imports/{import_batch_id}/publication",
+      "GET /v1/reconciliation-cases",
+      "POST /v1/reconciliation-cases/{reconciliation_case_id}/decisions"
+    ]
+  },
+  "security_boundary": {
+    "raw_exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-04-FREEZE",
+    "post_freeze_stage": "NEX-P2-05",
+    "freeze_before_holdings_projection": true
+  }
+}

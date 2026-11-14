@@ -1,0 +1,157 @@
+{
+  "schema_version": "nexora-transactions-holdings-reconciliation-ui-contract-v1",
+  "decision_id": "NEX-P2-11",
+  "decision_date": "2026-11-04",
+  "status": "candidate",
+  "prerequisite": {
+    "decision_id": "NEX-P2-10",
+    "frozen": true,
+    "freeze_commit_sha": "d2a6df0b26b914e5a012b77ad452605af587c940",
+    "accepted_candidate_commit_sha": "949643fc3cd945c0c25b1089428c4c72ce794b3b",
+    "freeze_record_path": "artifacts/p2-10/portfolio-dashboard-accounts-ui-freeze.json",
+    "freeze_record_checksum": "9d160d1bf4f12f609bd3fd757e709231bf8403655261fa82be72f35c57becad3"
+  },
+  "scope": {
+    "experiences": [
+      "immutable_transaction_journal",
+      "holdings_projection",
+      "cost_basis_lots",
+      "import_dry_run_preview",
+      "import_review_and_atomic_publication",
+      "reconciliation_decisions"
+    ],
+    "locales": [
+      "fa",
+      "en"
+    ],
+    "persian_direction": "rtl",
+    "english_direction": "ltr",
+    "existing_authenticated_shell": true,
+    "responsive_desktop_tablet_mobile": true,
+    "journal_mutation_ui_included": false,
+    "automatic_journal_correction": false,
+    "account_mutation_ui_included": false
+  },
+  "api_boundary": {
+    "operations": [
+      "GET /v1/transactions?portfolio_id={portfolio_id}",
+      "GET /v1/portfolios/{portfolio_id}/holdings?cost_basis_method={method}",
+      "GET /v1/portfolios/{portfolio_id}/lots?cost_basis_method={method}",
+      "POST /v1/portfolios/{portfolio_id}/holdings/rebuilds",
+      "POST /v1/imports/dry-runs",
+      "GET /v1/imports",
+      "POST /v1/imports/{import_batch_id}/reviews",
+      "POST /v1/imports/{import_batch_id}/publication",
+      "GET /v1/reconciliation-cases",
+      "POST /v1/reconciliation-cases/{reconciliation_case_id}/decisions"
+    ],
+    "same_origin_api_only": true,
+    "session_authentication_required": true,
+    "owner_scope_derived_from_session": true,
+    "owner_id_accepted_from_browser": false,
+    "csrf_for_mutations": true,
+    "recent_reauthentication_for_publication_and_decisions": true,
+    "browser_cache_mode": "no-store",
+    "direct_database_access": false,
+    "direct_trd_bot_access": false,
+    "new_backend_route_required": false
+  },
+  "journal_presentation": {
+    "append_only_evidence_visible": true,
+    "balanced_legs_visible": true,
+    "source_lineage_visible": true,
+    "correction_kind_visible": true,
+    "canonical_decimal_strings_visible": true,
+    "binary_float_for_financial_amounts": false,
+    "in_place_edit": false,
+    "physical_delete": false
+  },
+  "holdings_and_lots": {
+    "cost_basis_methods": [
+      "fifo",
+      "weighted_average"
+    ],
+    "explicit_rebuild_action": true,
+    "projection_version_visible": true,
+    "journal_sha256_visible": true,
+    "journal_transaction_count_visible": true,
+    "known_mixed_unknown_basis_visible": true,
+    "missing_projection_is_not_zero": true,
+    "derived_projection_presented_as_source_of_truth": false
+  },
+  "import_workflow": {
+    "formats": [
+      "csv",
+      "nexora_json"
+    ],
+    "maximum_content_bytes": 1048576,
+    "dry_run_required": true,
+    "normalized_row_preview": true,
+    "duplicate_count_visible": true,
+    "quarantine_count_visible": true,
+    "content_sha256_visible": true,
+    "owner_review_reason_required": true,
+    "atomic_publication": true,
+    "partial_publication": false,
+    "quarantined_batch_publication": false
+  },
+  "reconciliation_workflow": {
+    "states": [
+      "open",
+      "matched",
+      "accepted_difference",
+      "resolved",
+      "ignored_with_reason"
+    ],
+    "owner_reason_required": true,
+    "optimistic_row_version_sent": true,
+    "append_only_decision_evidence": true,
+    "automatic_destructive_fix": false,
+    "automatic_journal_correction": false
+  },
+  "state_model": {
+    "states": [
+      "loading",
+      "ready",
+      "empty",
+      "error",
+      "projection_missing",
+      "mutation_pending",
+      "reauthentication_required"
+    ],
+    "portfolio_selection_reloads_owner_scoped_evidence": true,
+    "failed_mutation_preserves_visible_evidence": true,
+    "sensitive_actions_fail_closed": true,
+    "session_expiry_uses_existing_shell_recovery": true
+  },
+  "accessibility": {
+    "semantic_headings": true,
+    "aria_tablist": true,
+    "labelled_forms": true,
+    "keyboard_navigation": true,
+    "visible_focus": true,
+    "minimum_interactive_target_css_pixels": 44,
+    "status_not_conveyed_by_color_only": true,
+    "reduced_motion_respected": true,
+    "mobile_horizontal_page_overflow": false
+  },
+  "security_boundary": {
+    "public_internet_deployment": false,
+    "multi_user": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P2-11-FREEZE",
+    "post_freeze_stage": "NEX-P2-12",
+    "p2_12_before_phase_two_acceptance": true
+  }
+}

@@ -1,0 +1,102 @@
+name: Transactions holdings and reconciliation UI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  portfolio-operations-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify frozen P2-10 prerequisite
+        run: python3 scripts/verify_portfolio_dashboard_accounts.py
+      - name: Verify P2-11 transactions holdings and reconciliation UI contract
+        run: python3 scripts/verify_transactions_holdings_reconciliation_ui.py
+      - name: Run repository contract tests
+        run: python3 -m unittest discover -s tests -v
+
+  backend-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.13.4"
+          enable-cache: true
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.13
+      - name: Check backend and P2-11 contract format
+        run: >-
+          uv run ruff format --check apps/server alembic
+          scripts/verify_transactions_holdings_reconciliation_ui.py
+          tests/test_transactions_holdings_reconciliation_ui_contract.py
+      - name: Lint backend and P2-11 contracts
+        run: >-
+          uv run ruff check apps/server alembic
+          scripts/verify_transactions_holdings_reconciliation_ui.py
+          tests/test_transactions_holdings_reconciliation_ui_contract.py
+      - name: Typecheck backend
+        run: uv run mypy
+      - name: Run backend tests
+        run: uv run pytest -m "not integration" -q
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Build Web
+        run: pnpm build
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Test P2-11 browser acceptance
+        run: pnpm --filter @nexora/web test:e2e

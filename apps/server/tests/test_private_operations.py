@@ -138,7 +138,10 @@ def test_backup_verification_rejects_path_traversal_identifier(tmp_path: Path) -
 
 
 def test_retention_dry_run_then_apply_never_deletes_protected_evidence(tmp_path: Path) -> None:
-    storage = LocalFilesystemArtifactStorage(ArtifactStorageSettings(root=tmp_path / "artifacts"))
+    storage = LocalFilesystemArtifactStorage(
+        ArtifactStorageSettings(root=tmp_path / "artifacts"),
+        disk_usage=lambda _: (200 * 1024**3, 20 * 1024**3, 180 * 1024**3),
+    )
     expired = _request(
         namespace=ArtifactNamespace.EXPORT,
         retention=RetentionClass.UNPINNED_EXPORT,

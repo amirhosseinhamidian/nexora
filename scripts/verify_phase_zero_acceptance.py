@@ -8,7 +8,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-phase-zero-acceptance.json"
 MATRIX_PATH = ROOT / "contracts" / "acceptance" / "v1" / "phase-zero-traceability.json"
@@ -154,8 +153,7 @@ def validate_prerequisites(prerequisites: Any) -> None:
     _require(isinstance(prerequisites, list), "frozen_prerequisites must be an array")
     _require(len(prerequisites) == 4, "exactly four frozen prerequisites are required")
     _require(
-        [item.get("decision_id") for item in prerequisites if isinstance(item, dict)]
-        == list(EXPECTED_PREREQUISITES),
+        [item.get("decision_id") for item in prerequisites if isinstance(item, dict)] == list(EXPECTED_PREREQUISITES),
         "prerequisites must preserve the P0-01 through P0-04 order",
     )
     for item in prerequisites:
@@ -207,12 +205,16 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
     product = contract.get("product")
     _require(isinstance(product, dict), "product must be an object")
-    _require(product == {
-        "name": "Nexora",
-        "version": "0.1.0",
-        "edition": "personal",
-        "operating_model": "single_owner",
-    }, "product boundary has drifted")
+    _require(
+        product
+        == {
+            "name": "Nexora",
+            "version": "0.1.0",
+            "edition": "personal",
+            "operating_model": "single_owner",
+        },
+        "product boundary has drifted",
+    )
 
     phase = contract.get("phase")
     _require(isinstance(phase, dict), "phase must be an object")
@@ -237,7 +239,10 @@ def validate_contract(contract: dict[str, Any]) -> None:
     operations = supplemental[0]
     _require(operations.get("id") == "NEX-P0-EVIDENCE-OPERATIONS", "invalid operational evidence ID")
     _require(operations.get("schema_version") == "nexora-private-operations-policy-v1", "invalid operations schema")
-    _require(operations.get("checksum") == "59f43b15ba53bb37b86897a6207b35ebdc9962b5a209720fb1c49671daee70bd", "operational evidence checksum drift")
+    _require(
+        operations.get("checksum") == "59f43b15ba53bb37b86897a6207b35ebdc9962b5a209720fb1c49671daee70bd",
+        "operational evidence checksum drift",
+    )
     operations_payload = _load_json(_safe_repository_file(operations.get("path"), "operational evidence"))
     _require(canonical_checksum(operations_payload) == operations["checksum"], "operational policy content drift")
 
@@ -246,7 +251,11 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(summary.get("matrix_schema_version") == "nexora-phase-zero-traceability-v1", "matrix schema mismatch")
     _require(summary.get("required_requirement_count") == 12, "exactly twelve acceptance requirements are required")
     _require(summary.get("required_status") == "pass", "acceptance status must be pass")
-    for key in ("all_decisions_require_owner", "all_requirements_require_evidence", "all_requirements_require_automated_verifier"):
+    for key in (
+        "all_decisions_require_owner",
+        "all_requirements_require_evidence",
+        "all_requirements_require_automated_verifier",
+    ):
         _require(summary.get(key) is True, f"acceptance summary requires {key}")
     _require(summary.get("unresolved_phase_zero_blockers") == 0, "Phase 0 blockers remain unresolved")
 
@@ -261,14 +270,20 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "NEX-DEFER-FUTURE-ML",
     }
     _require(isinstance(deferred, list), "deferred_decisions must be an array")
-    _require({item.get("id") for item in deferred if isinstance(item, dict)} == expected_deferred, "deferred decision inventory has drifted")
+    _require(
+        {item.get("id") for item in deferred if isinstance(item, dict)} == expected_deferred,
+        "deferred decision inventory has drifted",
+    )
     for item in deferred:
         _require(bool(item.get("owner")), f"deferred decision owner is required: {item.get('id')}")
         _require(bool(item.get("decision")), f"deferred decision description is required: {item.get('id')}")
         _require(bool(item.get("phase_zero_boundary")), f"deferred boundary is required: {item.get('id')}")
 
     security = contract.get("security_boundary")
-    _require(isinstance(security, dict) and set(security) == EXPECTED_SECURITY_KEYS, "security boundary inventory has drifted")
+    _require(
+        isinstance(security, dict) and set(security) == EXPECTED_SECURITY_KEYS,
+        "security boundary inventory has drifted",
+    )
     for key in EXPECTED_SECURITY_KEYS:
         _require(security.get(key) is False, f"forbidden capability enabled: {key}")
 
@@ -290,7 +305,9 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(transition.get("runtime_bootstrap_authorized") is False, "runtime bootstrap requires the final freeze")
     _require(transition.get("next_allowed_stage") == "NEX-P0-05-FREEZE", "next stage must be P0-05 freeze")
     _require(transition.get("post_freeze_stage") == "NEX-P1-01", "post-freeze stage must be P1-01")
-    _require("candidate_SHA" in transition.get("authorization_condition", ""), "transition condition must bind candidate SHA")
+    _require(
+        "candidate_SHA" in transition.get("authorization_condition", ""), "transition condition must bind candidate SHA"
+    )
 
 
 def validate_matrix(matrix: dict[str, Any], contract: dict[str, Any]) -> None:
@@ -300,7 +317,10 @@ def validate_matrix(matrix: dict[str, Any], contract: dict[str, Any]) -> None:
     requirements = matrix.get("requirements")
     expected_ids = [f"NEX-P0-REQ-{index:03d}" for index in range(1, 13)]
     _require(isinstance(requirements, list) and len(requirements) == 12, "traceability matrix requires twelve rows")
-    _require([item.get("id") for item in requirements if isinstance(item, dict)] == expected_ids, "requirement IDs must be unique and ordered")
+    _require(
+        [item.get("id") for item in requirements if isinstance(item, dict)] == expected_ids,
+        "requirement IDs must be unique and ordered",
+    )
 
     covered_decisions: set[str] = set()
     for requirement in requirements:
@@ -309,8 +329,13 @@ def validate_matrix(matrix: dict[str, Any], contract: dict[str, Any]) -> None:
         _require(bool(requirement.get("owner")), f"requirement owner is missing: {requirement_id}")
         _require(requirement.get("status") == "pass", f"requirement is not accepted: {requirement_id}")
         source_decisions = requirement.get("source_decisions")
-        _require(isinstance(source_decisions, list) and source_decisions, f"source decision is missing: {requirement_id}")
-        _require(set(source_decisions) <= {"NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"}, f"unknown source decision: {requirement_id}")
+        _require(
+            isinstance(source_decisions, list) and source_decisions, f"source decision is missing: {requirement_id}"
+        )
+        _require(
+            set(source_decisions) <= {"NEX-P0-01", "NEX-P0-02", "NEX-P0-03", "NEX-P0-04", "NEX-P0-05"},
+            f"unknown source decision: {requirement_id}",
+        )
         covered_decisions.update(source_decisions)
         evidence = requirement.get("evidence")
         _require(isinstance(evidence, list) and len(evidence) >= 2, f"durable evidence is incomplete: {requirement_id}")
@@ -345,8 +370,7 @@ def validate_freeze_record(
     _require(record.get("decision_id") == "NEX-P0-05", "invalid freeze decision ID")
     _require(record.get("repository") == "amirhosseinhamidian/nexora", "invalid repository")
     _require(
-        record.get("candidate_commit_sha")
-        == "20cf4eacc095d19711b3b80f518c56019445e87e",
+        record.get("candidate_commit_sha") == "20cf4eacc095d19711b3b80f518c56019445e87e",
         "candidate SHA does not match accepted P0-05 evidence",
     )
     _require(
@@ -354,8 +378,7 @@ def validate_freeze_record(
         "candidate SHA must be a full lowercase Git SHA",
     )
     _require(
-        record.get("candidate_commit_message")
-        == "docs(nexora): establish P0-05 phase-zero acceptance",
+        record.get("candidate_commit_message") == "docs(nexora): establish P0-05 phase-zero acceptance",
         "candidate commit message does not match accepted evidence",
     )
 
@@ -363,8 +386,7 @@ def validate_freeze_record(
     _require(isinstance(actions, dict), "github_actions must be an object")
     _require(actions.get("run_id") == 40080625175, "invalid GitHub Actions run ID")
     _require(
-        actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40080625175",
+        actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/40080625175",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(
@@ -448,8 +470,7 @@ def validate_freeze_record(
     _require(prerequisite.get("decision_id") == "NEX-P0-04", "invalid security prerequisite")
     _require(prerequisite.get("frozen") is True, "security prerequisite is not frozen")
     _require(
-        prerequisite.get("contract_checksum")
-        == security_module.canonical_checksum(security_contract),
+        prerequisite.get("contract_checksum") == security_module.canonical_checksum(security_contract),
         "security prerequisite checksum mismatch",
     )
 
@@ -485,7 +506,13 @@ def validate_documents() -> None:
     missing = [marker for marker in markers if marker not in document]
     _require(not missing, f"acceptance document is missing markers: {missing}")
     adr = ADR_PATH.read_text(encoding="utf-8")
-    for marker in ("Status: Accepted and frozen by NEX-P0-05", "## Decision", "## Consequences", "candidate SHA", "NEX-P1-01"):
+    for marker in (
+        "Status: Accepted and frozen by NEX-P0-05",
+        "## Decision",
+        "## Consequences",
+        "candidate SHA",
+        "NEX-P1-01",
+    ):
         _require(marker in adr, f"transition ADR is missing marker: {marker}")
 
 

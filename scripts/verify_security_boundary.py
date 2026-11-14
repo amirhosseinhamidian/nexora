@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-security-boundary.json"
 SECURITY_BASE = ROOT / "contracts" / "security" / "v1"

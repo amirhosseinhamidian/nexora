@@ -7,7 +7,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts" / "nexora-v0.1-technical-baseline.json"
 DOCUMENT_PATH = ROOT / "docs" / "v0.1" / "01-technical-baseline-and-repository-architecture.md"
@@ -98,8 +97,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
         "candidate SHA does not match accepted P0-02 evidence",
     )
     _require(
-        record.get("candidate_commit_message")
-        == "docs(nexora): establish P0-02 technical baseline",
+        record.get("candidate_commit_message") == "docs(nexora): establish P0-02 technical baseline",
         "candidate commit message does not match accepted evidence",
     )
 
@@ -107,8 +105,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     _require(isinstance(github_actions, dict), "github_actions must be an object")
     _require(github_actions.get("run_id") == 39770872404, "invalid GitHub Actions run ID")
     _require(
-        github_actions.get("run_url")
-        == "https://github.com/amirhosseinhamidian/nexora/actions/runs/39770872404",
+        github_actions.get("run_url") == "https://github.com/amirhosseinhamidian/nexora/actions/runs/39770872404",
         "GitHub Actions URL does not match the accepted run",
     )
     _require(github_actions.get("conclusion") == "success", "workflow was not successful")
@@ -173,8 +170,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     )
     _require(scope_prerequisite.get("frozen") is True, "scope prerequisite is not frozen")
     _require(
-        scope_prerequisite.get("contract_checksum")
-        == scope_verifier.canonical_checksum(scope_contract),
+        scope_prerequisite.get("contract_checksum") == scope_verifier.canonical_checksum(scope_contract),
         "scope prerequisite checksum mismatch",
     )
 
@@ -322,11 +318,7 @@ def validate_layout(contract: dict[str, Any]) -> None:
 def validate_layers(contract: dict[str, Any]) -> None:
     layers = contract.get("server_layers")
     _require(isinstance(layers, list), "server_layers must be an array")
-    actual = {
-        entry.get("name"): set(entry.get("may_depend_on", []))
-        for entry in layers
-        if isinstance(entry, dict)
-    }
+    actual = {entry.get("name"): set(entry.get("may_depend_on", [])) for entry in layers if isinstance(entry, dict)}
     expected = {
         "domain": set(),
         "application": {"domain"},
@@ -483,8 +475,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
     validate_debt_and_security(contract)
     validate_quality_and_dependency_policy(contract)
     _require(
-        contract.get("bootstrap_sequence")
-        == ["NEX-P0-03", "NEX-P0-04", "NEX-P0-05", "NEX-P1-01"],
+        contract.get("bootstrap_sequence") == ["NEX-P0-03", "NEX-P0-04", "NEX-P0-05", "NEX-P1-01"],
         "bootstrap sequence does not preserve the Phase 0 gate",
     )
     _require(

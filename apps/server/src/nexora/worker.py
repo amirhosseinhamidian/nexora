@@ -94,7 +94,12 @@ def main(argv: Sequence[str] | None = None, environ: Mapping[str, str] | None = 
                 return 0
             if not arguments.worker_id:
                 raise SystemExit("--worker-id is required with --once or --run")
-            handlers = TrdBotSyncHandlers(container.trd_bot_client)
+            if container.decision_event_projection_repository is None:
+                raise SystemExit("decision projection repository is unavailable")
+            handlers = TrdBotSyncHandlers(
+                container.trd_bot_client,
+                container.decision_event_projection_repository,
+            )
             worker = DurableWorker(
                 container.durable_work_repository,
                 handlers.registry(),

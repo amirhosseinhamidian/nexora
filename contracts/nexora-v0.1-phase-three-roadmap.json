@@ -1,0 +1,192 @@
+{
+  "schema_version": "nexora-phase-three-roadmap-v1",
+  "decision_id": "NEX-P3-00",
+  "decision_date": "2026-11-04",
+  "status": "candidate",
+  "title": "Phase 3 roadmap and deferred deployment amendment",
+  "phase_two_prerequisite": {
+    "decision_id": "NEX-P2-12",
+    "frozen": true,
+    "freeze_commit_sha": "ffe5b1b50c6eb7b09bfe052ad96038de47b779df",
+    "accepted_candidate_commit_sha": "f71ef1840c09b12259ef519bd27ffd508b1913f2",
+    "acceptance_record_path": "artifacts/p2-12/phase-two-final-acceptance.json",
+    "acceptance_record_canonical_checksum": "1fcf0bacdf223c3b5186e0bc2a1f8e763dc66a2c3e532d76f8073386456049e9",
+    "acceptance_record_checksum": "114a660b358ba58e16cc3f2b885c20cc72d0b20e0d425f5c266dd2120c0daedb",
+    "phase_two_scope_accepted": true,
+    "production_readiness_claimed": false
+  },
+  "roadmap_amendment": {
+    "local_development_may_continue": true,
+    "local_acceptance_may_freeze_phase_scope": true,
+    "local_acceptance_is_production_acceptance": false,
+    "server_acceptance_is_removed": false,
+    "server_acceptance_is_bypassed": false,
+    "production_deployment_blocked": true,
+    "v0_1_release_blocked": true,
+    "reason": "The planned private VPS is not yet available; domain, integration, UI and export work may continue without weakening the deployment gate."
+  },
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "planned_host_type": "private_vps",
+    "planned_country_code": "DE",
+    "required_before": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "required_evidence_unchanged": true,
+    "production_readiness_claimed": false
+  },
+  "phase_three_boundary": {
+    "title": "Decision Intelligence Experience",
+    "goal": "Turn portfolio evidence and compatible TRD Bot outputs into an explainable owner-reviewed daily decision workflow.",
+    "owner_model": "single_owner",
+    "deployment_model": "private_only",
+    "decision_evidence_is_immutable": true,
+    "human_review_is_separate_from_engine_recommendation": true,
+    "human_review_actions": [
+      "accept",
+      "reject",
+      "defer"
+    ],
+    "portfolio_impact_is_advisory": true,
+    "paper_shadow_only": true,
+    "live_execution": false,
+    "financial_advice_claimed": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false
+  },
+  "trd_bot_dependency": {
+    "current_release": "0.3.0",
+    "current_release_compatible": false,
+    "target_release": "0.3.1",
+    "target_purpose": "nexora_integration_compatibility",
+    "contract_freeze_may_proceed_without_provider": true,
+    "fixture_backed_development_may_proceed_without_provider": true,
+    "p3_03_freeze_requires_compatible_provider": true,
+    "provider_integration_smoke_required": true,
+    "direct_database_access": false,
+    "versioned_api_event_export_contract_required": true
+  },
+  "phase_three_roadmap": [
+    {
+      "stage_id": "NEX-P3-00",
+      "title": "Phase 3 Roadmap and Deferred Deployment Amendment",
+      "outcome": "Authorize bounded local continuation while preserving the blocking private-VPS gate.",
+      "status": "candidate"
+    },
+    {
+      "stage_id": "NEX-P3-01",
+      "title": "Decision, Review and Journal Domain Freeze",
+      "outcome": "Freeze decision evidence, owner review and outcome-journal invariants.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-02",
+      "title": "TRD Bot v0.3.1 Integration Contract",
+      "outcome": "Freeze the capabilities, snapshots, event feed, commands, resync and service-auth boundary.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-03",
+      "title": "Durable Decision and Event Projection",
+      "outcome": "Project compatible decision evidence with cursors, replay, quarantine and gap recovery.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-04",
+      "title": "Decision Feed and Candidate Details",
+      "outcome": "Expose owner-scoped decision and candidate evidence with complete source references.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-05",
+      "title": "Risk Gate Explanation and Reason Codes",
+      "outcome": "Explain policy version, checksum, uncertainty and every approval, rejection or deferral reason.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-06",
+      "title": "Portfolio Candidate Impact and Bounded What-if",
+      "outcome": "Show advisory exposure, concentration and bounded scenario impact without execution capability.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-07",
+      "title": "Human Accept, Reject and Defer Workflow",
+      "outcome": "Persist idempotent owner reviews with reasons, evidence version and optimistic concurrency.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-08",
+      "title": "Alert Inbox, Acknowledge and Snooze",
+      "outcome": "Deliver durable owner-scoped alert lifecycle without mutating source evidence.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-09",
+      "title": "Watchlist and Monitoring Preferences",
+      "outcome": "Persist owner watchlists and bounded presentation or monitoring preferences.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-10",
+      "title": "Decision and Outcome Journal",
+      "outcome": "Link decisions, reviews, observed outcomes and owner notes without rewriting historical evidence.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-11",
+      "title": "Phase 3 Export Coverage",
+      "outcome": "Extend private-complete and AI-safe exports across decisions, reviews, alerts, watchlists and outcomes.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-12",
+      "title": "UI Integration, Accessibility and End-to-end",
+      "outcome": "Deliver the bilingual responsive decision workflow with explicit empty, error and degraded states.",
+      "status": "planned"
+    },
+    {
+      "stage_id": "NEX-P3-13",
+      "title": "Phase 3 Acceptance and Freeze",
+      "outcome": "Bind migrations, projection recovery, exports, accessibility, browser and provider smoke evidence to one SHA.",
+      "status": "planned"
+    }
+  ],
+  "phase_three_acceptance": {
+    "migration_from_zero_required": true,
+    "backend_and_postgresql_required": true,
+    "frontend_and_browser_required": true,
+    "contract_and_schema_drift_checks_required": true,
+    "duplicate_replay_and_gap_recovery_required": true,
+    "fixture_end_to_end_required": true,
+    "compatible_provider_smoke_required": true,
+    "export_verification_required": true,
+    "accessibility_required": true,
+    "security_inventory_required": true,
+    "production_readiness_claimed": false
+  },
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-00-FREEZE",
+    "post_freeze_stage": "NEX-P3-01",
+    "candidate_commit_message": "docs(nexora): define Phase 3 roadmap and defer VPS gate",
+    "freeze_before_implementation": true,
+    "requires_successful_ci_on_candidate_sha": true
+  }
+}

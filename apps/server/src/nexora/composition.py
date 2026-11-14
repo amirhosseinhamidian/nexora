@@ -9,8 +9,17 @@ from sqlalchemy import Engine
 
 from nexora import __version__
 from nexora.adapters.postgresql import (
+    DecisionEventProjectionRepository,
     DurableWorkRepository,
+    HoldingsProjectionRepository,
+    ImportReconciliationRepository,
+    PaperShadowProjectionRepository,
+    PortfolioPerformanceRepository,
+    PortfolioRegistryRepository,
     PostgreSQLIdentityRepository,
+    PostgreSQLPortfolioExportSource,
+    TransactionJournalRepository,
+    ValuationEvidenceRepository,
     create_database_engine,
     create_session_factory,
 )
@@ -37,6 +46,7 @@ from nexora.observability import (
     create_runtime_observability,
     load_observability_settings,
 )
+from nexora.portfolio_export import PortfolioExportService, PortfolioExportSource
 from nexora.security_config import (
     AUTH_PEPPER_FILE_ENV,
     CANONICAL_ORIGIN_FILE_ENV,
@@ -72,6 +82,16 @@ class ApplicationContainer:
     database_engine: Engine | None = None
     identity_repository: PostgreSQLIdentityRepository | None = None
     durable_work_repository: DurableWorkRepository | None = None
+    decision_event_projection_repository: DecisionEventProjectionRepository | None = None
+    portfolio_registry_repository: PortfolioRegistryRepository | None = None
+    transaction_journal_repository: TransactionJournalRepository | None = None
+    import_reconciliation_repository: ImportReconciliationRepository | None = None
+    holdings_projection_repository: HoldingsProjectionRepository | None = None
+    valuation_evidence_repository: ValuationEvidenceRepository | None = None
+    portfolio_performance_repository: PortfolioPerformanceRepository | None = None
+    paper_shadow_projection_repository: PaperShadowProjectionRepository | None = None
+    portfolio_export_source: PortfolioExportSource | None = None
+    portfolio_export_service: PortfolioExportService | None = None
     security: SecuritySettings | None = None
     webauthn_verifier: WebAuthnCeremonyVerifier | None = None
     owner_identity_service: OwnerIdentityService | None = None
@@ -137,6 +157,9 @@ def compose_private_application(
     engine = create_database_engine(database_settings)
     session_factory = create_session_factory(engine)
     repository = PostgreSQLIdentityRepository(session_factory)
+    performance_repository = PortfolioPerformanceRepository(session_factory)
+    paper_shadow_repository = PaperShadowProjectionRepository(session_factory)
+    portfolio_export_source = PostgreSQLPortfolioExportSource(session_factory)
     verifier = webauthn_verifier or StandardWebAuthnVerifier()
     identity = RuntimeIdentity(
         service=SERVICE_NAME,
@@ -152,6 +175,16 @@ def compose_private_application(
         database_engine=engine,
         identity_repository=repository,
         durable_work_repository=DurableWorkRepository(session_factory),
+        decision_event_projection_repository=DecisionEventProjectionRepository(session_factory),
+        portfolio_registry_repository=PortfolioRegistryRepository(session_factory),
+        transaction_journal_repository=TransactionJournalRepository(session_factory),
+        import_reconciliation_repository=ImportReconciliationRepository(session_factory),
+        holdings_projection_repository=HoldingsProjectionRepository(session_factory),
+        valuation_evidence_repository=ValuationEvidenceRepository(session_factory),
+        portfolio_performance_repository=performance_repository,
+        paper_shadow_projection_repository=paper_shadow_repository,
+        portfolio_export_source=portfolio_export_source,
+        portfolio_export_service=PortfolioExportService(portfolio_export_source, artifact_storage),
         security=security,
         webauthn_verifier=verifier,
         owner_identity_service=OwnerIdentityService(repository, verifier, security),

@@ -14,12 +14,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from nexora.adapters.postgresql.models import (
     BackgroundJob,
+    DecisionProjectionState,
     ImmutableSourceEvidence,
     OutboxEvent,
     ProjectionCheckpoint,
     SourceReference,
     TrdBotSyncReceipt,
 )
+from nexora.decision_event_projection import DecisionProjectionRecord, PROJECTED_RESOURCES
 
 
 class DurableWorkError(RuntimeError):
@@ -128,12 +130,41 @@ class SyncReceiptWrite:
 
 
 @dataclass(frozen=True, slots=True)
+class DecisionProjectionQuarantineWrite:
+    resource_type: str
+    resource_id: str
+    source_schema_version: str
+    source_event_id: str | None
+    reason_code: str
+    payload: dict[str, Any]
+    payload_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionProjectionMutation:
+    generation: int
+    trigger: str
+    provider_version: str
+    contract_version: str
+    snapshots: tuple[DecisionProjectionRecord, ...] = field(default_factory=tuple)
+    events: tuple[DecisionProjectionRecord, ...] = field(default_factory=tuple)
+    resource_type: str | None = None
+    resource_item_count: int = 0
+    resource_quarantine_count: int = 0
+    resource_completed: bool = False
+    quarantine: tuple[DecisionProjectionQuarantineWrite, ...] = field(default_factory=tuple)
+    activate: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class JobCompletion:
     checkpoint: CheckpointAdvance | None = None
     outbox: tuple[OutboxMessage, ...] = field(default_factory=tuple)
     enqueue: tuple[EnqueuedJob, ...] = field(default_factory=tuple)
     source_evidence: tuple[SourceEvidenceWrite, ...] = field(default_factory=tuple)
     sync_receipts: tuple[SyncReceiptWrite, ...] = field(default_factory=tuple)
+    decision_projection: DecisionProjectionMutation | None = None
+    enqueue_after_projection_activation: tuple[EnqueuedJob, ...] = field(default_factory=tuple)
 
 
 class DurableWorkRepository:
@@ -297,12 +328,23 @@ class DurableWorkRepository:
                 self._append_sync_receipt(session, job.owner_id, receipt, completed_at)
             for evidence in result.source_evidence:
                 self._append_source_evidence(session, job.owner_id, evidence, completed_at)
+            projection_activated = False
+            if result.decision_projection is not None:
+                projection_activated = self._mutate_decision_projection(
+                    session,
+                    job.owner_id,
+                    result.decision_projection,
+                    completed_at,
+                )
             if result.checkpoint is not None:
                 self._advance_checkpoint(session, job.owner_id, result.checkpoint, completed_at)
             for message in result.outbox:
                 self._append_outbox(session, job, message, completed_at)
             for queued in result.enqueue:
                 self._enqueue_job(session, job.owner_id, queued, completed_at)
+            if projection_activated:
+                for queued in result.enqueue_after_projection_activation:
+                    self._enqueue_job(session, job.owner_id, queued, completed_at)
             job.status = "succeeded"
             job.lease_owner = None
             job.lease_expires_at = None
@@ -684,3 +726,175 @@ class DurableWorkRepository:
             )
             .on_conflict_do_nothing(index_elements=[ImmutableSourceEvidence.source_reference_id])
         )
+
+    @staticmethod
+    def _mutate_decision_projection(
+        session: Session,
+        owner_id: UUID,
+        mutation: DecisionProjectionMutation,
+        now: datetime,
+    ) -> bool:
+        state = session.execute(
+            select(DecisionProjectionState)
+            .where(
+                DecisionProjectionState.owner_id == owner_id,
+                DecisionProjectionState.generation == mutation.generation,
+            )
+            .with_for_update()
+        ).scalar_one_or_none()
+        if state is None:
+            if mutation.events:
+                raise DurableWorkError("event projection requires an active snapshot generation")
+            state = DecisionProjectionState(
+                projection_state_id=uuid4(),
+                owner_id=owner_id,
+                generation=mutation.generation,
+                status="staging",
+                trigger=mutation.trigger,
+                provider_version=mutation.provider_version,
+                contract_version=mutation.contract_version,
+                projection={},
+                resource_progress={},
+                aggregate_versions={},
+                quarantine=[],
+                created_at=now,
+                updated_at=now,
+            )
+            session.add(state)
+            session.flush()
+        identity = (state.trigger, state.provider_version, state.contract_version)
+        expected_identity = (mutation.trigger, mutation.provider_version, mutation.contract_version)
+        if identity != expected_identity:
+            raise IdempotencyConflict("decision projection generation identity changed")
+        if mutation.snapshots and state.status != "staging":
+            raise DurableWorkError("decision snapshot generation is not staging")
+        if mutation.events and state.status != "active":
+            raise DurableWorkError("decision event generation is not active")
+
+        projection = dict(state.projection)
+        aggregates = dict(state.aggregate_versions)
+        for record in mutation.snapshots:
+            key = f"{record.resource_type.value}:{record.resource_id}"
+            encoded = record.model_dump(mode="json")
+            existing = projection.get(key)
+            if existing is not None and existing != encoded:
+                raise IdempotencyConflict("snapshot identity was replayed with different evidence")
+            projection[key] = encoded
+            if record.aggregate_version is not None:
+                aggregate_key = f"{record.aggregate_type}:{record.aggregate_id}"
+                current = aggregates.get(aggregate_key)
+                if not isinstance(current, dict) or record.aggregate_version > current.get("version", 0):
+                    aggregates[aggregate_key] = {
+                        "version": record.aggregate_version,
+                        "event_id": record.source_event_id,
+                        "payload_sha256": record.payload_sha256,
+                    }
+
+        for record in mutation.events:
+            if (
+                record.aggregate_type is None
+                or record.aggregate_id is None
+                or record.aggregate_version is None
+                or record.source_event_id is None
+            ):
+                raise DurableWorkError("decision event aggregate lineage is incomplete")
+            aggregate_key = f"{record.aggregate_type}:{record.aggregate_id}"
+            current = aggregates.get(aggregate_key)
+            current_version = 0 if not isinstance(current, dict) else current.get("version", 0)
+            if not isinstance(current_version, int):
+                raise DurableWorkError("stored aggregate version is invalid")
+            if record.aggregate_version <= current_version:
+                if (
+                    isinstance(current, dict)
+                    and record.aggregate_version == current_version
+                    and current.get("event_id") == record.source_event_id
+                    and current.get("payload_sha256") == record.payload_sha256
+                ):
+                    continue
+                raise IdempotencyConflict("aggregate version was replayed with different evidence")
+            if record.aggregate_version != current_version + 1:
+                raise CheckpointConflict(
+                    f"decision aggregate gap: expected {current_version + 1}, "
+                    f"received {record.aggregate_version}"
+                )
+            projection[f"{record.resource_type.value}:{record.resource_id}"] = record.model_dump(mode="json")
+            aggregates[aggregate_key] = {
+                "version": record.aggregate_version,
+                "event_id": record.source_event_id,
+                "payload_sha256": record.payload_sha256,
+            }
+
+        progress = dict(state.resource_progress)
+        if mutation.resource_type is not None:
+            prior = progress.get(mutation.resource_type, {})
+            if not isinstance(prior, dict) or prior.get("complete") is True:
+                if prior:
+                    raise IdempotencyConflict("completed snapshot resource received another page")
+                prior = {}
+            progress[mutation.resource_type] = {
+                "items": int(prior.get("items", 0)) + mutation.resource_item_count,
+                "quarantined": int(prior.get("quarantined", 0))
+                + mutation.resource_quarantine_count,
+                "complete": mutation.resource_completed,
+            }
+
+        quarantine = list(state.quarantine)
+        known_quarantine = {
+            (item.get("resource_type"), item.get("resource_id"), item.get("payload_sha256"), item.get("reason_code"))
+            for item in quarantine
+            if isinstance(item, dict)
+        }
+        for item in mutation.quarantine:
+            if canonical_payload_sha256(item.payload) != item.payload_sha256:
+                raise DurableWorkError("quarantine payload checksum mismatch")
+            identity_key = (
+                item.resource_type,
+                item.resource_id,
+                item.payload_sha256,
+                item.reason_code,
+            )
+            if identity_key not in known_quarantine:
+                quarantine.append(
+                    {
+                        "resource_type": item.resource_type,
+                        "resource_id": item.resource_id,
+                        "source_schema_version": item.source_schema_version,
+                        "source_event_id": item.source_event_id,
+                        "reason_code": item.reason_code,
+                        "payload": item.payload,
+                        "payload_sha256": item.payload_sha256,
+                        "recorded_at": now.isoformat(),
+                    }
+                )
+                known_quarantine.add(identity_key)
+
+        state.projection = projection
+        state.aggregate_versions = aggregates
+        state.resource_progress = progress
+        state.quarantine = quarantine
+        state.updated_at = now
+        if not mutation.activate:
+            return False
+        required = {resource.value for resource in PROJECTED_RESOURCES}
+        if set(progress) != required or any(
+            not isinstance(progress[name], dict) or progress[name].get("complete") is not True
+            for name in required
+        ):
+            raise DurableWorkError("decision projection activation is missing completed snapshot resources")
+        if quarantine or any(progress[name].get("quarantined", 0) for name in required):
+            state.status = "rejected"
+            return False
+        session.execute(
+            update(DecisionProjectionState)
+            .where(
+                DecisionProjectionState.owner_id == owner_id,
+                DecisionProjectionState.status == "active",
+            )
+            .values(status="superseded", updated_at=now)
+        )
+        state.status = "active"
+        state.projection_sha256 = canonical_payload_sha256(
+            {key: projection[key] for key in sorted(projection)}
+        )
+        state.activated_at = now
+        return True

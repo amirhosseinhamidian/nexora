@@ -1,0 +1,147 @@
+{
+  "schema_version": "nexora-portfolio-registry-contract-v1",
+  "decision_id": "NEX-P2-02",
+  "decision_date": "2026-10-31",
+  "status": "candidate",
+  "title": "Owner-scoped portfolio, asset and account registry",
+  "prerequisite": {
+    "decision_id": "NEX-P2-01",
+    "freeze_commit_sha": "e82731b9ab50ca7ca0911250f71bf9096a89b314",
+    "accepted_candidate_commit_sha": "5fad7e9f49a48fb3068634ee8ae6621af8cc6ec1",
+    "artifact_path": "artifacts/p2-01/portfolio-domain-roadmap-freeze.json",
+    "artifact_checksum": "ab48298be9ba8b7ddb66b9857f191d64f123499d0ef4ac494f065bc16b8c6515",
+    "frozen": true
+  },
+  "scope": {
+    "owner_model": "single_owner_session_derived",
+    "entities": [
+      "asset",
+      "asset_identifier",
+      "portfolio",
+      "account"
+    ],
+    "physical_delete_exposed": false,
+    "transaction_journal_included": false,
+    "holdings_projection_included": false,
+    "valuation_included": false
+  },
+  "asset_registry": {
+    "classes": [
+      "crypto",
+      "fiat",
+      "equity",
+      "fund",
+      "commodity",
+      "other"
+    ],
+    "identifier_schemes": [
+      "iso_4217",
+      "ticker",
+      "coingecko",
+      "isin",
+      "cusip",
+      "figi",
+      "manual"
+    ],
+    "precision_range": [
+      0,
+      30
+    ],
+    "statuses": [
+      "active",
+      "inactive"
+    ],
+    "identifier_unique_per_owner_scheme_value": true,
+    "optimistic_concurrency": true
+  },
+  "portfolio_registry": {
+    "kinds": [
+      "personal",
+      "paper",
+      "shadow"
+    ],
+    "statuses": [
+      "active",
+      "archived"
+    ],
+    "active_owner_scoped_base_asset_required": true,
+    "optimistic_concurrency": true
+  },
+  "account_registry": {
+    "kinds": [
+      "exchange",
+      "wallet_watch_only",
+      "cash",
+      "brokerage_manual",
+      "paper",
+      "shadow",
+      "other_manual"
+    ],
+    "statuses": [
+      "active",
+      "closed"
+    ],
+    "active_owner_scoped_portfolio_required": true,
+    "credentials_supported": false,
+    "wallet_signing_material_supported": false,
+    "optimistic_concurrency": true
+  },
+  "persistence": {
+    "migration_revision": "20261031_0006",
+    "tables": [
+      "nexora.assets",
+      "nexora.asset_identifiers",
+      "nexora.portfolios",
+      "nexora.accounts"
+    ],
+    "owner_scope_on_every_table": true,
+    "composite_owner_foreign_keys": true,
+    "timezone_aware_timestamps": true,
+    "row_version_on_lifecycle_roots": true,
+    "database_constraints_required": true,
+    "upgrade_downgrade_rebuild_drift_cycle_required": true
+  },
+  "runtime_api": {
+    "authentication": "opaque_owner_session",
+    "csrf_for_mutations": true,
+    "owner_id_accepted_from_request": false,
+    "unknown_fields_rejected": true,
+    "operations": [
+      "POST /v1/assets",
+      "GET /v1/assets",
+      "POST /v1/assets/{asset_id}/identifiers",
+      "POST /v1/assets/{asset_id}/deactivate",
+      "POST /v1/portfolios",
+      "GET /v1/portfolios",
+      "GET /v1/portfolios/{portfolio_id}",
+      "POST /v1/portfolios/{portfolio_id}/archive",
+      "POST /v1/accounts",
+      "GET /v1/accounts",
+      "POST /v1/accounts/{account_id}/close"
+    ],
+    "not_found_is_owner_opaque": true,
+    "lifecycle_mutations_require_expected_row_version": true
+  },
+  "forbidden_capabilities": {
+    "transaction_journal": false,
+    "exchange_credentials": false,
+    "wallet_private_keys": false,
+    "wallet_seed_phrases": false,
+    "wallet_signing": false,
+    "fund_transfer": false,
+    "live_orders": false,
+    "direct_trd_bot_database_access": false,
+    "multi_user": false,
+    "saas": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P2-02-FREEZE",
+    "post_freeze_stage": "NEX-P2-03",
+    "candidate_commit_message": "feat(nexora): implement P2-02 portfolio registry",
+    "freeze_commit_message": "chore(nexora): freeze P2-02 portfolio registry",
+    "requires_successful_ci_on_candidate_sha": true,
+    "freeze_before_transaction_journal": true
+  }
+}

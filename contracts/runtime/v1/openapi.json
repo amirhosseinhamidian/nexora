@@ -3315,6 +3315,28 @@
         "title": "ProjectionLineageResponse",
         "type": "object"
       },
+      "ProviderReasonCodeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "namespace": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ProviderReasonCodeResponse",
+        "type": "object"
+      },
       "ProviderState": {
         "enum": [
           "ready",
@@ -3831,6 +3853,319 @@
           "reason"
         ],
         "title": "ReverseTransactionRequest",
+        "type": "object"
+      },
+      "RiskCheckResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_value": {
+            "title": "Actual Value",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "limit_value": {
+            "title": "Limit Value",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "passed",
+          "actual_value",
+          "limit_value",
+          "explanation"
+        ],
+        "title": "RiskCheckResponse",
+        "type": "object"
+      },
+      "RiskGateDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ProviderStatusResponse"
+          },
+          "risk_gate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskGateExplanationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schema_version": {
+            "const": "nexora-risk-gate-explanation-v1",
+            "default": "nexora-risk-gate-explanation-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "risk_gate"
+        ],
+        "title": "RiskGateDetailResponse",
+        "type": "object"
+      },
+      "RiskGateExplanationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Candidate Id"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RiskCheckResponse"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "disposition": {
+            "enum": [
+              "accepted",
+              "rejected"
+            ],
+            "title": "Disposition",
+            "type": "string"
+          },
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          },
+          "evaluation_id": {
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evidence_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Evidence Sha256",
+            "type": "string"
+          },
+          "external_order_submission_allowed": {
+            "const": false,
+            "default": false,
+            "title": "External Order Submission Allowed",
+            "type": "boolean"
+          },
+          "offline_only": {
+            "const": true,
+            "default": true,
+            "title": "Offline Only",
+            "type": "boolean"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/RiskPolicyResponse"
+          },
+          "position_sizing_exposed": {
+            "const": false,
+            "default": false,
+            "title": "Position Sizing Exposed",
+            "type": "boolean"
+          },
+          "provider_reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderReasonCodeResponse"
+            },
+            "title": "Provider Reason Codes",
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RiskSourceReferenceResponse"
+          },
+          "uncertainty": {
+            "$ref": "#/components/schemas/RiskUncertaintyResponse"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "decision",
+          "disposition",
+          "candidate_id",
+          "approved_candidate_id",
+          "policy",
+          "provider_reason_codes",
+          "checks",
+          "uncertainty",
+          "evaluated_at",
+          "source",
+          "evidence_sha256"
+        ],
+        "title": "RiskGateExplanationResponse",
+        "type": "object"
+      },
+      "RiskPolicyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "checksum"
+        ],
+        "title": "RiskPolicyResponse",
+        "type": "object"
+      },
+      "RiskSourceReferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Id"
+          },
+          "aggregate_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Type"
+          },
+          "aggregate_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Version"
+          },
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_schema_version": {
+            "const": "trd-bot-risk-gate-v1",
+            "title": "Resource Schema Version",
+            "type": "string"
+          },
+          "resource_type": {
+            "const": "risk_gate",
+            "default": "risk_gate",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-source-reference-v1",
+            "default": "nexora-source-reference-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_product": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Source Product",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version",
+          "resource_id",
+          "resource_schema_version",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "RiskSourceReferenceResponse",
+        "type": "object"
+      },
+      "RiskUncertaintyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "reason_code": {
+            "const": "TRD_BOT_RISK_UNCERTAINTY_NOT_SUPPLIED",
+            "default": "TRD_BOT_RISK_UNCERTAINTY_NOT_SUPPLIED",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "state": {
+            "const": "not_supplied",
+            "default": "not_supplied",
+            "title": "State",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "null"
+          }
+        },
+        "title": "RiskUncertaintyResponse",
         "type": "object"
       },
       "SessionResponse": {
@@ -10503,6 +10838,147 @@
           }
         },
         "summary": "Decide Reconciliation Case"
+      }
+    },
+    "/v1/risk-gates/{evaluation_id}": {
+      "get": {
+        "operationId": "getRiskGateExplanation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskGateDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Risk Gate Explanation"
       }
     },
     "/v1/transactions": {

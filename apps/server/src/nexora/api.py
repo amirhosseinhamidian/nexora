@@ -149,6 +149,12 @@ from nexora.portfolio_export_contracts import (
     PortfolioExportManifestResponse,
 )
 from nexora.portfolio_registry import RegistryConflict, RegistryNotFound
+from nexora.risk_gate_explanation import (
+    RiskGateDetailResponse,
+    RiskGateEvidenceInvalid,
+    RiskGateEvidenceNotFound,
+    RiskGateExplanationService,
+)
 from nexora.runtime_contracts import (
     ActionRequest,
     ActionResponse,
@@ -763,6 +769,24 @@ def create_app(
             message="decision feed request is invalid",
         )
 
+    @application.exception_handler(RiskGateEvidenceNotFound)
+    async def risk_gate_evidence_not_found(request: Request, _: RiskGateEvidenceNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="RISK_GATE_EVIDENCE_NOT_FOUND",
+            message="risk gate evidence is unavailable",
+        )
+
+    @application.exception_handler(RiskGateEvidenceInvalid)
+    async def risk_gate_evidence_invalid(request: Request, _: RiskGateEvidenceInvalid) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="RISK_GATE_EVIDENCE_INVALID",
+            message="risk gate evidence failed validation",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1052,6 +1076,12 @@ def create_app(
         if repository is None:
             raise CeremonyUnavailable("decision projection runtime is not configured")
         return DecisionFeedService(repository, resolved_container.trd_bot_integration_mode)
+
+    def risk_gate_explanations() -> RiskGateExplanationService:
+        repository = resolved_container.decision_event_projection_repository
+        if repository is None:
+            raise CeremonyUnavailable("decision projection runtime is not configured")
+        return RiskGateExplanationService(repository, resolved_container.trd_bot_integration_mode)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1378,6 +1408,18 @@ def create_app(
     ) -> CandidateDetailResponse:
         _, session = require_session(request)
         return decision_feed().candidate_detail(session.owner_id, candidate_id)
+
+    @application.get(
+        "/v1/risk-gates/{evaluation_id}",
+        response_model=RiskGateDetailResponse,
+        operation_id="getRiskGateExplanation",
+    )
+    def get_risk_gate_explanation(
+        request: Request,
+        evaluation_id: str = Path(min_length=1, max_length=160),
+    ) -> RiskGateDetailResponse:
+        _, session = require_session(request)
+        return risk_gate_explanations().detail(session.owner_id, evaluation_id)
 
     @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")
     def list_assets(request: Request) -> AssetListResponse:

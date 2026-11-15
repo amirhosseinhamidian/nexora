@@ -129,7 +129,7 @@ def _decode_cursor(cursor: str, generation: int, evidence_sha256: str) -> int:
     return offset
 
 
-def _status(
+def provider_status(
     mode: TrdBotIntegrationMode | None,
     snapshot: ActiveDecisionProjection | None,
     *,
@@ -231,7 +231,7 @@ class DecisionFeedService:
     def list_feed(self, owner_id: UUID, *, limit: int, cursor: str | None) -> DecisionFeedResponse:
         snapshot = self._repository.active_snapshot(owner_id)
         records = None if snapshot is None else _visible_records(snapshot)
-        provider = _status(self._integration_mode, snapshot, invalid=snapshot is not None and records is None)
+        provider = provider_status(self._integration_mode, snapshot, invalid=snapshot is not None and records is None)
         if snapshot is None or records is None:
             return DecisionFeedResponse(provider=provider, items=[])
         evidence_sha256 = canonical_json_sha256([record.model_dump(mode="json") for record in records])
@@ -251,7 +251,7 @@ class DecisionFeedService:
     def candidate_detail(self, owner_id: UUID, candidate_id: str) -> CandidateDetailResponse:
         snapshot = self._repository.active_snapshot(owner_id)
         records = None if snapshot is None else _visible_records(snapshot)
-        provider = _status(self._integration_mode, snapshot, invalid=snapshot is not None and records is None)
+        provider = provider_status(self._integration_mode, snapshot, invalid=snapshot is not None and records is None)
         if snapshot is None or records is None:
             return CandidateDetailResponse(provider=provider, candidate=None)
         candidate = next(

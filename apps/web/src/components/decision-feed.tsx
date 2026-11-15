@@ -53,6 +53,39 @@ type CandidateDetail = {
   schema_version: "nexora-decision-feed-v1";
 };
 
+type RiskGateExplanation = {
+  approved_candidate_id: string | null;
+  candidate_id: string;
+  checks: Array<{
+    actual_value: string;
+    explanation: string;
+    limit_value: string;
+    name: string;
+    passed: boolean;
+  }>;
+  decision: "approved" | "rejected";
+  disposition: "accepted" | "rejected";
+  evaluated_at: string;
+  evidence_sha256: string;
+  external_order_submission_allowed: false;
+  offline_only: true;
+  policy: { checksum: string; version: string };
+  position_sizing_exposed: false;
+  provider_reason_codes: Array<{ code: string; namespace: "trd_bot" }>;
+  source: Omit<SourceReference, "resource_type"> & { resource_type: "risk_gate" };
+  uncertainty: {
+    reason_code: "TRD_BOT_RISK_UNCERTAINTY_NOT_SUPPLIED";
+    state: "not_supplied";
+    value: null;
+  };
+};
+
+type RiskGateDetail = {
+  provider: ProviderStatus;
+  risk_gate: RiskGateExplanation | null;
+  schema_version: "nexora-risk-gate-explanation-v1";
+};
+
 function displayValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "object") return JSON.stringify(value);
@@ -128,11 +161,92 @@ function EvidencePanel({
   );
 }
 
+function RiskGatePanel({
+  copy,
+  riskGate,
+}: {
+  copy: Dictionary["decisionFeed"];
+  riskGate: RiskGateExplanation | null;
+}) {
+  if (!riskGate) {
+    return (
+      <section className="risk-explanation unavailable" aria-label={copy.riskTitle}>
+        <h4>{copy.riskTitle}</h4>
+        <p>{copy.riskUnavailable}</p>
+      </section>
+    );
+  }
+  return (
+    <section className="risk-explanation" aria-label={copy.riskTitle}>
+      <div className="risk-heading">
+        <div>
+          <p className="eyebrow">{copy.riskEyebrow}</p>
+          <h4>{copy.riskTitle}</h4>
+        </div>
+        <span className={`risk-decision ${riskGate.decision}`}>
+          {copy.riskDecisions[riskGate.decision]}
+        </span>
+      </div>
+      <dl className="risk-policy-grid">
+        <div>
+          <dt>{copy.policyVersion}</dt>
+          <dd dir="ltr">{riskGate.policy.version}</dd>
+        </div>
+        <div>
+          <dt>{copy.evaluatedAt}</dt>
+          <dd dir="ltr">{riskGate.evaluated_at}</dd>
+        </div>
+        <div className="wide">
+          <dt>{copy.policyChecksum}</dt>
+          <dd className="checksum" dir="ltr">
+            {riskGate.policy.checksum}
+          </dd>
+        </div>
+      </dl>
+      <h5>{copy.providerReasons}</h5>
+      {riskGate.provider_reason_codes.length ? (
+        <ul className="risk-reasons">
+          {riskGate.provider_reason_codes.map((reason) => (
+            <li key={`${reason.namespace}:${reason.code}`} dir="ltr">
+              <span>{reason.namespace}</span>
+              <strong>{reason.code}</strong>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="risk-empty-reasons">{copy.noProviderReasons}</p>
+      )}
+      <h5>{copy.policyChecks}</h5>
+      <div className="risk-checks">
+        {riskGate.checks.map((check) => (
+          <article className={check.passed ? "passed" : "failed"} key={check.name}>
+            <div>
+              <strong dir="ltr">{check.name}</strong>
+              <span>{check.passed ? copy.checkPassed : copy.checkFailed}</span>
+            </div>
+            <p>{check.explanation}</p>
+            <small dir="ltr">
+              {copy.actualValue}: {check.actual_value} · {copy.limitValue}: {check.limit_value}
+            </small>
+          </article>
+        ))}
+      </div>
+      <div className="risk-uncertainty" role="status">
+        <strong>{copy.uncertainty}</strong>
+        <p>{copy.uncertaintyNotSupplied}</p>
+        <code>{riskGate.uncertainty.reason_code}</code>
+      </div>
+      <p className="advisory-boundary">{copy.riskBoundary}</p>
+    </section>
+  );
+}
+
 export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
   const copy = dictionary.decisionFeed;
   const [state, setState] = useState<"error" | "loading" | "ready">("loading");
   const [page, setPage] = useState<DecisionFeedPage>();
   const [selected, setSelected] = useState<DecisionFeedItem>();
+  const [riskGate, setRiskGate] = useState<RiskGateExplanation | null>();
   const [detailLoading, setDetailLoading] = useState(false);
   const [revision, setRevision] = useState(0);
 
@@ -147,6 +261,7 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         if (controller.signal.aborted) return;
         setPage(response);
         setSelected(response.items[0]);
+        setRiskGate(undefined);
         setState("ready");
       } catch {
         if (!controller.signal.aborted) setState("error");
@@ -157,6 +272,7 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
   }, [revision]);
 
   const selectItem = useCallback(async (item: DecisionFeedItem) => {
+    setRiskGate(undefined);
     if (item.resource_type !== "candidate") {
       setSelected(item);
       return;
@@ -166,7 +282,25 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
       const detail = await apiRequest<CandidateDetail>(
         `/api/v1/candidates/${encodeURIComponent(item.resource_id)}`,
       );
-      if (detail.candidate) setSelected(detail.candidate);
+      if (detail.candidate) {
+        setSelected(detail.candidate);
+        const evaluationId = detail.candidate.evidence.evaluation_id;
+        if (typeof evaluationId === "string" && evaluationId) {
+          try {
+            const risk = await apiRequest<RiskGateDetail>(
+              `/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`,
+            );
+            if (risk.provider.generation !== detail.provider.generation) {
+              throw new Error("risk projection generation changed");
+            }
+            setRiskGate(risk.risk_gate);
+          } catch {
+            setRiskGate(null);
+          }
+        } else {
+          setRiskGate(null);
+        }
+      }
     } catch {
       setState("error");
     } finally {
@@ -266,7 +400,12 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
                     <LoaderCircle className="spin" size={20} /> {copy.loadingDetail}
                   </div>
                 ) : selected ? (
-                  <EvidencePanel copy={copy} item={selected} locale={locale} />
+                  <>
+                    <EvidencePanel copy={copy} item={selected} locale={locale} />
+                    {selected.resource_type === "candidate" && riskGate !== undefined ? (
+                      <RiskGatePanel copy={copy} riskGate={riskGate} />
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </div>

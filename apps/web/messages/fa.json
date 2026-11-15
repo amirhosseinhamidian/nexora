@@ -272,7 +272,27 @@
     "sourceChecksum": "checksum منبع",
     "evidenceChecksum": "checksum شواهد",
     "evidenceTitle": "شواهد provider",
-    "advisoryBoundary": "این شواهد پژوهشی فقط‌خواندنی است و امکان ثبت سفارش، انتقال وجه یا صدور مجوز اجرا ندارد."
+    "advisoryBoundary": "این شواهد پژوهشی فقط‌خواندنی است و امکان ثبت سفارش، انتقال وجه یا صدور مجوز اجرا ندارد.",
+    "riskEyebrow": "شواهد RISK متعلق به PROVIDER",
+    "riskTitle": "توضیح Risk Gate",
+    "riskUnavailable": "شواهد معتبر Risk Gate برای این Candidate در دسترس نیست.",
+    "riskDecisions": {
+      "approved": "تأییدشده",
+      "rejected": "ردشده"
+    },
+    "policyVersion": "نسخه policy",
+    "policyChecksum": "checksum سیاست",
+    "evaluatedAt": "زمان ارزیابی",
+    "providerReasons": "reason codeهای provider",
+    "noProviderReasons": "provider هیچ reason code مربوط به رد برنگردانده و تمام policy checkهای ارائه‌شده موفق بوده‌اند.",
+    "policyChecks": "کنترل‌های policy",
+    "checkPassed": "موفق",
+    "checkFailed": "ناموفق",
+    "actualValue": "مقدار واقعی",
+    "limitValue": "حد مجاز",
+    "uncertainty": "عدم قطعیت",
+    "uncertaintyNotSupplied": "Provider مقدار uncertainty ارائه نکرده است",
+    "riskBoundary": "Nexora شواهد immutable متعلق به TRD Bot را بدون محاسبه مجدد، override یا صدور مجوز برای تصمیم Risk Gate نمایش می‌دهد. Position sizing در این مرحله نمایش داده نمی‌شود."
   },
   "states": {
     "loadingTitle": "بازیابی نشست امن",

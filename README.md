@@ -211,11 +211,14 @@ provider smoke evidence. `NEX-P3-03` is accepted at
 `7b5d7014655320a750e94245d96847ddf799414f`; it provides the owner-scoped
 durable Decision/Event projection, strict source-reference validation,
 idempotent replay, quarantine, aggregate-gap recovery and atomic generation
-publication. `NEX-P3-04` is the current candidate. It exposes only active,
+publication. `NEX-P3-04` is accepted at
+`9438dc4c7458b17ca94b6a5efb726fda9a98a37f`; it exposes only active,
 owner-scoped Decision and Candidate evidence through bounded authenticated APIs
 and a bilingual read-only experience with complete source lineage and explicit
-provider/degraded states. Risk explanation, human review and every execution
-capability remain outside this stage.
+provider/degraded states. `NEX-P3-05` is the current candidate. It validates and
+explains provider-owned Risk Gate policy lineage, reason codes, checks and an
+explicit not-supplied uncertainty state without recomputing risk, exposing
+position sizing or adding any execution capability.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -374,6 +377,10 @@ P3-02 Freeze evidence: [`artifacts/p3-02/trd-bot-v031-integration-contract-freez
 
 P3-03 candidate contract: [`contracts/nexora-v0.1-durable-decision-event-projection.json`](contracts/nexora-v0.1-durable-decision-event-projection.json)
 
+P3-04 accepted contract: [`contracts/nexora-v0.1-decision-feed-candidate-details.json`](contracts/nexora-v0.1-decision-feed-candidate-details.json)
+
+P3-05 candidate contract: [`contracts/nexora-v0.1-risk-gate-explanation.json`](contracts/nexora-v0.1-risk-gate-explanation.json)
+
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
 - [`docs/v0.1/02-api-event-export-contracts-and-compatibility.md`](docs/v0.1/02-api-event-export-contracts-and-compatibility.md)
@@ -410,6 +417,8 @@ P3-03 candidate contract: [`contracts/nexora-v0.1-durable-decision-event-project
 - [`docs/v0.1/33-decision-review-journal-domain.md`](docs/v0.1/33-decision-review-journal-domain.md)
 - [`docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md`](docs/v0.1/34-trd-bot-v0.3.1-integration-contract.md)
 - [`docs/v0.1/35-durable-decision-event-projection.md`](docs/v0.1/35-durable-decision-event-projection.md)
+- [`docs/v0.1/36-decision-feed-candidate-details.md`](docs/v0.1/36-decision-feed-candidate-details.md)
+- [`docs/v0.1/37-risk-gate-explanation.md`](docs/v0.1/37-risk-gate-explanation.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)

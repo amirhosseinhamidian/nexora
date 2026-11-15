@@ -1,0 +1,86 @@
+{
+  "schema_version": "nexora-risk-gate-explanation-contract-v1",
+  "decision_id": "NEX-P3-05",
+  "decision_date": "2026-11-15",
+  "status": "candidate",
+  "title": "Risk Gate Explanation and Reason Codes",
+  "prerequisites": {
+    "p3_04_accepted_commit_sha": "9438dc4c7458b17ca94b6a5efb726fda9a98a37f",
+    "projection_schema_version": "nexora-decision-event-projection-v1",
+    "provider_release": "0.3.1",
+    "provider_risk_resource_schema": "trd-bot-risk-gate-v1"
+  },
+  "api": {
+    "schema_version": "nexora-risk-gate-explanation-v1",
+    "route": "/v1/risk-gates/{evaluation_id}",
+    "authenticated": true,
+    "owner_scoped": true,
+    "active_generation_only": true,
+    "staging_generation_visible": false,
+    "invalid_projection_action": "degraded_empty_fail_closed",
+    "invalid_risk_evidence_action": "unprocessable_fail_closed",
+    "missing_risk_evidence_action": "not_found",
+    "complete_source_reference": true
+  },
+  "explanation": {
+    "policy_version_visible": true,
+    "policy_checksum_visible": true,
+    "provider_reason_namespace": "trd_bot",
+    "all_provider_reason_codes_preserved": true,
+    "all_provider_checks_preserved_in_order": true,
+    "required_provider_checks": [
+      "candidate_fresh",
+      "ranking_score",
+      "reward_risk",
+      "risk_budget",
+      "notional_cap"
+    ],
+    "check_actual_and_limit_values_visible": true,
+    "missing_uncertainty_action": "explicit_not_supplied",
+    "missing_uncertainty_reason_code": "TRD_BOT_RISK_UNCERTAINTY_NOT_SUPPLIED",
+    "position_sizing_exposed": false,
+    "source_and_evidence_checksums_visible": true
+  },
+  "ownership_boundary": {
+    "risk_engine_owner": "trd_bot",
+    "nexora_recomputes_risk_gate": false,
+    "nexora_overrides_provider_decision": false,
+    "nexora_infers_missing_uncertainty": false,
+    "provider_evidence_mutated": false,
+    "owner_review_is_provider_reason": false
+  },
+  "web": {
+    "bilingual": true,
+    "responsive": true,
+    "approved_and_rejected_states": true,
+    "policy_lineage_visible": true,
+    "reason_codes_visible": true,
+    "checks_visible": true,
+    "uncertainty_state_visible": true,
+    "execution_boundary_visible": true
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "service_token_exposed": false,
+    "live_order_capability": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "review_is_execution_authorization": false,
+    "production_readiness_claimed": false
+  },
+  "scope": {
+    "portfolio_impact_or_position_sizing_exposed": false,
+    "human_review_workflow_added": false,
+    "alert_lifecycle_added": false,
+    "risk_policy_editor_added": false,
+    "provider_compatibility_claim_changed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P3-05-FREEZE",
+    "post_freeze_stage": "NEX-P3-06",
+    "requires_successful_ci_on_candidate_sha": true,
+    "requires_owner_scope_and_security_tests": true,
+    "requires_provider_compatibility_to_remain_valid": true
+  }
+}

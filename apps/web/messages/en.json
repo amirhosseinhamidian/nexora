@@ -272,7 +272,27 @@
     "sourceChecksum": "Source checksum",
     "evidenceChecksum": "Evidence checksum",
     "evidenceTitle": "Provider evidence",
-    "advisoryBoundary": "Read-only research evidence. This view cannot submit an order, move funds or authorize execution."
+    "advisoryBoundary": "Read-only research evidence. This view cannot submit an order, move funds or authorize execution.",
+    "riskEyebrow": "PROVIDER-OWNED RISK EVIDENCE",
+    "riskTitle": "Risk Gate explanation",
+    "riskUnavailable": "No valid Risk Gate evidence is available for this Candidate.",
+    "riskDecisions": {
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "policyVersion": "Policy version",
+    "policyChecksum": "Policy checksum",
+    "evaluatedAt": "Evaluated at",
+    "providerReasons": "Provider reason codes",
+    "noProviderReasons": "The provider returned no rejection reason codes; all supplied policy checks passed.",
+    "policyChecks": "Policy checks",
+    "checkPassed": "Passed",
+    "checkFailed": "Failed",
+    "actualValue": "Actual",
+    "limitValue": "Limit",
+    "uncertainty": "Uncertainty",
+    "uncertaintyNotSupplied": "Provider did not supply uncertainty",
+    "riskBoundary": "Nexora displays immutable TRD Bot evidence without recomputing, overriding or authorizing the Risk Gate decision. Position sizing is not exposed in this stage."
   },
   "states": {
     "loadingTitle": "Restoring secure session",

@@ -41,6 +41,9 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.fx_rate_observations",
         "nexora.manual_valuations",
         "nexora.decision_projection_states",
+        "nexora.decision_review_states",
+        "nexora.decision_reviews",
+        "nexora.decision_review_deliveries",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -58,6 +61,9 @@ def test_application_tables_are_owner_aware() -> None:
         "background_jobs",
         "outbox_events",
         "decision_projection_states",
+        "decision_review_states",
+        "decision_reviews",
+        "decision_review_deliveries",
     ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c
@@ -77,6 +83,25 @@ def test_source_reference_requires_lineage_and_checksum_columns() -> None:
         "payload_sha256",
         "recorded_at",
     }.issubset(table.c.keys())
+
+
+def test_decision_reviews_are_owner_scoped_append_only_and_non_executable() -> None:
+    states = Base.metadata.tables["nexora.decision_review_states"]
+    reviews = Base.metadata.tables["nexora.decision_reviews"]
+    deliveries = Base.metadata.tables["nexora.decision_review_deliveries"]
+    assert all(table.c.owner_id.nullable is False for table in (states, reviews, deliveries))
+    assert {
+        "review_version",
+        "supersedes_review_id",
+        "idempotency_key",
+        "request_sha256",
+        "source_evidence_checksum",
+        "execution_authorization",
+        "transaction_created",
+        "order_intent_created",
+    }.issubset(reviews.c.keys())
+    forbidden = {"order_id", "exchange_api_key", "wallet_address", "transfer_id"}
+    assert forbidden.isdisjoint(reviews.c.keys())
 
 
 def test_immutable_evidence_uses_postgresql_jsonb() -> None:

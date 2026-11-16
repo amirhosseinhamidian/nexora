@@ -1758,6 +1758,79 @@ textarea {
   gap: 0.35rem;
 }
 
+.decision-review {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--nx-primary) 45%, var(--nx-border));
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface-raised);
+}
+
+.decision-review.unavailable p,
+.decision-review > p {
+  color: var(--nx-text-muted);
+  line-height: 1.55;
+}
+
+.decision-review-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.decision-review-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--nx-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.decision-review-form .wide {
+  grid-column: 1 / -1;
+}
+
+.decision-review-form select,
+.decision-review-form textarea,
+.decision-review-form input {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+  color: var(--nx-text);
+  font: inherit;
+}
+
+.decision-review-form textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.review-history {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-history li {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.75rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+}
+
+.review-history code,
+.review-history small {
+  color: var(--nx-text-muted);
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
   .application-shell,
   [dir="rtl"] .application-shell {

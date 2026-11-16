@@ -6,6 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -1212,6 +1213,113 @@ class DecisionProjectionState(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DecisionReviewStateRecord(Base):
+    __tablename__ = "decision_review_states"
+    __table_args__ = (
+        CheckConstraint("current_version >= 0", name="current_version_nonnegative"),
+        ForeignKeyConstraint(
+            ["owner_id", "latest_review_id"],
+            [f"{SCHEMA_NAME}.decision_reviews.owner_id", f"{SCHEMA_NAME}.decision_reviews.review_id"],
+            name="fk_decision_review_states_owner_latest_review",
+            ondelete="RESTRICT",
+            use_alter=True,
+        ),
+        UniqueConstraint("owner_id", "decision_id", name="uq_decision_review_states_owner_decision"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    review_state_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    decision_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    latest_review_id: Mapped[UUID | None] = mapped_column()
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DecisionReviewRecord(Base):
+    __tablename__ = "decision_reviews"
+    __table_args__ = (
+        CheckConstraint("review_version >= 1", name="review_version_positive"),
+        CheckConstraint("action IN ('accept', 'reject', 'defer')", name="action_allowed"),
+        CheckConstraint("portfolio_mode IN ('paper', 'shadow')", name="portfolio_mode_allowed"),
+        CheckConstraint("char_length(reason_code) BETWEEN 1 AND 100", name="reason_code_length"),
+        CheckConstraint("reason_note IS NULL OR char_length(reason_note) BETWEEN 1 AND 500", name="reason_note_length"),
+        CheckConstraint("evidence_generation >= 1", name="evidence_generation_positive"),
+        CheckConstraint("source_evidence_checksum ~ '^sha256:[0-9a-f]{64}$'", name="evidence_checksum_format"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_checksum_format"),
+        CheckConstraint("reviewed_at <= recorded_at", name="reviewed_before_recorded"),
+        CheckConstraint("revisit_at IS NULL OR revisit_at > reviewed_at", name="revisit_after_review"),
+        CheckConstraint("execution_authorization = false", name="no_execution_authorization"),
+        CheckConstraint("transaction_created = false", name="no_transaction_created"),
+        CheckConstraint("order_intent_created = false", name="no_order_intent_created"),
+        ForeignKeyConstraint(
+            ["owner_id", "supersedes_review_id"],
+            [f"{SCHEMA_NAME}.decision_reviews.owner_id", f"{SCHEMA_NAME}.decision_reviews.review_id"],
+            name="fk_decision_reviews_owner_superseded_review",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "review_id", name="uq_decision_reviews_owner_review"),
+        UniqueConstraint(
+            "owner_id", "decision_id", "review_version", name="uq_decision_reviews_owner_decision_version"
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_decision_reviews_owner_idempotency"),
+        Index("ix_decision_reviews_owner_decision_recorded", "owner_id", "decision_id", "recorded_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    review_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    decision_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    review_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    action: Mapped[str] = mapped_column(String(16), nullable=False)
+    portfolio_mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    reason_note: Mapped[str | None] = mapped_column(String(500))
+    evidence_generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_evidence_checksum: Mapped[str] = mapped_column(String(71), nullable=False)
+    source_reference: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    revisit_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    supersedes_review_id: Mapped[UUID | None] = mapped_column()
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    execution_authorization: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    transaction_created: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    order_intent_created: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+
+class DecisionReviewDeliveryRecord(Base):
+    __tablename__ = "decision_review_deliveries"
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'accepted', 'duplicate')", name="status_allowed"),
+        CheckConstraint("attempt_count >= 0", name="attempt_count_nonnegative"),
+        ForeignKeyConstraint(
+            ["owner_id", "review_id"],
+            [f"{SCHEMA_NAME}.decision_reviews.owner_id", f"{SCHEMA_NAME}.decision_reviews.review_id"],
+            name="fk_decision_review_deliveries_owner_review",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "review_id", name="uq_decision_review_deliveries_owner_review"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    delivery_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    review_id: Mapped[UUID] = mapped_column(nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
+    provider_command_id: Mapped[str | None] = mapped_column(String(160))
+    provider_correlation_id: Mapped[UUID | None] = mapped_column()
+    provider_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    last_error_code: Mapped[str | None] = mapped_column(String(80))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class ProjectionCheckpoint(Base):

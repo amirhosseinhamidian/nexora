@@ -19,6 +19,13 @@ from nexora.adapters.postgresql.decision_projection import (
     AggregateProjectionState,
     DecisionEventProjectionRepository,
 )
+from nexora.adapters.postgresql.decision_review import (
+    DecisionReviewIdempotencyConflict,
+    DecisionReviewRepository,
+    DecisionReviewRepositoryConflict,
+    DecisionReviewView,
+    DecisionReviewWrite,
+)
 from nexora.adapters.postgresql.durable import (
     CheckpointAdvance,
     CheckpointConflict,
@@ -50,6 +57,9 @@ from nexora.adapters.postgresql.models import (
     BootstrapToken,
     BrowserSession,
     DecisionProjectionState,
+    DecisionReviewDeliveryRecord,
+    DecisionReviewRecord,
+    DecisionReviewStateRecord,
     FxRateObservationRecord,
     HoldingProjectionRecord,
     HoldingsRebuildIssueRecord,
@@ -108,6 +118,14 @@ __all__ = [
     "DecisionProjectionMutation",
     "DecisionProjectionQuarantineWrite",
     "DecisionProjectionState",
+    "DecisionReviewDeliveryRecord",
+    "DecisionReviewIdempotencyConflict",
+    "DecisionReviewRecord",
+    "DecisionReviewRepository",
+    "DecisionReviewRepositoryConflict",
+    "DecisionReviewStateRecord",
+    "DecisionReviewView",
+    "DecisionReviewWrite",
     "DurableWorkError",
     "DurableWorkRepository",
     "EnqueuedJob",

@@ -14,6 +14,7 @@ from nexora.adapters.postgresql.decision_projection import (
     ActiveDecisionProjection,
     DecisionEventProjectionRepository,
 )
+from nexora.adapters.postgresql.decision_review import DecisionReviewRepository
 from nexora.adapters.trd_bot import ResourceType, TrdBotIntegrationMode
 from nexora.decision_event_projection import (
     DecisionKind,
@@ -24,6 +25,11 @@ from nexora.decision_event_projection import (
 
 DECISION_FEED_SCHEMA_VERSION: Final = "nexora-decision-feed-v1"
 VISIBLE_RESOURCE_TYPES: Final = frozenset({ResourceType.DECISION_EVALUATION, ResourceType.CANDIDATE})
+REVIEW_ACTION_LOCAL_STATE: Final = {
+    "accept": LocalDecisionState.ACCEPTED,
+    "reject": LocalDecisionState.REJECTED,
+    "defer": LocalDecisionState.DEFERRED,
+}
 
 
 class DecisionFeedError(RuntimeError):
@@ -176,7 +182,10 @@ def provider_status(
     )
 
 
-def _response_item(record: DecisionProjectionRecord) -> DecisionFeedItemResponse:
+def _response_item(
+    record: DecisionProjectionRecord,
+    local_state: LocalDecisionState | None = None,
+) -> DecisionFeedItemResponse:
     if record.resource_type not in VISIBLE_RESOURCE_TYPES:
         raise DecisionFeedValidationError("resource is not visible in the decision feed")
     resource_type = cast(Literal["decision_evaluation", "candidate"], record.resource_type.value)
@@ -184,7 +193,7 @@ def _response_item(record: DecisionProjectionRecord) -> DecisionFeedItemResponse
         resource_type=resource_type,
         resource_id=record.resource_id,
         decision_kind=record.decision_kind,
-        local_state=record.local_state,
+        local_state=record.local_state if local_state is None else local_state,
         source=SourceReferenceResponse(
             source_version=record.provider_release,
             resource_type=resource_type,
@@ -224,9 +233,20 @@ class DecisionFeedService:
         self,
         repository: DecisionEventProjectionRepository,
         integration_mode: TrdBotIntegrationMode | None,
+        review_repository: DecisionReviewRepository | None = None,
     ) -> None:
         self._repository = repository
         self._integration_mode = integration_mode
+        self._review_repository = review_repository
+
+    def _local_states(self, owner_id: UUID, records: list[DecisionProjectionRecord]) -> dict[str, LocalDecisionState]:
+        if self._review_repository is None:
+            return {}
+        decision_ids = tuple(
+            record.resource_id for record in records if record.resource_type is ResourceType.DECISION_EVALUATION
+        )
+        actions = self._review_repository.latest_actions(owner_id, decision_ids)
+        return {decision_id: REVIEW_ACTION_LOCAL_STATE[action] for decision_id, action in actions.items()}
 
     def list_feed(self, owner_id: UUID, *, limit: int, cursor: str | None) -> DecisionFeedResponse:
         snapshot = self._repository.active_snapshot(owner_id)
@@ -237,10 +257,21 @@ class DecisionFeedService:
         evidence_sha256 = canonical_json_sha256([record.model_dump(mode="json") for record in records])
         offset = 0 if cursor is None else _decode_cursor(cursor, snapshot.generation, evidence_sha256)
         page = records[offset : offset + limit]
+        local_states = self._local_states(owner_id, records)
         next_offset = offset + len(page)
         return DecisionFeedResponse(
             provider=provider,
-            items=[_response_item(record) for record in page],
+            items=[
+                _response_item(
+                    record,
+                    local_states.get(
+                        record.resource_id
+                        if record.resource_type is ResourceType.DECISION_EVALUATION
+                        else str(record.payload.get("evaluation_id", ""))
+                    ),
+                )
+                for record in page
+            ],
             next_cursor=(
                 _encode_cursor(snapshot.generation, evidence_sha256, next_offset)
                 if next_offset < len(records)
@@ -264,4 +295,7 @@ class DecisionFeedService:
         )
         if candidate is None:
             raise DecisionEvidenceNotFound("candidate evidence is unavailable")
-        return CandidateDetailResponse(provider=provider, candidate=_response_item(candidate))
+        states = self._local_states(owner_id, records)
+        evaluation_id = candidate.payload.get("evaluation_id")
+        local_state = states.get(evaluation_id) if isinstance(evaluation_id, str) else None
+        return CandidateDetailResponse(provider=provider, candidate=_response_item(candidate, local_state))

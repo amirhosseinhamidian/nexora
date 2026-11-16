@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, ChevronRight, Database, LoaderCircle, RefreshCw } from "lucide-react";
+import type { FormEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
@@ -34,7 +35,7 @@ type DecisionFeedItem = {
   decision_kind: "candidate" | "portfolio_assessment";
   evidence: Record<string, unknown>;
   evidence_sha256: string;
-  local_state: "review_pending";
+  local_state: "accepted" | "deferred" | "rejected" | "review_pending";
   resource_id: string;
   resource_type: "candidate" | "decision_evaluation";
   source: SourceReference;
@@ -151,6 +152,64 @@ type PortfolioImpactDetail = {
   schema_version: "nexora-portfolio-candidate-impact-v1";
 };
 
+type ReviewAction = "accept" | "defer" | "reject";
+
+type DecisionReview = {
+  action: ReviewAction;
+  delivery_status: "accepted" | "duplicate" | "pending";
+  order_intent_created: false;
+  reason_code: string;
+  reason_note: string | null;
+  recorded_at: string;
+  review_id: string;
+  review_version: number;
+  reviewed_at: string;
+  transaction_created: false;
+};
+
+type DecisionReviewContext = {
+  current_version: number;
+  decision_id: string;
+  evidence_generation: number | null;
+  latest_review_id: string | null;
+  local_state: "accepted" | "deferred" | "rejected" | "review_pending";
+  provider_delivery_required: boolean;
+  reviewable: boolean;
+  reviews: DecisionReview[];
+  schema_version: "nexora-human-decision-review-v1";
+  source_evidence_checksum: string | null;
+};
+
+const reviewReasons: Record<ReviewAction, string[]> = {
+  accept: [
+    "owner.accept.evidence_sufficient",
+    "owner.accept.portfolio_fit",
+    "owner.accept.risk_within_policy",
+    "owner.accept.observe_in_paper_shadow",
+    "owner.accept.other_with_note",
+  ],
+  reject: [
+    "owner.reject.stale_context",
+    "owner.reject.low_confidence",
+    "owner.reject.data_quality",
+    "owner.reject.regime_mismatch",
+    "owner.reject.exposure",
+    "owner.reject.concentration",
+    "owner.reject.policy_limit",
+    "owner.reject.uncertainty",
+    "owner.reject.portfolio_conflict",
+    "owner.reject.other_with_note",
+  ],
+  defer: [
+    "owner.defer.evidence_pending",
+    "owner.defer.market_context_pending",
+    "owner.defer.valuation_missing",
+    "owner.defer.provider_degraded",
+    "owner.defer.review_later",
+    "owner.defer.other_with_note",
+  ],
+};
+
 function displayValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "object") return JSON.stringify(value);
@@ -180,7 +239,9 @@ function EvidencePanel({
           <p className="eyebrow">{copy.detailEyebrow}</p>
           <h3>{item.resource_id}</h3>
         </div>
-        <span className="evidence-state">{copy.reviewPending}</span>
+        <span className={`evidence-state ${item.local_state}`}>
+          {copy.reviewStates[item.local_state]}
+        </span>
       </div>
       <dl className="source-reference-grid">
         <div>
@@ -433,6 +494,188 @@ function PortfolioImpactPanel({
   );
 }
 
+function DecisionReviewPanel({
+  context,
+  copy,
+  decisionId,
+  onRecorded,
+}: {
+  context: DecisionReviewContext | null;
+  copy: Dictionary["decisionFeed"];
+  decisionId: string;
+  onRecorded: (context: DecisionReviewContext) => void;
+}) {
+  const [action, setAction] = useState<ReviewAction>("accept");
+  const [reasonCode, setReasonCode] = useState(reviewReasons.accept[0]);
+  const [reasonNote, setReasonNote] = useState("");
+  const [revisitAt, setRevisitAt] = useState("");
+  const [portfolioMode, setPortfolioMode] = useState<"paper" | "shadow">("paper");
+  const [submitting, setSubmitting] = useState(false);
+  const [pendingSubmission, setPendingSubmission] = useState<{
+    body: Record<string, unknown>;
+    key: string;
+  }>();
+  const [error, setError] = useState(false);
+
+  function chooseAction(next: ReviewAction) {
+    setAction(next);
+    setReasonCode(reviewReasons[next][0]);
+    if (next !== "defer") setRevisitAt("");
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!context?.reviewable || !context.evidence_generation || !context.source_evidence_checksum)
+      return;
+    const submission = pendingSubmission ?? {
+      body: {
+        action,
+        evidence_generation: context.evidence_generation,
+        expected_version: context.current_version,
+        portfolio_mode: portfolioMode,
+        reason_code: reasonCode,
+        reason_note: reasonNote.trim() || null,
+        revisit_at: revisitAt ? new Date(revisitAt).toISOString() : null,
+        reviewed_at: new Date().toISOString(),
+        source_evidence_checksum: context.source_evidence_checksum,
+        supersedes_review_id: context.latest_review_id,
+      },
+      key: `nexora-review-${crypto.randomUUID()}`,
+    };
+    setPendingSubmission(submission);
+    setSubmitting(true);
+    setError(false);
+    try {
+      await apiRequest<DecisionReview>(
+        `/api/v1/decisions/${encodeURIComponent(decisionId)}/reviews`,
+        {
+          body: submission.body,
+          headers: { "Idempotency-Key": submission.key },
+          method: "POST",
+        },
+      );
+      const refreshed = await apiRequest<DecisionReviewContext>(
+        `/api/v1/decisions/${encodeURIComponent(decisionId)}/reviews`,
+      );
+      onRecorded(refreshed);
+      setPendingSubmission(undefined);
+      setReasonNote("");
+      setRevisitAt("");
+    } catch {
+      setError(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (!context) {
+    return (
+      <section className="decision-review unavailable" aria-label={copy.reviewTitle}>
+        <h4>{copy.reviewTitle}</h4>
+        <p>{copy.reviewUnavailable}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="decision-review" aria-label={copy.reviewTitle}>
+      <div className="risk-heading">
+        <div>
+          <p className="eyebrow">{copy.reviewEyebrow}</p>
+          <h4>{copy.reviewTitle}</h4>
+        </div>
+        <span className={`evidence-state ${context.local_state}`}>
+          {copy.reviewStates[context.local_state]}
+        </span>
+      </div>
+      <p>{copy.reviewDescription}</p>
+      <form className="decision-review-form" onSubmit={(event) => void submit(event)}>
+        <label>
+          {copy.reviewAction}
+          <select
+            value={action}
+            onChange={(event) => chooseAction(event.target.value as ReviewAction)}
+          >
+            <option value="accept">{copy.reviewActions.accept}</option>
+            <option value="reject">{copy.reviewActions.reject}</option>
+            <option value="defer">{copy.reviewActions.defer}</option>
+          </select>
+        </label>
+        <label>
+          {copy.portfolioMode}
+          <select
+            value={portfolioMode}
+            onChange={(event) => setPortfolioMode(event.target.value as "paper" | "shadow")}
+          >
+            <option value="paper">Paper</option>
+            <option value="shadow">Shadow</option>
+          </select>
+        </label>
+        <label className="wide">
+          {copy.ownerReason}
+          <select
+            value={reasonCode}
+            onChange={(event) => setReasonCode(event.target.value)}
+            dir="ltr"
+          >
+            {reviewReasons[action].map((reason) => (
+              <option key={reason}>{reason}</option>
+            ))}
+          </select>
+        </label>
+        <label className="wide">
+          {copy.reasonNote}
+          <textarea
+            maxLength={500}
+            onChange={(event) => setReasonNote(event.target.value)}
+            value={reasonNote}
+          />
+        </label>
+        {action === "defer" ? (
+          <label className="wide">
+            {copy.revisitAt}
+            <input
+              onChange={(event) => setRevisitAt(event.target.value)}
+              type="datetime-local"
+              value={revisitAt}
+            />
+          </label>
+        ) : null}
+        {error ? (
+          <p className="form-error wide" role="alert">
+            {copy.reviewError}
+          </p>
+        ) : null}
+        <button
+          className="primary-button wide"
+          disabled={submitting || !context.reviewable}
+          type="submit"
+        >
+          {submitting ? copy.reviewSubmitting : copy.reviewSubmit}
+        </button>
+      </form>
+      {context.reviews.length ? (
+        <ol className="review-history">
+          {context.reviews.toReversed().map((review) => (
+            <li key={review.review_id}>
+              <strong>
+                {copy.reviewActions[review.action]} · v{review.review_version}
+              </strong>
+              <code>{review.reason_code}</code>
+              <small>
+                {review.delivery_status} · {review.recorded_at}
+              </small>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="risk-empty-reasons">{copy.noReviews}</p>
+      )}
+      <p className="advisory-boundary">{copy.reviewBoundary}</p>
+    </section>
+  );
+}
+
 export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
   const copy = dictionary.decisionFeed;
   const [state, setState] = useState<"error" | "loading" | "ready">("loading");
@@ -440,6 +683,8 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
   const [selected, setSelected] = useState<DecisionFeedItem>();
   const [riskGate, setRiskGate] = useState<RiskGateExplanation | null>();
   const [portfolioImpact, setPortfolioImpact] = useState<PortfolioImpact | null>();
+  const [reviewContext, setReviewContext] = useState<DecisionReviewContext | null>();
+  const [reviewDecisionId, setReviewDecisionId] = useState<string>();
   const [detailLoading, setDetailLoading] = useState(false);
   const [revision, setRevision] = useState(0);
 
@@ -456,6 +701,8 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         setSelected(response.items[0]);
         setRiskGate(undefined);
         setPortfolioImpact(undefined);
+        setReviewContext(undefined);
+        setReviewDecisionId(undefined);
         setState("ready");
       } catch {
         if (!controller.signal.aborted) setState("error");
@@ -468,8 +715,20 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
   const selectItem = useCallback(async (item: DecisionFeedItem) => {
     setRiskGate(undefined);
     setPortfolioImpact(undefined);
+    setReviewContext(undefined);
+    setReviewDecisionId(undefined);
     if (item.resource_type !== "candidate") {
       setSelected(item);
+      setReviewDecisionId(item.resource_id);
+      try {
+        setReviewContext(
+          await apiRequest<DecisionReviewContext>(
+            `/api/v1/decisions/${encodeURIComponent(item.resource_id)}/reviews`,
+          ),
+        );
+      } catch {
+        setReviewContext(null);
+      }
       return;
     }
     setDetailLoading(true);
@@ -481,10 +740,14 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         setSelected(detail.candidate);
         const evaluationId = detail.candidate.evidence.evaluation_id;
         if (typeof evaluationId === "string" && evaluationId) {
-          const [riskResult, impactResult] = await Promise.allSettled([
+          setReviewDecisionId(evaluationId);
+          const [riskResult, impactResult, reviewResult] = await Promise.allSettled([
             apiRequest<RiskGateDetail>(`/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`),
             apiRequest<PortfolioImpactDetail>(
               `/api/v1/portfolio-impacts/${encodeURIComponent(evaluationId)}`,
+            ),
+            apiRequest<DecisionReviewContext>(
+              `/api/v1/decisions/${encodeURIComponent(evaluationId)}/reviews`,
             ),
           ]);
           if (
@@ -503,9 +766,11 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
           } else {
             setPortfolioImpact(null);
           }
+          setReviewContext(reviewResult.status === "fulfilled" ? reviewResult.value : null);
         } else {
           setRiskGate(null);
           setPortfolioImpact(null);
+          setReviewContext(null);
         }
       }
     } catch {
@@ -614,6 +879,14 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
                     ) : null}
                     {selected.resource_type === "candidate" && portfolioImpact !== undefined ? (
                       <PortfolioImpactPanel copy={copy} impact={portfolioImpact} />
+                    ) : null}
+                    {reviewDecisionId && reviewContext !== undefined ? (
+                      <DecisionReviewPanel
+                        context={reviewContext}
+                        copy={copy}
+                        decisionId={reviewDecisionId}
+                        onRecorded={setReviewContext}
+                      />
                     ) : null}
                   </>
                 ) : null}

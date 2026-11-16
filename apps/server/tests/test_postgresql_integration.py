@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from threading import Barrier
@@ -21,6 +22,10 @@ from nexora.adapters.postgresql import (
     DecisionProjectionMutation,
     DecisionProjectionQuarantineWrite,
     DecisionProjectionState,
+    DecisionReviewIdempotencyConflict,
+    DecisionReviewRepository,
+    DecisionReviewRepositoryConflict,
+    DecisionReviewWrite,
     DurableWorkRepository,
     EnqueuedJob,
     HoldingsProjectionRepository,
@@ -87,7 +92,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261112_0011"
+    assert revision == "20261116_0012"
 
 
 def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
@@ -224,6 +229,94 @@ def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publicat
                 ).scalar_one_or_none()
                 is None
             )
+    finally:
+        outer.rollback()
+        connection.close()
+
+
+def test_decision_review_is_owner_scoped_idempotent_and_optimistically_versioned(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    repository = DecisionReviewRepository(factory)
+    reviewed_at = datetime.now(UTC) - timedelta(minutes=1)
+    source = {
+        "schema_version": "nexora-source-reference-v1",
+        "source_product": "trd_bot",
+        "source_version": "0.3.1",
+        "resource_type": "decision_evaluation",
+        "resource_id": "decision-review-integration",
+        "resource_schema_version": "trd-bot-decision-evaluation-v1",
+        "observed_at": reviewed_at.isoformat(),
+        "checksum": "sha256:" + "a" * 64,
+    }
+    first = DecisionReviewWrite(
+        decision_id="decision-review-integration",
+        action="accept",
+        portfolio_mode="paper",
+        reason_code="owner.accept.evidence_sufficient",
+        reason_note=None,
+        evidence_generation=1,
+        source_evidence_checksum="sha256:" + "a" * 64,
+        source_reference=source,
+        reviewed_at=reviewed_at,
+        revisit_at=None,
+        supersedes_review_id=None,
+        expected_version=0,
+        idempotency_key="decision-review-integration-key-0001",
+    )
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        created, replayed = repository.record(owner_id, first)
+        replay, duplicate = repository.record(owner_id, first)
+        assert replayed is False
+        assert duplicate is True
+        assert replay.review_id == created.review_id
+        assert created.review_version == 1
+        assert repository.list_for_decision(uuid4(), first.decision_id) == ()
+
+        with pytest.raises(DecisionReviewIdempotencyConflict):
+            repository.record(owner_id, replace(first, action="reject"))
+        with pytest.raises(DecisionReviewRepositoryConflict):
+            repository.record(
+                owner_id,
+                replace(first, idempotency_key="decision-review-integration-key-0002"),
+            )
+
+        superseding, duplicate = repository.record(
+            owner_id,
+            DecisionReviewWrite(
+                decision_id=first.decision_id,
+                action="defer",
+                portfolio_mode="shadow",
+                reason_code="owner.defer.review_later",
+                reason_note="Awaiting the next bounded evidence cycle.",
+                evidence_generation=1,
+                source_evidence_checksum=first.source_evidence_checksum,
+                source_reference=source,
+                reviewed_at=reviewed_at,
+                revisit_at=reviewed_at + timedelta(days=1),
+                supersedes_review_id=created.review_id,
+                expected_version=1,
+                idempotency_key="decision-review-integration-key-0003",
+            ),
+        )
+        assert duplicate is False
+        assert superseding.review_version == 2
+        assert superseding.supersedes_review_id == created.review_id
+        assert [item.action for item in repository.list_for_decision(owner_id, first.decision_id)] == [
+            "accept",
+            "defer",
+        ]
     finally:
         outer.rollback()
         connection.close()

@@ -22,6 +22,11 @@ class DecisionKind(StrEnum):
 
 class LocalDecisionState(StrEnum):
     REVIEW_PENDING = "review_pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    DEFERRED = "deferred"
+    EXPIRED = "expired"
+    SUPERSEDED = "superseded"
 
 
 PROJECTED_RESOURCE_KINDS: Final = {

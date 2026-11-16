@@ -312,7 +312,32 @@
     "lossFraction": "نسبت زیان",
     "portfolioChecks": "کنترل‌های policy پورتفولیو",
     "portfolioAnalysisUnavailable": "provider تحلیل پورتفولیو را صریحاً unavailable اعلام کرده و Nexora تحلیلی جعل نمی‌کند.",
-    "portfolioImpactBoundary": "شواهد فقط‌خواندنی Paper/Shadow از TRD Bot؛ Nexora این تحلیل را دوباره محاسبه نمی‌کند، Transaction یا OrderIntent نمی‌سازد، سفارش یا انتقال وجه انجام نمی‌دهد و بدون asset map نسخه‌بندی‌شده نماد provider را به دارایی شخصی متصل نمی‌کند."
+    "portfolioImpactBoundary": "شواهد فقط‌خواندنی Paper/Shadow از TRD Bot؛ Nexora این تحلیل را دوباره محاسبه نمی‌کند، Transaction یا OrderIntent نمی‌سازد، سفارش یا انتقال وجه انجام نمی‌دهد و بدون asset map نسخه‌بندی‌شده نماد provider را به دارایی شخصی متصل نمی‌کند.",
+    "reviewEyebrow": "ژورنال تصمیم مالک",
+    "reviewTitle": "پذیرش، رد یا تعویق",
+    "reviewDescription": "تصمیم immutable مالک را دقیقاً روی نسخه فعال شواهد ثبت کنید.",
+    "reviewUnavailable": "شواهد قابل بررسی Decision در دسترس نیست و review محلی ثبت نشد.",
+    "reviewAction": "اقدام مالک",
+    "reviewActions": {
+      "accept": "پذیرش",
+      "reject": "رد",
+      "defer": "تعویق"
+    },
+    "reviewStates": {
+      "review_pending": "در انتظار بررسی",
+      "accepted": "پذیرفته‌شده",
+      "rejected": "ردشده",
+      "deferred": "به‌تعویق‌افتاده"
+    },
+    "portfolioMode": "حالت Paper/Shadow",
+    "ownerReason": "reason code مالک",
+    "reasonNote": "یادداشت اختیاری مالک",
+    "revisitAt": "زمان بررسی دوباره (اختیاری)",
+    "reviewSubmit": "ثبت review تغییرناپذیر",
+    "reviewSubmitting": "در حال ثبت review…",
+    "reviewError": "ثبت review تأیید نشد؛ تلاش دوباره از همان idempotency key استفاده می‌کند.",
+    "noReviews": "برای این Decision هنوز review مالک ثبت نشده است.",
+    "reviewBoundary": "Review فقط شواهد تصمیم انسانی است و نمی‌تواند مجوز اجرا صادر کند، OrderIntent یا Transaction بسازد، سفارش ثبت کند، وجه انتقال دهد یا credential صرافی را افشا کند."
   },
   "states": {
     "loadingTitle": "بازیابی نشست امن",

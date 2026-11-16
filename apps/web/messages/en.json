@@ -312,7 +312,32 @@
     "lossFraction": "Loss fraction",
     "portfolioChecks": "Portfolio policy checks",
     "portfolioAnalysisUnavailable": "The provider explicitly marked portfolio analysis unavailable; Nexora does not fabricate one.",
-    "portfolioImpactBoundary": "Read-only Paper/Shadow evidence from TRD Bot. Nexora does not recompute this analysis, create a Transaction or OrderIntent, submit an order, transfer funds, or bind provider symbols to personal assets without a versioned asset map."
+    "portfolioImpactBoundary": "Read-only Paper/Shadow evidence from TRD Bot. Nexora does not recompute this analysis, create a Transaction or OrderIntent, submit an order, transfer funds, or bind provider symbols to personal assets without a versioned asset map.",
+    "reviewEyebrow": "OWNER DECISION JOURNAL",
+    "reviewTitle": "Accept, reject or defer",
+    "reviewDescription": "Record an immutable owner decision against the exact active evidence version.",
+    "reviewUnavailable": "Reviewable Decision evidence is unavailable. No local review was recorded.",
+    "reviewAction": "Owner action",
+    "reviewActions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "defer": "Defer"
+    },
+    "reviewStates": {
+      "review_pending": "Review pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "deferred": "Deferred"
+    },
+    "portfolioMode": "Paper/Shadow mode",
+    "ownerReason": "Owner reason code",
+    "reasonNote": "Optional owner note",
+    "revisitAt": "Revisit at (optional)",
+    "reviewSubmit": "Record immutable review",
+    "reviewSubmitting": "Recording review…",
+    "reviewError": "The review was not confirmed. Retry uses the same idempotency key.",
+    "noReviews": "No owner review has been recorded for this Decision.",
+    "reviewBoundary": "A review is human decision evidence only. It cannot authorize execution, create an OrderIntent, post a Transaction, submit an order, move funds or expose exchange credentials."
   },
   "states": {
     "loadingTitle": "Restoring secure session",

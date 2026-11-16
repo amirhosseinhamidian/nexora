@@ -219,11 +219,16 @@ provider/degraded states. `NEX-P3-05` is accepted at
 `1ffa8b6dd87ade246c87c40570ab5db27b72094a`; it validates and explains
 provider-owned Risk Gate policy lineage, reason codes, checks and an explicit
 not-supplied uncertainty state without recomputing risk, exposing position
-sizing, or adding execution capability. `NEX-P3-06` is the current candidate. It
-displays provider-owned Paper/Shadow Portfolio Impact, bounded scenarios,
-exposure, concentration, correlation and checks while cross-validating the
-matching approved Risk Gate checksum. Personal-asset binding remains deferred
-until a versioned provider asset map exists.
+sizing, or adding execution capability. `NEX-P3-06` is accepted at
+`bf8facf3124822a5d22a57d346a4ed0538a69d7d`; it displays provider-owned
+Paper/Shadow Portfolio Impact, bounded scenarios, exposure, concentration,
+correlation and checks while cross-validating the matching approved Risk Gate
+checksum. `NEX-P3-07` is the current candidate. It records immutable,
+idempotent Accept/Reject/Defer owner reviews against exact active evidence with
+optimistic concurrency and optional post-commit provider feedback. A review
+cannot authorize execution, create an OrderIntent or post a Transaction.
+Personal-asset binding remains deferred until a versioned provider asset map
+exists.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -277,6 +282,12 @@ uv run python scripts/verify_phase_two_final_acceptance.py
 uv run python scripts/verify_server_deployment_acceptance.py
 uv run python scripts/verify_phase_three_roadmap.py
 uv run python scripts/verify_decision_review_journal_domain.py
+uv run python scripts/verify_trd_bot_v031_integration_contract.py
+uv run python scripts/verify_durable_decision_event_projection.py
+uv run python scripts/verify_decision_feed_candidate_details.py
+uv run python scripts/verify_risk_gate_explanation.py
+uv run python scripts/verify_portfolio_candidate_impact.py
+uv run python scripts/verify_human_decision_review.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -386,7 +397,9 @@ P3-04 accepted contract: [`contracts/nexora-v0.1-decision-feed-candidate-details
 
 P3-05 accepted contract: [`contracts/nexora-v0.1-risk-gate-explanation.json`](contracts/nexora-v0.1-risk-gate-explanation.json)
 
-P3-06 candidate contract: [`contracts/nexora-v0.1-portfolio-candidate-impact.json`](contracts/nexora-v0.1-portfolio-candidate-impact.json)
+P3-06 accepted contract: [`contracts/nexora-v0.1-portfolio-candidate-impact.json`](contracts/nexora-v0.1-portfolio-candidate-impact.json)
+
+P3-07 candidate contract: [`contracts/nexora-v0.1-human-decision-review.json`](contracts/nexora-v0.1-human-decision-review.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)

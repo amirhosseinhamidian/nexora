@@ -28,6 +28,7 @@ function sameOriginApiPath(path: string): void {
 
 type ApiOptions = {
   body?: unknown;
+  headers?: Record<string, string>;
   method?: "GET" | "POST";
   signal?: AbortSignal;
   signalSessionExpiry?: boolean;
@@ -37,6 +38,7 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
   sameOriginApiPath(path);
   const method = options.method ?? "GET";
   const headers = new Headers({ Accept: "application/json" });
+  for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value);
   if (method === "POST") {
     headers.set("Content-Type", "application/json");
     const csrf = readCsrfToken();

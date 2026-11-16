@@ -169,6 +169,18 @@ describe("DecisionFeed", () => {
         },
         provider,
         schema_version: "nexora-portfolio-candidate-impact-v1",
+      })
+      .mockResolvedValueOnce({
+        current_version: 0,
+        decision_id: "decision-evaluation-1",
+        evidence_generation: 3,
+        latest_review_id: null,
+        local_state: "review_pending",
+        provider_delivery_required: true,
+        reviewable: true,
+        reviews: [],
+        schema_version: "nexora-human-decision-review-v1",
+        source_evidence_checksum: `sha256:${"a".repeat(64)}`,
       });
 
     render(<DecisionFeed dictionary={en} locale="en" />);
@@ -182,6 +194,7 @@ describe("DecisionFeed", () => {
     await waitFor(() => {
       expect(request).toHaveBeenCalledWith("/api/v1/risk-gates/decision-evaluation-1");
       expect(request).toHaveBeenCalledWith("/api/v1/portfolio-impacts/decision-evaluation-1");
+      expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-evaluation-1/reviews");
     });
     expect(await screen.findByText("observe")).toBeInTheDocument();
     expect(screen.getByText("decision-risk-v1")).toBeInTheDocument();
@@ -189,6 +202,8 @@ describe("DecisionFeed", () => {
     expect(screen.getByText("portfolio_policy_rejected")).toBeInTheDocument();
     expect(screen.getByText("Bounded what-if scenarios")).toBeInTheDocument();
     expect(screen.getAllByText("Provider did not supply uncertainty")).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "Accept, reject or defer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record immutable review" })).toBeEnabled();
   });
 
   it("renders an explicit degraded empty state", async () => {

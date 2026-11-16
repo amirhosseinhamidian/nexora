@@ -58,6 +58,15 @@ from nexora.decision_feed import (
     DecisionFeedService,
     DecisionFeedValidationError,
 )
+from nexora.decision_review import (
+    CreateDecisionReviewRequest,
+    DecisionReviewConflict,
+    DecisionReviewContextResponse,
+    DecisionReviewNotFound,
+    DecisionReviewResponse,
+    DecisionReviewService,
+    DecisionReviewValidationError,
+)
 from nexora.holdings_contracts import (
     HoldingListResponse,
     HoldingResponse,
@@ -811,6 +820,33 @@ def create_app(
             message="portfolio impact evidence failed validation",
         )
 
+    @application.exception_handler(DecisionReviewNotFound)
+    async def decision_review_not_found(request: Request, _: DecisionReviewNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="DECISION_REVIEW_EVIDENCE_NOT_FOUND",
+            message="reviewable decision evidence is unavailable",
+        )
+
+    @application.exception_handler(DecisionReviewConflict)
+    async def decision_review_conflict(request: Request, _: DecisionReviewConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="DECISION_REVIEW_CONFLICT",
+            message="decision evidence, version or idempotency state changed",
+        )
+
+    @application.exception_handler(DecisionReviewValidationError)
+    async def decision_review_validation(request: Request, _: DecisionReviewValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="DECISION_REVIEW_EVIDENCE_INVALID",
+            message="decision review evidence failed validation",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1099,7 +1135,11 @@ def create_app(
         repository = resolved_container.decision_event_projection_repository
         if repository is None:
             raise CeremonyUnavailable("decision projection runtime is not configured")
-        return DecisionFeedService(repository, resolved_container.trd_bot_integration_mode)
+        return DecisionFeedService(
+            repository,
+            resolved_container.trd_bot_integration_mode,
+            resolved_container.decision_review_repository,
+        )
 
     def risk_gate_explanations() -> RiskGateExplanationService:
         repository = resolved_container.decision_event_projection_repository
@@ -1112,6 +1152,18 @@ def create_app(
         if repository is None:
             raise CeremonyUnavailable("decision projection runtime is not configured")
         return PortfolioCandidateImpactService(repository, resolved_container.trd_bot_integration_mode)
+
+    def decision_reviews() -> DecisionReviewService:
+        repository = resolved_container.decision_review_repository
+        projections = resolved_container.decision_event_projection_repository
+        if repository is None or projections is None:
+            raise CeremonyUnavailable("decision review runtime is not configured")
+        return DecisionReviewService(
+            repository,
+            projections,
+            resolved_container.trd_bot_client,
+            resolved_container.trd_bot_integration_mode,
+        )
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1462,6 +1514,44 @@ def create_app(
     ) -> PortfolioImpactDetailResponse:
         _, session = require_session(request)
         return portfolio_candidate_impacts().detail(session.owner_id, evaluation_id)
+
+    @application.get(
+        "/v1/decisions/{decision_id}/reviews",
+        response_model=DecisionReviewContextResponse,
+        operation_id="getDecisionReviewContext",
+    )
+    def get_decision_review_context(
+        request: Request,
+        decision_id: str = Path(min_length=1, max_length=160),
+    ) -> DecisionReviewContextResponse:
+        _, session = require_session(request)
+        return decision_reviews().context(session.owner_id, decision_id)
+
+    @application.post(
+        "/v1/decisions/{decision_id}/reviews",
+        response_model=DecisionReviewResponse,
+        status_code=201,
+        operation_id="createDecisionReview",
+    )
+    def create_decision_review(
+        payload: CreateDecisionReviewRequest,
+        request: Request,
+        decision_id: str = Path(min_length=1, max_length=160),
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> DecisionReviewResponse:
+        _, session = require_session(request)
+        return decision_reviews().record(
+            session.owner_id,
+            decision_id,
+            payload,
+            idempotency_key=idempotency_key,
+            correlation_id=request.state.correlation_id,
+        )
 
     @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")
     def list_assets(request: Request) -> AssetListResponse:

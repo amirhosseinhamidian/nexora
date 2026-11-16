@@ -1,0 +1,73 @@
+{
+  "schema_version": "nexora-human-decision-review-contract-v1",
+  "decision_id": "NEX-P3-07",
+  "status": "candidate",
+  "title": "Human accept, reject and defer workflow",
+  "prerequisites": {
+    "p3_06_accepted_commit_sha": "bf8facf3124822a5d22a57d346a4ed0538a69d7d",
+    "provider_release": "0.3.1",
+    "decision_review_domain_contract": "nexora-decision-review-journal-domain-v1"
+  },
+  "review_actions": [
+    "accept",
+    "reject",
+    "defer"
+  ],
+  "persistence": {
+    "owner_scoped": true,
+    "append_only_reviews": true,
+    "correction_by_superseding_review": true,
+    "optimistic_concurrency": true,
+    "idempotency_key_required": true,
+    "exact_payload_replay_is_idempotent": true,
+    "different_payload_replay_is_conflict": true,
+    "source_evidence_generation_required": true,
+    "source_evidence_checksum_required": true
+  },
+  "reason_policy": {
+    "owner_namespace_required": true,
+    "provider_namespace_remains_separate": true,
+    "other_with_note_requires_note": true,
+    "defer_revisit_at_optional": true
+  },
+  "provider_feedback": {
+    "local_review_is_source_of_truth": true,
+    "delivery_occurs_after_local_commit": true,
+    "failed_delivery_remains_pending": true,
+    "same_idempotency_key_retries_pending_delivery": true,
+    "exact_decision_evaluation_reference_required": true,
+    "secret_or_raw_provider_error_persisted": false
+  },
+  "api": {
+    "authenticated": true,
+    "owner_scoped": true,
+    "get_context_path": "/v1/decisions/{decision_id}/reviews",
+    "create_review_path": "/v1/decisions/{decision_id}/reviews",
+    "active_generation_only": true,
+    "stale_evidence_action": "conflict",
+    "version_conflict_action": "conflict"
+  },
+  "security_boundary": {
+    "review_authorizes_execution": false,
+    "review_creates_order_intent": false,
+    "review_posts_transaction": false,
+    "review_submits_order": false,
+    "review_moves_funds": false,
+    "exchange_credentials_added": false,
+    "live_trading_added": false
+  },
+  "web": {
+    "actions_visible": true,
+    "owner_reason_visible": true,
+    "review_history_visible": true,
+    "delivery_state_visible": true,
+    "paper_shadow_mode_explicit": true,
+    "safety_boundary_visible": true
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-08",
+    "separate_freeze_task_required": false,
+    "nex_p3_03_gate_opened": false,
+    "real_local_provider_smoke_required_later": true
+  }
+}

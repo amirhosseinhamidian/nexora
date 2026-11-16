@@ -1630,9 +1630,20 @@ textarea {
 }
 
 .risk-decision.rejected,
+.risk-decision.reject,
 .risk-checks article.failed span {
   background: color-mix(in srgb, var(--nx-danger) 14%, transparent);
   color: var(--nx-danger);
+}
+
+.risk-decision.accept {
+  background: color-mix(in srgb, var(--nx-success) 14%, transparent);
+  color: var(--nx-success);
+}
+
+.risk-decision.unavailable {
+  background: color-mix(in srgb, var(--nx-warning) 14%, transparent);
+  color: var(--nx-warning);
 }
 
 .risk-policy-grid {
@@ -1708,6 +1719,43 @@ textarea {
 .risk-uncertainty code {
   overflow-wrap: anywhere;
   font-size: 0.75rem;
+}
+
+.portfolio-impact-summary,
+.portfolio-scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.portfolio-impact-summary > div,
+.portfolio-scenarios article {
+  padding: 0.75rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+}
+
+.portfolio-impact-summary .wide {
+  grid-column: 1 / -1;
+}
+
+.portfolio-impact-summary dt,
+.portfolio-scenarios span,
+.portfolio-scenarios small,
+.portfolio-impact-summary small {
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+}
+
+.portfolio-impact-summary dd {
+  margin: 0.3rem 0;
+}
+
+.portfolio-scenarios article {
+  display: grid;
+  gap: 0.35rem;
 }
 
 @media (max-width: 900px) {

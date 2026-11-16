@@ -1,0 +1,95 @@
+{
+  "schema_version": "nexora-portfolio-candidate-impact-contract-v1",
+  "decision_id": "NEX-P3-06",
+  "decision_date": "2026-11-16",
+  "status": "candidate",
+  "title": "Portfolio Candidate Impact and Bounded What-if",
+  "prerequisites": {
+    "p3_05_accepted_commit_sha": "1ffa8b6dd87ade246c87c40570ab5db27b72094a",
+    "projection_schema_version": "nexora-decision-event-projection-v1",
+    "provider_release": "0.3.1",
+    "provider_portfolio_resource_schema": "trd-bot-portfolio-intelligence-v1",
+    "matching_risk_gate_required": true
+  },
+  "api": {
+    "schema_version": "nexora-portfolio-candidate-impact-v1",
+    "route": "/v1/portfolio-impacts/{evaluation_id}",
+    "authenticated": true,
+    "owner_scoped": true,
+    "active_generation_only": true,
+    "staging_generation_visible": false,
+    "invalid_projection_action": "degraded_empty_fail_closed",
+    "invalid_portfolio_evidence_action": "unprocessable_fail_closed",
+    "missing_portfolio_evidence_action": "not_found",
+    "complete_source_reference": true
+  },
+  "provider_analysis": {
+    "engine_owner": "trd_bot",
+    "policy_lineage_visible": true,
+    "provider_reason_codes_preserved": true,
+    "analysis_scenarios_preserved_in_order": true,
+    "required_scenario_shocks": ["-0.100000", "-0.050000", "0.050000", "0.100000"],
+    "checks_preserved_in_order": true,
+    "required_checks": [
+      "portfolio_active",
+      "portfolio_capacity",
+      "projected_exposure",
+      "projected_concentration",
+      "candidate_correlation",
+      "scenario_loss",
+      "regime_alignment"
+    ],
+    "exposure_visible": true,
+    "concentration_visible": true,
+    "correlation_visible": true,
+    "snapshot_mode_and_source_visible": true,
+    "unavailable_state_explicit": true,
+    "missing_uncertainty_action": "explicit_not_supplied",
+    "missing_uncertainty_reason_code": "TRD_BOT_PORTFOLIO_UNCERTAINTY_NOT_SUPPLIED",
+    "risk_gate_checksum_cross_validated": true
+  },
+  "ownership_boundary": {
+    "nexora_recomputes_portfolio_analysis": false,
+    "nexora_overrides_provider_recommendation": false,
+    "nexora_infers_missing_uncertainty": false,
+    "nexora_guesses_symbol_to_personal_asset_mapping": false,
+    "provider_evidence_mutated": false,
+    "personal_portfolio_binding_without_versioned_asset_map": false
+  },
+  "web": {
+    "bilingual": true,
+    "responsive": true,
+    "accept_reject_unavailable_states": true,
+    "policy_and_risk_lineage_visible": true,
+    "exposure_concentration_correlation_visible": true,
+    "bounded_scenarios_visible": true,
+    "checks_visible": true,
+    "uncertainty_state_visible": true,
+    "execution_boundary_visible": true
+  },
+  "security_boundary": {
+    "direct_trd_bot_database_access": false,
+    "shared_database": false,
+    "service_token_exposed": false,
+    "live_order_capability": false,
+    "transaction_created": false,
+    "order_intent_created": false,
+    "exchange_credentials": false,
+    "wallet_or_fund_transfer": false,
+    "production_readiness_claimed": false
+  },
+  "scope": {
+    "personal_asset_mapping_added": false,
+    "position_sizing_editor_added": false,
+    "human_review_workflow_added": false,
+    "alert_lifecycle_added": false,
+    "provider_compatibility_claim_changed": false
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-07",
+    "requires_successful_ci_on_candidate_sha": true,
+    "requires_owner_scope_and_security_tests": true,
+    "requires_cross_resource_risk_lineage_test": true,
+    "requires_provider_compatibility_to_remain_valid": true
+  }
+}

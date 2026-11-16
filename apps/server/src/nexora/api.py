@@ -123,6 +123,12 @@ from nexora.performance_contracts import (
     PositionValuationResponse,
     RealizedPnlEventResponse,
 )
+from nexora.portfolio_candidate_impact import (
+    PortfolioCandidateImpactService,
+    PortfolioImpactDetailResponse,
+    PortfolioImpactEvidenceInvalid,
+    PortfolioImpactEvidenceNotFound,
+)
 from nexora.portfolio_contracts import (
     AccountListResponse,
     AccountResponse,
@@ -787,6 +793,24 @@ def create_app(
             message="risk gate evidence failed validation",
         )
 
+    @application.exception_handler(PortfolioImpactEvidenceNotFound)
+    async def portfolio_impact_evidence_not_found(request: Request, _: PortfolioImpactEvidenceNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="PORTFOLIO_IMPACT_EVIDENCE_NOT_FOUND",
+            message="portfolio impact evidence is unavailable",
+        )
+
+    @application.exception_handler(PortfolioImpactEvidenceInvalid)
+    async def portfolio_impact_evidence_invalid(request: Request, _: PortfolioImpactEvidenceInvalid) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="PORTFOLIO_IMPACT_EVIDENCE_INVALID",
+            message="portfolio impact evidence failed validation",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1082,6 +1106,12 @@ def create_app(
         if repository is None:
             raise CeremonyUnavailable("decision projection runtime is not configured")
         return RiskGateExplanationService(repository, resolved_container.trd_bot_integration_mode)
+
+    def portfolio_candidate_impacts() -> PortfolioCandidateImpactService:
+        repository = resolved_container.decision_event_projection_repository
+        if repository is None:
+            raise CeremonyUnavailable("decision projection runtime is not configured")
+        return PortfolioCandidateImpactService(repository, resolved_container.trd_bot_integration_mode)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1420,6 +1450,18 @@ def create_app(
     ) -> RiskGateDetailResponse:
         _, session = require_session(request)
         return risk_gate_explanations().detail(session.owner_id, evaluation_id)
+
+    @application.get(
+        "/v1/portfolio-impacts/{evaluation_id}",
+        response_model=PortfolioImpactDetailResponse,
+        operation_id="getPortfolioCandidateImpact",
+    )
+    def get_portfolio_candidate_impact(
+        request: Request,
+        evaluation_id: str = Path(min_length=1, max_length=160),
+    ) -> PortfolioImpactDetailResponse:
+        _, session = require_session(request)
+        return portfolio_candidate_impacts().detail(session.owner_id, evaluation_id)
 
     @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")
     def list_assets(request: Request) -> AssetListResponse:

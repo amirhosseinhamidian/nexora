@@ -2754,6 +2754,167 @@
         "title": "PortfolioExportProfile",
         "type": "string"
       },
+      "PortfolioImpactDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "portfolio_impact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PortfolioImpactResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ProviderStatusResponse"
+          },
+          "schema_version": {
+            "const": "nexora-portfolio-candidate-impact-v1",
+            "default": "nexora-portfolio-candidate-impact-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "portfolio_impact"
+        ],
+        "title": "PortfolioImpactDetailResponse",
+        "type": "object"
+      },
+      "PortfolioImpactResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "advisory_only": {
+            "const": true,
+            "default": true,
+            "title": "Advisory Only",
+            "type": "boolean"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderPortfolioAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "analyzed_at": {
+            "format": "date-time",
+            "title": "Analyzed At",
+            "type": "string"
+          },
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Id"
+          },
+          "disposition": {
+            "enum": [
+              "accepted",
+              "rejected",
+              "unavailable"
+            ],
+            "title": "Disposition",
+            "type": "string"
+          },
+          "evaluation_id": {
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "evidence_sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Evidence Sha256",
+            "type": "string"
+          },
+          "external_order_submission_allowed": {
+            "const": false,
+            "default": false,
+            "title": "External Order Submission Allowed",
+            "type": "boolean"
+          },
+          "order_intent_created": {
+            "const": false,
+            "default": false,
+            "title": "Order Intent Created",
+            "type": "boolean"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PortfolioPolicyResponse"
+          },
+          "provider_reason_codes": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderReasonResponse"
+            },
+            "title": "Provider Reason Codes",
+            "type": "array"
+          },
+          "recommendation": {
+            "enum": [
+              "accept",
+              "reject",
+              "unavailable"
+            ],
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "risk_gate_checksum_cross_validated": {
+            "const": true,
+            "default": true,
+            "title": "Risk Gate Checksum Cross Validated",
+            "type": "boolean"
+          },
+          "snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Id"
+          },
+          "source": {
+            "$ref": "#/components/schemas/PortfolioSourceResponse"
+          },
+          "transaction_created": {
+            "const": false,
+            "default": false,
+            "title": "Transaction Created",
+            "type": "boolean"
+          },
+          "uncertainty": {
+            "$ref": "#/components/schemas/PortfolioUncertaintyResponse"
+          }
+        },
+        "required": [
+          "evaluation_id",
+          "recommendation",
+          "disposition",
+          "candidate_id",
+          "snapshot_id",
+          "policy",
+          "provider_reason_codes",
+          "analysis",
+          "uncertainty",
+          "analyzed_at",
+          "source",
+          "evidence_sha256"
+        ],
+        "title": "PortfolioImpactResponse",
+        "type": "object"
+      },
       "PortfolioKind": {
         "enum": [
           "personal",
@@ -2784,6 +2945,25 @@
           "items"
         ],
         "title": "PortfolioListResponse",
+        "type": "object"
+      },
+      "PortfolioPolicyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "checksum"
+        ],
+        "title": "PortfolioPolicyResponse",
         "type": "object"
       },
       "PortfolioResponse": {
@@ -2859,6 +3039,129 @@
           "archived_at"
         ],
         "title": "PortfolioResponse",
+        "type": "object"
+      },
+      "PortfolioSourceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Id"
+          },
+          "aggregate_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Type"
+          },
+          "aggregate_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Version"
+          },
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_schema_version": {
+            "const": "trd-bot-portfolio-intelligence-v1",
+            "title": "Resource Schema Version",
+            "type": "string"
+          },
+          "resource_type": {
+            "const": "portfolio_intelligence",
+            "default": "portfolio_intelligence",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-source-reference-v1",
+            "default": "nexora-source-reference-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_product": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Source Product",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version",
+          "resource_id",
+          "resource_schema_version",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "PortfolioSourceResponse",
+        "type": "object"
+      },
+      "PortfolioUncertaintyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "reason_code": {
+            "const": "TRD_BOT_PORTFOLIO_UNCERTAINTY_NOT_SUPPLIED",
+            "default": "TRD_BOT_PORTFOLIO_UNCERTAINTY_NOT_SUPPLIED",
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "state": {
+            "const": "not_supplied",
+            "default": "not_supplied",
+            "title": "State",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "null"
+          }
+        },
+        "title": "PortfolioUncertaintyResponse",
         "type": "object"
       },
       "PortfolioValuationStatusResponse": {
@@ -3315,6 +3618,416 @@
         "title": "ProjectionLineageResponse",
         "type": "object"
       },
+      "ProviderCheck": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_value": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Actual Value",
+            "type": "string"
+          },
+          "explanation": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "limit_value": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Limit Value",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "passed",
+          "actual_value",
+          "limit_value",
+          "explanation"
+        ],
+        "title": "ProviderCheck",
+        "type": "object"
+      },
+      "ProviderCorrelation": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "maximum_absolute_correlation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Absolute Correlation"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "not_applicable",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "evidence"
+        ],
+        "title": "ProviderCorrelation",
+        "type": "object"
+      },
+      "ProviderExitRecommendation": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "hold",
+              "exit_risk",
+              "exit_regime"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "position_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Position Id",
+            "type": "string"
+          },
+          "reason_codes": {
+            "items": {
+              "enum": [
+                "risk_limit",
+                "regime_change"
+              ],
+              "type": "string"
+            },
+            "title": "Reason Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "position_id",
+          "action",
+          "reason_codes"
+        ],
+        "title": "ProviderExitRecommendation",
+        "type": "object"
+      },
+      "ProviderExposure": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_notional": {
+            "title": "Candidate Notional",
+            "type": "string"
+          },
+          "current_exposure_fraction": {
+            "title": "Current Exposure Fraction",
+            "type": "string"
+          },
+          "current_gross_notional": {
+            "title": "Current Gross Notional",
+            "type": "string"
+          },
+          "projected_asset_concentration_fraction": {
+            "title": "Projected Asset Concentration Fraction",
+            "type": "string"
+          },
+          "projected_exposure_fraction": {
+            "title": "Projected Exposure Fraction",
+            "type": "string"
+          },
+          "projected_gross_notional": {
+            "title": "Projected Gross Notional",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current_gross_notional",
+          "candidate_notional",
+          "projected_gross_notional",
+          "current_exposure_fraction",
+          "projected_exposure_fraction",
+          "projected_asset_concentration_fraction"
+        ],
+        "title": "ProviderExposure",
+        "type": "object"
+      },
+      "ProviderPortfolioAnalysis": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis_checksum": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Analysis Checksum",
+            "type": "string"
+          },
+          "analysis_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Analysis Id",
+            "type": "string"
+          },
+          "analyzed_at": {
+            "format": "date-time",
+            "title": "Analyzed At",
+            "type": "string"
+          },
+          "candidate_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "correlation": {
+            "$ref": "#/components/schemas/ProviderCorrelation"
+          },
+          "evaluation_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Evaluation Id",
+            "type": "string"
+          },
+          "exit_recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderExitRecommendation"
+            },
+            "title": "Exit Recommendations",
+            "type": "array"
+          },
+          "exposure": {
+            "$ref": "#/components/schemas/ProviderExposure"
+          },
+          "external_order_submission_allowed": {
+            "const": false,
+            "title": "External Order Submission Allowed",
+            "type": "boolean"
+          },
+          "offline_only": {
+            "const": true,
+            "title": "Offline Only",
+            "type": "boolean"
+          },
+          "policy_checksum": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Policy Checksum",
+            "type": "string"
+          },
+          "recommendation": {
+            "enum": [
+              "accept",
+              "reject"
+            ],
+            "title": "Recommendation",
+            "type": "string"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderScenario"
+            },
+            "title": "Scenarios",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "decision-portfolio-analysis-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/ProviderPortfolioSnapshot"
+          }
+        },
+        "required": [
+          "schema_version",
+          "analysis_id",
+          "evaluation_id",
+          "candidate_id",
+          "snapshot",
+          "exposure",
+          "correlation",
+          "scenarios",
+          "checks",
+          "recommendation",
+          "exit_recommendations",
+          "policy_checksum",
+          "analyzed_at",
+          "offline_only",
+          "external_order_submission_allowed",
+          "analysis_checksum"
+        ],
+        "title": "ProviderPortfolioAnalysis",
+        "type": "object"
+      },
+      "ProviderPortfolioSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "cash": {
+            "title": "Cash",
+            "type": "string"
+          },
+          "dataset_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "equity": {
+            "title": "Equity",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "paper",
+              "shadow"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "open_positions": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderPosition"
+            },
+            "title": "Open Positions",
+            "type": "array"
+          },
+          "portfolio_id": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Id"
+          },
+          "schema_version": {
+            "const": "decision-portfolio-snapshot-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "snapshot_checksum": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Snapshot Checksum",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "empty_baseline",
+              "persisted_simulation"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "starting_equity": {
+            "title": "Starting Equity",
+            "type": "string"
+          },
+          "status": {
+            "const": "active",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "snapshot_id",
+          "source",
+          "mode",
+          "dataset_id",
+          "status",
+          "as_of",
+          "starting_equity",
+          "cash",
+          "equity",
+          "open_positions",
+          "snapshot_checksum"
+        ],
+        "title": "ProviderPortfolioSnapshot",
+        "type": "object"
+      },
+      "ProviderPosition": {
+        "additionalProperties": false,
+        "properties": {
+          "notional": {
+            "title": "Notional",
+            "type": "string"
+          },
+          "pair": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Pair",
+            "type": "object"
+          },
+          "position_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Position Id",
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "long",
+              "short"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "unrealized_pnl": {
+            "title": "Unrealized Pnl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "position_id",
+          "pair",
+          "side",
+          "notional",
+          "unrealized_pnl"
+        ],
+        "title": "ProviderPosition",
+        "type": "object"
+      },
       "ProviderReasonCodeResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3335,6 +4048,60 @@
           "code"
         ],
         "title": "ProviderReasonCodeResponse",
+        "type": "object"
+      },
+      "ProviderReasonResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "namespace": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Namespace",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "ProviderReasonResponse",
+        "type": "object"
+      },
+      "ProviderScenario": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_pnl": {
+            "title": "Candidate Pnl",
+            "type": "string"
+          },
+          "existing_pnl": {
+            "title": "Existing Pnl",
+            "type": "string"
+          },
+          "loss_fraction": {
+            "title": "Loss Fraction",
+            "type": "string"
+          },
+          "projected_equity": {
+            "title": "Projected Equity",
+            "type": "string"
+          },
+          "shock_fraction": {
+            "title": "Shock Fraction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shock_fraction",
+          "existing_pnl",
+          "candidate_pnl",
+          "projected_equity",
+          "loss_fraction"
+        ],
+        "title": "ProviderScenario",
         "type": "object"
       },
       "ProviderState": {
@@ -9068,6 +9835,147 @@
           }
         },
         "summary": "Create Portfolio Export"
+      }
+    },
+    "/v1/portfolio-impacts/{evaluation_id}": {
+      "get": {
+        "operationId": "getPortfolioCandidateImpact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evaluation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Evaluation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioImpactDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Portfolio Candidate Impact"
       }
     },
     "/v1/portfolios": {

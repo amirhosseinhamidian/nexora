@@ -292,7 +292,27 @@
     "limitValue": "Limit",
     "uncertainty": "Uncertainty",
     "uncertaintyNotSupplied": "Provider did not supply uncertainty",
-    "riskBoundary": "Nexora displays immutable TRD Bot evidence without recomputing, overriding or authorizing the Risk Gate decision. Position sizing is not exposed in this stage."
+    "riskBoundary": "Nexora displays immutable TRD Bot evidence without recomputing, overriding or authorizing the Risk Gate decision. Position sizing is not exposed in this stage.",
+    "portfolioImpactEyebrow": "PROVIDER-OWNED PAPER/SHADOW EVIDENCE",
+    "portfolioImpactTitle": "Candidate portfolio impact",
+    "portfolioImpactUnavailable": "No valid portfolio-impact evidence is available for this Candidate.",
+    "portfolioRecommendations": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "unavailable": "Unavailable"
+    },
+    "noPortfolioReasons": "The provider returned no portfolio rejection reason codes; all supplied checks passed.",
+    "snapshotMode": "Simulation mode",
+    "snapshotSource": "Snapshot source",
+    "projectedExposure": "Projected exposure",
+    "projectedConcentration": "Projected concentration",
+    "correlation": "Candidate correlation",
+    "whatIfScenarios": "Bounded what-if scenarios",
+    "projectedEquity": "Projected equity",
+    "lossFraction": "Loss fraction",
+    "portfolioChecks": "Portfolio policy checks",
+    "portfolioAnalysisUnavailable": "The provider explicitly marked portfolio analysis unavailable; Nexora does not fabricate one.",
+    "portfolioImpactBoundary": "Read-only Paper/Shadow evidence from TRD Bot. Nexora does not recompute this analysis, create a Transaction or OrderIntent, submit an order, transfer funds, or bind provider symbols to personal assets without a versioned asset map."
   },
   "states": {
     "loadingTitle": "Restoring secure session",

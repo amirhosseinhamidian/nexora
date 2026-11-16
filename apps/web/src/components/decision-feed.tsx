@@ -86,6 +86,71 @@ type RiskGateDetail = {
   schema_version: "nexora-risk-gate-explanation-v1";
 };
 
+type PortfolioAnalysis = {
+  candidate_id: string;
+  checks: Array<{
+    actual_value: string;
+    explanation: string;
+    limit_value: string;
+    name: string;
+    passed: boolean;
+  }>;
+  correlation: {
+    evidence: string;
+    maximum_absolute_correlation: string | null;
+    status: "available" | "not_applicable" | "unavailable";
+  };
+  exposure: {
+    candidate_notional: string;
+    current_exposure_fraction: string;
+    current_gross_notional: string;
+    projected_asset_concentration_fraction: string;
+    projected_exposure_fraction: string;
+    projected_gross_notional: string;
+  };
+  recommendation: "accept" | "reject";
+  scenarios: Array<{
+    candidate_pnl: string;
+    existing_pnl: string;
+    loss_fraction: string;
+    projected_equity: string;
+    shock_fraction: string;
+  }>;
+  snapshot: {
+    as_of: string;
+    mode: "paper" | "shadow";
+    open_positions: Array<unknown>;
+    source: "empty_baseline" | "persisted_simulation";
+  };
+};
+
+type PortfolioImpact = {
+  analysis: PortfolioAnalysis | null;
+  analyzed_at: string;
+  candidate_id: string | null;
+  disposition: "accepted" | "rejected" | "unavailable";
+  evidence_sha256: string;
+  external_order_submission_allowed: false;
+  order_intent_created: false;
+  policy: { checksum: string; version: string };
+  provider_reason_codes: Array<{ code: string; namespace: "trd_bot" }>;
+  recommendation: "accept" | "reject" | "unavailable";
+  risk_gate_checksum_cross_validated: true;
+  snapshot_id: string | null;
+  transaction_created: false;
+  uncertainty: {
+    reason_code: "TRD_BOT_PORTFOLIO_UNCERTAINTY_NOT_SUPPLIED";
+    state: "not_supplied";
+    value: null;
+  };
+};
+
+type PortfolioImpactDetail = {
+  portfolio_impact: PortfolioImpact | null;
+  provider: ProviderStatus;
+  schema_version: "nexora-portfolio-candidate-impact-v1";
+};
+
 function displayValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "object") return JSON.stringify(value);
@@ -241,12 +306,140 @@ function RiskGatePanel({
   );
 }
 
+function PortfolioImpactPanel({
+  copy,
+  impact,
+}: {
+  copy: Dictionary["decisionFeed"];
+  impact: PortfolioImpact | null;
+}) {
+  if (!impact) {
+    return (
+      <section className="risk-explanation unavailable" aria-label={copy.portfolioImpactTitle}>
+        <h4>{copy.portfolioImpactTitle}</h4>
+        <p>{copy.portfolioImpactUnavailable}</p>
+      </section>
+    );
+  }
+  const analysis = impact.analysis;
+  return (
+    <section className="risk-explanation portfolio-impact" aria-label={copy.portfolioImpactTitle}>
+      <div className="risk-heading">
+        <div>
+          <p className="eyebrow">{copy.portfolioImpactEyebrow}</p>
+          <h4>{copy.portfolioImpactTitle}</h4>
+        </div>
+        <span className={`risk-decision ${impact.recommendation}`}>
+          {copy.portfolioRecommendations[impact.recommendation]}
+        </span>
+      </div>
+      <dl className="risk-policy-grid">
+        <div>
+          <dt>{copy.policyVersion}</dt>
+          <dd dir="ltr">{impact.policy.version}</dd>
+        </div>
+        <div>
+          <dt>{copy.evaluatedAt}</dt>
+          <dd dir="ltr">{impact.analyzed_at}</dd>
+        </div>
+        <div className="wide">
+          <dt>{copy.policyChecksum}</dt>
+          <dd className="checksum" dir="ltr">
+            {impact.policy.checksum}
+          </dd>
+        </div>
+      </dl>
+      <h5>{copy.providerReasons}</h5>
+      {impact.provider_reason_codes.length ? (
+        <ul className="risk-reasons">
+          {impact.provider_reason_codes.map((reason) => (
+            <li key={`${reason.namespace}:${reason.code}`} dir="ltr">
+              <span>{reason.namespace}</span>
+              <strong>{reason.code}</strong>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="risk-empty-reasons">{copy.noPortfolioReasons}</p>
+      )}
+      {analysis ? (
+        <>
+          <dl className="portfolio-impact-summary">
+            <div>
+              <dt>{copy.snapshotMode}</dt>
+              <dd dir="ltr">{analysis.snapshot.mode}</dd>
+            </div>
+            <div>
+              <dt>{copy.snapshotSource}</dt>
+              <dd dir="ltr">{analysis.snapshot.source}</dd>
+            </div>
+            <div>
+              <dt>{copy.projectedExposure}</dt>
+              <dd dir="ltr">{analysis.exposure.projected_exposure_fraction}</dd>
+            </div>
+            <div>
+              <dt>{copy.projectedConcentration}</dt>
+              <dd dir="ltr">{analysis.exposure.projected_asset_concentration_fraction}</dd>
+            </div>
+            <div className="wide">
+              <dt>{copy.correlation}</dt>
+              <dd dir="ltr">
+                {analysis.correlation.status}:{" "}
+                {analysis.correlation.maximum_absolute_correlation ?? "—"}
+              </dd>
+              <small>{analysis.correlation.evidence}</small>
+            </div>
+          </dl>
+          <h5>{copy.whatIfScenarios}</h5>
+          <div className="portfolio-scenarios">
+            {analysis.scenarios.map((scenario) => (
+              <article key={scenario.shock_fraction}>
+                <strong dir="ltr">{scenario.shock_fraction}</strong>
+                <span dir="ltr">
+                  {copy.projectedEquity}: {scenario.projected_equity}
+                </span>
+                <small dir="ltr">
+                  {copy.lossFraction}: {scenario.loss_fraction}
+                </small>
+              </article>
+            ))}
+          </div>
+          <h5>{copy.portfolioChecks}</h5>
+          <div className="risk-checks">
+            {analysis.checks.map((check) => (
+              <article className={check.passed ? "passed" : "failed"} key={check.name}>
+                <div>
+                  <strong dir="ltr">{check.name}</strong>
+                  <span>{check.passed ? copy.checkPassed : copy.checkFailed}</span>
+                </div>
+                <p>{check.explanation}</p>
+                <small dir="ltr">
+                  {copy.actualValue}: {check.actual_value} · {copy.limitValue}: {check.limit_value}
+                </small>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="risk-empty-reasons">{copy.portfolioAnalysisUnavailable}</p>
+      )}
+      <div className="risk-uncertainty" role="status">
+        <strong>{copy.uncertainty}</strong>
+        <p>{copy.uncertaintyNotSupplied}</p>
+        <code>{impact.uncertainty.reason_code}</code>
+      </div>
+      <p className="advisory-boundary">{copy.portfolioImpactBoundary}</p>
+    </section>
+  );
+}
+
 export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
   const copy = dictionary.decisionFeed;
   const [state, setState] = useState<"error" | "loading" | "ready">("loading");
   const [page, setPage] = useState<DecisionFeedPage>();
   const [selected, setSelected] = useState<DecisionFeedItem>();
   const [riskGate, setRiskGate] = useState<RiskGateExplanation | null>();
+  const [portfolioImpact, setPortfolioImpact] = useState<PortfolioImpact | null>();
   const [detailLoading, setDetailLoading] = useState(false);
   const [revision, setRevision] = useState(0);
 
@@ -262,6 +455,7 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         setPage(response);
         setSelected(response.items[0]);
         setRiskGate(undefined);
+        setPortfolioImpact(undefined);
         setState("ready");
       } catch {
         if (!controller.signal.aborted) setState("error");
@@ -273,6 +467,7 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
 
   const selectItem = useCallback(async (item: DecisionFeedItem) => {
     setRiskGate(undefined);
+    setPortfolioImpact(undefined);
     if (item.resource_type !== "candidate") {
       setSelected(item);
       return;
@@ -286,19 +481,31 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         setSelected(detail.candidate);
         const evaluationId = detail.candidate.evidence.evaluation_id;
         if (typeof evaluationId === "string" && evaluationId) {
-          try {
-            const risk = await apiRequest<RiskGateDetail>(
-              `/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`,
-            );
-            if (risk.provider.generation !== detail.provider.generation) {
-              throw new Error("risk projection generation changed");
-            }
-            setRiskGate(risk.risk_gate);
-          } catch {
+          const [riskResult, impactResult] = await Promise.allSettled([
+            apiRequest<RiskGateDetail>(`/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`),
+            apiRequest<PortfolioImpactDetail>(
+              `/api/v1/portfolio-impacts/${encodeURIComponent(evaluationId)}`,
+            ),
+          ]);
+          if (
+            riskResult.status === "fulfilled" &&
+            riskResult.value.provider.generation === detail.provider.generation
+          ) {
+            setRiskGate(riskResult.value.risk_gate);
+          } else {
             setRiskGate(null);
+          }
+          if (
+            impactResult.status === "fulfilled" &&
+            impactResult.value.provider.generation === detail.provider.generation
+          ) {
+            setPortfolioImpact(impactResult.value.portfolio_impact);
+          } else {
+            setPortfolioImpact(null);
           }
         } else {
           setRiskGate(null);
+          setPortfolioImpact(null);
         }
       }
     } catch {
@@ -404,6 +611,9 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
                     <EvidencePanel copy={copy} item={selected} locale={locale} />
                     {selected.resource_type === "candidate" && riskGate !== undefined ? (
                       <RiskGatePanel copy={copy} riskGate={riskGate} />
+                    ) : null}
+                    {selected.resource_type === "candidate" && portfolioImpact !== undefined ? (
+                      <PortfolioImpactPanel copy={copy} impact={portfolioImpact} />
                     ) : null}
                   </>
                 ) : null}

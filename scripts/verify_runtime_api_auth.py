@@ -75,6 +75,7 @@ APPROVED_EXTENSION_OPERATIONS = {
     "GET /v1/decisions",
     "GET /v1/candidates/{candidate_id}",
     "GET /v1/risk-gates/{evaluation_id}",
+    "GET /v1/portfolio-impacts/{evaluation_id}",
 }
 
 

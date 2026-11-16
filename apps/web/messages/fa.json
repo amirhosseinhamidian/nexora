@@ -292,7 +292,27 @@
     "limitValue": "حد مجاز",
     "uncertainty": "عدم قطعیت",
     "uncertaintyNotSupplied": "Provider مقدار uncertainty ارائه نکرده است",
-    "riskBoundary": "Nexora شواهد immutable متعلق به TRD Bot را بدون محاسبه مجدد، override یا صدور مجوز برای تصمیم Risk Gate نمایش می‌دهد. Position sizing در این مرحله نمایش داده نمی‌شود."
+    "riskBoundary": "Nexora شواهد immutable متعلق به TRD Bot را بدون محاسبه مجدد، override یا صدور مجوز برای تصمیم Risk Gate نمایش می‌دهد. Position sizing در این مرحله نمایش داده نمی‌شود.",
+    "portfolioImpactEyebrow": "شواهد PAPER/SHADOW متعلق به PROVIDER",
+    "portfolioImpactTitle": "اثر Candidate بر پورتفولیو",
+    "portfolioImpactUnavailable": "شواهد معتبر اثر پورتفولیو برای این Candidate در دسترس نیست.",
+    "portfolioRecommendations": {
+      "accept": "پذیرش",
+      "reject": "رد",
+      "unavailable": "در دسترس نیست"
+    },
+    "noPortfolioReasons": "provider هیچ reason code مربوط به رد پورتفولیو برنگردانده و تمام کنترل‌های ارائه‌شده موفق بوده‌اند.",
+    "snapshotMode": "حالت شبیه‌سازی",
+    "snapshotSource": "منبع snapshot",
+    "projectedExposure": "exposure پیش‌بینی‌شده",
+    "projectedConcentration": "تمرکز پیش‌بینی‌شده",
+    "correlation": "همبستگی Candidate",
+    "whatIfScenarios": "سناریوهای محدود what-if",
+    "projectedEquity": "equity پیش‌بینی‌شده",
+    "lossFraction": "نسبت زیان",
+    "portfolioChecks": "کنترل‌های policy پورتفولیو",
+    "portfolioAnalysisUnavailable": "provider تحلیل پورتفولیو را صریحاً unavailable اعلام کرده و Nexora تحلیلی جعل نمی‌کند.",
+    "portfolioImpactBoundary": "شواهد فقط‌خواندنی Paper/Shadow از TRD Bot؛ Nexora این تحلیل را دوباره محاسبه نمی‌کند، Transaction یا OrderIntent نمی‌سازد، سفارش یا انتقال وجه انجام نمی‌دهد و بدون asset map نسخه‌بندی‌شده نماد provider را به دارایی شخصی متصل نمی‌کند."
   },
   "states": {
     "loadingTitle": "بازیابی نشست امن",

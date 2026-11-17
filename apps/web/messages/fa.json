@@ -375,6 +375,52 @@
     "historyCount": "{count} transition immutable محلی",
     "notificationDeferred": "ارسال notification به آینده موکول شده است. وضعیت هشدار نمی‌تواند مجوز اجرا صادر کند، سفارش یا Transaction بسازد یا وجه منتقل کند."
   },
+  "watchlists": {
+    "eyebrow": "تنظیمات مانیتورینگ مالک",
+    "title": "Watchlistها",
+    "description": "referenceهای محدود دارایی، بازار، Strategy و منبع Candidate را برای نمایش و مانیتورینگ محلی سازمان‌دهی کنید.",
+    "loading": "در حال بارگذاری Watchlistهای مالک…",
+    "error": "Watchlistها بارگذاری نشدند و هیچ preferenceای تغییر نکرد.",
+    "retry": "تلاش دوباره",
+    "name": "نام Watchlist",
+    "namePlaceholder": "Candidateهای تصمیم",
+    "create": "ساخت Watchlist",
+    "saving": "در حال ثبت…",
+    "emptyTitle": "هنوز Watchlistی وجود ندارد",
+    "emptyDescription": "یک Watchlist محدود به مالک بسازید و سپس referenceهای محدود مانیتورینگ را ثبت کنید.",
+    "select": "Watchlist فعال",
+    "version": "نسخه {version}",
+    "updated": "آخرین تغییر",
+    "itemsTitle": "Referenceهای ثبت‌شده",
+    "noItems": "هنوز آیتمی در این Watchlist ثبت نشده است.",
+    "itemKind": "نوع reference",
+    "itemKinds": {
+      "asset": "دارایی",
+      "market": "بازار",
+      "strategy": "Strategy",
+      "candidate_source": "منبع Candidate"
+    },
+    "reference": "Reference",
+    "label": "برچسب اختیاری",
+    "addItem": "ثبت آیتم",
+    "preferencesTitle": "Preferenceهای محدود مانیتورینگ",
+    "presentationOrder": "ترتیب نمایش",
+    "presentationOrders": {
+      "newest_first": "جدیدترین ابتدا",
+      "oldest_first": "قدیمی‌ترین ابتدا",
+      "severity_desc": "بیشترین شدت ابتدا"
+    },
+    "minimumSeverity": "حداقل شدت قابل نمایش",
+    "severities": {
+      "info": "اطلاعاتی",
+      "warning": "هشدار",
+      "critical": "بحرانی"
+    },
+    "includeResolved": "نمایش شواهد حل‌شده",
+    "savePreferences": "ذخیره preferenceها",
+    "operationError": "عملیات تأیید نشد؛ تلاش دوباره همان idempotency key را حفظ می‌کند.",
+    "boundary": "Watchlist فقط metadata محلی نمایش است و نمی‌تواند trade instruction بسازد، subscription provider را مدیریت کند، notification بفرستد، سفارش ثبت کند یا وجه منتقل کند."
+  },
   "states": {
     "loadingTitle": "بازیابی نشست امن",
     "loadingDescription": "Runtime خصوصی بدون نمایش اطلاعات نشست بررسی می‌شود.",

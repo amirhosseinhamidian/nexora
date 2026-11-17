@@ -65,7 +65,7 @@ class RuntimeApiAuthContractTests(unittest.TestCase):
 
     def test_post_freeze_openapi_extensions_are_explicitly_bounded(self) -> None:
         self.assertTrue(MODULE.EXPECTED_OPERATIONS.isdisjoint(MODULE.APPROVED_EXTENSION_OPERATIONS))
-        self.assertEqual(len(MODULE.APPROVED_EXTENSION_OPERATIONS), 45)
+        self.assertEqual(len(MODULE.APPROVED_EXTENSION_OPERATIONS), 49)
 
     def test_generated_checksum_cannot_change(self) -> None:
         candidate = copy.deepcopy(self.contract)

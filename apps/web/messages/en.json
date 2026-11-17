@@ -375,6 +375,52 @@
     "historyCount": "{count} immutable local transitions",
     "notificationDeferred": "Notification delivery is deferred. Alert state cannot authorize execution, create an order, post a transaction or move funds."
   },
+  "watchlists": {
+    "eyebrow": "OWNER MONITORING PREFERENCES",
+    "title": "Watchlists",
+    "description": "Organize bounded asset, market, Strategy and Candidate-source references for local presentation and monitoring.",
+    "loading": "Loading owner watchlists…",
+    "error": "Watchlists could not be loaded. No preference was changed.",
+    "retry": "Try again",
+    "name": "Watchlist name",
+    "namePlaceholder": "Decision candidates",
+    "create": "Create watchlist",
+    "saving": "Saving…",
+    "emptyTitle": "No watchlist yet",
+    "emptyDescription": "Create an owner-scoped watchlist, then register bounded references for monitoring.",
+    "select": "Active watchlist",
+    "version": "Version {version}",
+    "updated": "Updated",
+    "itemsTitle": "Registered references",
+    "noItems": "No item is registered in this watchlist.",
+    "itemKind": "Reference kind",
+    "itemKinds": {
+      "asset": "Asset",
+      "market": "Market",
+      "strategy": "Strategy",
+      "candidate_source": "Candidate source"
+    },
+    "reference": "Reference",
+    "label": "Optional label",
+    "addItem": "Register item",
+    "preferencesTitle": "Bounded monitoring preferences",
+    "presentationOrder": "Presentation order",
+    "presentationOrders": {
+      "newest_first": "Newest first",
+      "oldest_first": "Oldest first",
+      "severity_desc": "Highest severity first"
+    },
+    "minimumSeverity": "Minimum visible severity",
+    "severities": {
+      "info": "Information",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "includeResolved": "Include resolved evidence",
+    "savePreferences": "Save preferences",
+    "operationError": "The operation was not confirmed. Retry keeps the same idempotency key.",
+    "boundary": "Watchlists are local presentation metadata only. They cannot create trade instructions, manage provider subscriptions, deliver notifications, submit orders or move funds."
+  },
   "states": {
     "loadingTitle": "Restoring secure session",
     "loadingDescription": "Checking the private runtime without exposing session material.",

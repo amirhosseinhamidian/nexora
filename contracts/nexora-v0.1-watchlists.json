@@ -1,0 +1,81 @@
+{
+  "schema_version": "nexora-watchlists-contract-v1",
+  "decision_id": "NEX-P3-09",
+  "status": "candidate",
+  "title": "Watchlist and Monitoring Preferences",
+  "prerequisites": {
+    "p3_08_accepted_commit_sha": "0c008cd6d24ec02e28edcb7f94d698341aa2bc8f",
+    "decision_review_domain_contract": "nexora-decision-review-journal-domain-v1"
+  },
+  "watchlists": {
+    "owner_scoped": true,
+    "item_kinds": [
+      "asset",
+      "market",
+      "strategy",
+      "candidate_source"
+    ],
+    "optimistic_concurrency": true,
+    "idempotency_key_required": true,
+    "exact_payload_replay_is_idempotent": true,
+    "different_payload_replay_is_conflict": true,
+    "duplicate_item_registration_is_idempotent": true,
+    "owner_and_name_unique": true
+  },
+  "monitoring_preferences": {
+    "bounded": true,
+    "presentation_orders": [
+      "newest_first",
+      "oldest_first",
+      "severity_desc"
+    ],
+    "minimum_severities": [
+      "info",
+      "warning",
+      "critical"
+    ],
+    "include_resolved_boolean_only": true,
+    "default_presentation_order": "newest_first",
+    "default_minimum_severity": "info",
+    "default_include_resolved": false,
+    "notification_delivery_enabled": false,
+    "provider_subscription_management_enabled": false
+  },
+  "api": {
+    "authenticated": true,
+    "owner_scoped": true,
+    "list_path": "/v1/watchlists",
+    "create_path": "/v1/watchlists",
+    "add_item_path": "/v1/watchlists/{watchlist_id}/items",
+    "update_preferences_path": "/v1/watchlists/{watchlist_id}/preferences",
+    "bounded_page_size": true,
+    "version_conflict_action": "conflict"
+  },
+  "security_boundary": {
+    "creates_trade_instruction": false,
+    "creates_order_intent": false,
+    "posts_transaction": false,
+    "submits_order": false,
+    "moves_funds": false,
+    "manages_provider_subscription": false,
+    "delivers_notification": false,
+    "exchange_credentials_added": false,
+    "live_trading_added": false
+  },
+  "web": {
+    "bilingual": true,
+    "loading_state": true,
+    "empty_state": true,
+    "error_state": true,
+    "create_watchlist_visible": true,
+    "register_item_visible": true,
+    "bounded_preferences_visible": true,
+    "safety_boundary_visible": true
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-10",
+    "separate_freeze_task_required": false,
+    "nex_p3_03_gate_opened": false,
+    "real_local_provider_smoke_required_later": true
+  }
+}

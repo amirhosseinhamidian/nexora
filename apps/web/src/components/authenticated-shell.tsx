@@ -25,6 +25,7 @@ import {
 } from "@/components/portfolio-dashboard";
 import { PortfolioOperations } from "@/components/portfolio-operations";
 import { StatePanel } from "@/components/state-panel";
+import { WatchlistPanel } from "@/components/watchlist-panel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError, SESSION_EXPIRED_EVENT, apiRequest } from "@/lib/api-client";
@@ -236,6 +237,8 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
           <DecisionFeed dictionary={dictionary} locale={locale} />
 
           <AlertInbox dictionary={dictionary} locale={locale} />
+
+          <WatchlistPanel dictionary={dictionary} locale={locale} />
 
           <PortfolioOperations
             context={portfolioContext}

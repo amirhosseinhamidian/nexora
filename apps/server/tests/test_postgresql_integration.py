@@ -49,6 +49,12 @@ from nexora.adapters.postgresql import (
     TransactionLegRecord,
     TransactionRecord,
     ValuationEvidenceRepository,
+    WatchlistCreate,
+    WatchlistIdempotencyConflict,
+    WatchlistItemWrite,
+    WatchlistPreferencesWrite,
+    WatchlistRepository,
+    WatchlistRepositoryConflict,
     create_database_engine,
     create_session_factory,
     load_database_settings,
@@ -96,7 +102,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261117_0013"
+    assert revision == "20261117_0014"
 
 
 def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
@@ -409,6 +415,98 @@ def test_alert_inbox_is_owner_scoped_idempotent_and_optimistically_versioned(eng
         connection.close()
 
 
+def test_watchlists_are_owner_scoped_idempotent_and_optimistically_versioned(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    repository = WatchlistRepository(factory)
+    create = WatchlistCreate(
+        name="Decision candidates",
+        idempotency_key="watchlist-integration-create-0001",
+    )
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        created, replayed = repository.create(owner_id, create)
+        replay, duplicate = repository.create(owner_id, create)
+        assert replayed is False
+        assert duplicate is True
+        assert replay.watchlist_id == created.watchlist_id
+        assert repository.list(uuid4(), limit=50) == ()
+
+        added, duplicate = repository.add_item(
+            owner_id,
+            created.watchlist_id,
+            WatchlistItemWrite(
+                item_kind="candidate_source",
+                reference="momentum-v3",
+                label="Momentum candidates",
+                expected_version=0,
+                idempotency_key="watchlist-integration-item-0001",
+            ),
+        )
+        assert duplicate is False
+        assert added.row_version == 1
+        assert added.items[0].reference == "momentum-v3"
+
+        deduplicated, duplicate = repository.add_item(
+            owner_id,
+            created.watchlist_id,
+            WatchlistItemWrite(
+                item_kind="candidate_source",
+                reference="momentum-v3",
+                label="Momentum candidates",
+                expected_version=1,
+                idempotency_key="watchlist-integration-item-0002",
+            ),
+        )
+        assert duplicate is True
+        assert deduplicated.row_version == 1
+        assert len(deduplicated.items) == 1
+
+        updated, duplicate = repository.update_preferences(
+            owner_id,
+            created.watchlist_id,
+            WatchlistPreferencesWrite(
+                presentation_order="severity_desc",
+                minimum_severity="warning",
+                include_resolved=True,
+                expected_version=1,
+                idempotency_key="watchlist-integration-preferences-0001",
+            ),
+        )
+        assert duplicate is False
+        assert updated.row_version == 2
+        assert updated.preferences.minimum_severity == "warning"
+        assert updated.preferences.include_resolved is True
+
+        with pytest.raises(WatchlistRepositoryConflict):
+            repository.update_preferences(
+                owner_id,
+                created.watchlist_id,
+                WatchlistPreferencesWrite(
+                    presentation_order="newest_first",
+                    minimum_severity="info",
+                    include_resolved=False,
+                    expected_version=1,
+                    idempotency_key="watchlist-integration-preferences-0002",
+                ),
+            )
+        with pytest.raises(WatchlistIdempotencyConflict):
+            repository.create(owner_id, replace(create, name="Different name"))
+    finally:
+        outer.rollback()
+        connection.close()
+
+
 def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
     owner_id = uuid4()
     connection = engine.connect().execution_options(isolation_level="REPEATABLE READ")
@@ -543,6 +641,10 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "decision_review_deliveries",
         "owner_alert_states",
         "alert_state_history",
+        "watchlists",
+        "watchlist_items",
+        "watchlist_preferences",
+        "watchlist_operations",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

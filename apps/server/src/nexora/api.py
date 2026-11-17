@@ -239,6 +239,16 @@ from nexora.valuation_contracts import (
     PriceObservationResponse,
     ValuationStatusResponse,
 )
+from nexora.watchlists import (
+    CreateWatchlistItemRequest,
+    CreateWatchlistRequest,
+    UpdateMonitoringPreferencesRequest,
+    WatchlistConflict,
+    WatchlistListResponse,
+    WatchlistNotFound,
+    WatchlistResponse,
+    WatchlistService,
+)
 
 CORRELATION_HEADER = "X-Correlation-ID"
 CSRF_HEADER = "X-CSRF-Token"
@@ -883,6 +893,24 @@ def create_app(
             message="alert evidence failed validation",
         )
 
+    @application.exception_handler(WatchlistNotFound)
+    async def watchlist_not_found(request: Request, _: WatchlistNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="WATCHLIST_NOT_FOUND",
+            message="watchlist is unavailable",
+        )
+
+    @application.exception_handler(WatchlistConflict)
+    async def watchlist_conflict(request: Request, _: WatchlistConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="WATCHLIST_STATE_CONFLICT",
+            message="watchlist version or idempotency state changed",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1207,6 +1235,12 @@ def create_app(
         if repository is None or projections is None:
             raise CeremonyUnavailable("alert inbox runtime is not configured")
         return AlertInboxService(repository, projections, resolved_container.trd_bot_integration_mode)
+
+    def watchlists() -> WatchlistService:
+        repository = resolved_container.watchlist_repository
+        if repository is None:
+            raise CeremonyUnavailable("watchlist runtime is not configured")
+        return WatchlistService(repository)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1629,6 +1663,86 @@ def create_app(
         return alert_inbox().transition(
             session.owner_id,
             alert_id,
+            payload,
+            idempotency_key=idempotency_key,
+        )
+
+    @application.get(
+        "/v1/watchlists",
+        response_model=WatchlistListResponse,
+        operation_id="listWatchlists",
+    )
+    def list_watchlists(
+        request: Request,
+        limit: int = Query(default=50, ge=1, le=100),
+    ) -> WatchlistListResponse:
+        _, session = require_session(request)
+        return watchlists().list(session.owner_id, limit=limit)
+
+    @application.post(
+        "/v1/watchlists",
+        response_model=WatchlistResponse,
+        status_code=201,
+        operation_id="createWatchlist",
+    )
+    def create_watchlist(
+        payload: CreateWatchlistRequest,
+        request: Request,
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> WatchlistResponse:
+        _, session = require_session(request)
+        return watchlists().create(session.owner_id, payload, idempotency_key=idempotency_key)
+
+    @application.post(
+        "/v1/watchlists/{watchlist_id}/items",
+        response_model=WatchlistResponse,
+        status_code=201,
+        operation_id="createWatchlistItem",
+    )
+    def create_watchlist_item(
+        payload: CreateWatchlistItemRequest,
+        request: Request,
+        watchlist_id: UUID,
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> WatchlistResponse:
+        _, session = require_session(request)
+        return watchlists().add_item(
+            session.owner_id,
+            watchlist_id,
+            payload,
+            idempotency_key=idempotency_key,
+        )
+
+    @application.post(
+        "/v1/watchlists/{watchlist_id}/preferences",
+        response_model=WatchlistResponse,
+        operation_id="updateWatchlistPreferences",
+    )
+    def update_watchlist_preferences(
+        payload: UpdateMonitoringPreferencesRequest,
+        request: Request,
+        watchlist_id: UUID,
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> WatchlistResponse:
+        _, session = require_session(request)
+        return watchlists().update_preferences(
+            session.owner_id,
+            watchlist_id,
             payload,
             idempotency_key=idempotency_key,
         )

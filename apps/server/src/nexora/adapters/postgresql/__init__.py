@@ -93,6 +93,10 @@ from nexora.adapters.postgresql.models import (
     TransactionLegRecord,
     TransactionRecord,
     TrdBotSyncReceipt,
+    WatchlistItemRecord,
+    WatchlistOperationRecord,
+    WatchlistPreferenceRecord,
+    WatchlistRecord,
     WebAuthnChallenge,
     WebAuthnCredential,
 )
@@ -102,6 +106,18 @@ from nexora.adapters.postgresql.portfolio_export import PostgreSQLPortfolioExpor
 from nexora.adapters.postgresql.portfolio_registry import PortfolioRegistryRepository
 from nexora.adapters.postgresql.transaction_journal import TransactionJournalRepository
 from nexora.adapters.postgresql.valuation import ValuationEvidenceRepository
+from nexora.adapters.postgresql.watchlists import (
+    WatchlistCreate,
+    WatchlistIdempotencyConflict,
+    WatchlistItemView,
+    WatchlistItemWrite,
+    WatchlistPreferencesView,
+    WatchlistPreferencesWrite,
+    WatchlistRepository,
+    WatchlistRepositoryConflict,
+    WatchlistRepositoryNotFound,
+    WatchlistView,
+)
 
 __all__ = [
     "ALEMBIC_VERSION_SCHEMA",
@@ -188,6 +204,20 @@ __all__ = [
     "TransactionRecord",
     "TrdBotSyncReceipt",
     "ValuationEvidenceRepository",
+    "WatchlistCreate",
+    "WatchlistIdempotencyConflict",
+    "WatchlistItemRecord",
+    "WatchlistItemView",
+    "WatchlistItemWrite",
+    "WatchlistOperationRecord",
+    "WatchlistPreferenceRecord",
+    "WatchlistPreferencesView",
+    "WatchlistPreferencesWrite",
+    "WatchlistRecord",
+    "WatchlistRepository",
+    "WatchlistRepositoryConflict",
+    "WatchlistRepositoryNotFound",
+    "WatchlistView",
     "WebAuthnChallenge",
     "WebAuthnCredential",
     "canonical_payload_sha256",

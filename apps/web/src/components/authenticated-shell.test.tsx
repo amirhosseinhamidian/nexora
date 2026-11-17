@@ -32,6 +32,8 @@ describe("AuthenticatedShell", () => {
       .mockResolvedValueOnce({ items: [] })
       .mockResolvedValueOnce({ items: [] })
       .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({ items: [], schema_version: "nexora-watchlists-v1" })
       .mockResolvedValueOnce({ status: "completed" });
 
     render(<AuthenticatedShell dictionary={en} locale="en" />);

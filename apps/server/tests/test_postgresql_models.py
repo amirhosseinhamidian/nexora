@@ -46,6 +46,10 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.decision_review_deliveries",
         "nexora.owner_alert_states",
         "nexora.alert_state_history",
+        "nexora.watchlists",
+        "nexora.watchlist_items",
+        "nexora.watchlist_preferences",
+        "nexora.watchlist_operations",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -68,6 +72,10 @@ def test_application_tables_are_owner_aware() -> None:
         "decision_review_deliveries",
         "owner_alert_states",
         "alert_state_history",
+        "watchlists",
+        "watchlist_items",
+        "watchlist_preferences",
+        "watchlist_operations",
     ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c
@@ -124,6 +132,20 @@ def test_alert_inbox_is_owner_scoped_append_only_and_source_bound() -> None:
     }.issubset(history.c.keys())
     forbidden = {"notification_token", "exchange_api_key", "order_id", "wallet_address"}
     assert forbidden.isdisjoint(history.c.keys())
+
+
+def test_watchlists_are_owner_scoped_bounded_and_non_executable() -> None:
+    watchlists = Base.metadata.tables["nexora.watchlists"]
+    items = Base.metadata.tables["nexora.watchlist_items"]
+    preferences = Base.metadata.tables["nexora.watchlist_preferences"]
+    operations = Base.metadata.tables["nexora.watchlist_operations"]
+    assert all(table.c.owner_id.nullable is False for table in (watchlists, items, preferences, operations))
+    assert {"row_version", "name"}.issubset(watchlists.c.keys())
+    assert {"item_kind", "reference", "label"}.issubset(items.c.keys())
+    assert {"presentation_order", "minimum_severity", "include_resolved"}.issubset(preferences.c.keys())
+    assert {"operation_type", "aggregate_version", "idempotency_key", "request_sha256"}.issubset(operations.c.keys())
+    forbidden = {"trade_instruction", "order_id", "subscription_token", "exchange_api_key"}
+    assert all(forbidden.isdisjoint(table.c.keys()) for table in (watchlists, items, preferences, operations))
 
 
 def test_immutable_evidence_uses_postgresql_jsonb() -> None:

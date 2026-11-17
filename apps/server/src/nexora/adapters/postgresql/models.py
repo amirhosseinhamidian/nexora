@@ -1393,6 +1393,125 @@ class AlertStateHistoryRecord(Base):
     request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class WatchlistRecord(Base):
+    __tablename__ = "watchlists"
+    __table_args__ = (
+        CheckConstraint("char_length(name) BETWEEN 1 AND 120", name="name_length"),
+        CheckConstraint("row_version >= 0", name="row_version_nonnegative"),
+        CheckConstraint("updated_at >= created_at", name="timestamps_ordered"),
+        UniqueConstraint("owner_id", "watchlist_id", name="uq_watchlists_owner_watchlist"),
+        UniqueConstraint("owner_id", "name", name="uq_watchlists_owner_name"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    watchlist_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class WatchlistItemRecord(Base):
+    __tablename__ = "watchlist_items"
+    __table_args__ = (
+        CheckConstraint(
+            "item_kind IN ('asset', 'market', 'strategy', 'candidate_source')",
+            name="item_kind_allowed",
+        ),
+        CheckConstraint("char_length(reference) BETWEEN 1 AND 160", name="reference_length"),
+        CheckConstraint("label IS NULL OR char_length(label) BETWEEN 1 AND 120", name="label_length"),
+        ForeignKeyConstraint(
+            ["owner_id", "watchlist_id"],
+            [f"{SCHEMA_NAME}.watchlists.owner_id", f"{SCHEMA_NAME}.watchlists.watchlist_id"],
+            name="fk_watchlist_items_owner_watchlist",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "owner_id",
+            "watchlist_id",
+            "item_kind",
+            "reference",
+            name="uq_watchlist_items_owner_watchlist_kind_reference",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    watchlist_item_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    watchlist_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    item_kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    reference: Mapped[str] = mapped_column(String(160), nullable=False)
+    label: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class WatchlistPreferenceRecord(Base):
+    __tablename__ = "watchlist_preferences"
+    __table_args__ = (
+        CheckConstraint(
+            "presentation_order IN ('newest_first', 'oldest_first', 'severity_desc')",
+            name="presentation_order_allowed",
+        ),
+        CheckConstraint(
+            "minimum_severity IN ('info', 'warning', 'critical')",
+            name="minimum_severity_allowed",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "watchlist_id"],
+            [f"{SCHEMA_NAME}.watchlists.owner_id", f"{SCHEMA_NAME}.watchlists.watchlist_id"],
+            name="fk_watchlist_preferences_owner_watchlist",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "watchlist_id", name="uq_watchlist_preferences_owner_watchlist"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    preference_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    watchlist_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    presentation_order: Mapped[str] = mapped_column(String(24), nullable=False, server_default="newest_first")
+    minimum_severity: Mapped[str] = mapped_column(String(16), nullable=False, server_default="info")
+    include_resolved: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class WatchlistOperationRecord(Base):
+    __tablename__ = "watchlist_operations"
+    __table_args__ = (
+        CheckConstraint(
+            "operation_type IN ('create', 'add_item', 'update_preferences')",
+            name="operation_type_allowed",
+        ),
+        CheckConstraint("aggregate_version >= 0", name="aggregate_version_nonnegative"),
+        CheckConstraint(
+            "char_length(idempotency_key) BETWEEN 16 AND 160",
+            name="idempotency_key_length",
+        ),
+        CheckConstraint("idempotency_key !~ '[[:space:]]'", name="idempotency_key_no_whitespace"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_checksum_format"),
+        ForeignKeyConstraint(
+            ["owner_id", "watchlist_id"],
+            [f"{SCHEMA_NAME}.watchlists.owner_id", f"{SCHEMA_NAME}.watchlists.watchlist_id"],
+            name="fk_watchlist_operations_owner_watchlist",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_watchlist_operations_owner_idempotency"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    operation_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    watchlist_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    operation_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    aggregate_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

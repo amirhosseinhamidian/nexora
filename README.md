@@ -228,9 +228,13 @@ checksum. `NEX-P3-07` is accepted at
 idempotent Accept/Reject/Defer owner reviews against exact active evidence with
 optimistic concurrency and optional post-commit provider feedback. A review
 cannot authorize execution, create an OrderIntent or post a Transaction.
-`NEX-P3-08` is the current candidate. It adds a durable owner-scoped Alert
+`NEX-P3-08` is accepted at
+`0c008cd6d24ec02e28edcb7f94d698341aa2bc8f`; it adds a durable owner-scoped Alert
 Inbox with append-only acknowledge and snooze transitions while source alerts
 remain immutable. Notification delivery remains deferred.
+`NEX-P3-09` is the current candidate. It persists owner-scoped watchlists,
+idempotent bounded item registration and optimistic monitoring preferences
+without creating trade instructions or managing provider subscriptions.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -293,6 +297,7 @@ uv run python scripts/verify_risk_gate_explanation.py
 uv run python scripts/verify_portfolio_candidate_impact.py
 uv run python scripts/verify_human_decision_review.py
 uv run python scripts/verify_alert_inbox.py
+uv run python scripts/verify_watchlists.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -406,7 +411,9 @@ P3-06 accepted contract: [`contracts/nexora-v0.1-portfolio-candidate-impact.json
 
 P3-07 accepted contract: [`contracts/nexora-v0.1-human-decision-review.json`](contracts/nexora-v0.1-human-decision-review.json)
 
-P3-08 candidate contract: [`contracts/nexora-v0.1-alert-inbox.json`](contracts/nexora-v0.1-alert-inbox.json)
+P3-08 accepted contract: [`contracts/nexora-v0.1-alert-inbox.json`](contracts/nexora-v0.1-alert-inbox.json)
+
+P3-09 candidate contract: [`contracts/nexora-v0.1-watchlists.json`](contracts/nexora-v0.1-watchlists.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)

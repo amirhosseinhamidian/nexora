@@ -451,6 +451,9 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "fx_rate_observations",
         "manual_valuations",
         "decision_projection_states",
+        "decision_review_states",
+        "decision_reviews",
+        "decision_review_deliveries",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

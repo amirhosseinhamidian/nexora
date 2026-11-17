@@ -124,6 +124,7 @@ jobs:
           PGPASSWORD: nexora_ci_fixture_password
         run: |
           createdb --host 127.0.0.1 --username nexora nexora_fresh
+          umask 077
           printf '%s\n' 'postgresql+psycopg://nexora:nexora_ci_fixture_password@127.0.0.1:5432/nexora_fresh' > /tmp/nexora-fresh.dsn
           NEXORA_MIGRATION_DATABASE_DSN_FILE=/tmp/nexora-fresh.dsn uv run alembic upgrade head
           NEXORA_MIGRATION_DATABASE_DSN_FILE=/tmp/nexora-fresh.dsn uv run alembic check

@@ -179,6 +179,8 @@ class DecisionReviewRepository:
                 transaction_created=False,
                 order_intent_created=False,
             )
+            session.add(review)
+            session.flush()
             delivery = DecisionReviewDeliveryRecord(
                 delivery_id=uuid4(),
                 owner_id=owner_id,
@@ -187,7 +189,7 @@ class DecisionReviewRepository:
                 attempt_count=0,
                 updated_at=recorded_at,
             )
-            session.add_all((review, delivery))
+            session.add(delivery)
             state.current_version = review.review_version
             state.latest_review_id = review.review_id
             state.updated_at = recorded_at

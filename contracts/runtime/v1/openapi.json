@@ -698,6 +698,96 @@
         "title": "CreateAssetRequest",
         "type": "object"
       },
+      "CreateDecisionReviewRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/DecisionReviewAction"
+          },
+          "evidence_generation": {
+            "minimum": 1.0,
+            "title": "Evidence Generation",
+            "type": "integer"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "portfolio_mode": {
+            "enum": [
+              "paper",
+              "shadow"
+            ],
+            "title": "Portfolio Mode",
+            "type": "string"
+          },
+          "reason_code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "reason_note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Note"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          },
+          "revisit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisit At"
+          },
+          "source_evidence_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Source Evidence Checksum",
+            "type": "string"
+          },
+          "supersedes_review_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Review Id"
+          }
+        },
+        "required": [
+          "action",
+          "portfolio_mode",
+          "reason_code",
+          "reviewed_at",
+          "expected_version",
+          "evidence_generation",
+          "source_evidence_checksum"
+        ],
+        "title": "CreateDecisionReviewRequest",
+        "type": "object"
+      },
       "CreateFxRateObservationRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1166,6 +1256,286 @@
         ],
         "title": "DecisionKind",
         "type": "string"
+      },
+      "DecisionReviewAction": {
+        "enum": [
+          "accept",
+          "reject",
+          "defer"
+        ],
+        "title": "DecisionReviewAction",
+        "type": "string"
+      },
+      "DecisionReviewContextResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "current_version": {
+            "minimum": 0.0,
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "evidence_generation": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Generation"
+          },
+          "latest_review_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Review Id"
+          },
+          "local_state": {
+            "enum": [
+              "review_pending",
+              "accepted",
+              "rejected",
+              "deferred"
+            ],
+            "title": "Local State",
+            "type": "string"
+          },
+          "provider_delivery_required": {
+            "title": "Provider Delivery Required",
+            "type": "boolean"
+          },
+          "reviewable": {
+            "title": "Reviewable",
+            "type": "boolean"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionReviewResponse"
+            },
+            "title": "Reviews",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-human-decision-review-v1",
+            "default": "nexora-human-decision-review-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_evidence_checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Evidence Checksum"
+          }
+        },
+        "required": [
+          "decision_id",
+          "current_version",
+          "latest_review_id",
+          "local_state",
+          "reviewable",
+          "provider_delivery_required",
+          "reviews"
+        ],
+        "title": "DecisionReviewContextResponse",
+        "type": "object"
+      },
+      "DecisionReviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/DecisionReviewAction"
+          },
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "delivery_attempt_count": {
+            "minimum": 0.0,
+            "title": "Delivery Attempt Count",
+            "type": "integer"
+          },
+          "delivery_status": {
+            "enum": [
+              "pending",
+              "accepted",
+              "duplicate"
+            ],
+            "title": "Delivery Status",
+            "type": "string"
+          },
+          "evidence_generation": {
+            "minimum": 1.0,
+            "title": "Evidence Generation",
+            "type": "integer"
+          },
+          "execution_authorization": {
+            "const": false,
+            "default": false,
+            "title": "Execution Authorization",
+            "type": "boolean"
+          },
+          "local_state": {
+            "enum": [
+              "accepted",
+              "rejected",
+              "deferred"
+            ],
+            "title": "Local State",
+            "type": "string"
+          },
+          "order_intent_created": {
+            "const": false,
+            "default": false,
+            "title": "Order Intent Created",
+            "type": "boolean"
+          },
+          "portfolio_mode": {
+            "enum": [
+              "paper",
+              "shadow"
+            ],
+            "title": "Portfolio Mode",
+            "type": "string"
+          },
+          "provider_accepted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Accepted At"
+          },
+          "provider_command_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Command Id"
+          },
+          "reason_code": {
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "reason_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Note"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "review_id": {
+            "format": "uuid",
+            "title": "Review Id",
+            "type": "string"
+          },
+          "review_version": {
+            "minimum": 1.0,
+            "title": "Review Version",
+            "type": "integer"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          },
+          "revisit_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revisit At"
+          },
+          "schema_version": {
+            "const": "nexora-human-decision-review-v1",
+            "default": "nexora-human-decision-review-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_evidence_checksum": {
+            "title": "Source Evidence Checksum",
+            "type": "string"
+          },
+          "supersedes_review_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Review Id"
+          },
+          "transaction_created": {
+            "const": false,
+            "default": false,
+            "title": "Transaction Created",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "review_id",
+          "decision_id",
+          "review_version",
+          "action",
+          "local_state",
+          "portfolio_mode",
+          "reason_code",
+          "reason_note",
+          "evidence_generation",
+          "source_evidence_checksum",
+          "reviewed_at",
+          "recorded_at",
+          "revisit_at",
+          "supersedes_review_id",
+          "delivery_status",
+          "provider_command_id",
+          "provider_accepted_at",
+          "delivery_attempt_count"
+        ],
+        "title": "DecisionReviewResponse",
+        "type": "object"
       },
       "ErrorDetail": {
         "additionalProperties": false,
@@ -1810,7 +2180,12 @@
       },
       "LocalDecisionState": {
         "enum": [
-          "review_pending"
+          "review_pending",
+          "accepted",
+          "rejected",
+          "deferred",
+          "expired",
+          "superseded"
         ],
         "title": "LocalDecisionState",
         "type": "string"
@@ -8991,6 +9366,308 @@
           }
         },
         "summary": "List Decision Feed"
+      }
+    },
+    "/v1/decisions/{decision_id}/reviews": {
+      "get": {
+        "operationId": "getDecisionReviewContext",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Decision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionReviewContextResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Get Decision Review Context"
+      },
+      "post": {
+        "operationId": "createDecisionReview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Decision Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 16,
+              "pattern": "^[^\\s]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDecisionReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Decision Review"
       }
     },
     "/v1/imports": {

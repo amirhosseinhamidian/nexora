@@ -1,5 +1,12 @@
 """PostgreSQL persistence primitives without application startup side effects."""
 
+from nexora.adapters.postgresql.alert_inbox import (
+    AlertInboxIdempotencyConflict,
+    AlertInboxRepository,
+    AlertInboxRepositoryConflict,
+    AlertStateView,
+    AlertStateWrite,
+)
 from nexora.adapters.postgresql.base import (
     ALEMBIC_VERSION_SCHEMA,
     DATABASE_SESSION_OPTIONS,
@@ -51,6 +58,7 @@ from nexora.adapters.postgresql.identity import IdentityStateConflict, PostgreSQ
 from nexora.adapters.postgresql.import_reconciliation import ImportReconciliationRepository
 from nexora.adapters.postgresql.models import (
     AccountRecord,
+    AlertStateHistoryRecord,
     AssetIdentifierRecord,
     AssetRecord,
     BackgroundJob,
@@ -71,6 +79,7 @@ from nexora.adapters.postgresql.models import (
     LotProjectionRecord,
     ManualValuationRecord,
     OutboxEvent,
+    OwnerAlertStateRecord,
     OwnerProfile,
     PortfolioRecord,
     PriceObservationRecord,
@@ -104,6 +113,12 @@ __all__ = [
     "AccountRecord",
     "ActiveProjectionGeneration",
     "AggregateProjectionState",
+    "AlertInboxIdempotencyConflict",
+    "AlertInboxRepository",
+    "AlertInboxRepositoryConflict",
+    "AlertStateHistoryRecord",
+    "AlertStateView",
+    "AlertStateWrite",
     "AssetIdentifierRecord",
     "AssetRecord",
     "BackgroundJob",
@@ -150,6 +165,7 @@ __all__ = [
     "OutboxClaim",
     "OutboxEvent",
     "OutboxMessage",
+    "OwnerAlertStateRecord",
     "OwnerProfile",
     "PaperShadowProjectionRepository",
     "PortfolioPerformanceRepository",

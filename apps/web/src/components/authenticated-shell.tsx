@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { AlertInbox } from "@/components/alert-inbox";
 import { FoundationControls } from "@/components/foundation-controls";
 import { DecisionFeed } from "@/components/decision-feed";
 import {
@@ -153,7 +154,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
               const Icon = navigationIcons[index];
               return (
                 <li key={label}>
-                  {index <= 2 || index === 4 ? (
+                  {index <= 3 || index === 4 ? (
                     <Link
                       aria-current={index === 0 ? "page" : undefined}
                       className={`navigation-link ${index === 0 ? "active" : ""}`}
@@ -164,7 +165,9 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
                             ? "#accounts"
                             : index === 2
                               ? "#decisions"
-                              : "#portfolio-operations"
+                              : index === 3
+                                ? "#alerts"
+                                : "#portfolio-operations"
                       }
                     >
                       <Icon aria-hidden="true" size={19} />
@@ -231,6 +234,8 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
           />
 
           <DecisionFeed dictionary={dictionary} locale={locale} />
+
+          <AlertInbox dictionary={dictionary} locale={locale} />
 
           <PortfolioOperations
             context={portfolioContext}

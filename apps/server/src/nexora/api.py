@@ -33,6 +33,15 @@ from nexora.adapters.postgresql import (
     probe_database,
 )
 from nexora.adapters.trd_bot import TrdBotIntegrationMode
+from nexora.alert_inbox import (
+    AlertInboxConflict,
+    AlertInboxNotFound,
+    AlertInboxResponse,
+    AlertInboxService,
+    AlertInboxValidationError,
+    AlertStateHistoryResponse,
+    CreateAlertTransitionRequest,
+)
 from nexora.artifact_storage import (
     ArtifactCapacityExceeded,
     ArtifactConflict,
@@ -847,6 +856,33 @@ def create_app(
             message="decision review evidence failed validation",
         )
 
+    @application.exception_handler(AlertInboxNotFound)
+    async def alert_inbox_not_found(request: Request, _: AlertInboxNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="ALERT_EVIDENCE_NOT_FOUND",
+            message="alert evidence is unavailable",
+        )
+
+    @application.exception_handler(AlertInboxConflict)
+    async def alert_inbox_conflict(request: Request, _: AlertInboxConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="ALERT_STATE_CONFLICT",
+            message="alert evidence, version or idempotency state changed",
+        )
+
+    @application.exception_handler(AlertInboxValidationError)
+    async def alert_inbox_validation(request: Request, _: AlertInboxValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="ALERT_EVIDENCE_INVALID",
+            message="alert evidence failed validation",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1164,6 +1200,13 @@ def create_app(
             resolved_container.trd_bot_client,
             resolved_container.trd_bot_integration_mode,
         )
+
+    def alert_inbox() -> AlertInboxService:
+        repository = resolved_container.alert_inbox_repository
+        projections = resolved_container.decision_event_projection_repository
+        if repository is None or projections is None:
+            raise CeremonyUnavailable("alert inbox runtime is not configured")
+        return AlertInboxService(repository, projections, resolved_container.trd_bot_integration_mode)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1551,6 +1594,43 @@ def create_app(
             payload,
             idempotency_key=idempotency_key,
             correlation_id=request.state.correlation_id,
+        )
+
+    @application.get(
+        "/v1/alerts",
+        response_model=AlertInboxResponse,
+        operation_id="listAlertInbox",
+    )
+    def list_alert_inbox(
+        request: Request,
+        limit: int = Query(default=50, ge=1, le=100),
+    ) -> AlertInboxResponse:
+        _, session = require_session(request)
+        return alert_inbox().list_inbox(session.owner_id, limit=limit)
+
+    @application.post(
+        "/v1/alerts/{alert_id}/state-transitions",
+        response_model=AlertStateHistoryResponse,
+        status_code=201,
+        operation_id="createAlertStateTransition",
+    )
+    def create_alert_state_transition(
+        payload: CreateAlertTransitionRequest,
+        request: Request,
+        alert_id: str = Path(min_length=1, max_length=160),
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> AlertStateHistoryResponse:
+        _, session = require_session(request)
+        return alert_inbox().transition(
+            session.owner_id,
+            alert_id,
+            payload,
+            idempotency_key=idempotency_key,
         )
 
     @application.get("/v1/assets", response_model=AssetListResponse, operation_id="listAssets")

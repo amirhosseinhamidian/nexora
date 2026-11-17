@@ -339,6 +339,42 @@
     "noReviews": "No owner review has been recorded for this Decision.",
     "reviewBoundary": "A review is human decision evidence only. It cannot authorize execution, create an OrderIntent, post a Transaction, submit an order, move funds or expose exchange credentials."
   },
+  "alertInbox": {
+    "eyebrow": "OWNER-SCOPED ALERT LIFECYCLE",
+    "title": "Alert inbox",
+    "description": "Acknowledge or snooze immutable provider alerts without changing their source evidence.",
+    "loading": "Loading the active alert projection…",
+    "error": "Alerts could not be loaded. No alert state was changed.",
+    "retry": "Try again",
+    "providerDegraded": "Provider alert evidence is degraded",
+    "providerStates": {
+      "degraded": "No valid active projection is available. Alert evidence remains unavailable until synchronization recovers.",
+      "disabled_incompatible": "TRD Bot integration is disabled because the configured provider is incompatible.",
+      "ready": "The compatible provider projection is ready."
+    },
+    "emptyTitle": "No active alerts",
+    "emptyDescription": "The active owner-scoped projection contains no alert evidence.",
+    "listLabel": "Owner alert inbox",
+    "sourceAlert": "IMMUTABLE SOURCE ALERT",
+    "states": {
+      "open": "Open",
+      "acknowledged": "Acknowledged",
+      "snoozed": "Snoozed",
+      "resolved": "Resolved",
+      "expired": "Expired"
+    },
+    "observedAt": "Observed at",
+    "sourceSchema": "Source schema",
+    "sourceChecksum": "Source checksum",
+    "evidence": "Provider evidence",
+    "acknowledge": "Acknowledge",
+    "snoozeUntil": "Resume alert at",
+    "snooze": "Snooze",
+    "saving": "Saving…",
+    "transitionError": "The transition was not confirmed. Retry uses the same idempotency key.",
+    "historyCount": "{count} immutable local transitions",
+    "notificationDeferred": "Notification delivery is deferred. Alert state cannot authorize execution, create an order, post a transaction or move funds."
+  },
   "states": {
     "loadingTitle": "Restoring secure session",
     "loadingDescription": "Checking the private runtime without exposing session material.",

@@ -166,6 +166,280 @@
         "title": "ActionResponse",
         "type": "object"
       },
+      "AlertAction": {
+        "enum": [
+          "acknowledge",
+          "snooze"
+        ],
+        "title": "AlertAction",
+        "type": "string"
+      },
+      "AlertInboxItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "alert_id": {
+            "title": "Alert Id",
+            "type": "string"
+          },
+          "current_version": {
+            "minimum": 0.0,
+            "title": "Current Version",
+            "type": "integer"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "title": "Evidence",
+            "type": "object"
+          },
+          "evidence_sha256": {
+            "title": "Evidence Sha256",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AlertStateHistoryResponse"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "local_state": {
+            "$ref": "#/components/schemas/AlertState"
+          },
+          "snooze_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snooze Until"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AlertSourceReferenceResponse"
+          }
+        },
+        "required": [
+          "alert_id",
+          "local_state",
+          "current_version",
+          "source",
+          "evidence",
+          "evidence_sha256",
+          "history"
+        ],
+        "title": "AlertInboxItemResponse",
+        "type": "object"
+      },
+      "AlertInboxResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertInboxItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "notification_delivery_enabled": {
+            "const": false,
+            "default": false,
+            "title": "Notification Delivery Enabled",
+            "type": "boolean"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ProviderStatusResponse"
+          },
+          "schema_version": {
+            "const": "nexora-alert-inbox-v1",
+            "default": "nexora-alert-inbox-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "items"
+        ],
+        "title": "AlertInboxResponse",
+        "type": "object"
+      },
+      "AlertSourceReferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Id"
+          },
+          "aggregate_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Type"
+          },
+          "aggregate_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Version"
+          },
+          "checksum": {
+            "title": "Checksum",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_schema_version": {
+            "title": "Resource Schema Version",
+            "type": "string"
+          },
+          "resource_type": {
+            "const": "alert",
+            "default": "alert",
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-source-reference-v1",
+            "default": "nexora-source-reference-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_product": {
+            "const": "trd_bot",
+            "default": "trd_bot",
+            "title": "Source Product",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_version",
+          "resource_id",
+          "resource_schema_version",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "AlertSourceReferenceResponse",
+        "type": "object"
+      },
+      "AlertState": {
+        "enum": [
+          "open",
+          "acknowledged",
+          "snoozed",
+          "resolved",
+          "expired"
+        ],
+        "title": "AlertState",
+        "type": "string"
+      },
+      "AlertStateHistoryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "alert_history_id": {
+            "format": "uuid",
+            "title": "Alert History Id",
+            "type": "string"
+          },
+          "evidence_generation": {
+            "minimum": 1.0,
+            "title": "Evidence Generation",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "reason_code": {
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "snooze_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snooze Until"
+          },
+          "source_evidence_checksum": {
+            "title": "Source Evidence Checksum",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AlertState"
+          },
+          "state_version": {
+            "minimum": 1.0,
+            "title": "State Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alert_history_id",
+          "state_version",
+          "state",
+          "reason_code",
+          "snooze_until",
+          "evidence_generation",
+          "source_evidence_checksum",
+          "occurred_at",
+          "recorded_at"
+        ],
+        "title": "AlertStateHistoryResponse",
+        "type": "object"
+      },
       "AnalyticsState": {
         "enum": [
           "complete",
@@ -627,6 +901,55 @@
           "kind"
         ],
         "title": "CreateAccountRequest",
+        "type": "object"
+      },
+      "CreateAlertTransitionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/AlertAction"
+          },
+          "evidence_generation": {
+            "minimum": 1.0,
+            "title": "Evidence Generation",
+            "type": "integer"
+          },
+          "expected_version": {
+            "minimum": 0.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "snooze_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snooze Until"
+          },
+          "source_evidence_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Source Evidence Checksum",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "occurred_at",
+          "expected_version",
+          "evidence_generation",
+          "source_evidence_checksum"
+        ],
+        "title": "CreateAlertTransitionRequest",
         "type": "object"
       },
       "CreateAssetIdentifierRequest": {
@@ -6579,6 +6902,311 @@
           }
         },
         "summary": "Close Account"
+      }
+    },
+    "/v1/alerts": {
+      "get": {
+        "operationId": "listAlertInbox",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertInboxResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Alert Inbox"
+      }
+    },
+    "/v1/alerts/{alert_id}/state-transitions": {
+      "post": {
+        "operationId": "createAlertStateTransition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "alert_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Alert Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 16,
+              "pattern": "^[^\\s]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAlertTransitionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertStateHistoryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Alert State Transition"
       }
     },
     "/v1/assets": {

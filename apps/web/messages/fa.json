@@ -339,6 +339,42 @@
     "noReviews": "برای این Decision هنوز review مالک ثبت نشده است.",
     "reviewBoundary": "Review فقط شواهد تصمیم انسانی است و نمی‌تواند مجوز اجرا صادر کند، OrderIntent یا Transaction بسازد، سفارش ثبت کند، وجه انتقال دهد یا credential صرافی را افشا کند."
   },
+  "alertInbox": {
+    "eyebrow": "چرخه هشدار محدود به مالک",
+    "title": "صندوق هشدارها",
+    "description": "هشدارهای immutable متعلق به provider را بدون تغییر شواهد منبع تأیید یا snooze کنید.",
+    "loading": "در حال بارگذاری projection فعال هشدارها…",
+    "error": "هشدارها بارگذاری نشدند و هیچ وضعیت هشداری تغییر نکرد.",
+    "retry": "تلاش دوباره",
+    "providerDegraded": "شواهد هشدار provider در وضعیت محدود است",
+    "providerStates": {
+      "degraded": "projection فعال و معتبر در دسترس نیست؛ شواهد هشدار تا بازیابی همگام‌سازی نمایش داده نمی‌شوند.",
+      "disabled_incompatible": "اتصال TRD Bot به‌دلیل ناسازگاری provider غیرفعال است.",
+      "ready": "projection مربوط به provider سازگار آماده است."
+    },
+    "emptyTitle": "هشدار فعالی وجود ندارد",
+    "emptyDescription": "projection فعال محدود به مالک هیچ شواهد هشداری ندارد.",
+    "listLabel": "صندوق هشدارهای مالک",
+    "sourceAlert": "هشدار IMMUTABLE منبع",
+    "states": {
+      "open": "باز",
+      "acknowledged": "تأییدشده",
+      "snoozed": "Snooze شده",
+      "resolved": "حل‌شده",
+      "expired": "منقضی‌شده"
+    },
+    "observedAt": "زمان مشاهده",
+    "sourceSchema": "schema منبع",
+    "sourceChecksum": "checksum منبع",
+    "evidence": "شواهد provider",
+    "acknowledge": "تأیید هشدار",
+    "snoozeUntil": "زمان بازگشت هشدار",
+    "snooze": "Snooze",
+    "saving": "در حال ثبت…",
+    "transitionError": "ثبت transition تأیید نشد؛ تلاش دوباره از همان idempotency key استفاده می‌کند.",
+    "historyCount": "{count} transition immutable محلی",
+    "notificationDeferred": "ارسال notification به آینده موکول شده است. وضعیت هشدار نمی‌تواند مجوز اجرا صادر کند، سفارش یا Transaction بسازد یا وجه منتقل کند."
+  },
   "states": {
     "loadingTitle": "بازیابی نشست امن",
     "loadingDescription": "Runtime خصوصی بدون نمایش اطلاعات نشست بررسی می‌شود.",

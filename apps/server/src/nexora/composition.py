@@ -9,6 +9,7 @@ from sqlalchemy import Engine
 
 from nexora import __version__
 from nexora.adapters.postgresql import (
+    AlertInboxRepository,
     DecisionEventProjectionRepository,
     DecisionReviewRepository,
     DurableWorkRepository,
@@ -85,6 +86,7 @@ class ApplicationContainer:
     durable_work_repository: DurableWorkRepository | None = None
     decision_event_projection_repository: DecisionEventProjectionRepository | None = None
     decision_review_repository: DecisionReviewRepository | None = None
+    alert_inbox_repository: AlertInboxRepository | None = None
     portfolio_registry_repository: PortfolioRegistryRepository | None = None
     transaction_journal_repository: TransactionJournalRepository | None = None
     import_reconciliation_repository: ImportReconciliationRepository | None = None
@@ -179,6 +181,7 @@ def compose_private_application(
         durable_work_repository=DurableWorkRepository(session_factory),
         decision_event_projection_repository=DecisionEventProjectionRepository(session_factory),
         decision_review_repository=DecisionReviewRepository(session_factory),
+        alert_inbox_repository=AlertInboxRepository(session_factory),
         portfolio_registry_repository=PortfolioRegistryRepository(session_factory),
         transaction_journal_repository=TransactionJournalRepository(session_factory),
         import_reconciliation_repository=ImportReconciliationRepository(session_factory),

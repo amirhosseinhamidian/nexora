@@ -1322,6 +1322,77 @@ class DecisionReviewDeliveryRecord(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class OwnerAlertStateRecord(Base):
+    __tablename__ = "owner_alert_states"
+    __table_args__ = (
+        CheckConstraint("current_version >= 0", name="current_version_nonnegative"),
+        ForeignKeyConstraint(
+            ["owner_id", "latest_history_id"],
+            [f"{SCHEMA_NAME}.alert_state_history.owner_id", f"{SCHEMA_NAME}.alert_state_history.alert_history_id"],
+            name="fk_owner_alert_states_owner_latest_history",
+            ondelete="RESTRICT",
+            use_alter=True,
+        ),
+        UniqueConstraint("owner_id", "alert_id", name="uq_owner_alert_states_owner_alert"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    alert_state_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    alert_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    current_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    latest_history_id: Mapped[UUID | None] = mapped_column()
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class AlertStateHistoryRecord(Base):
+    __tablename__ = "alert_state_history"
+    __table_args__ = (
+        CheckConstraint("state_version >= 1", name="state_version_positive"),
+        CheckConstraint(
+            "state IN ('open', 'acknowledged', 'snoozed', 'resolved', 'expired')",
+            name="state_allowed",
+        ),
+        CheckConstraint("char_length(reason_code) BETWEEN 1 AND 100", name="reason_code_length"),
+        CheckConstraint("evidence_generation >= 1", name="evidence_generation_positive"),
+        CheckConstraint("source_evidence_checksum ~ '^sha256:[0-9a-f]{64}$'", name="evidence_checksum_format"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_checksum_format"),
+        CheckConstraint("occurred_at <= recorded_at", name="occurred_before_recorded"),
+        CheckConstraint(
+            "(state = 'snoozed' AND snooze_until IS NOT NULL) OR (state <> 'snoozed' AND snooze_until IS NULL)",
+            name="snooze_until_matches_state",
+        ),
+        CheckConstraint(
+            "snooze_until IS NULL OR snooze_until > occurred_at",
+            name="snooze_until_after_occurrence",
+        ),
+        UniqueConstraint("owner_id", "alert_history_id", name="uq_alert_state_history_owner_history"),
+        UniqueConstraint("owner_id", "alert_id", "state_version", name="uq_alert_state_history_owner_alert_version"),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_alert_state_history_owner_idempotency"),
+        Index("ix_alert_state_history_owner_alert_recorded", "owner_id", "alert_id", "recorded_at"),
+        {"schema": SCHEMA_NAME},
+    )
+
+    alert_history_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    alert_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    state_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    snooze_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    evidence_generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_evidence_checksum: Mapped[str] = mapped_column(String(71), nullable=False)
+    source_reference: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

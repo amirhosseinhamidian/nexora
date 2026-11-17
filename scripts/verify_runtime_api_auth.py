@@ -78,6 +78,8 @@ APPROVED_EXTENSION_OPERATIONS = {
     "GET /v1/portfolio-impacts/{evaluation_id}",
     "GET /v1/decisions/{decision_id}/reviews",
     "POST /v1/decisions/{decision_id}/reviews",
+    "GET /v1/alerts",
+    "POST /v1/alerts/{alert_id}/state-transitions",
 }
 
 

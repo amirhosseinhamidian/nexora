@@ -13,6 +13,10 @@ from uuid import UUID, uuid4
 import pytest
 from nexora.adapters.postgresql import (
     AccountRecord,
+    AlertInboxIdempotencyConflict,
+    AlertInboxRepository,
+    AlertInboxRepositoryConflict,
+    AlertStateWrite,
     AssetIdentifierRecord,
     AssetRecord,
     BackgroundJob,
@@ -92,7 +96,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261116_0012"
+    assert revision == "20261117_0013"
 
 
 def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
@@ -322,6 +326,89 @@ def test_decision_review_is_owner_scoped_idempotent_and_optimistically_versioned
         connection.close()
 
 
+def test_alert_inbox_is_owner_scoped_idempotent_and_optimistically_versioned(engine: Engine) -> None:
+    owner_id = uuid4()
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    repository = AlertInboxRepository(factory)
+    occurred_at = datetime.now(UTC) - timedelta(minutes=1)
+    source = {
+        "schema_version": "nexora-source-reference-v1",
+        "source_product": "trd_bot",
+        "source_version": "0.3.1",
+        "resource_type": "alert",
+        "resource_id": "alert-inbox-integration",
+        "resource_schema_version": "trd-bot-alert-v1",
+        "observed_at": occurred_at.isoformat(),
+        "checksum": "sha256:" + "b" * 64,
+    }
+    first = AlertStateWrite(
+        alert_id="alert-inbox-integration",
+        state="acknowledged",
+        reason_code="owner.alert.acknowledged",
+        snooze_until=None,
+        evidence_generation=1,
+        source_evidence_checksum="sha256:" + "b" * 64,
+        source_reference=source,
+        occurred_at=occurred_at,
+        expected_version=0,
+        idempotency_key="alert-inbox-integration-key-0001",
+    )
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        created, replayed = repository.record(owner_id, first)
+        replay, duplicate = repository.record(owner_id, first)
+        assert replayed is False
+        assert duplicate is True
+        assert replay.alert_history_id == created.alert_history_id
+        assert created.state_version == 1
+        assert repository.list_for_alert(uuid4(), first.alert_id) == ()
+
+        with pytest.raises(AlertInboxIdempotencyConflict):
+            repository.record(owner_id, replace(first, state="snoozed"))
+        with pytest.raises(AlertInboxIdempotencyConflict):
+            repository.record(owner_id, replace(first, expected_version=1))
+        with pytest.raises(AlertInboxRepositoryConflict):
+            repository.record(
+                owner_id,
+                replace(first, idempotency_key="alert-inbox-integration-key-0002"),
+            )
+
+        snoozed, duplicate = repository.record(
+            owner_id,
+            AlertStateWrite(
+                alert_id=first.alert_id,
+                state="snoozed",
+                reason_code="owner.alert.snoozed",
+                snooze_until=occurred_at + timedelta(days=1),
+                evidence_generation=1,
+                source_evidence_checksum=first.source_evidence_checksum,
+                source_reference=source,
+                occurred_at=occurred_at,
+                expected_version=1,
+                idempotency_key="alert-inbox-integration-key-0003",
+            ),
+        )
+        assert duplicate is False
+        assert snoozed.state_version == 2
+        assert [item.state for item in repository.list_for_alert(owner_id, first.alert_id)] == [
+            "acknowledged",
+            "snoozed",
+        ]
+    finally:
+        outer.rollback()
+        connection.close()
+
+
 def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
     owner_id = uuid4()
     connection = engine.connect().execution_options(isolation_level="REPEATABLE READ")
@@ -454,6 +541,8 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "decision_review_states",
         "decision_reviews",
         "decision_review_deliveries",
+        "owner_alert_states",
+        "alert_state_history",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

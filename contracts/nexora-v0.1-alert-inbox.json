@@ -1,0 +1,79 @@
+{
+  "schema_version": "nexora-alert-inbox-contract-v1",
+  "decision_id": "NEX-P3-08",
+  "status": "candidate",
+  "title": "Alert Inbox, Acknowledge and Snooze",
+  "prerequisites": {
+    "p3_07_accepted_commit_sha": "ec8922357e207f318df6898c2ddb64bd8bfb84a4",
+    "provider_release": "0.3.1",
+    "decision_review_domain_contract": "nexora-decision-review-journal-domain-v1"
+  },
+  "source_alerts": {
+    "immutable": true,
+    "deletion_forbidden": true,
+    "active_generation_only": true,
+    "source_checksum_retained": true,
+    "source_reference_retained": true
+  },
+  "owner_state": {
+    "owner_scoped": true,
+    "local_states": [
+      "open",
+      "acknowledged",
+      "snoozed",
+      "resolved",
+      "expired"
+    ],
+    "owner_actions": [
+      "acknowledge",
+      "snooze"
+    ],
+    "history_append_only": true,
+    "optimistic_concurrency": true,
+    "idempotency_key_required": true,
+    "exact_payload_replay_is_idempotent": true,
+    "different_payload_replay_is_conflict": true,
+    "snooze_until_required": true,
+    "expired_snooze_reopens_for_presentation": true,
+    "source_terminal_state_precedence": true
+  },
+  "api": {
+    "authenticated": true,
+    "owner_scoped": true,
+    "list_path": "/v1/alerts",
+    "state_transition_path": "/v1/alerts/{alert_id}/state-transitions",
+    "bounded_page_size": true,
+    "stale_evidence_action": "conflict",
+    "version_conflict_action": "conflict"
+  },
+  "notification_delivery": {
+    "enabled": false,
+    "deferred": true
+  },
+  "security_boundary": {
+    "acknowledgement_authorizes_execution": false,
+    "snooze_creates_order_intent": false,
+    "alert_state_posts_transaction": false,
+    "alert_state_submits_order": false,
+    "alert_state_moves_funds": false,
+    "exchange_credentials_added": false,
+    "live_trading_added": false
+  },
+  "web": {
+    "bilingual": true,
+    "loading_state": true,
+    "empty_state": true,
+    "error_state": true,
+    "degraded_state": true,
+    "source_lineage_visible": true,
+    "acknowledge_action_visible": true,
+    "snooze_action_visible": true,
+    "notification_delivery_deferred_visible": true
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-09",
+    "separate_freeze_task_required": false,
+    "nex_p3_03_gate_opened": false,
+    "real_local_provider_smoke_required_later": true
+  }
+}

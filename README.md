@@ -223,10 +223,14 @@ sizing, or adding execution capability. `NEX-P3-06` is accepted at
 `bf8facf3124822a5d22a57d346a4ed0538a69d7d`; it displays provider-owned
 Paper/Shadow Portfolio Impact, bounded scenarios, exposure, concentration,
 correlation and checks while cross-validating the matching approved Risk Gate
-checksum. `NEX-P3-07` is the current candidate. It records immutable,
+checksum. `NEX-P3-07` is accepted at
+`ec8922357e207f318df6898c2ddb64bd8bfb84a4`; it records immutable,
 idempotent Accept/Reject/Defer owner reviews against exact active evidence with
 optimistic concurrency and optional post-commit provider feedback. A review
 cannot authorize execution, create an OrderIntent or post a Transaction.
+`NEX-P3-08` is the current candidate. It adds a durable owner-scoped Alert
+Inbox with append-only acknowledge and snooze transitions while source alerts
+remain immutable. Notification delivery remains deferred.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -288,6 +292,7 @@ uv run python scripts/verify_decision_feed_candidate_details.py
 uv run python scripts/verify_risk_gate_explanation.py
 uv run python scripts/verify_portfolio_candidate_impact.py
 uv run python scripts/verify_human_decision_review.py
+uv run python scripts/verify_alert_inbox.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -399,7 +404,9 @@ P3-05 accepted contract: [`contracts/nexora-v0.1-risk-gate-explanation.json`](co
 
 P3-06 accepted contract: [`contracts/nexora-v0.1-portfolio-candidate-impact.json`](contracts/nexora-v0.1-portfolio-candidate-impact.json)
 
-P3-07 candidate contract: [`contracts/nexora-v0.1-human-decision-review.json`](contracts/nexora-v0.1-human-decision-review.json)
+P3-07 accepted contract: [`contracts/nexora-v0.1-human-decision-review.json`](contracts/nexora-v0.1-human-decision-review.json)
+
+P3-08 candidate contract: [`contracts/nexora-v0.1-alert-inbox.json`](contracts/nexora-v0.1-alert-inbox.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)

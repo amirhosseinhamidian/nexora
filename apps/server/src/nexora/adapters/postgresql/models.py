@@ -1629,7 +1629,7 @@ class OutcomeJournalEntryRecord(Base):
     decision_evidence_generation: Mapped[int] = mapped_column(Integer, nullable=False)
     decision_evidence_checksum: Mapped[str] = mapped_column(String(71), nullable=False)
     decision_source_reference: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    source_lineage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    source_lineage: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     supersedes_entry_id: Mapped[UUID | None] = mapped_column()

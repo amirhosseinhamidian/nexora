@@ -34,7 +34,7 @@ def upgrade() -> None:
         sa.Column("decision_evidence_generation", sa.Integer(), nullable=False),
         sa.Column("decision_evidence_checksum", sa.String(length=71), nullable=False),
         sa.Column("decision_source_reference", postgresql.JSONB(), nullable=False),
-        sa.Column("source_lineage", postgresql.JSONB(), nullable=True),
+        sa.Column("source_lineage", postgresql.JSONB(none_as_null=True), nullable=True),
         sa.Column("occurred_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("recorded_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("supersedes_entry_id", sa.Uuid(), nullable=True),

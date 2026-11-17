@@ -153,6 +153,8 @@ def test_watchlists_are_owner_scoped_bounded_and_non_executable() -> None:
 def test_outcome_journal_is_append_only_source_bound_and_non_executable() -> None:
     entries = Base.metadata.tables["nexora.outcome_journal_entries"]
     assert entries.c.owner_id.nullable is False
+    assert isinstance(entries.c.source_lineage.type, postgresql.JSONB)
+    assert entries.c.source_lineage.type.none_as_null is True
     assert {
         "decision_id",
         "entry_kind",

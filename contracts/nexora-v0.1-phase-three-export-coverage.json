@@ -1,0 +1,106 @@
+{
+  "schema_version": "nexora-phase-three-export-coverage-v1",
+  "decision_id": "NEX-P3-11",
+  "status": "candidate",
+  "title": "Phase 3 Export Coverage",
+  "prerequisites": {
+    "p3_10_accepted_commit_sha": "7e6d646c789849561654ea060291eeaa26a71702",
+    "decision_review_domain_contract": "nexora-decision-review-journal-domain-v1",
+    "portfolio_export_contract": "nexora-portfolio-api-export-contract-v1"
+  },
+  "profiles": [
+    "private_complete",
+    "ai_safe"
+  ],
+  "required_domains": [
+    "decision_records",
+    "source_references",
+    "human_reviews",
+    "portfolio_impacts",
+    "alert_state_history",
+    "watchlists",
+    "outcome_journal",
+    "lineage",
+    "uncertainty"
+  ],
+  "required_datasets": [
+    "decision_records",
+    "decision_projection_states",
+    "source_references",
+    "human_reviews",
+    "decision_review_states",
+    "decision_review_deliveries",
+    "portfolio_impacts",
+    "owner_alert_states",
+    "alert_state_history",
+    "watchlists",
+    "watchlist_items",
+    "watchlist_preferences",
+    "watchlist_operations",
+    "outcome_journal"
+  ],
+  "snapshot": {
+    "owner_scoped": true,
+    "repeatable_read": true,
+    "schema_versioned": true,
+    "generated_at_required": true,
+    "complete_export_required": true,
+    "partial_export_allowed": false,
+    "bounded_record_count": true,
+    "deterministic_ordering": true
+  },
+  "checksums": {
+    "source_checksums_preserved": true,
+    "phase_three_dataset_checksums_required": true,
+    "snapshot_checksum_required": true,
+    "file_checksums_required": true,
+    "bundle_checksum_required": true
+  },
+  "ai_safe": {
+    "required_domains_remain_covered": true,
+    "lineage_preserved": true,
+    "uncertainty_preserved": true,
+    "excluded_categories": [
+      "credentials",
+      "tokens",
+      "session_identifiers",
+      "recovery_material",
+      "private_keys",
+      "raw_security_context",
+      "provider_raw_payloads",
+      "owner_free_text",
+      "provider_delivery_identifiers",
+      "idempotency_material"
+    ],
+    "outcome_content_excluded": true,
+    "review_note_excluded": true,
+    "public_download": false
+  },
+  "persistence": {
+    "existing_export_artifact_type": "portfolio-export",
+    "existing_authenticated_create_path": "/v1/portfolio-exports",
+    "existing_authenticated_download_path_reused": true,
+    "new_tables": [],
+    "new_migration_required": false,
+    "new_public_route": false,
+    "public_bucket": false
+  },
+  "security_boundary": {
+    "owner_override": false,
+    "public_download": false,
+    "credentials_exported": false,
+    "session_material_exported": false,
+    "execution_authorization": false,
+    "creates_order_intent": false,
+    "posts_transaction": false,
+    "submits_order": false,
+    "moves_funds": false,
+    "live_trading_added": false
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-12",
+    "separate_freeze_task_required": false,
+    "phase_three_acceptance_deferred_to": "NEX-P3-13",
+    "production_readiness_claimed": false
+  }
+}

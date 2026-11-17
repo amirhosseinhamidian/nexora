@@ -32,6 +32,33 @@ PORTFOLIO_EXPORT_RECORD_SCHEMA: Final = "nexora-portfolio-export-record-v1"
 MAX_EXPORT_RECORDS: Final = 100_000
 MAX_UNCOMPRESSED_BYTES: Final = 128 * 1024 * 1024
 DATASET_PATTERN: Final = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+PHASE_THREE_REQUIRED_DATASETS: Final = frozenset(
+    {
+        "decision_records",
+        "decision_projection_states",
+        "source_references",
+        "human_reviews",
+        "decision_review_states",
+        "decision_review_deliveries",
+        "portfolio_impacts",
+        "owner_alert_states",
+        "alert_state_history",
+        "watchlists",
+        "watchlist_items",
+        "watchlist_preferences",
+        "watchlist_operations",
+        "outcome_journal",
+    }
+)
+PHASE_THREE_SOURCE_CHECKSUM_FIELDS: Final = {
+    "decision_records": "source_checksum",
+    "source_references": "payload_sha256",
+    "human_reviews": "source_evidence_checksum",
+    "portfolio_impacts": "source_checksum",
+    "alert_state_history": "source_evidence_checksum",
+    "outcome_journal": "decision_evidence_checksum",
+}
+PHASE_THREE_UNCERTAINTY_KEYS: Final = frozenset({"review_actions", "alert_states", "journal_uncertainty_levels"})
 
 type JsonScalar = str | int | bool | None
 type JsonValue = JsonScalar | list[JsonValue] | dict[str, JsonValue]
@@ -197,6 +224,33 @@ def _zip_entry(name: str) -> zipfile.ZipInfo:
     return entry
 
 
+def _validate_phase_three_coverage(snapshot: PortfolioExportSnapshot) -> None:
+    missing_datasets = PHASE_THREE_REQUIRED_DATASETS.difference(snapshot.datasets)
+    if missing_datasets:
+        raise PortfolioExportValidationError(
+            f"complete Phase 3 export is missing datasets: {', '.join(sorted(missing_datasets))}"
+        )
+    dataset_checksums = snapshot.lineage.get("phase_three_dataset_sha256")
+    if not isinstance(dataset_checksums, dict) or set(dataset_checksums) != PHASE_THREE_REQUIRED_DATASETS:
+        raise PortfolioExportValidationError("Phase 3 dataset checksum inventory is incomplete")
+    for dataset in sorted(PHASE_THREE_REQUIRED_DATASETS):
+        checksum = dataset_checksums[dataset]
+        expected = canonical_json_sha256(list(snapshot.datasets[dataset]))
+        if not isinstance(checksum, str) or not re.fullmatch(r"[0-9a-f]{64}", checksum) or checksum != expected:
+            raise PortfolioExportValidationError(f"Phase 3 dataset checksum mismatch: {dataset}")
+    for dataset, field in PHASE_THREE_SOURCE_CHECKSUM_FIELDS.items():
+        pattern = r"[0-9a-f]{64}" if dataset == "source_references" else r"sha256:[0-9a-f]{64}"
+        for record in snapshot.datasets[dataset]:
+            checksum = record.get(field)
+            if not isinstance(checksum, str) or re.fullmatch(pattern, checksum) is None:
+                raise PortfolioExportValidationError(f"Phase 3 source checksum missing: {dataset}.{field}")
+    missing_uncertainty = PHASE_THREE_UNCERTAINTY_KEYS.difference(snapshot.uncertainty)
+    if missing_uncertainty:
+        raise PortfolioExportValidationError(
+            f"Phase 3 uncertainty summary is incomplete: {', '.join(sorted(missing_uncertainty))}"
+        )
+
+
 def build_portfolio_export(
     snapshot: PortfolioExportSnapshot,
     *,
@@ -205,6 +259,7 @@ def build_portfolio_export(
     ordered_formats = _ordered_formats(formats)
     if not re.fullmatch(r"[0-9a-f]{64}", snapshot.owner_scope_checksum):
         raise PortfolioExportValidationError("owner scope checksum is invalid")
+    _validate_phase_three_coverage(snapshot)
     captured_at = _utc_text(snapshot.captured_at)
     datasets: dict[str, tuple[JsonRecord, ...]] = {}
     record_count = 0

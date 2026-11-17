@@ -11,17 +11,23 @@ from uuid import UUID
 
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 import pytest
-from nexora.adapters.postgresql.models import AccountRecord
-from nexora.adapters.postgresql.portfolio_export import _record
+from nexora.adapters.postgresql.models import AccountRecord, OutcomeJournalEntryRecord
+from nexora.adapters.postgresql.portfolio_export import (
+    _phase_three_projection_datasets,
+    _record,
+)
 from nexora.artifact_storage import ArtifactStorageSettings, LocalFilesystemArtifactStorage
 from nexora.portfolio_export import (
+    PHASE_THREE_REQUIRED_DATASETS,
     JsonRecord,
+    JsonValue,
     PortfolioExportFormat,
     PortfolioExportProfile,
     PortfolioExportService,
     PortfolioExportSnapshot,
     PortfolioExportValidationError,
     build_portfolio_export,
+    canonical_json_sha256,
 )
 
 OWNER_ID = UUID("113f777b-f75b-46e5-91da-91d9601c03ea")
@@ -30,6 +36,7 @@ CAPTURED_AT = datetime(2026, 11, 3, 1, 30, tzinfo=UTC)
 
 def _snapshot(*, reverse: bool = False) -> PortfolioExportSnapshot:
     datasets: dict[str, tuple[JsonRecord, ...]] = {
+        **{name: () for name in PHASE_THREE_REQUIRED_DATASETS},
         "transactions": (
             {
                 "transaction_id": "00000000-0000-0000-0000-000000000401",
@@ -47,13 +54,25 @@ def _snapshot(*, reverse: bool = False) -> PortfolioExportSnapshot:
     }
     if reverse:
         datasets = dict(reversed(tuple(datasets.items())))
+    phase_three_dataset_sha256: dict[str, JsonValue] = {
+        name: canonical_json_sha256(list(datasets[name])) for name in PHASE_THREE_REQUIRED_DATASETS
+    }
     return PortfolioExportSnapshot(
         captured_at=CAPTURED_AT,
         profile=PortfolioExportProfile.PRIVATE_COMPLETE,
         owner_scope_checksum="a" * 64,
         datasets=datasets,
-        lineage={"journal_transaction_count": 1, "immutable_evidence_count": 0},
-        uncertainty={"portfolio_analytics_states": {"complete": 1, "stale": 0, "missing": 0}},
+        lineage={
+            "journal_transaction_count": 1,
+            "immutable_evidence_count": 0,
+            "phase_three_dataset_sha256": phase_three_dataset_sha256,
+        },
+        uncertainty={
+            "portfolio_analytics_states": {"complete": 1, "stale": 0, "missing": 0},
+            "review_actions": {},
+            "alert_states": {},
+            "journal_uncertainty_levels": {},
+        },
         excluded_fields=(),
     )
 
@@ -101,7 +120,7 @@ def test_binary_float_and_duplicate_or_empty_formats_fail_closed() -> None:
         captured_at=snapshot.captured_at,
         profile=snapshot.profile,
         owner_scope_checksum=snapshot.owner_scope_checksum,
-        datasets={"assets": ({"price": 1.25},)},  # type: ignore[dict-item]
+        datasets={**snapshot.datasets, "assets": ({"price": 1.25},)},  # type: ignore[dict-item]
         lineage=snapshot.lineage,
         uncertainty=snapshot.uncertainty,
         excluded_fields=(),
@@ -115,6 +134,28 @@ def test_binary_float_and_duplicate_or_empty_formats_fail_closed() -> None:
             snapshot,
             formats=(PortfolioExportFormat.JSON, PortfolioExportFormat.JSON),
         )
+    incomplete = PortfolioExportSnapshot(
+        captured_at=snapshot.captured_at,
+        profile=snapshot.profile,
+        owner_scope_checksum=snapshot.owner_scope_checksum,
+        datasets={"assets": ()},
+        lineage=snapshot.lineage,
+        uncertainty=snapshot.uncertainty,
+        excluded_fields=(),
+    )
+    with pytest.raises(PortfolioExportValidationError, match="missing datasets"):
+        build_portfolio_export(incomplete, formats=(PortfolioExportFormat.JSON,))
+    bad_lineage = PortfolioExportSnapshot(
+        captured_at=snapshot.captured_at,
+        profile=snapshot.profile,
+        owner_scope_checksum=snapshot.owner_scope_checksum,
+        datasets=snapshot.datasets,
+        lineage={**snapshot.lineage, "phase_three_dataset_sha256": {}},
+        uncertainty=snapshot.uncertainty,
+        excluded_fields=(),
+    )
+    with pytest.raises(PortfolioExportValidationError, match="checksum inventory"):
+        build_portfolio_export(bad_lineage, formats=(PortfolioExportFormat.JSON,))
 
 
 def test_ai_safe_record_excludes_owner_and_external_account_reference() -> None:
@@ -141,6 +182,106 @@ def test_ai_safe_record_excludes_owner_and_external_account_reference() -> None:
     assert "external_reference" not in ai_safe
     assert "owner_id" not in complete
     assert ai_safe["institution_name"] == "Institution"
+
+
+def test_ai_safe_outcome_journal_preserves_lineage_and_redacts_owner_text() -> None:
+    entry = OutcomeJournalEntryRecord(
+        entry_id=UUID("00000000-0000-0000-0000-000000000501"),
+        owner_id=OWNER_ID,
+        decision_id="decision-export-1",
+        entry_kind="observed_outcome",
+        content="Private owner observation.",
+        uncertainty_level="high",
+        uncertainty_note="Private uncertainty context.",
+        review_id=None,
+        portfolio_id=None,
+        simulated_position_reference=None,
+        decision_evidence_generation=2,
+        decision_evidence_checksum="sha256:" + "a" * 64,
+        decision_source_reference={"checksum": "sha256:" + "a" * 64},
+        source_lineage={"checksum": "sha256:" + "b" * 64},
+        occurred_at=CAPTURED_AT,
+        recorded_at=CAPTURED_AT,
+        supersedes_entry_id=None,
+        idempotency_key="outcome-export-idempotency-0001",
+        request_sha256="c" * 64,
+        author_kind="owner",
+        ai_generated=False,
+        provider_rewritable=False,
+        execution_authorization=False,
+        transaction_created=False,
+        order_intent_created=False,
+    )
+
+    complete = _record("outcome_journal", entry, PortfolioExportProfile.PRIVATE_COMPLETE)
+    ai_safe = _record("outcome_journal", entry, PortfolioExportProfile.AI_SAFE)
+
+    assert complete["content"] == "Private owner observation."
+    assert "content" not in ai_safe
+    assert "uncertainty_note" not in ai_safe
+    assert ai_safe["uncertainty_level"] == "high"
+    assert ai_safe["decision_evidence_checksum"] == "sha256:" + "a" * 64
+    assert ai_safe["source_lineage"] == {"checksum": "sha256:" + "b" * 64}
+
+
+def test_phase_three_projection_records_and_portfolio_impacts_are_explicit() -> None:
+    projection_states: tuple[JsonRecord, ...] = (
+        {
+            "projection_state_id": "00000000-0000-0000-0000-000000000601",
+            "generation": 2,
+            "status": "active",
+            "projection_sha256": "d" * 64,
+            "projection": {
+                "portfolio_intelligence:impact-1": {
+                    "resource_type": "portfolio_intelligence",
+                    "resource_id": "impact-1",
+                    "source_checksum": "sha256:" + "e" * 64,
+                    "payload_sha256": "f" * 64,
+                    "payload": {"recommendation": "accept"},
+                },
+                "decision_evaluation:decision-1": {
+                    "resource_type": "decision_evaluation",
+                    "resource_id": "decision-1",
+                    "source_checksum": "sha256:" + "1" * 64,
+                    "payload_sha256": "2" * 64,
+                    "payload": {"decision": "review"},
+                },
+            },
+        },
+    )
+
+    decisions, impacts = _phase_three_projection_datasets(
+        projection_states,
+        PortfolioExportProfile.PRIVATE_COMPLETE,
+    )
+    ai_safe_decisions, ai_safe_impacts = _phase_three_projection_datasets(
+        projection_states,
+        PortfolioExportProfile.AI_SAFE,
+    )
+
+    assert [item["resource_id"] for item in decisions] == ["decision-1", "impact-1"]
+    assert [item["resource_id"] for item in impacts] == ["impact-1"]
+    assert all(item["projection_generation"] == 2 for item in decisions)
+    assert all("source_checksum" in item for item in decisions)
+    assert all("payload" in item for item in decisions)
+    assert all("payload" not in item for item in ai_safe_decisions)
+    assert all("payload" not in item for item in ai_safe_impacts)
+    assert {
+        "decision_records",
+        "decision_projection_states",
+        "source_references",
+        "human_reviews",
+        "decision_review_states",
+        "decision_review_deliveries",
+        "portfolio_impacts",
+        "owner_alert_states",
+        "alert_state_history",
+        "watchlists",
+        "watchlist_items",
+        "watchlist_preferences",
+        "watchlist_operations",
+        "outcome_journal",
+    } == PHASE_THREE_REQUIRED_DATASETS
 
 
 def test_service_publishes_owner_scoped_immutable_artifact_idempotently(tmp_path: Path) -> None:

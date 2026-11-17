@@ -73,7 +73,7 @@ from nexora.holdings_projection import BasisStatus, CostBasisMethod, NegativeHol
 from nexora.import_reconciliation import ImportConflict, ImportFormat, ImportRowStatus
 from nexora.paper_shadow_projection import canonical_json_sha256
 from nexora.performance import AnalyticsState, PerformancePointState
-from nexora.portfolio_export import PortfolioExportProfile
+from nexora.portfolio_export import PHASE_THREE_REQUIRED_DATASETS, PortfolioExportProfile
 from nexora.portfolio_registry import AccountKind, AssetClass, AssetIdentifierScheme, PortfolioKind, RegistryConflict
 from nexora.transaction_journal import (
     CorrectionKind,
@@ -654,6 +654,16 @@ def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: 
         assert len(ai_safe.datasets["performance_series"][0]["points"]) == 31  # type: ignore[arg-type]
         assert ai_safe.uncertainty["paper_shadow_complete"] is False
         assert "accounts.external_reference" in ai_safe.excluded_fields
+        assert PHASE_THREE_REQUIRED_DATASETS.issubset(ai_safe.datasets)
+        phase_three_checksums = ai_safe.lineage["phase_three_dataset_sha256"]
+        assert isinstance(phase_three_checksums, dict)
+        assert set(phase_three_checksums) == PHASE_THREE_REQUIRED_DATASETS
+        assert ai_safe.uncertainty["journal_uncertainty_levels"] == {
+            "low": 0,
+            "medium": 0,
+            "high": 0,
+            "unknown": 0,
+        }
     finally:
         outer.rollback()
         connection.close()

@@ -15,8 +15,13 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from nexora.adapters.postgresql.models import (
     AccountRecord,
+    AlertStateHistoryRecord,
     AssetIdentifierRecord,
     AssetRecord,
+    DecisionProjectionState,
+    DecisionReviewDeliveryRecord,
+    DecisionReviewRecord,
+    DecisionReviewStateRecord,
     FxRateObservationRecord,
     HoldingProjectionRecord,
     HoldingsRebuildIssueRecord,
@@ -27,6 +32,8 @@ from nexora.adapters.postgresql.models import (
     LotConsumptionRecord,
     LotProjectionRecord,
     ManualValuationRecord,
+    OutcomeJournalEntryRecord,
+    OwnerAlertStateRecord,
     PortfolioRecord,
     PriceObservationRecord,
     ReconciliationCaseRecord,
@@ -35,18 +42,25 @@ from nexora.adapters.postgresql.models import (
     TransactionLegRecord,
     TransactionRecord,
     TrdBotSyncReceipt,
+    WatchlistItemRecord,
+    WatchlistOperationRecord,
+    WatchlistPreferenceRecord,
+    WatchlistRecord,
 )
 from nexora.adapters.postgresql.paper_shadow_projection import PaperShadowProjectionRepository
 from nexora.adapters.postgresql.performance import PortfolioPerformanceRepository
+from nexora.adapters.trd_bot import ResourceType
 from nexora.holdings_projection import CostBasisMethod
 from nexora.performance import PerformanceSeries, PortfolioAnalyticsSnapshot
 from nexora.portfolio_export import (
     MAX_EXPORT_RECORDS,
+    PHASE_THREE_REQUIRED_DATASETS,
     JsonRecord,
     JsonValue,
     PortfolioExportCapacityExceeded,
     PortfolioExportProfile,
     PortfolioExportSnapshot,
+    canonical_json_sha256,
 )
 
 DATASET_MODELS: tuple[tuple[str, type[Any]], ...] = (
@@ -71,6 +85,17 @@ DATASET_MODELS: tuple[tuple[str, type[Any]], ...] = (
     ("price_observations", PriceObservationRecord),
     ("fx_rate_observations", FxRateObservationRecord),
     ("manual_valuations", ManualValuationRecord),
+    ("decision_projection_states", DecisionProjectionState),
+    ("decision_review_states", DecisionReviewStateRecord),
+    ("human_reviews", DecisionReviewRecord),
+    ("decision_review_deliveries", DecisionReviewDeliveryRecord),
+    ("owner_alert_states", OwnerAlertStateRecord),
+    ("alert_state_history", AlertStateHistoryRecord),
+    ("watchlists", WatchlistRecord),
+    ("watchlist_items", WatchlistItemRecord),
+    ("watchlist_preferences", WatchlistPreferenceRecord),
+    ("watchlist_operations", WatchlistOperationRecord),
+    ("outcome_journal", OutcomeJournalEntryRecord),
 )
 
 AI_SAFE_EXCLUDED_FIELDS: Mapping[str, frozenset[str]] = {
@@ -87,6 +112,16 @@ AI_SAFE_EXCLUDED_FIELDS: Mapping[str, frozenset[str]] = {
     "price_observations": frozenset({"source_reference", "idempotency_key"}),
     "fx_rate_observations": frozenset({"source_reference", "idempotency_key"}),
     "manual_valuations": frozenset({"reason", "source_reference", "idempotency_key"}),
+    "decision_projection_states": frozenset({"projection", "resource_progress", "aggregate_versions", "quarantine"}),
+    "human_reviews": frozenset({"reason_note", "idempotency_key", "request_sha256"}),
+    "decision_review_deliveries": frozenset({"provider_command_id", "provider_correlation_id", "last_error_code"}),
+    "alert_state_history": frozenset({"idempotency_key", "request_sha256"}),
+    "watchlists": frozenset({"name"}),
+    "watchlist_items": frozenset({"label"}),
+    "watchlist_operations": frozenset({"idempotency_key", "request_sha256"}),
+    "outcome_journal": frozenset({"content", "uncertainty_note", "idempotency_key", "request_sha256"}),
+    "decision_records": frozenset({"payload"}),
+    "portfolio_impacts": frozenset({"payload"}),
 }
 
 
@@ -138,6 +173,49 @@ def _record(dataset: str, row: object, profile: PortfolioExportProfile) -> JsonR
             continue
         result[name] = _json_value(getattr(row, name))
     return result
+
+
+def _phase_three_projection_datasets(
+    projection_states: tuple[JsonRecord, ...],
+    profile: PortfolioExportProfile,
+) -> tuple[tuple[JsonRecord, ...], tuple[JsonRecord, ...]]:
+    decisions: list[JsonRecord] = []
+    portfolio_impacts: list[JsonRecord] = []
+    validated_states: list[tuple[int, str, str, str | None, JsonRecord]] = []
+    for state in projection_states:
+        generation = state.get("generation")
+        state_id = state.get("projection_state_id")
+        status = state.get("status")
+        projection_sha256 = state.get("projection_sha256")
+        if (
+            not isinstance(generation, int)
+            or isinstance(generation, bool)
+            or not isinstance(state_id, str)
+            or not isinstance(status, str)
+            or (projection_sha256 is not None and not isinstance(projection_sha256, str))
+        ):
+            raise TypeError("decision projection export identity is invalid")
+        validated_states.append((generation, state_id, status, projection_sha256, state))
+    for generation, _, status, projection_sha256, state in sorted(
+        validated_states, key=lambda item: (item[0], item[1])
+    ):
+        projection = state.get("projection")
+        if not isinstance(projection, dict):
+            raise TypeError("decision projection export source must be an object")
+        for projection_key in sorted(projection):
+            raw_record = projection[projection_key]
+            if not isinstance(raw_record, dict):
+                raise TypeError("decision projection export record must be an object")
+            record = _json_record(raw_record)
+            record["projection_generation"] = generation
+            record["projection_status"] = status
+            record["projection_sha256"] = projection_sha256
+            if profile is PortfolioExportProfile.AI_SAFE:
+                record.pop("payload", None)
+            decisions.append(record)
+            if record.get("resource_type") == ResourceType.PORTFOLIO_INTELLIGENCE.value:
+                portfolio_impacts.append(dict(record))
+    return tuple(decisions), tuple(portfolio_impacts)
 
 
 def _analytics_record(snapshot: PortfolioAnalyticsSnapshot) -> JsonRecord:
@@ -241,6 +319,7 @@ class PostgreSQLPortfolioExportSource:
         if captured_at.tzinfo is None or captured_at.utcoffset() != UTC.utcoffset(captured_at):
             raise ValueError("export capture timestamp must be timezone-aware UTC")
         datasets: dict[str, tuple[JsonRecord, ...]] = {}
+        raw_projection_states: tuple[JsonRecord, ...] = ()
         total = 0
         with self._session_factory() as session:
             connection = _repeatable_read_connection(session)
@@ -261,8 +340,22 @@ class PostgreSQLPortfolioExportSource:
                 rows = tuple(session.execute(statement).scalars())
                 if len(rows) > remaining:
                     raise PortfolioExportCapacityExceeded("complete export exceeds the source record budget")
+                if name == "decision_projection_states":
+                    raw_projection_states = tuple(
+                        _record(name, row, PortfolioExportProfile.PRIVATE_COMPLETE) for row in rows
+                    )
                 datasets[name] = tuple(_record(name, row, profile) for row in rows)
                 total += len(rows)
+
+            decision_records, portfolio_impacts = _phase_three_projection_datasets(
+                raw_projection_states,
+                profile,
+            )
+            datasets["decision_records"] = decision_records
+            datasets["portfolio_impacts"] = portfolio_impacts
+            total += len(decision_records) + len(portfolio_impacts)
+            if total > MAX_EXPORT_RECORDS:
+                raise PortfolioExportCapacityExceeded("complete export exceeds the source record budget")
 
             performance_repository = PortfolioPerformanceRepository(snapshot_factory)
             paper_shadow_repository = PaperShadowProjectionRepository(snapshot_factory)
@@ -305,6 +398,21 @@ class PostgreSQLPortfolioExportSource:
             state: sum(1 for item in analytics if item.get("state") == state)
             for state in ("complete", "stale", "missing")
         }
+        review_actions = {
+            action: sum(1 for item in datasets["human_reviews"] if item.get("action") == action)
+            for action in ("accept", "reject", "defer")
+        }
+        alert_states = {
+            state: sum(1 for item in datasets["alert_state_history"] if item.get("state") == state)
+            for state in ("open", "acknowledged", "snoozed", "resolved", "expired")
+        }
+        journal_uncertainty = {
+            level: sum(1 for item in datasets["outcome_journal"] if item.get("uncertainty_level") == level)
+            for level in ("low", "medium", "high", "unknown")
+        }
+        phase_three_dataset_sha256 = {
+            name: canonical_json_sha256(list(datasets[name])) for name in sorted(PHASE_THREE_REQUIRED_DATASETS)
+        }
         excluded_fields = (
             tuple(
                 sorted(f"{dataset}.{field}" for dataset, fields in AI_SAFE_EXCLUDED_FIELDS.items() for field in fields)
@@ -323,6 +431,11 @@ class PostgreSQLPortfolioExportSource:
                 "trd_bot_sync_receipt_count": len(datasets["trd_bot_sync_receipts"]),
                 "journal_transaction_count": len(datasets["transactions"]),
                 "paper_shadow_projection_sha256": projection.projection_sha256,
+                "phase_three_dataset_sha256": cast(JsonValue, phase_three_dataset_sha256),
+                "decision_record_count": len(datasets["decision_records"]),
+                "human_review_count": len(datasets["human_reviews"]),
+                "alert_history_count": len(datasets["alert_state_history"]),
+                "outcome_journal_count": len(datasets["outcome_journal"]),
             },
             uncertainty={
                 "paper_shadow_complete": projection.complete,
@@ -331,6 +444,9 @@ class PostgreSQLPortfolioExportSource:
                 "quarantined_import_row_count": quarantined_rows,
                 "holdings_rebuild_issue_count": len(datasets["holdings_rebuild_issues"]),
                 "portfolio_analytics_states": cast(JsonValue, analytics_states),
+                "review_actions": cast(JsonValue, review_actions),
+                "alert_states": cast(JsonValue, alert_states),
+                "journal_uncertainty_levels": cast(JsonValue, journal_uncertainty),
             },
             excluded_fields=excluded_fields,
         )

@@ -236,9 +236,14 @@ remain immutable. Notification delivery remains deferred.
 `7a06093b5ce81a60353797e61d8aadcbd40b40e0`; it persists owner-scoped watchlists,
 idempotent bounded item registration and optimistic monitoring preferences
 without creating trade instructions or managing provider subscriptions.
-`NEX-P3-10` is the current candidate. It appends owner-authored Decision notes,
-observed outcomes, lessons and superseding corrections with visible uncertainty
-and immutable source lineage. AI and provider rewrites remain forbidden.
+`NEX-P3-10` is accepted at
+`7e6d646c789849561654ea060291eeaa26a71702`; it appends owner-authored Decision
+notes, observed outcomes, lessons and superseding corrections with visible
+uncertainty and immutable source lineage. AI and provider rewrites remain
+forbidden. `NEX-P3-11` is the current candidate. It extends deterministic,
+owner-scoped `private_complete` and `ai_safe` exports across the complete Phase
+3 Decision, review, Alert, watchlist and outcome history while preserving source
+checksums and excluding security material.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -303,6 +308,7 @@ uv run python scripts/verify_human_decision_review.py
 uv run python scripts/verify_alert_inbox.py
 uv run python scripts/verify_watchlists.py
 uv run python scripts/verify_outcome_journal.py
+uv run python scripts/verify_phase_three_export_coverage.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -400,6 +406,11 @@ NEX_P3_02_TRD_BOT_V031_INTEGRATION_CONTRACT=PASS
 NEX_P3_02_FREEZE=PASS
 NEX_P3_02_PROVIDER_IMPLEMENTATION=DEFERRED_TO_TRD_BOT
 NEX_P3_03_PROVIDER_SMOKE_GATE=PRESERVED
+NEX_P3_10_ACCEPTED_SHA=PASS
+NEX_P3_11_PHASE_THREE_EXPORT_COVERAGE=COMPLETE
+NEX_P3_11_AI_SAFE_LINEAGE_AND_UNCERTAINTY=PRESERVED
+NEX_P3_11_PUBLIC_DOWNLOAD=FORBIDDEN
+NEX_P3_12=BLOCKED_PENDING_P3_11_CI_ACCEPTANCE
 ```
 
 ## Documents
@@ -420,7 +431,9 @@ P3-08 accepted contract: [`contracts/nexora-v0.1-alert-inbox.json`](contracts/ne
 
 P3-09 accepted contract: [`contracts/nexora-v0.1-watchlists.json`](contracts/nexora-v0.1-watchlists.json)
 
-P3-10 candidate contract: [`contracts/nexora-v0.1-outcome-journal.json`](contracts/nexora-v0.1-outcome-journal.json)
+P3-10 accepted contract: [`contracts/nexora-v0.1-outcome-journal.json`](contracts/nexora-v0.1-outcome-journal.json)
+
+P3-11 candidate contract: [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
@@ -461,6 +474,11 @@ P3-10 candidate contract: [`contracts/nexora-v0.1-outcome-journal.json`](contrac
 - [`docs/v0.1/36-decision-feed-candidate-details.md`](docs/v0.1/36-decision-feed-candidate-details.md)
 - [`docs/v0.1/37-risk-gate-explanation.md`](docs/v0.1/37-risk-gate-explanation.md)
 - [`docs/v0.1/38-portfolio-candidate-impact.md`](docs/v0.1/38-portfolio-candidate-impact.md)
+- [`docs/v0.1/40-human-decision-review.md`](docs/v0.1/40-human-decision-review.md)
+- [`docs/v0.1/41-alert-inbox.md`](docs/v0.1/41-alert-inbox.md)
+- [`docs/v0.1/42-watchlists-and-monitoring-preferences.md`](docs/v0.1/42-watchlists-and-monitoring-preferences.md)
+- [`docs/v0.1/43-decision-and-outcome-journal.md`](docs/v0.1/43-decision-and-outcome-journal.md)
+- [`docs/v0.1/44-phase-three-export-coverage.md`](docs/v0.1/44-phase-three-export-coverage.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -491,6 +509,7 @@ P3-10 candidate contract: [`contracts/nexora-v0.1-outcome-journal.json`](contrac
 - [`contracts/nexora-v0.1-phase-three-roadmap.json`](contracts/nexora-v0.1-phase-three-roadmap.json)
 - [`contracts/nexora-v0.1-decision-review-journal-domain.json`](contracts/nexora-v0.1-decision-review-journal-domain.json)
 - [`contracts/nexora-v0.1-trd-bot-v031-integration.json`](contracts/nexora-v0.1-trd-bot-v031-integration.json)
+- [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

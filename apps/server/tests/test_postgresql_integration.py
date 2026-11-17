@@ -39,6 +39,10 @@ from nexora.adapters.postgresql import (
     LeaseLost,
     OutboxEvent,
     OutboxMessage,
+    OutcomeJournalIdempotencyConflict,
+    OutcomeJournalRepository,
+    OutcomeJournalRepositoryConflict,
+    OutcomeJournalWrite,
     PaperShadowProjectionRepository,
     PortfolioPerformanceRepository,
     PortfolioRecord,
@@ -102,7 +106,7 @@ def test_postgresql_17_and_current_migration_head(engine: Engine) -> None:
     assert 170000 <= server_version < 180000
     assert timezone == "UTC"
     assert search_path == "public"
-    assert revision == "20261117_0014"
+    assert revision == "20261117_0015"
 
 
 def test_decision_projection_generation_is_atomic_and_quarantine_blocks_publication(
@@ -507,6 +511,88 @@ def test_watchlists_are_owner_scoped_idempotent_and_optimistically_versioned(eng
         connection.close()
 
 
+def test_outcome_journal_is_owner_scoped_append_only_and_idempotent(engine: Engine) -> None:
+    owner_id = uuid4()
+    occurred_at = datetime.now(UTC) - timedelta(seconds=1)
+    connection = engine.connect()
+    outer = connection.begin()
+    factory = sessionmaker(
+        bind=connection,
+        class_=Session,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    repository = OutcomeJournalRepository(factory)
+    write = OutcomeJournalWrite(
+        decision_id="decision-journal-1",
+        entry_kind="owner_note",
+        content="Observe the candidate without changing the source evidence.",
+        uncertainty_level="medium",
+        uncertainty_note="Market regime remains uncertain.",
+        review_id=None,
+        portfolio_id=None,
+        simulated_position_reference=None,
+        decision_evidence_generation=3,
+        decision_evidence_checksum="sha256:" + "a" * 64,
+        decision_source_reference={
+            "schema_version": "nexora-source-reference-v1",
+            "source_product": "trd_bot",
+            "source_version": "0.3.1",
+            "resource_type": "decision_evaluation",
+            "resource_id": "decision-journal-1",
+            "resource_schema_version": "trd-decision-evaluation-v1",
+            "observed_at": occurred_at.isoformat(),
+            "checksum": "sha256:" + "a" * 64,
+        },
+        source_lineage=None,
+        occurred_at=occurred_at,
+        supersedes_entry_id=None,
+        idempotency_key="outcome-journal-integration-0001",
+    )
+    try:
+        connection.execute(
+            text("INSERT INTO nexora.owner_profiles (owner_id, owner_key) VALUES (:owner_id, 'primary_owner')"),
+            {"owner_id": owner_id},
+        )
+        created, replayed = repository.record(owner_id, write)
+        replay, duplicate = repository.record(owner_id, write)
+        assert replayed is False
+        assert duplicate is True
+        assert replay.entry_id == created.entry_id
+        assert repository.list_for_decision(uuid4(), write.decision_id, limit=50) == ()
+
+        correction, duplicate = repository.record(
+            owner_id,
+            replace(
+                write,
+                entry_kind="correction",
+                content="Corrected owner observation.",
+                supersedes_entry_id=created.entry_id,
+                idempotency_key="outcome-journal-integration-0002",
+            ),
+        )
+        assert duplicate is False
+        assert correction.supersedes_entry_id == created.entry_id
+        assert len(repository.list_for_decision(owner_id, write.decision_id, limit=50)) == 2
+
+        with pytest.raises(OutcomeJournalRepositoryConflict):
+            repository.record(
+                owner_id,
+                replace(
+                    write,
+                    entry_kind="correction",
+                    content="Competing correction.",
+                    supersedes_entry_id=created.entry_id,
+                    idempotency_key="outcome-journal-integration-0003",
+                ),
+            )
+        with pytest.raises(OutcomeJournalIdempotencyConflict):
+            repository.record(owner_id, replace(write, content="Different content"))
+    finally:
+        outer.rollback()
+        connection.close()
+
+
 def test_portfolio_export_snapshot_is_complete_owner_scoped_and_ai_safe(engine: Engine) -> None:
     owner_id = uuid4()
     connection = engine.connect().execution_options(isolation_level="REPEATABLE READ")
@@ -645,6 +731,7 @@ def test_expected_schema_and_tables_exist_without_security_sensitive_capabilitie
         "watchlist_items",
         "watchlist_preferences",
         "watchlist_operations",
+        "outcome_journal_entries",
     }
     forbidden = {"live_orders", "wallets", "exchange_credentials"}
     assert forbidden.isdisjoint(inspector.get_table_names(schema="nexora"))

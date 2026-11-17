@@ -232,9 +232,13 @@ cannot authorize execution, create an OrderIntent or post a Transaction.
 `0c008cd6d24ec02e28edcb7f94d698341aa2bc8f`; it adds a durable owner-scoped Alert
 Inbox with append-only acknowledge and snooze transitions while source alerts
 remain immutable. Notification delivery remains deferred.
-`NEX-P3-09` is the current candidate. It persists owner-scoped watchlists,
+`NEX-P3-09` is accepted at
+`7a06093b5ce81a60353797e61d8aadcbd40b40e0`; it persists owner-scoped watchlists,
 idempotent bounded item registration and optimistic monitoring preferences
 without creating trade instructions or managing provider subscriptions.
+`NEX-P3-10` is the current candidate. It appends owner-authored Decision notes,
+observed outcomes, lessons and superseding corrections with visible uncertainty
+and immutable source lineage. AI and provider rewrites remain forbidden.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -298,6 +302,7 @@ uv run python scripts/verify_portfolio_candidate_impact.py
 uv run python scripts/verify_human_decision_review.py
 uv run python scripts/verify_alert_inbox.py
 uv run python scripts/verify_watchlists.py
+uv run python scripts/verify_outcome_journal.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -413,7 +418,9 @@ P3-07 accepted contract: [`contracts/nexora-v0.1-human-decision-review.json`](co
 
 P3-08 accepted contract: [`contracts/nexora-v0.1-alert-inbox.json`](contracts/nexora-v0.1-alert-inbox.json)
 
-P3-09 candidate contract: [`contracts/nexora-v0.1-watchlists.json`](contracts/nexora-v0.1-watchlists.json)
+P3-09 accepted contract: [`contracts/nexora-v0.1-watchlists.json`](contracts/nexora-v0.1-watchlists.json)
+
+P3-10 candidate contract: [`contracts/nexora-v0.1-outcome-journal.json`](contracts/nexora-v0.1-outcome-journal.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)

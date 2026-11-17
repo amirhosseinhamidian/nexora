@@ -1246,6 +1246,108 @@
         "title": "CreateManualValuationRequest",
         "type": "object"
       },
+      "CreateOutcomeJournalEntryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "entry_kind": {
+            "$ref": "#/components/schemas/OutcomeJournalEntryKind"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "portfolio_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Id"
+          },
+          "review_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Id"
+          },
+          "simulated_position_reference": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Position Reference"
+          },
+          "source_lineage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutcomeSourceLineage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "supersedes_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Entry Id"
+          },
+          "uncertainty_level": {
+            "$ref": "#/components/schemas/OutcomeUncertaintyLevel"
+          },
+          "uncertainty_note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Note"
+          }
+        },
+        "required": [
+          "entry_kind",
+          "content",
+          "uncertainty_level",
+          "occurred_at"
+        ],
+        "title": "CreateOutcomeJournalEntryRequest",
+        "type": "object"
+      },
       "CreatePortfolioExportRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1623,6 +1725,59 @@
           "items"
         ],
         "title": "DecisionFeedResponse",
+        "type": "object"
+      },
+      "DecisionJournalSourceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "resource_id": {
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_schema_version": {
+            "title": "Resource Schema Version",
+            "type": "string"
+          },
+          "resource_type": {
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-source-reference-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_product": {
+            "const": "trd_bot",
+            "title": "Source Product",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema_version",
+          "source_product",
+          "source_version",
+          "resource_type",
+          "resource_id",
+          "resource_schema_version",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "DecisionJournalSourceResponse",
         "type": "object"
       },
       "DecisionKind": {
@@ -2936,6 +3091,300 @@
         ],
         "title": "MonitoringPreferencesResponse",
         "type": "object"
+      },
+      "OutcomeJournalEntryKind": {
+        "enum": [
+          "owner_note",
+          "review_rationale",
+          "observed_outcome",
+          "expectation_comparison",
+          "lesson",
+          "correction"
+        ],
+        "title": "OutcomeJournalEntryKind",
+        "type": "string"
+      },
+      "OutcomeJournalEntryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ai_generated": {
+            "const": false,
+            "default": false,
+            "title": "Ai Generated",
+            "type": "boolean"
+          },
+          "append_only": {
+            "const": true,
+            "default": true,
+            "title": "Append Only",
+            "type": "boolean"
+          },
+          "author_kind": {
+            "const": "owner",
+            "default": "owner",
+            "title": "Author Kind",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "decision_evidence_checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Decision Evidence Checksum",
+            "type": "string"
+          },
+          "decision_evidence_generation": {
+            "minimum": 1.0,
+            "title": "Decision Evidence Generation",
+            "type": "integer"
+          },
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "decision_source_reference": {
+            "$ref": "#/components/schemas/DecisionJournalSourceResponse"
+          },
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "entry_kind": {
+            "$ref": "#/components/schemas/OutcomeJournalEntryKind"
+          },
+          "execution_authorization": {
+            "const": false,
+            "default": false,
+            "title": "Execution Authorization",
+            "type": "boolean"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "order_intent_created": {
+            "const": false,
+            "default": false,
+            "title": "Order Intent Created",
+            "type": "boolean"
+          },
+          "portfolio_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portfolio Id"
+          },
+          "provider_rewritable": {
+            "const": false,
+            "default": false,
+            "title": "Provider Rewritable",
+            "type": "boolean"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "review_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Id"
+          },
+          "schema_version": {
+            "const": "nexora-outcome-journal-v1",
+            "default": "nexora-outcome-journal-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "simulated_position_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulated Position Reference"
+          },
+          "source_lineage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OutcomeSourceLineage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "supersedes_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Entry Id"
+          },
+          "transaction_created": {
+            "const": false,
+            "default": false,
+            "title": "Transaction Created",
+            "type": "boolean"
+          },
+          "uncertainty_level": {
+            "$ref": "#/components/schemas/OutcomeUncertaintyLevel"
+          },
+          "uncertainty_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Note"
+          }
+        },
+        "required": [
+          "entry_id",
+          "decision_id",
+          "entry_kind",
+          "content",
+          "uncertainty_level",
+          "uncertainty_note",
+          "review_id",
+          "portfolio_id",
+          "simulated_position_reference",
+          "decision_evidence_generation",
+          "decision_evidence_checksum",
+          "decision_source_reference",
+          "source_lineage",
+          "occurred_at",
+          "recorded_at",
+          "supersedes_entry_id"
+        ],
+        "title": "OutcomeJournalEntryResponse",
+        "type": "object"
+      },
+      "OutcomeJournalListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "decision_id": {
+            "title": "Decision Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OutcomeJournalEntryResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "nexora-outcome-journal-v1",
+            "default": "nexora-outcome-journal-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision_id",
+          "items"
+        ],
+        "title": "OutcomeJournalListResponse",
+        "type": "object"
+      },
+      "OutcomeSourceKind": {
+        "enum": [
+          "provider_evidence",
+          "portfolio_snapshot",
+          "manual_observation",
+          "external_record"
+        ],
+        "title": "OutcomeSourceKind",
+        "type": "string"
+      },
+      "OutcomeSourceLineage": {
+        "additionalProperties": false,
+        "properties": {
+          "checksum": {
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "nexora-outcome-source-lineage-v1",
+            "default": "nexora-outcome-source-lineage-v1",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_id": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/OutcomeSourceKind"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          }
+        },
+        "required": [
+          "source_kind",
+          "source_id",
+          "observed_at",
+          "checksum"
+        ],
+        "title": "OutcomeSourceLineage",
+        "type": "object"
+      },
+      "OutcomeUncertaintyLevel": {
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "unknown"
+        ],
+        "title": "OutcomeUncertaintyLevel",
+        "type": "string"
       },
       "PaperShadowPortfolioResponse": {
         "additionalProperties": false,
@@ -10266,6 +10715,320 @@
           }
         },
         "summary": "List Decision Feed"
+      }
+    },
+    "/v1/decisions/{decision_id}/journal": {
+      "get": {
+        "operationId": "listDecisionOutcomeJournal",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Decision Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeJournalListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "List Decision Outcome Journal"
+      },
+      "post": {
+        "operationId": "createDecisionOutcomeJournalEntry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Decision Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 160,
+              "minLength": 16,
+              "pattern": "^[^\\s]+$",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutcomeJournalEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutcomeJournalEntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Versioned fail-closed error"
+          }
+        },
+        "summary": "Create Decision Outcome Journal Entry"
       }
     },
     "/v1/decisions/{decision_id}/reviews": {

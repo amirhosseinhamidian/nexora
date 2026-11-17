@@ -1,0 +1,92 @@
+{
+  "schema_version": "nexora-outcome-journal-contract-v1",
+  "decision_id": "NEX-P3-10",
+  "status": "candidate",
+  "title": "Decision and Outcome Journal",
+  "prerequisites": {
+    "p3_09_accepted_commit_sha": "7a06093b5ce81a60353797e61d8aadcbd40b40e0",
+    "decision_review_domain_contract": "nexora-decision-review-journal-domain-v1"
+  },
+  "journal": {
+    "aggregate": "outcome_journal_entry",
+    "owner_scoped": true,
+    "append_only": true,
+    "decision_reference_required": true,
+    "review_reference_optional": true,
+    "portfolio_reference_optional": true,
+    "simulated_position_reference_optional": true,
+    "entry_kinds": [
+      "owner_note",
+      "review_rationale",
+      "observed_outcome",
+      "expectation_comparison",
+      "lesson",
+      "correction"
+    ],
+    "uncertainty_levels": [
+      "low",
+      "medium",
+      "high",
+      "unknown"
+    ],
+    "occurred_at_required": true,
+    "recorded_at_required": true,
+    "idempotency_key_required": true,
+    "exact_payload_replay_is_idempotent": true,
+    "different_payload_replay_is_conflict": true,
+    "mutation_after_recording": false,
+    "deletion": false,
+    "correction_requires_superseded_entry": true,
+    "single_direct_correction_per_entry": true
+  },
+  "lineage": {
+    "decision_source_snapshot_required": true,
+    "decision_evidence_generation_required": true,
+    "decision_evidence_checksum_required": true,
+    "observed_outcome_source_lineage_required": true,
+    "source_kinds": [
+      "provider_evidence",
+      "portfolio_snapshot",
+      "manual_observation",
+      "external_record"
+    ],
+    "source_checksum_required": true,
+    "human_note_rewritten_by_provider_sync": false
+  },
+  "api": {
+    "authenticated": true,
+    "owner_scoped": true,
+    "list_path": "/v1/decisions/{decision_id}/journal",
+    "create_path": "/v1/decisions/{decision_id}/journal",
+    "bounded_page_size": true,
+    "update_endpoint": false,
+    "delete_endpoint": false
+  },
+  "security_boundary": {
+    "ai_generated_entry_allowed": false,
+    "provider_rewrite_allowed": false,
+    "execution_authorization": false,
+    "creates_order_intent": false,
+    "posts_transaction": false,
+    "submits_order": false,
+    "moves_funds": false,
+    "exchange_credentials_added": false,
+    "live_trading_added": false
+  },
+  "web": {
+    "bilingual": true,
+    "explicit_initial_state": true,
+    "loading_state": true,
+    "empty_state": true,
+    "error_state": true,
+    "source_lineage_visible": true,
+    "uncertainty_visible": true,
+    "append_only_boundary_visible": true
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-11",
+    "separate_freeze_task_required": false,
+    "nex_p3_03_gate_opened": false,
+    "real_local_provider_smoke_required_later": true
+  }
+}

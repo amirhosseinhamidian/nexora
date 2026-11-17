@@ -1734,6 +1734,217 @@ textarea {
   line-height: 1.55;
 }
 
+.outcome-journal-panel {
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-lg);
+  background: var(--nx-surface);
+}
+
+.outcome-journal-panel .section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.outcome-journal-panel .section-heading > svg {
+  color: var(--nx-primary);
+}
+
+.outcome-journal-panel label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--nx-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.outcome-journal-panel input,
+.outcome-journal-panel select,
+.outcome-journal-panel textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+  color: var(--nx-text);
+  font: inherit;
+}
+
+.outcome-journal-panel textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.journal-search {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.journal-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  color: var(--nx-text-muted);
+}
+
+.journal-state.error {
+  color: var(--nx-warning);
+}
+
+.journal-state .secondary-button {
+  margin-inline-start: auto;
+}
+
+.journal-workspace {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.journal-active-decision {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-primary-soft);
+  color: var(--nx-text-muted);
+}
+
+.journal-active-decision code {
+  color: var(--nx-text);
+  overflow-wrap: anywhere;
+}
+
+.journal-entry-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journal-entry-list > li {
+  padding: 1rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface-raised);
+}
+
+.journal-entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.journal-entry-heading time {
+  color: var(--nx-text-muted);
+  font-size: 0.8rem;
+}
+
+.journal-entry-list p {
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.journal-entry-list dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.journal-entry-list dl > div {
+  padding: 0.65rem;
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface);
+}
+
+.journal-entry-list dl .wide {
+  grid-column: 1 / -1;
+}
+
+.journal-entry-list dt {
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.journal-entry-list dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.journal-form {
+  padding: 1rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-surface-raised);
+}
+
+.journal-form h3 {
+  margin-top: 0;
+}
+
+.journal-form-grid,
+.journal-lineage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.journal-form-grid .wide,
+.journal-lineage .wide {
+  grid-column: 1 / -1;
+}
+
+.journal-lineage {
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-md);
+}
+
+.journal-lineage legend {
+  padding-inline: 0.35rem;
+  color: var(--nx-text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.journal-form > .primary-button {
+  margin-top: 0.85rem;
+}
+
+.journal-boundary {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 1rem 0 0;
+  padding: 0.85rem;
+  border-inline-start: 3px solid var(--nx-primary);
+  background: var(--nx-primary-soft);
+  color: var(--nx-text-muted);
+  line-height: 1.55;
+}
+
+.journal-boundary svg {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+}
+
 @media (max-width: 700px) {
   .alert-actions {
     grid-template-columns: 1fr;
@@ -1746,6 +1957,25 @@ textarea {
 
   .watchlist-selector {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .journal-search,
+  .journal-form-grid,
+  .journal-lineage,
+  .journal-entry-list dl {
+    grid-template-columns: 1fr;
+  }
+
+  .journal-form-grid .wide,
+  .journal-lineage .wide,
+  .journal-entry-list dl .wide {
+    grid-column: auto;
+  }
+
+  .journal-active-decision,
+  .journal-entry-heading {
+    align-items: flex-start;
     flex-direction: column;
   }
 }

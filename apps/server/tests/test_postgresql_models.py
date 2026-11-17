@@ -50,6 +50,7 @@ def test_schema_contains_persistence_spine_and_durable_work_tables() -> None:
         "nexora.watchlist_items",
         "nexora.watchlist_preferences",
         "nexora.watchlist_operations",
+        "nexora.outcome_journal_entries",
     }
     assert all(table.schema == SCHEMA_NAME for table in Base.metadata.sorted_tables)
 
@@ -76,6 +77,7 @@ def test_application_tables_are_owner_aware() -> None:
         "watchlist_items",
         "watchlist_preferences",
         "watchlist_operations",
+        "outcome_journal_entries",
     ):
         table = Base.metadata.tables[f"nexora.{table_name}"]
         assert "owner_id" in table.c
@@ -146,6 +148,33 @@ def test_watchlists_are_owner_scoped_bounded_and_non_executable() -> None:
     assert {"operation_type", "aggregate_version", "idempotency_key", "request_sha256"}.issubset(operations.c.keys())
     forbidden = {"trade_instruction", "order_id", "subscription_token", "exchange_api_key"}
     assert all(forbidden.isdisjoint(table.c.keys()) for table in (watchlists, items, preferences, operations))
+
+
+def test_outcome_journal_is_append_only_source_bound_and_non_executable() -> None:
+    entries = Base.metadata.tables["nexora.outcome_journal_entries"]
+    assert entries.c.owner_id.nullable is False
+    assert {
+        "decision_id",
+        "entry_kind",
+        "content",
+        "uncertainty_level",
+        "decision_evidence_generation",
+        "decision_evidence_checksum",
+        "decision_source_reference",
+        "source_lineage",
+        "occurred_at",
+        "recorded_at",
+        "supersedes_entry_id",
+        "idempotency_key",
+        "request_sha256",
+        "ai_generated",
+        "provider_rewritable",
+        "execution_authorization",
+        "transaction_created",
+        "order_intent_created",
+    }.issubset(entries.c.keys())
+    forbidden = {"order_id", "exchange_api_key", "wallet_address", "provider_command_id"}
+    assert forbidden.isdisjoint(entries.c.keys())
 
 
 def test_immutable_evidence_uses_postgresql_jsonb() -> None:

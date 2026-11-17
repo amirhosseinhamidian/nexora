@@ -79,6 +79,7 @@ from nexora.adapters.postgresql.models import (
     LotProjectionRecord,
     ManualValuationRecord,
     OutboxEvent,
+    OutcomeJournalEntryRecord,
     OwnerAlertStateRecord,
     OwnerProfile,
     PortfolioRecord,
@@ -99,6 +100,14 @@ from nexora.adapters.postgresql.models import (
     WatchlistRecord,
     WebAuthnChallenge,
     WebAuthnCredential,
+)
+from nexora.adapters.postgresql.outcome_journal import (
+    OutcomeJournalEntryView,
+    OutcomeJournalIdempotencyConflict,
+    OutcomeJournalRepository,
+    OutcomeJournalRepositoryConflict,
+    OutcomeJournalRepositoryNotFound,
+    OutcomeJournalWrite,
 )
 from nexora.adapters.postgresql.paper_shadow_projection import PaperShadowProjectionRepository
 from nexora.adapters.postgresql.performance import PortfolioPerformanceRepository
@@ -181,6 +190,13 @@ __all__ = [
     "OutboxClaim",
     "OutboxEvent",
     "OutboxMessage",
+    "OutcomeJournalEntryRecord",
+    "OutcomeJournalEntryView",
+    "OutcomeJournalIdempotencyConflict",
+    "OutcomeJournalRepository",
+    "OutcomeJournalRepositoryConflict",
+    "OutcomeJournalRepositoryNotFound",
+    "OutcomeJournalWrite",
     "OwnerAlertStateRecord",
     "OwnerProfile",
     "PaperShadowProjectionRepository",

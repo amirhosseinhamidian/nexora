@@ -127,6 +127,15 @@ from nexora.observability import (
     database_pool_values,
     load_observability_settings,
 )
+from nexora.outcome_journal import (
+    CreateOutcomeJournalEntryRequest,
+    OutcomeJournalConflict,
+    OutcomeJournalEntryResponse,
+    OutcomeJournalListResponse,
+    OutcomeJournalNotFound,
+    OutcomeJournalService,
+    OutcomeJournalValidationError,
+)
 from nexora.overload import InteractiveRequestGate
 from nexora.performance import (
     AnalyticsNotFound,
@@ -911,6 +920,33 @@ def create_app(
             message="watchlist version or idempotency state changed",
         )
 
+    @application.exception_handler(OutcomeJournalNotFound)
+    async def outcome_journal_not_found(request: Request, _: OutcomeJournalNotFound) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=404,
+            code="OUTCOME_JOURNAL_REFERENCE_NOT_FOUND",
+            message="decision evidence or journal reference is unavailable",
+        )
+
+    @application.exception_handler(OutcomeJournalConflict)
+    async def outcome_journal_conflict(request: Request, _: OutcomeJournalConflict) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=409,
+            code="OUTCOME_JOURNAL_CONFLICT",
+            message="journal idempotency or correction state changed",
+        )
+
+    @application.exception_handler(OutcomeJournalValidationError)
+    async def outcome_journal_validation(request: Request, _: OutcomeJournalValidationError) -> JSONResponse:
+        return _error_response(
+            request,
+            status_code=422,
+            code="OUTCOME_JOURNAL_EVIDENCE_INVALID",
+            message="decision evidence failed journal validation",
+        )
+
     @application.exception_handler(ValuationNotFound)
     async def valuation_not_found(request: Request, _: ValuationNotFound) -> JSONResponse:
         return _error_response(
@@ -1241,6 +1277,13 @@ def create_app(
         if repository is None:
             raise CeremonyUnavailable("watchlist runtime is not configured")
         return WatchlistService(repository)
+
+    def outcome_journal() -> OutcomeJournalService:
+        repository = resolved_container.outcome_journal_repository
+        projections = resolved_container.decision_event_projection_repository
+        if repository is None or projections is None:
+            raise CeremonyUnavailable("outcome journal runtime is not configured")
+        return OutcomeJournalService(repository, projections)
 
     @application.get("/health/live", response_model=LivenessResponse, operation_id="getLiveness")
     def liveness() -> LivenessResponse:
@@ -1628,6 +1671,44 @@ def create_app(
             payload,
             idempotency_key=idempotency_key,
             correlation_id=request.state.correlation_id,
+        )
+
+    @application.get(
+        "/v1/decisions/{decision_id}/journal",
+        response_model=OutcomeJournalListResponse,
+        operation_id="listDecisionOutcomeJournal",
+    )
+    def list_decision_outcome_journal(
+        request: Request,
+        decision_id: str = Path(min_length=1, max_length=160),
+        limit: int = Query(default=50, ge=1, le=100),
+    ) -> OutcomeJournalListResponse:
+        _, session = require_session(request)
+        return outcome_journal().list_for_decision(session.owner_id, decision_id, limit=limit)
+
+    @application.post(
+        "/v1/decisions/{decision_id}/journal",
+        response_model=OutcomeJournalEntryResponse,
+        status_code=201,
+        operation_id="createDecisionOutcomeJournalEntry",
+    )
+    def create_decision_outcome_journal_entry(
+        payload: CreateOutcomeJournalEntryRequest,
+        request: Request,
+        decision_id: str = Path(min_length=1, max_length=160),
+        idempotency_key: str = Header(
+            alias="Idempotency-Key",
+            min_length=16,
+            max_length=160,
+            pattern=r"^[^\s]+$",
+        ),
+    ) -> OutcomeJournalEntryResponse:
+        _, session = require_session(request)
+        return outcome_journal().record(
+            session.owner_id,
+            decision_id,
+            payload,
+            idempotency_key=idempotency_key,
         )
 
     @application.get(

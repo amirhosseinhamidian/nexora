@@ -15,6 +15,7 @@ from nexora.adapters.postgresql import (
     DurableWorkRepository,
     HoldingsProjectionRepository,
     ImportReconciliationRepository,
+    OutcomeJournalRepository,
     PaperShadowProjectionRepository,
     PortfolioPerformanceRepository,
     PortfolioRegistryRepository,
@@ -89,6 +90,7 @@ class ApplicationContainer:
     decision_review_repository: DecisionReviewRepository | None = None
     alert_inbox_repository: AlertInboxRepository | None = None
     watchlist_repository: WatchlistRepository | None = None
+    outcome_journal_repository: OutcomeJournalRepository | None = None
     portfolio_registry_repository: PortfolioRegistryRepository | None = None
     transaction_journal_repository: TransactionJournalRepository | None = None
     import_reconciliation_repository: ImportReconciliationRepository | None = None
@@ -185,6 +187,7 @@ def compose_private_application(
         decision_review_repository=DecisionReviewRepository(session_factory),
         alert_inbox_repository=AlertInboxRepository(session_factory),
         watchlist_repository=WatchlistRepository(session_factory),
+        outcome_journal_repository=OutcomeJournalRepository(session_factory),
         portfolio_registry_repository=PortfolioRegistryRepository(session_factory),
         transaction_journal_repository=TransactionJournalRepository(session_factory),
         import_reconciliation_repository=ImportReconciliationRepository(session_factory),

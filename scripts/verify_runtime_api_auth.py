@@ -84,6 +84,8 @@ APPROVED_EXTENSION_OPERATIONS = {
     "POST /v1/watchlists",
     "POST /v1/watchlists/{watchlist_id}/items",
     "POST /v1/watchlists/{watchlist_id}/preferences",
+    "GET /v1/decisions/{decision_id}/journal",
+    "POST /v1/decisions/{decision_id}/journal",
 }
 
 

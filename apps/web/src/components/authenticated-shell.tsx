@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AlertInbox } from "@/components/alert-inbox";
 import { FoundationControls } from "@/components/foundation-controls";
+import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
 import { DecisionFeed } from "@/components/decision-feed";
 import {
   PortfolioDashboard,
@@ -168,7 +169,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
                               ? "#decisions"
                               : index === 3
                                 ? "#alerts"
-                                : "#portfolio-operations"
+                                : "#decision-journal"
                       }
                     >
                       <Icon aria-hidden="true" size={19} />
@@ -235,6 +236,8 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
           />
 
           <DecisionFeed dictionary={dictionary} locale={locale} />
+
+          <OutcomeJournalPanel dictionary={dictionary} locale={locale} />
 
           <AlertInbox dictionary={dictionary} locale={locale} />
 

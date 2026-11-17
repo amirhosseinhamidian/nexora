@@ -1512,6 +1512,137 @@ class WatchlistOperationRecord(Base):
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class OutcomeJournalEntryRecord(Base):
+    __tablename__ = "outcome_journal_entries"
+    __table_args__ = (
+        CheckConstraint(
+            "entry_kind IN ('owner_note', 'review_rationale', 'observed_outcome', "
+            "'expectation_comparison', 'lesson', 'correction')",
+            name="entry_kind_allowed",
+        ),
+        CheckConstraint("char_length(decision_id) BETWEEN 1 AND 160", name="decision_id_length"),
+        CheckConstraint("char_length(content) BETWEEN 1 AND 4000", name="content_length"),
+        CheckConstraint(
+            "uncertainty_level IN ('low', 'medium', 'high', 'unknown')",
+            name="uncertainty_level_allowed",
+        ),
+        CheckConstraint(
+            "uncertainty_note IS NULL OR char_length(uncertainty_note) BETWEEN 1 AND 500",
+            name="uncertainty_note_length",
+        ),
+        CheckConstraint(
+            "simulated_position_reference IS NULL OR char_length(simulated_position_reference) BETWEEN 1 AND 160",
+            name="simulated_position_reference_length",
+        ),
+        CheckConstraint("decision_evidence_generation >= 1", name="decision_generation_positive"),
+        CheckConstraint("decision_evidence_checksum ~ '^sha256:[0-9a-f]{64}$'", name="decision_checksum_format"),
+        CheckConstraint("jsonb_typeof(decision_source_reference) = 'object'", name="decision_source_object"),
+        CheckConstraint(
+            "decision_source_reference ->> 'schema_version' = 'nexora-source-reference-v1' AND "
+            "decision_source_reference ->> 'source_product' = 'trd_bot' AND "
+            "decision_source_reference ->> 'resource_type' = 'decision_evaluation' AND "
+            "decision_source_reference ->> 'resource_id' = decision_id AND "
+            "decision_source_reference ->> 'checksum' = decision_evidence_checksum AND "
+            "(decision_source_reference ->> 'observed_at')::timestamptz <= occurred_at",
+            name="decision_source_matches_entry",
+        ),
+        CheckConstraint(
+            "source_lineage IS NULL OR jsonb_typeof(source_lineage) = 'object'",
+            name="source_lineage_object",
+        ),
+        CheckConstraint(
+            "source_lineage IS NULL OR ("
+            "source_lineage ->> 'schema_version' = 'nexora-outcome-source-lineage-v1' AND "
+            "char_length(source_lineage ->> 'source_id') BETWEEN 1 AND 160 AND "
+            "source_lineage ->> 'source_kind' IN "
+            "('provider_evidence', 'portfolio_snapshot', 'manual_observation', 'external_record') AND "
+            "source_lineage ->> 'checksum' ~ '^sha256:[0-9a-f]{64}$' AND "
+            "source_lineage ? 'observed_at' AND "
+            "(source_lineage ->> 'observed_at')::timestamptz <= occurred_at)",
+            name="source_lineage_shape",
+        ),
+        CheckConstraint(
+            "entry_kind <> 'observed_outcome' OR source_lineage IS NOT NULL",
+            name="observed_outcome_has_lineage",
+        ),
+        CheckConstraint(
+            "(entry_kind = 'correction' AND supersedes_entry_id IS NOT NULL) OR "
+            "(entry_kind <> 'correction' AND supersedes_entry_id IS NULL)",
+            name="correction_shape",
+        ),
+        CheckConstraint("supersedes_entry_id IS NULL OR supersedes_entry_id <> entry_id", name="no_self_correction"),
+        CheckConstraint("occurred_at <= recorded_at", name="occurred_before_recorded"),
+        CheckConstraint(
+            "char_length(idempotency_key) BETWEEN 16 AND 160",
+            name="idempotency_key_length",
+        ),
+        CheckConstraint("idempotency_key !~ '[[:space:]]'", name="idempotency_key_no_whitespace"),
+        CheckConstraint("request_sha256 ~ '^[0-9a-f]{64}$'", name="request_checksum_format"),
+        CheckConstraint("author_kind = 'owner'", name="owner_authored_only"),
+        CheckConstraint("ai_generated = false", name="no_ai_generated_entry"),
+        CheckConstraint("provider_rewritable = false", name="no_provider_rewrite"),
+        CheckConstraint("execution_authorization = false", name="no_execution_authorization"),
+        CheckConstraint("transaction_created = false", name="no_transaction_created"),
+        CheckConstraint("order_intent_created = false", name="no_order_intent_created"),
+        ForeignKeyConstraint(
+            ["owner_id", "review_id"],
+            [f"{SCHEMA_NAME}.decision_reviews.owner_id", f"{SCHEMA_NAME}.decision_reviews.review_id"],
+            name="fk_outcome_journal_entries_owner_review",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "portfolio_id"],
+            [f"{SCHEMA_NAME}.portfolios.owner_id", f"{SCHEMA_NAME}.portfolios.portfolio_id"],
+            name="fk_outcome_journal_entries_owner_portfolio",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["owner_id", "supersedes_entry_id"],
+            [f"{SCHEMA_NAME}.outcome_journal_entries.owner_id", f"{SCHEMA_NAME}.outcome_journal_entries.entry_id"],
+            name="fk_outcome_journal_entries_owner_superseded_entry",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint("owner_id", "entry_id", name="uq_outcome_journal_entries_owner_entry"),
+        UniqueConstraint("owner_id", "idempotency_key", name="uq_outcome_journal_entries_owner_idempotency"),
+        UniqueConstraint("owner_id", "supersedes_entry_id", name="uq_outcome_journal_entries_owner_superseded_entry"),
+        Index(
+            "ix_outcome_journal_entries_owner_decision_occurred",
+            "owner_id",
+            "decision_id",
+            "occurred_at",
+        ),
+        {"schema": SCHEMA_NAME},
+    )
+
+    entry_id: Mapped[UUID] = mapped_column(primary_key=True)
+    owner_id: Mapped[UUID] = mapped_column(
+        ForeignKey(f"{SCHEMA_NAME}.owner_profiles.owner_id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    decision_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    entry_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    content: Mapped[str] = mapped_column(String(4000), nullable=False)
+    uncertainty_level: Mapped[str] = mapped_column(String(16), nullable=False)
+    uncertainty_note: Mapped[str | None] = mapped_column(String(500))
+    review_id: Mapped[UUID | None] = mapped_column()
+    portfolio_id: Mapped[UUID | None] = mapped_column()
+    simulated_position_reference: Mapped[str | None] = mapped_column(String(160))
+    decision_evidence_generation: Mapped[int] = mapped_column(Integer, nullable=False)
+    decision_evidence_checksum: Mapped[str] = mapped_column(String(71), nullable=False)
+    decision_source_reference: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    source_lineage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    supersedes_entry_id: Mapped[UUID | None] = mapped_column()
+    idempotency_key: Mapped[str] = mapped_column(String(160), nullable=False)
+    request_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    author_kind: Mapped[str] = mapped_column(String(16), nullable=False, server_default="owner")
+    ai_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    provider_rewritable: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    execution_authorization: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    transaction_created: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    order_intent_created: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+
+
 class ProjectionCheckpoint(Base):
     __tablename__ = "projection_checkpoints"
     __table_args__ = (

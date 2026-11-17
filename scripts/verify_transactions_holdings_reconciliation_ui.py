@@ -299,7 +299,10 @@ def validate_runtime_markers() -> None:
     _require("onWorkspaceChange?.(workspaceContext)" in dashboard, "portfolio selection is not propagated")
     _require("<PortfolioOperations" in shell, "P2-11 workspace is not composed")
     _require("recentlyReauthenticated={session.recently_reauthenticated}" in shell, "reauth state is not bound")
-    _require('"#portfolio-operations"' in shell, "journal navigation is not enabled")
+    _require(
+        any(target in shell for target in ('"#portfolio-operations"', '"#decision-journal"')),
+        "journal navigation is not enabled",
+    )
     _require("index === 4" in shell, "journal navigation does not target the Journal item")
     for marker in ('cache: "no-store"', 'credentials: "same-origin"', 'headers.set("X-CSRF-Token", csrf)'):
         _require(marker in client, f"API client marker missing: {marker}")

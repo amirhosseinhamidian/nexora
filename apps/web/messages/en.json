@@ -7,6 +7,7 @@
     "decisions": "Decisions",
     "alerts": "Alerts",
     "journal": "Journal",
+    "watchlists": "Watchlists",
     "exports": "Exports",
     "settings": "Settings"
   },
@@ -239,6 +240,13 @@
       "resolved": "Resolved",
       "ignored_with_reason": "Ignored with reason"
     }
+  },
+  "decisionExperience": {
+    "eyebrow": "INTEGRATED DECISION INTELLIGENCE",
+    "title": "Decision intelligence workspace",
+    "description": "Move from immutable provider evidence to human review, outcome history, alerts and bounded monitoring without leaving the private owner workspace.",
+    "activeDecision": "Active Decision context",
+    "noActiveDecision": "Select Decision evidence to connect its outcome journal."
   },
   "decisionFeed": {
     "eyebrow": "OWNER-SCOPED DECISION EVIDENCE",

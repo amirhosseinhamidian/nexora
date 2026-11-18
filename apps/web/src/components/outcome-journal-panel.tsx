@@ -2,7 +2,7 @@
 
 import { BookOpen, LoaderCircle, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -76,9 +76,11 @@ function isJournalEntry(value: unknown): value is JournalEntry {
 }
 
 export function OutcomeJournalPanel({
+  decisionId,
   dictionary,
   locale,
 }: {
+  decisionId?: string;
   dictionary: Dictionary;
   locale: Locale;
 }) {
@@ -104,29 +106,43 @@ export function OutcomeJournalPanel({
   const [submitting, setSubmitting] = useState(false);
   const [operationError, setOperationError] = useState(false);
   const [pending, setPending] = useState<PendingEntry>();
+  const loadSequence = useRef(0);
+  const integratedDecisionId = useRef<string | undefined>(undefined);
 
   function changed() {
     setPending(undefined);
     setOperationError(false);
   }
 
-  async function load(decisionId: string) {
+  const load = useCallback(async (nextDecisionId: string) => {
+    const sequence = ++loadSequence.current;
     setState("loading");
     setOperationError(false);
     try {
       const response = await apiRequest<JournalList>(
-        `/api/v1/decisions/${encodeURIComponent(decisionId)}/journal?limit=50`,
+        `/api/v1/decisions/${encodeURIComponent(nextDecisionId)}/journal?limit=50`,
       );
       const nextEntries = Array.isArray(response?.items)
         ? response.items.filter(isJournalEntry)
         : [];
+      if (sequence !== loadSequence.current) return;
       setEntries(nextEntries);
-      setActiveDecision(decisionId);
+      setActiveDecision(nextDecisionId);
       setState("ready");
     } catch {
-      setState("error");
+      if (sequence === loadSequence.current) setState("error");
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!decisionId || decisionId === integratedDecisionId.current) return;
+    const synchronize = window.setTimeout(() => {
+      integratedDecisionId.current = decisionId;
+      setDecisionInput(decisionId);
+      void load(decisionId);
+    }, 0);
+    return () => window.clearTimeout(synchronize);
+  }, [decisionId, load]);
 
   function loadDecision(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

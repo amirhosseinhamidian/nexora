@@ -1,0 +1,111 @@
+{
+  "schema_version": "nexora-phase-three-ui-integration-v1",
+  "decision_id": "NEX-P3-12",
+  "decision_date": "2026-11-18",
+  "status": "candidate",
+  "title": "Phase 3 UI Integration, Accessibility and End-to-end",
+  "prerequisites": {
+    "p3_11_accepted_commit_sha": "306f2d1141bec65386c961e9fe36f9ab193fee3c",
+    "phase_three_export_contract": "nexora-phase-three-export-coverage-v1",
+    "existing_authenticated_shell": true
+  },
+  "experiences": [
+    "decision_feed",
+    "candidate_details",
+    "risk_gate_explanation",
+    "portfolio_candidate_impact",
+    "human_decision_review",
+    "alert_inbox",
+    "watchlists",
+    "outcome_journal"
+  ],
+  "integration": {
+    "single_owner_workspace": true,
+    "selected_decision_context_shared": true,
+    "selected_decision_opens_outcome_journal": true,
+    "source_lineage_visible": true,
+    "uncertainty_visible": true,
+    "review_and_alert_history_visible": true,
+    "safety_boundaries_visible": true,
+    "new_backend_route_required": false,
+    "new_database_migration_required": false
+  },
+  "localization_and_layout": {
+    "locales": [
+      "fa",
+      "en"
+    ],
+    "persian_direction": "rtl",
+    "english_direction": "ltr",
+    "responsive_desktop_tablet_mobile": true,
+    "mobile_horizontal_page_overflow": false
+  },
+  "state_model": {
+    "states": [
+      "loading",
+      "ready",
+      "empty",
+      "error",
+      "degraded",
+      "mutation_pending",
+      "mutation_retry"
+    ],
+    "failed_mutation_preserves_visible_evidence": true,
+    "unchanged_retry_preserves_idempotency_key": true,
+    "provider_degradation_is_explicit": true,
+    "missing_evidence_is_not_fabricated": true,
+    "session_expiry_uses_existing_shell_recovery": true
+  },
+  "accessibility": {
+    "semantic_landmarks_and_headings": true,
+    "skip_link": true,
+    "labelled_forms": true,
+    "keyboard_decision_navigation": true,
+    "visible_focus": true,
+    "minimum_interactive_target_css_pixels": 44,
+    "live_status_announcements": true,
+    "status_not_conveyed_by_color_only": true,
+    "reduced_motion_respected": true
+  },
+  "browser_acceptance": {
+    "fixture_backed": true,
+    "chromium_required": true,
+    "real_provider_dependency": false,
+    "persian_rtl_required": true,
+    "english_ltr_required": true,
+    "mobile_viewport_required": true,
+    "keyboard_workflow_required": true,
+    "loading_empty_error_degraded_required": true
+  },
+  "api_boundary": {
+    "same_origin_api_only": true,
+    "session_authentication_required": true,
+    "owner_scope_derived_from_session": true,
+    "owner_id_accepted_from_browser": false,
+    "csrf_for_mutations": true,
+    "browser_cache_mode": "no-store",
+    "direct_database_access": false,
+    "direct_trd_bot_access": false
+  },
+  "security_boundary": {
+    "public_internet_deployment": false,
+    "multi_user": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "creates_order_intent": false,
+    "posts_transaction": false,
+    "submits_order": false,
+    "moves_funds": false,
+    "financial_advice": false,
+    "tax_advice": false
+  },
+  "transition": {
+    "next_allowed_stage_after_ci_acceptance": "NEX-P3-13",
+    "phase_three_acceptance_deferred_to": "NEX-P3-13",
+    "production_readiness_claimed": false,
+    "server_deployment_acceptance_satisfied": false
+  }
+}

@@ -114,4 +114,20 @@ describe("OutcomeJournalPanel", () => {
       expectedOptions,
     );
   });
+
+  it("loads the Decision selected by the integrated evidence workflow", async () => {
+    request.mockResolvedValueOnce({
+      decision_id: "decision-1",
+      items: [],
+      schema_version: "nexora-outcome-journal-v1",
+    });
+
+    render(<OutcomeJournalPanel decisionId="decision-1" dictionary={en} locale="en" />);
+
+    expect(
+      await screen.findByRole("heading", { name: "No journal entry yet" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Decision ID")).toHaveValue("decision-1");
+    expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-1/journal?limit=50");
+  });
 });

@@ -240,10 +240,15 @@ without creating trade instructions or managing provider subscriptions.
 `7e6d646c789849561654ea060291eeaa26a71702`; it appends owner-authored Decision
 notes, observed outcomes, lessons and superseding corrections with visible
 uncertainty and immutable source lineage. AI and provider rewrites remain
-forbidden. `NEX-P3-11` is the current candidate. It extends deterministic,
+forbidden. `NEX-P3-11` is accepted at
+`306f2d1141bec65386c961e9fe36f9ab193fee3c`. It extends deterministic,
 owner-scoped `private_complete` and `ai_safe` exports across the complete Phase
 3 Decision, review, Alert, watchlist and outcome history while preserving source
-checksums and excluding security material.
+checksums and excluding security material. `NEX-P3-12` is the current candidate;
+it integrates the bilingual Decision workflow, connects selected evidence to the
+Outcome Journal, adds keyboard and reduced-motion support, and supplies
+fixture-backed browser acceptance for responsive, empty, error and degraded
+states.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -309,6 +314,7 @@ uv run python scripts/verify_alert_inbox.py
 uv run python scripts/verify_watchlists.py
 uv run python scripts/verify_outcome_journal.py
 uv run python scripts/verify_phase_three_export_coverage.py
+uv run python scripts/verify_phase_three_ui_integration.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -411,6 +417,11 @@ NEX_P3_11_PHASE_THREE_EXPORT_COVERAGE=COMPLETE
 NEX_P3_11_AI_SAFE_LINEAGE_AND_UNCERTAINTY=PRESERVED
 NEX_P3_11_PUBLIC_DOWNLOAD=FORBIDDEN
 NEX_P3_12=BLOCKED_PENDING_P3_11_CI_ACCEPTANCE
+NEX_P3_11_ACCEPTED_SHA=PASS
+NEX_P3_12_UI_INTEGRATION=COMPLETE
+NEX_P3_12_ACCESSIBILITY_AND_BROWSER_E2E=COMPLETE
+NEX_P3_13=BLOCKED_PENDING_P3_12_CI_ACCEPTANCE
+PRODUCTION_READINESS_CLAIMED=false
 ```
 
 ## Documents
@@ -433,7 +444,9 @@ P3-09 accepted contract: [`contracts/nexora-v0.1-watchlists.json`](contracts/nex
 
 P3-10 accepted contract: [`contracts/nexora-v0.1-outcome-journal.json`](contracts/nexora-v0.1-outcome-journal.json)
 
-P3-11 candidate contract: [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
+P3-11 accepted contract: [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
+
+P3-12 candidate contract: [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
@@ -479,6 +492,7 @@ P3-11 candidate contract: [`contracts/nexora-v0.1-phase-three-export-coverage.js
 - [`docs/v0.1/42-watchlists-and-monitoring-preferences.md`](docs/v0.1/42-watchlists-and-monitoring-preferences.md)
 - [`docs/v0.1/43-decision-and-outcome-journal.md`](docs/v0.1/43-decision-and-outcome-journal.md)
 - [`docs/v0.1/44-phase-three-export-coverage.md`](docs/v0.1/44-phase-three-export-coverage.md)
+- [`docs/v0.1/45-phase-three-ui-integration.md`](docs/v0.1/45-phase-three-ui-integration.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)

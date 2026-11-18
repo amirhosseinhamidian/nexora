@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, ChevronRight, Database, LoaderCircle, RefreshCw } from "lucide-react";
-import type { FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -676,7 +676,20 @@ function DecisionReviewPanel({
   );
 }
 
-export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
+type DecisionFeedProps = {
+  dictionary: Dictionary;
+  locale: Locale;
+  onDecisionChange?: (decisionId: string | undefined) => void;
+};
+
+function decisionContextId(item: DecisionFeedItem | undefined): string | undefined {
+  if (!item) return undefined;
+  if (item.resource_type === "decision_evaluation") return item.resource_id;
+  const evaluationId = item.evidence.evaluation_id;
+  return typeof evaluationId === "string" && evaluationId ? evaluationId : undefined;
+}
+
+export function DecisionFeed({ dictionary, locale, onDecisionChange }: DecisionFeedProps) {
   const copy = dictionary.decisionFeed;
   const [state, setState] = useState<"error" | "loading" | "ready">("loading");
   const [page, setPage] = useState<DecisionFeedPage>();
@@ -687,6 +700,8 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
   const [reviewDecisionId, setReviewDecisionId] = useState<string>();
   const [detailLoading, setDetailLoading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const decisionButtons = useRef<Array<HTMLButtonElement | null>>([]);
+  const selectionSequence = useRef(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -698,7 +713,9 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
         });
         if (controller.signal.aborted) return;
         setPage(response);
-        setSelected(response.items[0]);
+        const firstItem = response.items[0];
+        setSelected(firstItem);
+        onDecisionChange?.(decisionContextId(firstItem));
         setRiskGate(undefined);
         setPortfolioImpact(undefined);
         setReviewContext(undefined);
@@ -710,75 +727,102 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
     }
     void load();
     return () => controller.abort();
-  }, [revision]);
+  }, [onDecisionChange, revision]);
 
-  const selectItem = useCallback(async (item: DecisionFeedItem) => {
-    setRiskGate(undefined);
-    setPortfolioImpact(undefined);
-    setReviewContext(undefined);
-    setReviewDecisionId(undefined);
-    if (item.resource_type !== "candidate") {
-      setSelected(item);
-      setReviewDecisionId(item.resource_id);
-      try {
-        setReviewContext(
-          await apiRequest<DecisionReviewContext>(
+  const selectItem = useCallback(
+    async (item: DecisionFeedItem) => {
+      const sequence = ++selectionSequence.current;
+      setRiskGate(undefined);
+      setPortfolioImpact(undefined);
+      setReviewContext(undefined);
+      setReviewDecisionId(undefined);
+      setDetailLoading(false);
+      onDecisionChange?.(decisionContextId(item));
+      if (item.resource_type !== "candidate") {
+        setSelected(item);
+        setReviewDecisionId(item.resource_id);
+        try {
+          const context = await apiRequest<DecisionReviewContext>(
             `/api/v1/decisions/${encodeURIComponent(item.resource_id)}/reviews`,
-          ),
-        );
-      } catch {
-        setReviewContext(null);
+          );
+          if (sequence === selectionSequence.current) setReviewContext(context);
+        } catch {
+          if (sequence === selectionSequence.current) setReviewContext(null);
+        }
+        return;
       }
-      return;
-    }
-    setDetailLoading(true);
-    try {
-      const detail = await apiRequest<CandidateDetail>(
-        `/api/v1/candidates/${encodeURIComponent(item.resource_id)}`,
-      );
-      if (detail.candidate) {
-        setSelected(detail.candidate);
-        const evaluationId = detail.candidate.evidence.evaluation_id;
-        if (typeof evaluationId === "string" && evaluationId) {
-          setReviewDecisionId(evaluationId);
-          const [riskResult, impactResult, reviewResult] = await Promise.allSettled([
-            apiRequest<RiskGateDetail>(`/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`),
-            apiRequest<PortfolioImpactDetail>(
-              `/api/v1/portfolio-impacts/${encodeURIComponent(evaluationId)}`,
-            ),
-            apiRequest<DecisionReviewContext>(
-              `/api/v1/decisions/${encodeURIComponent(evaluationId)}/reviews`,
-            ),
-          ]);
-          if (
-            riskResult.status === "fulfilled" &&
-            riskResult.value.provider.generation === detail.provider.generation
-          ) {
-            setRiskGate(riskResult.value.risk_gate);
+      setDetailLoading(true);
+      try {
+        const detail = await apiRequest<CandidateDetail>(
+          `/api/v1/candidates/${encodeURIComponent(item.resource_id)}`,
+        );
+        if (sequence !== selectionSequence.current) return;
+        if (detail.candidate) {
+          setSelected(detail.candidate);
+          const evaluationId = detail.candidate.evidence.evaluation_id;
+          if (typeof evaluationId === "string" && evaluationId) {
+            onDecisionChange?.(evaluationId);
+            setReviewDecisionId(evaluationId);
+            const [riskResult, impactResult, reviewResult] = await Promise.allSettled([
+              apiRequest<RiskGateDetail>(`/api/v1/risk-gates/${encodeURIComponent(evaluationId)}`),
+              apiRequest<PortfolioImpactDetail>(
+                `/api/v1/portfolio-impacts/${encodeURIComponent(evaluationId)}`,
+              ),
+              apiRequest<DecisionReviewContext>(
+                `/api/v1/decisions/${encodeURIComponent(evaluationId)}/reviews`,
+              ),
+            ]);
+            if (sequence !== selectionSequence.current) return;
+            if (
+              riskResult.status === "fulfilled" &&
+              riskResult.value.provider.generation === detail.provider.generation
+            ) {
+              setRiskGate(riskResult.value.risk_gate);
+            } else {
+              setRiskGate(null);
+            }
+            if (
+              impactResult.status === "fulfilled" &&
+              impactResult.value.provider.generation === detail.provider.generation
+            ) {
+              setPortfolioImpact(impactResult.value.portfolio_impact);
+            } else {
+              setPortfolioImpact(null);
+            }
+            setReviewContext(reviewResult.status === "fulfilled" ? reviewResult.value : null);
           } else {
             setRiskGate(null);
-          }
-          if (
-            impactResult.status === "fulfilled" &&
-            impactResult.value.provider.generation === detail.provider.generation
-          ) {
-            setPortfolioImpact(impactResult.value.portfolio_impact);
-          } else {
             setPortfolioImpact(null);
+            setReviewContext(null);
           }
-          setReviewContext(reviewResult.status === "fulfilled" ? reviewResult.value : null);
-        } else {
-          setRiskGate(null);
-          setPortfolioImpact(null);
-          setReviewContext(null);
         }
+      } catch {
+        if (sequence === selectionSequence.current) setState("error");
+      } finally {
+        if (sequence === selectionSequence.current) setDetailLoading(false);
       }
-    } catch {
-      setState("error");
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
+    },
+    [onDecisionChange],
+  );
+
+  function navigateDecisions(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (!page?.items.length) return;
+    const last = page.items.length - 1;
+    const nextIndex =
+      event.key === "ArrowDown"
+        ? Math.min(index + 1, last)
+        : event.key === "ArrowUp"
+          ? Math.max(index - 1, 0)
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? last
+              : undefined;
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    decisionButtons.current[nextIndex]?.focus();
+    void selectItem(page.items[nextIndex]);
+  }
 
   async function loadMore() {
     if (!page?.next_cursor) return;
@@ -804,12 +848,12 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
       </div>
 
       {state === "loading" ? (
-        <div className="inline-state">
-          <LoaderCircle className="spin" size={20} /> {copy.loading}
+        <div aria-live="polite" className="inline-state" role="status">
+          <LoaderCircle aria-hidden="true" className="spin" size={20} /> {copy.loading}
         </div>
       ) : state === "error" ? (
-        <div className="inline-state warning">
-          <AlertTriangle size={20} />
+        <div className="inline-state warning" role="alert">
+          <AlertTriangle aria-hidden="true" size={20} />
           <span>{copy.error}</span>
           <button
             className="secondary-button"
@@ -837,13 +881,18 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
             </div>
           ) : (
             <div className="decision-workspace">
-              <div className="decision-list" aria-label={copy.listLabel}>
-                {page.items.map((item) => (
+              <div aria-label={copy.listLabel} className="decision-list" role="group">
+                {page.items.map((item, index) => (
                   <button
                     aria-pressed={selected?.resource_id === item.resource_id}
                     className="decision-list-item"
                     key={`${item.resource_type}:${item.resource_id}`}
                     onClick={() => void selectItem(item)}
+                    onKeyDown={(event) => navigateDecisions(event, index)}
+                    ref={(element) => {
+                      decisionButtons.current[index] = element;
+                    }}
+                    tabIndex={selected?.resource_id === item.resource_id ? 0 : -1}
                     type="button"
                   >
                     <span>
@@ -868,8 +917,9 @@ export function DecisionFeed({ dictionary, locale }: { dictionary: Dictionary; l
               </div>
               <div className="decision-detail">
                 {detailLoading ? (
-                  <div className="inline-state">
-                    <LoaderCircle className="spin" size={20} /> {copy.loadingDetail}
+                  <div aria-live="polite" className="inline-state" role="status">
+                    <LoaderCircle aria-hidden="true" className="spin" size={20} />{" "}
+                    {copy.loadingDetail}
                   </div>
                 ) : selected ? (
                   <>

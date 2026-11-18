@@ -44,6 +44,11 @@ textarea {
   transform: translateY(0);
 }
 
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--nx-primary-strong);
+  outline-offset: 3px;
+}
+
 .application-shell {
   display: grid;
   grid-template-columns: 15rem minmax(0, 1fr);
@@ -1437,6 +1442,50 @@ textarea {
   }
 }
 
+.decision-experience {
+  min-width: 0;
+  margin-top: 1.5rem;
+}
+
+.decision-experience-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-lg);
+  background: var(--nx-surface);
+}
+
+.decision-experience-heading h2,
+.decision-experience-heading p {
+  margin-block-end: 0;
+}
+
+.decision-experience-heading > svg {
+  flex: 0 0 auto;
+  color: var(--nx-primary);
+}
+
+.decision-context {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  margin-top: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-inline-start: 3px solid var(--nx-primary);
+  border-radius: var(--nx-radius-md);
+  background: var(--nx-primary-soft);
+  color: var(--nx-text-muted);
+}
+
+.decision-context code {
+  color: var(--nx-text);
+  overflow-wrap: anywhere;
+}
+
 .decision-feed {
   margin-top: 1.5rem;
   padding: clamp(1rem, 3vw, 1.5rem);
@@ -1778,6 +1827,17 @@ textarea {
   resize: vertical;
 }
 
+.decision-experience :where(button, input:not([type="checkbox"]), select, summary),
+.decision-experience .watchlist-checkbox {
+  min-block-size: 2.75rem;
+}
+
+.decision-experience
+  :where(.decision-feed, .outcome-journal-panel, .alert-inbox, .watchlist-panel) {
+  min-width: 0;
+  scroll-margin-block-start: 1rem;
+}
+
 .journal-search {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) auto;
@@ -1946,6 +2006,12 @@ textarea {
 }
 
 @media (max-width: 700px) {
+  .decision-experience-heading,
+  .decision-context {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .alert-actions {
     grid-template-columns: 1fr;
   }
@@ -1977,6 +2043,17 @@ textarea {
   .journal-entry-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

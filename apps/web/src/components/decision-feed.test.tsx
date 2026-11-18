@@ -227,4 +227,19 @@ describe("DecisionFeed", () => {
       screen.getByRole("heading", { name: "No Decision or Candidate evidence" }),
     ).toBeInTheDocument();
   });
+
+  it("publishes the active Decision context for the integrated journal", async () => {
+    const onDecisionChange = vi.fn();
+    request.mockResolvedValueOnce({
+      items: [candidate],
+      next_cursor: null,
+      provider,
+      schema_version: "nexora-decision-feed-v1",
+    });
+
+    render(<DecisionFeed dictionary={en} locale="en" onDecisionChange={onDecisionChange} />);
+
+    expect(await screen.findByRole("heading", { name: "candidate-1" })).toBeInTheDocument();
+    expect(onDecisionChange).toHaveBeenCalledWith("decision-evaluation-1");
+  });
 });

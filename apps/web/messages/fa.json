@@ -7,6 +7,7 @@
     "decisions": "تصمیم‌ها",
     "alerts": "هشدارها",
     "journal": "ژورنال",
+    "watchlists": "Watchlistها",
     "exports": "خروجی‌ها",
     "settings": "تنظیمات"
   },
@@ -239,6 +240,13 @@
       "resolved": "حل‌شده",
       "ignored_with_reason": "نادیده‌گرفته‌شده با دلیل"
     }
+  },
+  "decisionExperience": {
+    "eyebrow": "هوشمندی یکپارچه تصمیم",
+    "title": "فضای کاری هوشمندی تصمیم",
+    "description": "بدون خروج از فضای خصوصی مالک، از شواهد immutable provider به review انسانی، تاریخچه نتیجه، هشدارها و مانیتورینگ محدود بروید.",
+    "activeDecision": "زمینه Decision فعال",
+    "noActiveDecision": "برای اتصال ژورنال نتیجه، شواهد یک Decision را انتخاب کنید."
   },
   "decisionFeed": {
     "eyebrow": "شواهد تصمیم محدود به مالک",

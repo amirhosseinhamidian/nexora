@@ -3,6 +3,7 @@
 import type { ActionResponse, SessionResponse } from "@nexora/contracts";
 import {
   Bell,
+  Binoculars,
   BookOpen,
   BriefcaseBusiness,
   CheckCircle2,
@@ -16,17 +17,14 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { AlertInbox } from "@/components/alert-inbox";
+import { DecisionExperience } from "@/components/decision-experience";
 import { FoundationControls } from "@/components/foundation-controls";
-import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
-import { DecisionFeed } from "@/components/decision-feed";
 import {
   PortfolioDashboard,
   type PortfolioWorkspaceContext,
 } from "@/components/portfolio-dashboard";
 import { PortfolioOperations } from "@/components/portfolio-operations";
 import { StatePanel } from "@/components/state-panel";
-import { WatchlistPanel } from "@/components/watchlist-panel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError, SESSION_EXPIRED_EVENT, apiRequest } from "@/lib/api-client";
@@ -37,6 +35,7 @@ const navigationIcons = [
   FileChartColumn,
   Bell,
   BookOpen,
+  Binoculars,
   Download,
   SlidersHorizontal,
 ] as const;
@@ -137,6 +136,16 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
   }
 
   const navigation = Object.values(dictionary.navigation);
+  const navigationTargets = [
+    `/${locale}`,
+    "#accounts",
+    "#decisions",
+    "#alerts",
+    "#decision-journal",
+    "#watchlists",
+    null,
+    null,
+  ] as const;
   const status = servicesReady ? dictionary.shell.ready : dictionary.shell.limited;
   return (
     <div className="application-shell">
@@ -154,23 +163,14 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
           <ul className="navigation-list">
             {navigation.map((label, index) => {
               const Icon = navigationIcons[index];
+              const href = navigationTargets[index];
               return (
                 <li key={label}>
-                  {index <= 3 || index === 4 ? (
+                  {href ? (
                     <Link
                       aria-current={index === 0 ? "page" : undefined}
                       className={`navigation-link ${index === 0 ? "active" : ""}`}
-                      href={
-                        index === 0
-                          ? `/${locale}`
-                          : index === 1
-                            ? "#accounts"
-                            : index === 2
-                              ? "#decisions"
-                              : index === 3
-                                ? "#alerts"
-                                : "#decision-journal"
-                      }
+                      href={href}
                     >
                       <Icon aria-hidden="true" size={19} />
                       <span>{label}</span>
@@ -235,13 +235,7 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
             onWorkspaceChange={setPortfolioContext}
           />
 
-          <DecisionFeed dictionary={dictionary} locale={locale} />
-
-          <OutcomeJournalPanel dictionary={dictionary} locale={locale} />
-
-          <AlertInbox dictionary={dictionary} locale={locale} />
-
-          <WatchlistPanel dictionary={dictionary} locale={locale} />
+          <DecisionExperience dictionary={dictionary} locale={locale} />
 
           <PortfolioOperations
             context={portfolioContext}

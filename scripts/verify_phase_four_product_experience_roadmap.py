@@ -293,8 +293,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
     )
     _require(workflow.get("run_id") == P4_PRIMARY_RUN_ID, "workflow run ID drift")
     _require(
-        workflow.get("run_url")
-        == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{P4_PRIMARY_RUN_ID}",
+        workflow.get("run_url") == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{P4_PRIMARY_RUN_ID}",
         "workflow URL drift",
     )
     _require(workflow.get("head_sha") == P4_CANDIDATE_SHA, "workflow head SHA drift")

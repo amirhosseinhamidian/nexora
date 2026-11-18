@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-accounting-experience-ui-freeze-v1",
+  "decision_id": "NEX-P4-06",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "3f1e51f51ee4035288cf686885a28a7fa1d342ac",
+  "candidate_tree_sha": "a9f23f55d2906a14c488e4e01583b6ba919c8def",
+  "candidate_predecessor_sha": "437a635077ef4d1e5d219f9b7cb1f42e3ce85618",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 accounting and reconciliation",
+  "accounting_experience_ui_contract": {
+    "path": "contracts/nexora-v0.1-accounting-experience-ui.json",
+    "checksum": "4c147ce8ca92c788946d43348c14b0d82bb61dc80f24da59aa2a45b4d0b4cd14"
+  },
+  "p4_05_freeze_canonical_checksum": "2ea7cb5dfda189daa7241a164005dd68d8e2f1f6a2056089239e6d61a0792c1f",
+  "github_actions": {
+    "workflow_path": ".github/workflows/accounting-experience-ui.yml",
+    "run_id": 44409570455,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44409570455",
+    "head_sha": "3f1e51f51ee4035288cf686885a28a7fa1d342ac",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "accounting-experience-contract": {
+        "job_id": 135173765601,
+        "conclusion": "success"
+      },
+      "accounting-experience-web": {
+        "job_id": 135173765864,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-07",
+  "production_readiness_claimed": false
+}

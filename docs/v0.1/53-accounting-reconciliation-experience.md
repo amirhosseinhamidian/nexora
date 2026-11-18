@@ -57,6 +57,9 @@ pnpm test
 pnpm test:e2e
 ```
 
-The [candidate contract](../../contracts/nexora-v0.1-accounting-experience-ui.json)
-requires successful CI on the candidate commit before recording `NEX-P4-06-FREEZE`.
-That Freeze opens `NEX-P4-07`.
+The [accounting and reconciliation workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44409570455)
+passed its contract and Chromium jobs on candidate
+`3f1e51f51ee4035288cf686885a28a7fa1d342ac`. The checksummed
+[Freeze record](../../artifacts/p4-06/accounting-experience-ui-freeze.json)
+binds that run to the [candidate contract](../../contracts/nexora-v0.1-accounting-experience-ui.json)
+and opens `NEX-P4-07` for the Decision Intelligence pages.

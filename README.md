@@ -284,11 +284,11 @@ Its Freeze record opens `NEX-P4-05` for portfolio overview and analytics.
 `NEX-P4-05` is frozen at candidate `17d0940aed4057d46f7f1af99e804b7c6d98db07`.
 It shows snapshot holdings, valuation health and sampled performance on
 Overview and portfolio detail pages. Its Freeze record opens `NEX-P4-06`
-for accounting and reconciliation. The `NEX-P4-06` candidate adds separate
-journal, holdings, purchase-lot, import and reconciliation pages. It uses
-confirmed accounting actions and the existing recent-passkey requirement for
-publication and reconciliation decisions. `NEX-P4-07` opens after the
-`NEX-P4-06` Freeze.
+for accounting and reconciliation. `NEX-P4-06` is frozen at candidate
+`3f1e51f51ee4035288cf686885a28a7fa1d342ac`. It delivers separate journal,
+holdings, purchase-lot, import and reconciliation pages, with recent passkey
+verification for publication and reconciliation decisions. Its Freeze record
+opens `NEX-P4-07` for the Decision Intelligence pages.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -636,3 +636,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p4-05/portfolio-analytics-ui-freeze.json`](artifacts/p4-05/portfolio-analytics-ui-freeze.json)
 - [`contracts/nexora-v0.1-accounting-experience-ui.json`](contracts/nexora-v0.1-accounting-experience-ui.json)
 - [`docs/v0.1/53-accounting-reconciliation-experience.md`](docs/v0.1/53-accounting-reconciliation-experience.md)
+- [`artifacts/p4-06/accounting-experience-ui-freeze.json`](artifacts/p4-06/accounting-experience-ui-freeze.json)

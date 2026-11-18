@@ -1,6 +1,6 @@
 # NEX-P4-05 — Portfolio overview and analytics
 
-Status: **Candidate**
+Status: **Frozen at candidate `17d0940aed4057d46f7f1af99e804b7c6d98db07`**
 
 The [P4-04 Freeze](../../artifacts/p4-04/registry-management-ui-freeze.json)
 passed [its workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44395721270)
@@ -34,4 +34,7 @@ The [P2-07 analytics contract](25-nav-pnl-performance.md) defines how the
 read-only figures are calculated. P4-05 uses the existing owner-scoped
 endpoints. Accounting workflows are assigned to P4-06.
 
-After local verification and CI, the candidate opens `NEX-P4-05-FREEZE`.
+The [portfolio analytics workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44402756115)
+passed its contract and web jobs on the accepted commit, including Chromium
+coverage. The checksummed [Freeze record](../../artifacts/p4-05/portfolio-analytics-ui-freeze.json)
+opens `NEX-P4-06` for accounting and reconciliation.

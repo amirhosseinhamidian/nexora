@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-portfolio-analytics-ui-freeze-v1",
+  "decision_id": "NEX-P4-05",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "17d0940aed4057d46f7f1af99e804b7c6d98db07",
+  "candidate_tree_sha": "4f38278253947768a5a2d2d68e735254620161d3",
+  "candidate_predecessor_sha": "ea7025148103004a6441377077b14aee1014f328",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 portfolio analytics",
+  "portfolio_analytics_ui_contract": {
+    "path": "contracts/nexora-v0.1-portfolio-analytics-ui.json",
+    "checksum": "f1ed43062b0f2e5bb8ad46bf37068c344311c18fd9630fbfeaa9f75d8acd5ad4"
+  },
+  "p4_04_freeze_canonical_checksum": "fde080e0d1ac0a260ad1214340c46fee9c9fd7f9453122e485ce36d662394ef9",
+  "github_actions": {
+    "workflow_path": ".github/workflows/portfolio-analytics-ui.yml",
+    "run_id": 44402756115,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44402756115",
+    "head_sha": "17d0940aed4057d46f7f1af99e804b7c6d98db07",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "portfolio-analytics-contract": {
+        "job_id": 135149870153,
+        "conclusion": "success"
+      },
+      "portfolio-analytics-web": {
+        "job_id": 135149870522,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-06",
+  "production_readiness_claimed": false
+}

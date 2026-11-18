@@ -39,6 +39,27 @@ class PortfolioAnalyticsUiContractTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "stage transition drift"):
             MODULE.validate_contract(contract)
 
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_freeze_record(), MODULE.load_contract())
+
+    def test_freeze_binds_ci_to_the_analytics_candidate(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["head_sha"] = MODULE.P4_04_FREEZE_SHA
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "CI head SHA drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_requires_successful_web_and_browser_checks(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["jobs"]["portfolio-analytics-web"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "CI job did not succeed"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_only_opens_p4_06(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["next_allowed_stage"] = "NEX-P4-07"
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
 
 if __name__ == "__main__":
     unittest.main()

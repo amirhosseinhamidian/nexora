@@ -1,6 +1,6 @@
 # NEX-P4-02 — Platform Shell, Navigation and Routes
 
-Status: **Candidate**
+Status: **Frozen at candidate `cd3dd588c830707860fa872e09f1ec122cc4eb03`**
 
 The local workspace now opens on Overview and uses stable, locale-prefixed
 paths. A shared layout keeps navigation, language and appearance controls,
@@ -35,4 +35,8 @@ deployment contracts continue to define those capabilities and their gates.
 
 The prerequisite is the [P4-01 Freeze](../../artifacts/p4-01/ui-foundation-freeze.json)
 verified by [GitHub Actions](https://github.com/amirhosseinhamidian/nexora/actions/runs/44319372484).
-This candidate opens `NEX-P4-02-FREEZE` after local verification and CI.
+The candidate passed local verification and the
+[platform shell workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44322665757)
+on the same commit. The checksummed
+[Freeze record](../../artifacts/p4-02/platform-shell-freeze.json) opens
+`NEX-P4-03` for first-run onboarding and first portfolio creation.

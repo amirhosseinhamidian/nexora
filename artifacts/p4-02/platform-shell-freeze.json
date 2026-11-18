@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-platform-shell-freeze-v1",
+  "decision_id": "NEX-P4-02",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-18",
+  "candidate_commit_sha": "cd3dd588c830707860fa872e09f1ec122cc4eb03",
+  "candidate_tree_sha": "923dc3d2bb65f59f30ffbd684644be72ea60c8f0",
+  "candidate_predecessor_sha": "a89a4cbeab3a6b4846638ca47d2e5a051c6e16d7",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 platform shell and routes",
+  "platform_shell_contract": {
+    "path": "contracts/nexora-v0.1-platform-shell.json",
+    "checksum": "542ca782b3659c5d06fa3ddff97969a6e075721dd9f0ef84513f0a0951fdc822"
+  },
+  "p4_01_freeze_canonical_checksum": "5c335ffbd731d9cea0df1e2cf1bfecfdf17b575531cb218f41b091a0ae22905d",
+  "github_actions": {
+    "workflow_path": ".github/workflows/platform-shell.yml",
+    "run_id": 44322665757,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44322665757",
+    "head_sha": "cd3dd588c830707860fa872e09f1ec122cc4eb03",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "platform-shell-contract": {
+        "job_id": 134865458739,
+        "conclusion": "success"
+      },
+      "platform-shell-web": {
+        "job_id": 134865457996,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-03",
+  "production_readiness_claimed": false
+}

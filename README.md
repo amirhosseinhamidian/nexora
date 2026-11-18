@@ -271,8 +271,9 @@ requires first-run Portfolio onboarding and routed bilingual pages, and
 preserves all security and private-VPS gates. `NEX-P4-01` is frozen at candidate
 `1a05a19e47268f291ddcb09a49c0463020106035`. It delivers shared tokens and
 accessible micro-components. Its Freeze record opens `NEX-P4-02` for the
-application shell, navigation and routes. The P4-02 candidate provides the
-locale-prefixed workspace pages and the responsive sidebar and mobile drawer.
+application shell, navigation and routes. `NEX-P4-02` is frozen at candidate
+`cd3dd588c830707860fa872e09f1ec122cc4eb03`. Its Freeze record opens
+`NEX-P4-03` for first-run onboarding and first portfolio creation.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -455,8 +456,8 @@ NEX_P4_00_FREEZE=PASS
 NEX_P4_01_UI_FOUNDATION_CANDIDATE=PASS
 NEX_P4_01_FREEZE=PASS
 NEX_P4_02_PLATFORM_SHELL_CANDIDATE=PASS
-NEX_P4_02_FREEZE=PENDING_SAME_SHA_CI
-NEX_P4_03=BLOCKED_PENDING_P4_02_FREEZE
+NEX_P4_02_FREEZE=PASS
+NEX_P4_03=OPEN
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -602,3 +603,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p4-01/ui-foundation-freeze.json`](artifacts/p4-01/ui-foundation-freeze.json)
 - [`contracts/nexora-v0.1-platform-shell.json`](contracts/nexora-v0.1-platform-shell.json)
 - [`docs/v0.1/49-platform-shell-navigation-and-routes.md`](docs/v0.1/49-platform-shell-navigation-and-routes.md)
+- [`artifacts/p4-02/platform-shell-freeze.json`](artifacts/p4-02/platform-shell-freeze.json)

@@ -37,6 +37,27 @@ class PlatformShellContractTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.PlatformShellContractError, "stage transition drift"):
             MODULE.validate_contract(contract)
 
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_freeze_record(), MODULE.load_contract())
+
+    def test_freeze_rejects_ci_for_another_commit(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PlatformShellContractError, "CI head SHA drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_requires_successful_web_and_browser_checks(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["jobs"]["platform-shell-web"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PlatformShellContractError, "CI job did not succeed"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_opens_only_p4_03(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["next_allowed_stage"] = "NEX-P4-04"
+        with self.assertRaisesRegex(MODULE.PlatformShellContractError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
 
 if __name__ == "__main__":
     unittest.main()

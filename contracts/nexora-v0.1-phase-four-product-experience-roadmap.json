@@ -1,0 +1,373 @@
+{
+  "schema_version": "nexora-phase-four-product-experience-roadmap-v1",
+  "decision_id": "NEX-P4-00",
+  "decision_date": "2026-11-18",
+  "status": "candidate",
+  "title": "Nexora v0.1 Product Experience Completion Roadmap",
+  "phase_three_prerequisite": {
+    "decision_id": "NEX-P3-13",
+    "frozen": true,
+    "accepted_candidate_commit_sha": "bff9b1f3b4f84f0019eef6e25d50a22d4bc9ccb2",
+    "freeze_commit_sha": "0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1",
+    "acceptance_record_path": "artifacts/p3-13/phase-three-final-acceptance.json",
+    "acceptance_record_canonical_checksum": "7d362ce2a7cb4f916a5fd2da4d704ebbb45b714290ef746dbdb95456e24f01fa",
+    "acceptance_record_checksum": "c42b1fc54c1b8f4d74c25a8a3e4499a87eae5eb3d0590de8ebff7e452e224149",
+    "phase_three_scope_accepted": true,
+    "production_readiness_claimed": false
+  },
+  "source_hierarchy": [
+    {
+      "priority": 1,
+      "source": "frozen_repository_contracts_and_acceptance_records",
+      "role": "implemented_security_domain_and_acceptance_truth"
+    },
+    {
+      "priority": 2,
+      "source": "Nexora_v0.1.0_Proposal_FA.pdf",
+      "role": "product_pages_and_user_experience_intent"
+    },
+    {
+      "priority": 3,
+      "source": "Nexora_TRD_BOT_UI_Redesign_Refactor_Proposal_v0.1_FA.pdf",
+      "role": "frontend_architecture_and_incremental_migration_guidance"
+    },
+    {
+      "priority": 4,
+      "source": "Nexora_TRD_BOT_v0.3.0_Proposal_FA.pdf",
+      "role": "ecosystem_context_and_future_product_boundary"
+    }
+  ],
+  "reconciliation_decision": {
+    "product_version": "0.1.0",
+    "delivery_phase": "P4",
+    "phase_name": "v0.1 Product Experience Completion",
+    "backend_domain_reimplementation_allowed": false,
+    "contract_defect_repairs_allowed": true,
+    "new_product_capabilities_allowed": false,
+    "existing_capabilities_must_become_usable_without_direct_api_calls": true,
+    "local_product_acceptance_is_production_acceptance": false,
+    "private_vps_gate_preserved": true,
+    "phase_number_is_not_product_version": true
+  },
+  "capability_reconciliation": [
+    {
+      "capability": "single_owner_identity_and_session",
+      "source_phase": "P1",
+      "current_state": "complete",
+      "phase_four_owner": "P4-02",
+      "phase_four_action": "preserve_and_integrate"
+    },
+    {
+      "capability": "asset_portfolio_account_registry",
+      "source_phase": "P2",
+      "current_state": "backend_only_for_creation_and_lifecycle",
+      "phase_four_owner": "P4-03,P4-04",
+      "phase_four_action": "deliver_onboarding_and_management_ui"
+    },
+    {
+      "capability": "portfolio_dashboard_and_analytics",
+      "source_phase": "P2",
+      "current_state": "partial_single_page_read_only_ui",
+      "phase_four_owner": "P4-05",
+      "phase_four_action": "deliver_routed_product_experience"
+    },
+    {
+      "capability": "transactions_holdings_import_reconciliation",
+      "source_phase": "P2",
+      "current_state": "partial_single_page_ui",
+      "phase_four_owner": "P4-06",
+      "phase_four_action": "deliver_complete_accounting_workflow"
+    },
+    {
+      "capability": "decision_intelligence",
+      "source_phase": "P3",
+      "current_state": "partial_single_page_ui",
+      "phase_four_owner": "P4-07",
+      "phase_four_action": "deliver_routed_decision_workflow"
+    },
+    {
+      "capability": "alerts_watchlists_outcome_journal",
+      "source_phase": "P3",
+      "current_state": "partial_single_page_ui",
+      "phase_four_owner": "P4-08",
+      "phase_four_action": "deliver_routed_monitoring_workflow"
+    },
+    {
+      "capability": "exports_and_user_settings",
+      "source_phase": "P1,P2,P3",
+      "current_state": "backend_and_download_foundation_without_complete_pages",
+      "phase_four_owner": "P4-09",
+      "phase_four_action": "deliver_export_and_settings_pages"
+    },
+    {
+      "capability": "bilingual_responsive_accessible_content",
+      "source_phase": "P1,P2,P3",
+      "current_state": "partial",
+      "phase_four_owner": "P4-01,P4-02,P4-10",
+      "phase_four_action": "standardize_and_harden"
+    }
+  ],
+  "target_routes": [
+    "/{locale}/overview",
+    "/{locale}/portfolios",
+    "/{locale}/portfolios/{portfolio_id}",
+    "/{locale}/transactions",
+    "/{locale}/decisions",
+    "/{locale}/alerts",
+    "/{locale}/journal",
+    "/{locale}/exports",
+    "/{locale}/settings"
+  ],
+  "product_experience_requirements": {
+    "first_run_onboarding_required": true,
+    "first_portfolio_creation_without_direct_api_required": true,
+    "persian_sidebar_side": "right",
+    "english_sidebar_side": "left",
+    "collapsible_desktop_sidebar_required": true,
+    "mobile_navigation_required": true,
+    "full_width_responsive_page_frame_required": true,
+    "plain_language_messages_required": true,
+    "persian_avoids_unnecessary_english_required": true,
+    "shared_micro_components_required": true,
+    "confirmation_dialog_for_sensitive_actions_required": true,
+    "toast_for_transient_operation_feedback_required": true,
+    "inline_form_errors_required": true,
+    "charts_only_when_they_improve_understanding": true,
+    "chart_text_equivalent_required": true,
+    "rtl_ltr_required": true,
+    "light_dark_required": true,
+    "keyboard_and_screen_reader_required": true,
+    "reduced_motion_required": true,
+    "no_page_level_horizontal_overflow_required": true
+  },
+  "micro_component_inventory": [
+    "button",
+    "icon_button",
+    "input",
+    "textarea",
+    "select",
+    "combobox",
+    "checkbox",
+    "radio",
+    "switch",
+    "form_field",
+    "field_error",
+    "alert",
+    "toast",
+    "progress",
+    "spinner",
+    "skeleton",
+    "empty_state",
+    "error_state",
+    "offline_state",
+    "degraded_state",
+    "modal",
+    "confirmation_dialog",
+    "drawer",
+    "sheet",
+    "tooltip",
+    "popover",
+    "dropdown_menu",
+    "table",
+    "responsive_record_list",
+    "pagination",
+    "tabs",
+    "filters",
+    "search",
+    "stat_card",
+    "chart_container",
+    "chart_legend",
+    "comparison_block"
+  ],
+  "destructive_and_sensitive_action_policy": {
+    "physical_delete_of_immutable_evidence": false,
+    "portfolio_action": "archive",
+    "asset_action": "deactivate",
+    "account_action": "close",
+    "transaction_correction": "reversal_or_supersession",
+    "journal_correction": "supersession",
+    "confirmation_dialog_required": true,
+    "recent_reauthentication_preserved_where_contract_requires": true,
+    "optimistic_concurrency_preserved": true
+  },
+  "phase_four_roadmap": [
+    {
+      "stage_id": "NEX-P4-00",
+      "title": "Roadmap Reconciliation and Freeze",
+      "outcome": "Freeze the authoritative capability, route, API, content, security and acceptance plan before feature implementation.",
+      "status": "candidate",
+      "depends_on": ["NEX-P3-13-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-01",
+      "title": "UI Foundation and Micro Components",
+      "outcome": "Deliver reusable accessible primitives, feedback, overlays and data-presentation components.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-00-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-02",
+      "title": "Platform Shell Navigation and Routes",
+      "outcome": "Replace anchor navigation with routed pages, directional collapsible navigation and a responsive full-width page frame.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-01-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-03",
+      "title": "First Run Onboarding",
+      "outcome": "Allow a new owner to create the base asset, first Portfolio and optional Account without direct API use.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-02-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-04",
+      "title": "Asset Portfolio and Account Management",
+      "outcome": "Expose the existing registry lifecycle through clear routed management experiences.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-03-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-05",
+      "title": "Portfolio Overview and Analytics",
+      "outcome": "Deliver a readable Portfolio overview with valuation health, allocation, performance, comparisons and explicit uncertainty.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-04-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-06",
+      "title": "Accounting and Reconciliation Experience",
+      "outcome": "Deliver routed transaction, holdings, lots, import and reconciliation workflows without weakening immutable accounting rules.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-05-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-07",
+      "title": "Decision Intelligence Pages",
+      "outcome": "Move Decision, Candidate, Risk, Impact and Review capabilities into a complete routed workflow.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-06-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-08",
+      "title": "Alerts Watchlists and Outcome Journal",
+      "outcome": "Deliver the routed monitoring and outcome lifecycle from Alert or Decision evidence to Journal history.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-07-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-09",
+      "title": "Exports and Settings",
+      "outcome": "Deliver complete export creation, history, verification, download and bounded owner preferences.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-08-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-10",
+      "title": "Content Localization Accessibility and Responsive Hardening",
+      "outcome": "Audit and harden plain language, Persian terminology, bilingual direction, themes, accessibility and viewport behavior.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-09-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-11",
+      "title": "Product End to End Acceptance Candidate",
+      "outcome": "Bind complete owner journeys and the visual acceptance matrix to one candidate SHA.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-10-FREEZE"]
+    },
+    {
+      "stage_id": "NEX-P4-12",
+      "title": "Phase 4 Final Acceptance and Freeze",
+      "outcome": "Freeze the accepted local v0.1 product experience without claiming production readiness.",
+      "status": "planned",
+      "depends_on": ["NEX-P4-11-FREEZE"]
+    }
+  ],
+  "stage_execution_policy": {
+    "sequence": [
+      "contract",
+      "implementation",
+      "code_review",
+      "commands_delivered_to_owner",
+      "owner_runs_tests_builds_and_migrations",
+      "defects_repaired",
+      "candidate_commit",
+      "same_sha_ci",
+      "freeze",
+      "next_stage"
+    ],
+    "assistant_runs_tests_builds_or_migrations": false,
+    "owner_executes_commands": true,
+    "freeze_before_next_stage": true,
+    "roadmap_change_after_freeze_requires_amendment": true
+  },
+  "phase_four_acceptance": {
+    "bootstrap_login_to_first_portfolio_journey_required": true,
+    "asset_portfolio_account_management_required": true,
+    "portfolio_overview_required": true,
+    "import_publication_reconciliation_required": true,
+    "holdings_projection_required": true,
+    "decision_review_required": true,
+    "alert_transition_required": true,
+    "outcome_journal_required": true,
+    "export_creation_verification_download_required": true,
+    "persian_rtl_required": true,
+    "english_ltr_required": true,
+    "light_dark_required": true,
+    "mobile_tablet_desktop_wide_required": true,
+    "accessibility_required": true,
+    "migration_from_zero_required": true,
+    "same_sha_ci_required": true,
+    "manual_visual_acceptance_required": true,
+    "production_readiness_claimed": false
+  },
+  "deferred": [
+    "ai_copilot",
+    "portfolio_ml",
+    "connected_financial_accounts",
+    "exchange_trade_credentials",
+    "wallet_keys_and_fund_transfer",
+    "live_trading",
+    "multi_user_saas",
+    "public_registration",
+    "native_mobile_application",
+    "autonomous_ai_actions",
+    "financial_or_tax_advice"
+  ],
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "required_before": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P4-00-FREEZE",
+    "post_freeze_stage": "NEX-P4-01",
+    "freeze_before_implementation": true,
+    "requires_successful_ci_on_candidate_sha": true,
+    "word_roadmap_generated_after_freeze": true,
+    "candidate_commit_message": "docs(nexora): define Phase 4 product experience roadmap",
+    "freeze_commit_message": "chore(nexora): freeze Phase 4 product experience roadmap"
+  }
+}

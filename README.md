@@ -256,6 +256,21 @@ Freeze. Production readiness remains unclaimed.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
+`NEX-P3-13` is frozen. Candidate
+`bff9b1f3b4f84f0019eef6e25d50a22d4bc9ccb2` passed the local Phase 3
+acceptance and same-SHA CI. Freeze commit
+`0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1` contains its checksummed
+acceptance artifact. Phase 3 is complete; production readiness remains
+unclaimed.
+
+`NEX-P4-00` is a Candidate. It reconciles the original Nexora v0.1 product
+experience, the TRD BOT UI architecture guidance and the frozen P1-P3
+repository truth into the Product Experience Completion roadmap. It keeps the
+product version at v0.1.0, separates delivery Phase 4 from product versioning,
+requires first-run Portfolio onboarding and routed bilingual pages, and
+preserves all security and private-VPS gates. No P4 feature implementation is
+open before P4-00 same-SHA CI acceptance and Freeze.
+
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
 available when remote access is required; LAN-only, wildcard and public binds
@@ -320,6 +335,7 @@ uv run python scripts/verify_outcome_journal.py
 uv run python scripts/verify_phase_three_export_coverage.py
 uv run python scripts/verify_phase_three_ui_integration.py
 uv run python scripts/verify_phase_three_final_acceptance.py
+uv run python scripts/verify_phase_four_product_experience_roadmap.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -430,6 +446,10 @@ NEX_P3_12_ACCEPTED_SHA=PASS
 NEX_P3_13_FINAL_ACCEPTANCE_TOOLING=PASS
 NEX_P3_13_PROVIDER_SMOKE_EVIDENCE=BOUND
 NEX_P3_13_READY_FOR_ACCEPTANCE_CANDIDATE=PASS
+NEX_P3_13_FREEZE_PREREQUISITE=PASS
+NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS
+NEX_P4_00_FREEZE=PENDING_SAME_SHA_CI
+NEX_P4_01=BLOCKED_PENDING_P4_00_FREEZE
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -505,6 +525,7 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`docs/v0.1/44-phase-three-export-coverage.md`](docs/v0.1/44-phase-three-export-coverage.md)
 - [`docs/v0.1/45-phase-three-ui-integration.md`](docs/v0.1/45-phase-three-ui-integration.md)
 - [`docs/v0.1/46-phase-three-final-acceptance.md`](docs/v0.1/46-phase-three-final-acceptance.md)
+- [`docs/v0.1/47-phase-four-product-experience-roadmap.md`](docs/v0.1/47-phase-four-product-experience-roadmap.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -538,6 +559,7 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
 - [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
 - [`contracts/nexora-v0.1-phase-three-final-acceptance.json`](contracts/nexora-v0.1-phase-three-final-acceptance.json)
+- [`contracts/nexora-v0.1-phase-four-product-experience-roadmap.json`](contracts/nexora-v0.1-phase-four-product-experience-roadmap.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

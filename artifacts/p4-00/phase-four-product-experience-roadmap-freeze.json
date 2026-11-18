@@ -1,0 +1,66 @@
+{
+  "schema_version": "nexora-phase-four-product-experience-roadmap-freeze-v1",
+  "decision_id": "NEX-P4-00",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_commit_sha": "1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d",
+  "candidate_tree_sha": "e1981ea664884472fcd548d5740351fa83050d4a",
+  "candidate_predecessor_sha": "0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1",
+  "candidate_commit_message": "feat(nexora): define phase four product experience roadmap",
+  "github_actions": {
+    "workflow_name": "Phase 4 product experience roadmap",
+    "workflow_path": ".github/workflows/phase-four-product-experience-roadmap.yml",
+    "run_id": 44307215455,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44307215455",
+    "head_sha": "1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "product_experience_roadmap_contract": {
+        "job_id": 134811770398,
+        "name": "product-experience-roadmap-contract",
+        "conclusion": "success",
+        "required_steps_passed": true
+      },
+      "backend_regression": {
+        "job_id": 134811769903,
+        "name": "backend-regression",
+        "conclusion": "success",
+        "required_steps_passed": true
+      },
+      "web_regression": {
+        "job_id": 134811770353,
+        "name": "web-regression",
+        "conclusion": "success",
+        "required_steps_passed": true
+      }
+    }
+  },
+  "phase_four_product_experience_roadmap_contract": {
+    "path": "contracts/nexora-v0.1-phase-four-product-experience-roadmap.json",
+    "schema_version": "nexora-phase-four-product-experience-roadmap-v1",
+    "checksum": "023b800af6e339ce0fa18a0c20bcb6d06282f11110dc16f134151364e6fb6b61"
+  },
+  "word_roadmap": {
+    "path": "docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx",
+    "language": "fa-IR",
+    "generated_after_candidate_ci": true,
+    "sha256": "dabbc9baac46f4f1276859916ef2fee16a509dab05495d338d17fa4b2546193a",
+    "size_bytes": 44980
+  },
+  "recorded_on": "2026-11-18",
+  "frozen": true,
+  "phase_four_implementation_started": false,
+  "next_allowed_stage": "NEX-P4-01",
+  "roadmap_amendment_required_for_material_change": true,
+  "server_deployment_acceptance": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "production_readiness_claimed": false
+}

@@ -1,6 +1,6 @@
 # NEX-P4-00 — Nexora v0.1 Product Experience Completion Roadmap
 
-Status: **Candidate — no Phase 4 feature implementation is open before Freeze**
+Status: **Frozen at candidate `1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d` — P4-01 is open**
 
 Phase 3 is complete and frozen at commit
 `0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1`. Its accepted candidate is
@@ -210,9 +210,10 @@ impact. Informal scope drift is not allowed.
 
 ## P4-00 transition
 
-The Candidate opens only `NEX-P4-00-FREEZE`. After successful same-SHA CI and a
-checksummed Freeze artifact, `NEX-P4-01` may open. The final Word roadmap is
-generated from the Frozen P4-00 source, not from this mutable Candidate.
+The Candidate opened only `NEX-P4-00-FREEZE`. Successful same-SHA CI is bound in
+`artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json`, so
+`NEX-P4-01` is now open. The final Persian Word roadmap was generated from the
+Frozen P4-00 source.
 
 The private German VPS acceptance gate remains unchanged and continues to block
 v0.1 production deployment and release.

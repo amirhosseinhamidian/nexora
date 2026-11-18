@@ -448,8 +448,8 @@ NEX_P3_13_PROVIDER_SMOKE_EVIDENCE=BOUND
 NEX_P3_13_READY_FOR_ACCEPTANCE_CANDIDATE=PASS
 NEX_P3_13_FREEZE_PREREQUISITE=PASS
 NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS
-NEX_P4_00_FREEZE=PENDING_SAME_SHA_CI
-NEX_P4_01=BLOCKED_PENDING_P4_00_FREEZE
+NEX_P4_00_FREEZE=PASS
+NEX_P4_01=OPEN
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -588,3 +588,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p2-05/holdings-projection-freeze.json`](artifacts/p2-05/holdings-projection-freeze.json)
 - [`artifacts/p3-00/phase-three-roadmap-freeze.json`](artifacts/p3-00/phase-three-roadmap-freeze.json)
 - [`artifacts/p3-01/decision-review-journal-domain-freeze.json`](artifacts/p3-01/decision-review-journal-domain-freeze.json)
+- [`artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json`](artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json)
+- [`docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx`](docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx)

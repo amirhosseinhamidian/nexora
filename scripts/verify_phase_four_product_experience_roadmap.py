@@ -10,12 +10,19 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-four-product-experience-roadmap.json"
 P3_ACCEPTANCE_PATH = ROOT / "artifacts/p3-13/phase-three-final-acceptance.json"
+FREEZE_PATH = ROOT / "artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json"
+WORD_ROADMAP_PATH = ROOT / "docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx"
 
 CONTRACT_CHECKSUM = "023b800af6e339ce0fa18a0c20bcb6d06282f11110dc16f134151364e6fb6b61"
 P3_ACCEPTANCE_CANONICAL_CHECKSUM = "7d362ce2a7cb4f916a5fd2da4d704ebbb45b714290ef746dbdb95456e24f01fa"
 P3_ACCEPTANCE_RECORD_CHECKSUM = "c42b1fc54c1b8f4d74c25a8a3e4499a87eae5eb3d0590de8ebff7e452e224149"
 P3_CANDIDATE_SHA = "bff9b1f3b4f84f0019eef6e25d50a22d4bc9ccb2"
 P3_FREEZE_SHA = "0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1"
+P4_CANDIDATE_SHA = "1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d"
+P4_CANDIDATE_TREE_SHA = "e1981ea664884472fcd548d5740351fa83050d4a"
+P4_CANDIDATE_PREDECESSOR_SHA = "0c08c71ccb3a75d3dd662eb6f780a677cf25d6f1"
+P4_CANDIDATE_MESSAGE = "feat(nexora): define phase four product experience roadmap"
+P4_PRIMARY_RUN_ID = 44307215455
 
 EXPECTED_STAGES = [f"NEX-P4-{number:02d}" for number in range(13)]
 EXPECTED_ROUTES = {
@@ -118,6 +125,10 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -262,14 +273,99 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(transition.get("word_roadmap_generated_after_freeze") is True, "Word generation moved before Freeze")
 
 
-def validate_files_and_markers() -> None:
-    expected = {
-        "README.md": "`NEX-P4-00` is a Candidate",
-        "docs/v0.1/47-phase-four-product-experience-roadmap.md": "# NEX-P4-00",
-        ".github/workflows/phase-four-product-experience-roadmap.yml": "name: Phase 4 product experience roadmap",
-        "tests/test_phase_four_product_experience_roadmap.py": "class PhaseFourProductExperienceRoadmapContractTests",
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(
+        record.get("schema_version") == "nexora-phase-four-product-experience-roadmap-freeze-v1",
+        "invalid freeze schema",
+    )
+    _require(record.get("decision_id") == "NEX-P4-00", "invalid freeze decision ID")
+    _require(record.get("repository") == "amirhosseinhamidian/nexora", "repository drift")
+    _require(record.get("candidate_commit_sha") == P4_CANDIDATE_SHA, "candidate SHA drift")
+    _require(record.get("candidate_tree_sha") == P4_CANDIDATE_TREE_SHA, "candidate tree drift")
+    _require(record.get("candidate_predecessor_sha") == P4_CANDIDATE_PREDECESSOR_SHA, "candidate predecessor drift")
+    _require(record.get("candidate_commit_message") == P4_CANDIDATE_MESSAGE, "candidate message drift")
+
+    workflow = record.get("github_actions")
+    _require(isinstance(workflow, dict), "GitHub Actions evidence must be an object")
+    _require(
+        workflow.get("workflow_path") == ".github/workflows/phase-four-product-experience-roadmap.yml",
+        "workflow path drift",
+    )
+    _require(workflow.get("run_id") == P4_PRIMARY_RUN_ID, "workflow run ID drift")
+    _require(
+        workflow.get("run_url")
+        == f"https://github.com/amirhosseinhamidian/nexora/actions/runs/{P4_PRIMARY_RUN_ID}",
+        "workflow URL drift",
+    )
+    _require(workflow.get("head_sha") == P4_CANDIDATE_SHA, "workflow head SHA drift")
+    _require(workflow.get("head_branch") == "feature/v0.1-decision-intelligence", "workflow branch drift")
+    _require(workflow.get("event") == "push", "workflow must be a push run")
+    _require(workflow.get("attempt") == 1, "workflow attempt drift")
+    _require(workflow.get("conclusion") == "success", "workflow did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), "workflow jobs must be an object")
+    expected_jobs = {
+        "product_experience_roadmap_contract": 134811770398,
+        "backend_regression": 134811769903,
+        "web_regression": 134811770353,
     }
-    for relative, marker in expected.items():
+    _require(set(jobs) == set(expected_jobs), "workflow job inventory drift")
+    for name, job_id in expected_jobs.items():
+        job = jobs[name]
+        _require(isinstance(job, dict), f"{name} evidence must be an object")
+        _require(job.get("job_id") == job_id, f"{name} job ID drift")
+        _require(job.get("conclusion") == "success", f"{name} did not succeed")
+        _require(job.get("required_steps_passed") is True, f"{name} required steps did not pass")
+
+    evidence = record.get("phase_four_product_experience_roadmap_contract")
+    _require(isinstance(evidence, dict), "P4-00 contract evidence must be an object")
+    _require(
+        evidence.get("path") == "contracts/nexora-v0.1-phase-four-product-experience-roadmap.json",
+        "contract path drift",
+    )
+    _require(evidence.get("schema_version") == contract.get("schema_version"), "contract schema drift")
+    _require(evidence.get("checksum") == CONTRACT_CHECKSUM, "recorded contract checksum drift")
+    _require(evidence.get("checksum") == canonical_checksum(contract), "contract checksum mismatch")
+
+    word = record.get("word_roadmap")
+    _require(isinstance(word, dict), "Word roadmap evidence must be an object")
+    _require(
+        word.get("path") == "docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx",
+        "Word roadmap path drift",
+    )
+    _require(word.get("language") == "fa-IR", "Word roadmap language drift")
+    _require(word.get("generated_after_candidate_ci") is True, "Word roadmap was generated before candidate CI")
+    _require(WORD_ROADMAP_PATH.is_file(), "Word roadmap is missing")
+    _require(
+        word.get("sha256") == hashlib.sha256(WORD_ROADMAP_PATH.read_bytes()).hexdigest(),
+        "Word roadmap checksum drift",
+    )
+    _require(word.get("size_bytes") == WORD_ROADMAP_PATH.stat().st_size, "Word roadmap size drift")
+
+    _require(record.get("recorded_on") == "2026-11-18", "freeze record date drift")
+    _require(record.get("frozen") is True, "P4-00 is not frozen")
+    _require(record.get("phase_four_implementation_started") is False, "Phase 4 implementation started before Freeze")
+    _require(record.get("next_allowed_stage") == "NEX-P4-01", "post-Freeze stage drift")
+    _require(record.get("roadmap_amendment_required_for_material_change") is True, "roadmap amendment gate removed")
+    _require(record.get("production_readiness_claimed") is False, "production readiness cannot be claimed")
+
+    server = record.get("server_deployment_acceptance")
+    _require(isinstance(server, dict), "server gate evidence must be an object")
+    _require(server.get("gate_id") == "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE", "server gate ID drift")
+    _require(server.get("status") == "deferred_until_private_vps_available", "server gate status drift")
+    _require(server.get("removed") is False, "server gate was removed")
+    _require(server.get("bypassed") is False, "server gate was bypassed")
+
+
+def validate_files_and_markers() -> None:
+    expected = (
+        ("README.md", "`NEX-P4-00` is a Candidate"),
+        ("README.md", "NEX_P4_00_FREEZE=PASS"),
+        ("docs/v0.1/47-phase-four-product-experience-roadmap.md", "# NEX-P4-00"),
+        (".github/workflows/phase-four-product-experience-roadmap.yml", "name: Phase 4 product experience roadmap"),
+        ("tests/test_phase_four_product_experience_roadmap.py", "class PhaseFourProductExperienceRoadmapContractTests"),
+    )
+    for relative, marker in expected:
         content = (ROOT / relative).read_text(encoding="utf-8")
         _require(marker in content, f"{relative} is missing the P4-00 marker")
 
@@ -280,13 +376,16 @@ def main() -> int:
     validate_contract(contract)
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P4-00 contract checksum drift")
     validate_files_and_markers()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P3_13_FREEZE_PREREQUISITE=PASS")
     print("NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS")
-    print("NEX_P4_00_FREEZE=PENDING_SAME_SHA_CI")
-    print("NEX_P4_01=BLOCKED_PENDING_P4_00_FREEZE")
+    print(f"candidate_commit_sha={P4_CANDIDATE_SHA}")
+    print("NEX_P4_00_FREEZE=PASS")
+    print("NEX_P4_01=OPEN")
     print("PRODUCTION_READINESS_CLAIMED=false")
     return 0
 

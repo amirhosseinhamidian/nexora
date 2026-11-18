@@ -19,6 +19,7 @@ SPEC.loader.exec_module(MODULE)
 class PhaseFourProductExperienceRoadmapContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.contract = MODULE.load_contract()
+        self.freeze_record = MODULE.load_freeze_record()
 
     def test_frozen_phase_three_prerequisite_is_valid(self) -> None:
         MODULE.validate_phase_three_prerequisite()
@@ -29,6 +30,33 @@ class PhaseFourProductExperienceRoadmapContractTests(unittest.TestCase):
 
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
+
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(self.freeze_record, self.contract)
+
+    def test_freeze_record_rejects_a_different_candidate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["candidate_commit_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.PhaseFourProductExperienceRoadmapError, "candidate SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_same_sha_ci(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["github_actions"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.PhaseFourProductExperienceRoadmapError, "did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_cannot_remove_server_gate(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["server_deployment_acceptance"]["removed"] = True
+        with self.assertRaisesRegex(MODULE.PhaseFourProductExperienceRoadmapError, "server gate was removed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p4_01(self) -> None:
+        changed = copy.deepcopy(self.freeze_record)
+        changed["next_allowed_stage"] = "NEX-P4-02"
+        with self.assertRaisesRegex(MODULE.PhaseFourProductExperienceRoadmapError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
 
     def test_phase_three_freeze_cannot_be_rebound(self) -> None:
         changed = copy.deepcopy(self.contract)

@@ -1,0 +1,53 @@
+{
+  "schema_version": "nexora-accounting-experience-ui-v1",
+  "decision_id": "NEX-P4-06",
+  "status": "candidate",
+  "p4_05_prerequisite": {
+    "freeze_commit_sha": "437a635077ef4d1e5d219f9b7cb1f42e3ce85618",
+    "freeze_record_path": "artifacts/p4-05/portfolio-analytics-ui-freeze.json",
+    "freeze_record_checksum": "2ea7cb5dfda189daa7241a164005dd68d8e2f1f6a2056089239e6d61a0792c1f",
+    "successful_ci_run_id": 44404355235
+  },
+  "routes": {
+    "journal": "/{locale}/transactions",
+    "holdings": "/{locale}/transactions/holdings",
+    "lots": "/{locale}/transactions/lots",
+    "imports": "/{locale}/transactions/imports",
+    "reconciliation": "/{locale}/transactions/reconciliation"
+  },
+  "portfolio_views": ["journal", "holdings", "lots"],
+  "owner_views": ["imports", "reconciliation"],
+  "cost_basis_methods": ["fifo", "weighted_average"],
+  "read_operations": {
+    "/v1/transactions": "listTransactions",
+    "/v1/portfolios/{portfolio_id}/holdings": "listPortfolioHoldings",
+    "/v1/portfolios/{portfolio_id}/lots": "listPortfolioLots",
+    "/v1/imports": "listImportBatches",
+    "/v1/reconciliation-cases": "listReconciliationCases"
+  },
+  "write_operations": {
+    "/v1/portfolios/{portfolio_id}/holdings/rebuilds": "rebuildPortfolioHoldings",
+    "/v1/imports/dry-runs": "createImportDryRun",
+    "/v1/imports/{import_batch_id}/reviews": "reviewImportBatch",
+    "/v1/imports/{import_batch_id}/publication": "publishImportBatch",
+    "/v1/reconciliation-cases/{reconciliation_case_id}/decisions": "decideReconciliationCase",
+    "/v1/auth/reauthentication/options": "createReauthenticationOptions",
+    "/v1/auth/reauthentication/complete": "completeReauthentication"
+  },
+  "safety": {
+    "journal_read_only": true,
+    "confirmation_required": ["rebuild", "review", "publication", "reconciliation_decision"],
+    "recent_passkey_required": ["publication", "reconciliation_decision"],
+    "import_max_utf8_bytes": 1048576,
+    "explicit_dry_run_required": true,
+    "quarantine_blocks_publication": true,
+    "atomic_publication": true,
+    "reconciliation_uses_expected_row_version": true,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-06-FREEZE",
+    "post_freeze_stage": "NEX-P4-07"
+  }
+}

@@ -54,8 +54,12 @@ function credentialJson(credential: PublicKeyCredential): string {
   throw new Error("WEBAUTHN_RESPONSE_INVALID");
 }
 
-export async function createPasskeyAssertion(options: AuthenticationOptionsResponse) {
+export async function createPasskeyAssertion(
+  options: AuthenticationOptionsResponse,
+  signal?: AbortSignal,
+) {
   const credential = await requireWebAuthn().get({
+    signal,
     publicKey: {
       allowCredentials: options.allow_credentials.map((item) => ({
         id: decodeBase64Url(item.credential_id),

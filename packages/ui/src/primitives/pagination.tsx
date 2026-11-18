@@ -3,6 +3,7 @@ import { Button } from "./button";
 export function Pagination({
   currentPage,
   label,
+  locale = "en",
   nextLabel,
   onPageChange,
   previousLabel,
@@ -10,6 +11,7 @@ export function Pagination({
 }: {
   currentPage: number;
   label: string;
+  locale?: string;
   nextLabel: string;
   onPageChange: (page: number) => void;
   previousLabel: string;
@@ -25,7 +27,7 @@ export function Pagination({
         {previousLabel}
       </Button>
       <span aria-current="page">
-        {currentPage} / {totalPages}
+        {currentPage.toLocaleString(locale)} / {totalPages.toLocaleString(locale)}
       </span>
       <Button
         disabled={currentPage >= totalPages}

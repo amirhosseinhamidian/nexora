@@ -2,24 +2,23 @@
 
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
 
 import { AlertInbox } from "@/components/alert-inbox";
 import { useWorkspace } from "@/components/authenticated-shell";
 import { DecisionExperience } from "@/components/decision-experience";
 import { FirstRunOnboarding } from "@/components/first-run-onboarding";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
-import {
-  PortfolioDashboard,
-  type PortfolioWorkspaceContext,
-} from "@/components/portfolio-dashboard";
-import { PortfolioOperations } from "@/components/portfolio-operations";
+import { PortfolioDashboard } from "@/components/portfolio-dashboard";
 import { RegistryManagement } from "@/components/registry-management";
+import { TransactionsWorkspace } from "@/components/transactions-workspace";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
+import type { AccountingQuery, AccountingView } from "@/lib/portfolio-accounting";
 
 type WorkspaceViewProps =
   | { section: "portfolioDetail"; portfolioId: string }
+  | { section: "transactions"; query: AccountingQuery; view: AccountingView }
   | {
       section:
         | "overview"
@@ -27,7 +26,6 @@ type WorkspaceViewProps =
         | "portfolios"
         | "assets"
         | "accounts"
-        | "transactions"
         | "decisions"
         | "alerts"
         | "journal"
@@ -65,27 +63,6 @@ function SecurityBoundary() {
         ))}
       </ul>
     </section>
-  );
-}
-
-function TransactionsWorkspace() {
-  const { dictionary, locale, session } = useWorkspace();
-  const [portfolioContext, setPortfolioContext] = useState<PortfolioWorkspaceContext>();
-  return (
-    <>
-      <PortfolioDashboard
-        dictionary={dictionary}
-        locale={locale}
-        onWorkspaceChange={setPortfolioContext}
-        selectionOnly
-      />
-      <PortfolioOperations
-        context={portfolioContext}
-        dictionary={dictionary}
-        locale={locale}
-        recentlyReauthenticated={session.recently_reauthenticated}
-      />
-    </>
   );
 }
 
@@ -172,8 +149,22 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       );
       break;
     case "transactions":
-      title = navigation.transactions;
-      content = <TransactionsWorkspace />;
+      title =
+        props.view === "journal"
+          ? navigation.transactions
+          : dictionary.portfolioOperations.tabs[props.view];
+      content = (
+        <TransactionsWorkspace
+          key={JSON.stringify([
+            session.owner_id,
+            props.view,
+            props.query.portfolio,
+            props.query.basis,
+          ])}
+          query={props.query}
+          view={props.view}
+        />
+      );
       break;
     case "decisions":
       title = navigation.decisions;

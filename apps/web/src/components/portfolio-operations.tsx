@@ -3,388 +3,293 @@
 import {
   Alert,
   Button,
-  Disclosure,
-  FormField,
-  Input,
-  ResponsiveRecordList,
-  Select,
+  ConfirmationDialog,
+  EmptyState,
+  ErrorState,
+  IconButton,
   Spinner,
-  Tabs,
-  Textarea,
+  ToastRegion,
 } from "@nexora/ui/primitives";
-import {
-  AlertTriangle,
-  ArrowLeftRight,
-  Boxes,
-  CheckCircle2,
-  FileInput,
-  History,
-  RefreshCw,
-  Scale,
-  ShieldAlert,
-} from "lucide-react";
-import { useId, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
+import { AccountingImports } from "@/components/accounting-imports";
+import { AccountingJournal } from "@/components/accounting-journal";
+import { AccountingProjection } from "@/components/accounting-projection";
+import { AccountingReconciliation } from "@/components/accounting-reconciliation";
 import type { PortfolioWorkspaceContext } from "@/components/portfolio-dashboard";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { ApiRequestError, apiRequest } from "@/lib/api-client";
+import { ApiRequestError } from "@/lib/api-client";
+import {
+  decideAccountingCase,
+  loadAccountingView,
+  needsAccountingPortfolio,
+  previewAccountingImport,
+  publishAccountingImport,
+  rebuildAccountingProjection,
+  reviewAccountingImport,
+  type AccountingData,
+  type AccountingView,
+  type CostBasisMethod,
+} from "@/lib/portfolio-accounting";
 
-type TransactionLeg = {
-  account_id: string | null;
-  asset_id: string;
-  external_counterparty: string | null;
-  quantity: string;
-  sequence: number;
-  transaction_leg_id: string;
+type Action = (signal: AbortSignal) => Promise<unknown>;
+type Confirmation = {
+  description: ReactNode;
+  label: string;
+  perform: Action;
+  sensitive?: boolean;
+  title: string;
 };
-
-type Transaction = {
-  correction_kind: "reversal" | "supersession" | null;
-  correction_of_transaction_id: string | null;
-  legs: TransactionLeg[];
-  memo: string | null;
-  occurred_at: string;
-  recorded_at: string;
-  source_kind: "import" | "manual" | "trd_bot";
-  source_reference: string;
-  transaction_id: string;
-  transaction_kind:
-    | "adjustment"
-    | "airdrop"
-    | "buy"
-    | "deposit"
-    | "fee"
-    | "income"
-    | "opening_balance"
-    | "reward"
-    | "sell"
-    | "transfer"
-    | "withdrawal";
-};
-
-type ProjectionCheckpoint = {
-  cost_basis_method: CostBasisMethod;
-  journal_sha256: string;
-  journal_transaction_count: number;
-  projection_version: string;
-  rebuilt_at: string;
-};
-
-type BasisStatus = "known" | "mixed" | "unknown";
-type CostBasisMethod = "fifo" | "weighted_average";
-
-type Holding = {
-  account_id: string;
-  asset_id: string;
-  average_unit_cost: string | null;
-  basis_status: BasisStatus;
-  cost_basis_asset_id: string | null;
-  quantity: string;
-  total_cost_basis: string | null;
-};
-
-type Lot = {
-  account_id: string;
-  acquired_at: string;
-  acquisition_transaction_id: string;
-  asset_id: string;
-  basis_status: BasisStatus;
-  cost_basis_asset_id: string | null;
-  lot_key: string;
-  original_cost_basis: string | null;
-  original_quantity: string;
-  remaining_cost_basis: string | null;
-  remaining_quantity: string;
-};
-
-type ImportRow = {
-  external_row_id: string | null;
-  import_row_id: string;
-  normalized_payload: Record<string, unknown> | null;
-  reason_code: string | null;
-  row_number: number;
-  status: "duplicate" | "published" | "quarantined" | "ready";
-};
-
-type ImportBatch = {
-  content_sha256: string;
-  created_at: string;
-  duplicate_count: number;
-  import_batch_id: string;
-  published_at: string | null;
-  quarantined_count: number;
-  ready_count: number;
-  review_reason: string | null;
-  reviewed_at: string | null;
-  row_count: number;
-  rows: ImportRow[];
-  source_format: "csv" | "nexora_json";
-  status: "dry_run" | "published" | "quarantined" | "reviewed";
-};
-
-type ReconciliationCase = {
-  created_at: string;
-  difference_code: string;
-  import_batch_id: string;
-  import_row_id: string;
-  reason: string | null;
-  reconciliation_case_id: string;
-  row_version: number;
-  state: "accepted_difference" | "ignored_with_reason" | "matched" | "open" | "resolved";
-  transaction_id: string | null;
-  updated_at: string;
-};
-
-type ListResponse<T> = { items: T[] };
-type HoldingListResponse = { checkpoint: ProjectionCheckpoint; items: Holding[] };
-type LotListResponse = { checkpoint: ProjectionCheckpoint; items: Lot[] };
-type Tab = "holdings" | "imports" | "journal" | "reconciliation";
-type ViewState = "error" | "loading" | "ready";
-
-type WorkspaceData = {
-  holdings?: HoldingListResponse;
-  imports: ImportBatch[];
-  lots?: LotListResponse;
-  reconciliation: ReconciliationCase[];
-  transactions: Transaction[];
-};
-
-const emptyData: WorkspaceData = {
-  imports: [],
-  reconciliation: [],
-  transactions: [],
-};
-
-function localizeDigits(value: string, locale: Locale): string {
-  if (locale === "en") return value;
-  return value.replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-}
-
-function exactDecimal(value: string | null, locale: Locale): string {
-  if (value === null) return "—";
-  if (locale === "en") return value;
-  return localizeDigits(value.replace("-", "−").replace(".", "٫"), locale);
-}
-
-function formatTimestamp(value: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function shortId(value: string): string {
-  return `${value.slice(0, 8)}…`;
-}
-
-async function optionalProjection<T>(path: string, signal: AbortSignal): Promise<T | undefined> {
-  try {
-    return await apiRequest<T>(path, { signal });
-  } catch (error) {
-    if (error instanceof ApiRequestError && error.status === 404) return undefined;
-    throw error;
-  }
-}
 
 export function PortfolioOperations({
+  basis,
   context,
   dictionary,
   locale,
+  onBasisChange,
+  onReauthenticate,
+  onRefreshSession,
   recentlyReauthenticated,
+  view,
 }: {
+  basis: CostBasisMethod;
   context?: PortfolioWorkspaceContext;
   dictionary: Dictionary;
   locale: Locale;
+  onBasisChange: (basis: CostBasisMethod) => void;
+  onReauthenticate?: Action;
+  onRefreshSession?: Action;
   recentlyReauthenticated: boolean;
+  view: AccountingView;
 }) {
-  const fieldId = useId();
   const copy = dictionary.portfolioOperations;
-  const [activeTab, setActiveTab] = useState<Tab>("journal");
-  const [basisMethod, setBasisMethod] = useState<CostBasisMethod>("fifo");
-  const [data, setData] = useState<WorkspaceData>(emptyData);
-  const [state, setState] = useState<ViewState>(context ? "loading" : "ready");
+  const portfolioId = context?.portfolioId;
+  const needsPortfolio = needsAccountingPortfolio(view);
+  const request = useRef<AbortController | null>(null);
   const [revision, setRevision] = useState(0);
-  const [busyAction, setBusyAction] = useState<string>();
-  const [feedback, setFeedback] = useState<{ error: boolean; text: string }>();
-  const [importFormat, setImportFormat] = useState<"csv" | "nexora_json">("csv");
-  const [importContent, setImportContent] = useState("");
-  const [reviewReasons, setReviewReasons] = useState<Record<string, string>>({});
-  const [decisionReasons, setDecisionReasons] = useState<Record<string, string>>({});
-  const [decisionStates, setDecisionStates] = useState<
-    Record<string, Exclude<ReconciliationCase["state"], "open">>
-  >({});
+  const [loaded, setLoaded] = useState<{ data: AccountingData; revision: number }>();
+  const [failedRevision, setFailedRevision] = useState<number>();
+  const [pending, setPending] = useState(false);
+  const [confirmation, setConfirmation] = useState<Confirmation>();
+  const [notice, setNotice] = useState<{ title: string; tone: "success" | "warning" | "danger" }>();
+
+  const failed = failedRevision === revision;
+  const refreshing = loaded?.revision !== revision && !failed;
+  const busy = pending || refreshing || failed;
 
   useEffect(() => {
-    if (!context) return;
-    const currentContext = context;
+    if (needsPortfolio && !portfolioId) return;
     const controller = new AbortController();
-    async function load() {
-      setState("loading");
-      setFeedback(undefined);
-      const portfolio = encodeURIComponent(currentContext.portfolioId);
-      const method = encodeURIComponent(basisMethod);
-      try {
-        const [transactions, holdings, lots, imports, reconciliation] = await Promise.all([
-          apiRequest<ListResponse<Transaction>>(`/api/v1/transactions?portfolio_id=${portfolio}`, {
-            signal: controller.signal,
-          }),
-          optionalProjection<HoldingListResponse>(
-            `/api/v1/portfolios/${portfolio}/holdings?cost_basis_method=${method}`,
-            controller.signal,
-          ),
-          optionalProjection<LotListResponse>(
-            `/api/v1/portfolios/${portfolio}/lots?cost_basis_method=${method}`,
-            controller.signal,
-          ),
-          apiRequest<ListResponse<ImportBatch>>("/api/v1/imports", { signal: controller.signal }),
-          apiRequest<ListResponse<ReconciliationCase>>("/api/v1/reconciliation-cases", {
-            signal: controller.signal,
-          }),
-        ]);
-        if (controller.signal.aborted) return;
-        setData({
-          holdings,
-          imports: imports.items,
-          lots,
-          reconciliation: reconciliation.items,
-          transactions: transactions.items,
-        });
-        setState("ready");
-      } catch {
-        if (!controller.signal.aborted) setState("error");
-      }
-    }
-    void load();
+    void loadAccountingView(view, portfolioId, basis, controller.signal).then(
+      (data) => {
+        if (!controller.signal.aborted) setLoaded({ data, revision });
+      },
+      () => {
+        if (!controller.signal.aborted) setFailedRevision(revision);
+      },
+    );
     return () => controller.abort();
-  }, [basisMethod, context, revision]);
+  }, [basis, needsPortfolio, portfolioId, revision, view]);
 
-  const accounts = useMemo(
-    () => new Map((context?.accounts ?? []).map((account) => [account.account_id, account])),
-    [context?.accounts],
-  );
-  const assets = useMemo(
-    () => new Map((context?.assets ?? []).map((asset) => [asset.asset_id, asset])),
-    [context?.assets],
-  );
-  const retry = useCallback(() => setRevision((value) => value + 1), []);
+  useEffect(() => () => request.current?.abort(), []);
 
-  async function mutate<T>(key: string, action: () => Promise<T>): Promise<T | undefined> {
-    setBusyAction(key);
-    setFeedback(undefined);
+  useEffect(() => {
+    if (notice?.tone !== "success") return;
+    const timer = window.setTimeout(() => setNotice(undefined), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  function refresh() {
+    setRevision((value) => value + 1);
+  }
+
+  async function run(
+    perform: Action,
+    options: { invalidInputMessage?: string; sensitive?: boolean; verifying?: boolean } = {},
+  ) {
+    if (request.current || busy || (options.sensitive && !recentlyReauthenticated)) return false;
+    const controller = new AbortController();
+    request.current = controller;
+    setConfirmation(undefined);
+    setNotice(undefined);
+    setPending(true);
     try {
-      const result = await action();
-      setFeedback({ error: false, text: copy.actionSucceeded });
-      return result;
+      await perform(controller.signal);
+      if (controller.signal.aborted) return false;
+      setNotice({
+        title: options.verifying ? copy.reauthenticated : copy.actionSucceeded,
+        tone: "success",
+      });
+      if (!options.verifying) refresh();
+      return true;
     } catch (error) {
-      const code = error instanceof ApiRequestError ? error.code : "UNEXPECTED_ERROR";
-      setFeedback({ error: true, text: `${copy.actionFailed} (${code})` });
-      return undefined;
+      if (controller.signal.aborted) return false;
+      const status = error instanceof ApiRequestError ? error.status : undefined;
+      if (status === 401 && (options.sensitive || options.verifying)) {
+        // The API uses 401 for stale verification and expired sessions. Check the session before recovering.
+        try {
+          await onRefreshSession?.(controller.signal);
+        } catch {
+          /* The session client handles expiry. */
+        }
+      }
+      if (controller.signal.aborted) return false;
+      if (options.verifying) {
+        setNotice({ title: copy.reauthenticationFailed, tone: "danger" });
+      } else if (status === 409 || status === 404) {
+        setNotice({ title: copy.changedRecord, tone: "warning" });
+        refresh();
+      } else if (status === 401 && options.sensitive) {
+        setNotice({ title: copy.reauthenticationRequired, tone: "warning" });
+      } else if (status === 413 && view === "imports") {
+        setNotice({ title: copy.imports.sizeError, tone: "danger" });
+      } else if (status === 400 || status === 422) {
+        setNotice({ title: options.invalidInputMessage ?? copy.invalidInput, tone: "danger" });
+      } else {
+        setNotice({ title: copy.actionFailed, tone: "danger" });
+        refresh();
+      }
+      return false;
     } finally {
-      setBusyAction(undefined);
+      request.current = null;
+      if (!controller.signal.aborted) setPending(false);
     }
   }
 
-  async function rebuildHoldings() {
-    if (!context) return;
-    const portfolio = encodeURIComponent(context.portfolioId);
-    const result = await mutate("rebuild", () =>
-      apiRequest(`/api/v1/portfolios/${portfolio}/holdings/rebuilds`, {
-        body: { cost_basis_method: basisMethod },
-        method: "POST",
-      }),
-    );
-    if (result) retry();
+  function requestConfirmation(action: Confirmation) {
+    if (request.current || busy || (action.sensitive && !recentlyReauthenticated)) return;
+    setNotice(undefined);
+    setConfirmation(action);
   }
 
-  async function createDryRun(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const created = await mutate<ImportBatch>("dry-run", () =>
-      apiRequest("/api/v1/imports/dry-runs", {
-        body: { content: importContent, source_format: importFormat },
-        method: "POST",
-      }),
-    );
-    if (created) {
-      setImportContent("");
-      setData((current) => ({ ...current, imports: [created, ...current.imports] }));
-    }
+  const data = loaded?.data;
+  let panel: ReactNode;
+
+  switch (data?.view) {
+    case "journal":
+      if (context)
+        panel = (
+          <AccountingJournal
+            context={context}
+            copy={copy}
+            locale={locale}
+            transactions={data.items}
+          />
+        );
+      break;
+    case "holdings":
+    case "lots":
+      if (context && portfolioId) {
+        panel = (
+          <AccountingProjection
+            basis={basis}
+            busy={busy}
+            context={context}
+            copy={copy}
+            data={data}
+            locale={locale}
+            onBasisChange={onBasisChange}
+            onRebuild={() =>
+              requestConfirmation({
+                description: (
+                  <>
+                    <bdi>{context.portfolioName}</bdi> ·{" "}
+                    {basis === "fifo" ? copy.holdings.fifo : copy.holdings.weightedAverage}
+                    <br />
+                    {copy.holdings.confirmDescription}
+                  </>
+                ),
+                label: copy.holdings.rebuild,
+                perform: (signal) => rebuildAccountingProjection(portfolioId, basis, signal),
+                title: copy.holdings.confirmTitle,
+              })
+            }
+          />
+        );
+      }
+      break;
+    case "imports":
+      panel = (
+        <AccountingImports
+          busy={busy}
+          copy={copy}
+          imports={data.items}
+          locale={locale}
+          onDryRun={(format, text) =>
+            run((signal) => previewAccountingImport(format, text, signal), {
+              invalidInputMessage: copy.imports.formatError,
+            })
+          }
+          onPublish={(batch) =>
+            requestConfirmation({
+              description: (
+                <>
+                  <code dir="ltr">{batch.import_batch_id}</code>
+                  <br />
+                  {copy.imports.publishDescription}
+                </>
+              ),
+              label: copy.imports.publish,
+              perform: (signal) => publishAccountingImport(batch.import_batch_id, signal),
+              sensitive: true,
+              title: copy.imports.publishTitle,
+            })
+          }
+          onReview={(batch, reason) =>
+            requestConfirmation({
+              description: (
+                <>
+                  <code dir="ltr">{batch.import_batch_id}</code>
+                  <br />
+                  {copy.imports.reviewDescription}
+                  <br />
+                  <bdi>{reason}</bdi>
+                </>
+              ),
+              label: copy.imports.review,
+              perform: (signal) => reviewAccountingImport(batch.import_batch_id, reason, signal),
+              title: copy.imports.reviewTitle,
+            })
+          }
+          recentlyReauthenticated={recentlyReauthenticated}
+        />
+      );
+      break;
+    case "reconciliation":
+      panel = (
+        <AccountingReconciliation
+          busy={busy}
+          cases={data.items}
+          copy={copy}
+          locale={locale}
+          onDecide={(item, state, reason) =>
+            requestConfirmation({
+              description: (
+                <>
+                  <code dir="ltr">{item.reconciliation_case_id}</code>
+                  <br />
+                  {copy.reconciliationState[state]} · <bdi>{reason}</bdi>
+                  <br />
+                  {copy.reconciliation.confirmDescription}
+                </>
+              ),
+              label: copy.reconciliation.apply,
+              perform: (signal) => decideAccountingCase(item, state, reason, signal),
+              sensitive: true,
+              title: copy.reconciliation.confirmTitle,
+            })
+          }
+          recentlyReauthenticated={recentlyReauthenticated}
+        />
+      );
+      break;
   }
 
-  async function reviewBatch(batch: ImportBatch) {
-    const reason = reviewReasons[batch.import_batch_id]?.trim() ?? "";
-    if (reason.length < 8) {
-      setFeedback({ error: true, text: copy.reasonRequired });
-      return;
-    }
-    const reviewed = await mutate<ImportBatch>(`review-${batch.import_batch_id}`, () =>
-      apiRequest(`/api/v1/imports/${encodeURIComponent(batch.import_batch_id)}/reviews`, {
-        body: { reason },
-        method: "POST",
-      }),
-    );
-    if (reviewed) {
-      setData((current) => ({
-        ...current,
-        imports: current.imports.map((item) =>
-          item.import_batch_id === reviewed.import_batch_id ? reviewed : item,
-        ),
-      }));
-    }
-  }
-
-  async function publishBatch(batch: ImportBatch) {
-    const published = await mutate<ImportBatch>(`publish-${batch.import_batch_id}`, () =>
-      apiRequest(`/api/v1/imports/${encodeURIComponent(batch.import_batch_id)}/publication`, {
-        body: {},
-        method: "POST",
-      }),
-    );
-    if (published) {
-      setData((current) => ({
-        ...current,
-        imports: current.imports.map((item) =>
-          item.import_batch_id === published.import_batch_id ? published : item,
-        ),
-      }));
-      retry();
-    }
-  }
-
-  async function decideCase(item: ReconciliationCase) {
-    const reason = decisionReasons[item.reconciliation_case_id]?.trim() ?? "";
-    if (reason.length < 8) {
-      setFeedback({ error: true, text: copy.reasonRequired });
-      return;
-    }
-    const nextState = decisionStates[item.reconciliation_case_id] ?? "matched";
-    const decided = await mutate<ReconciliationCase>(
-      `decision-${item.reconciliation_case_id}`,
-      () =>
-        apiRequest(
-          `/api/v1/reconciliation-cases/${encodeURIComponent(item.reconciliation_case_id)}/decisions`,
-          {
-            body: { expected_row_version: item.row_version, reason, state: nextState },
-            method: "POST",
-          },
-        ),
-    );
-    if (decided) {
-      setData((current) => ({
-        ...current,
-        reconciliation: current.reconciliation.map((candidate) =>
-          candidate.reconciliation_case_id === decided.reconciliation_case_id ? decided : candidate,
-        ),
-      }));
-    }
-  }
-
-  const tabs: Array<{ icon: typeof History; id: Tab; label: string }> = [
-    { icon: History, id: "journal", label: copy.tabs.journal },
-    { icon: Boxes, id: "holdings", label: copy.tabs.holdings },
-    { icon: FileInput, id: "imports", label: copy.tabs.imports },
-    { icon: Scale, id: "reconciliation", label: copy.tabs.reconciliation },
-  ];
+  const gated =
+    (data?.view === "imports" &&
+      data.items.some((batch) => batch.status === "reviewed" && batch.quarantined_count === 0)) ||
+    (data?.view === "reconciliation" && data.items.some((item) => item.state === "open"));
 
   return (
     <section
@@ -394,563 +299,81 @@ export function PortfolioOperations({
     >
       <div className="operations-heading">
         <div>
-          <p className="section-kicker">{copy.eyebrow}</p>
           <h2 id="portfolio-operations-title">{copy.title}</h2>
-          <p>{copy.description}</p>
+          <p>{needsPortfolio ? copy.description : copy.ownerScope}</p>
         </div>
-        {context && <span className="operations-context">{context.portfolioName}</span>}
+        {needsPortfolio && context ? (
+          <span className="operations-context">{context.portfolioName}</span>
+        ) : null}
       </div>
-
-      {!context ? (
-        <div className="dashboard-state compact">
-          <Boxes aria-hidden="true" size={24} />
-          <p>{copy.noPortfolio}</p>
-        </div>
+      <ToastRegion
+        label={copy.notifications}
+        messages={
+          notice
+            ? [
+                {
+                  ...notice,
+                  id: "accounting-result",
+                  action: (
+                    <IconButton
+                      aria-label={copy.dismissNotification}
+                      onClick={() => setNotice(undefined)}
+                      size="sm"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </IconButton>
+                  ),
+                },
+              ]
+            : []
+        }
+      />
+      {needsPortfolio && !portfolioId ? (
+        <EmptyState title={copy.noPortfolio} />
       ) : (
         <>
-          <Tabs className="operations-tabs" label={copy.tabs.label}>
-            {tabs.map(({ icon: Icon, id, label }) => (
-              <Button
-                variant="ghost"
-                aria-controls={`operations-panel-${id}`}
-                aria-selected={activeTab === id}
-                className={activeTab === id ? "active" : ""}
-                id={`operations-tab-${id}`}
-                key={id}
-                onClick={() => setActiveTab(id)}
-                role="tab"
-                tabIndex={activeTab === id ? 0 : -1}
-                type="button"
-              >
-                <Icon aria-hidden="true" size={18} />
-                {label}
-              </Button>
-            ))}
-          </Tabs>
-
-          {feedback && (
-            <Alert
-              className={`operations-feedback ${feedback.error ? "error" : "success"}`}
-              role="status"
-            >
-              {feedback.error ? (
-                <AlertTriangle aria-hidden="true" size={18} />
-              ) : (
-                <CheckCircle2 aria-hidden="true" size={18} />
-              )}
-              <span>{feedback.text}</span>
-            </Alert>
-          )}
-
-          {state === "loading" ? (
-            <div aria-live="polite" className="dashboard-state compact">
-              <Spinner label="" size="lg" />
-              <p>{copy.loading}</p>
-            </div>
-          ) : state === "error" ? (
-            <Alert tone="danger" className="dashboard-state compact error" role="alert">
-              <ShieldAlert aria-hidden="true" size={24} />
-              <div>
-                <p>{copy.loadError}</p>
-                <Button
-                  variant="secondary"
-                  className="secondary-button"
-                  onClick={retry}
-                  type="button"
-                >
-                  <RefreshCw aria-hidden="true" size={17} />
+          {refreshing || pending ? <Spinner label={pending ? copy.saving : copy.loading} /> : null}
+          {failed ? (
+            <ErrorState
+              title={copy.loadError}
+              action={
+                <Button onClick={refresh} variant="secondary">
                   {copy.retry}
                 </Button>
-              </div>
-            </Alert>
-          ) : (
-            <>
-              <div
-                aria-labelledby="operations-tab-journal"
-                className="operations-panel"
-                hidden={activeTab !== "journal"}
-                id="operations-panel-journal"
-                role="tabpanel"
-              >
-                <div className="panel-heading">
-                  <div>
-                    <h3>{copy.journal.title}</h3>
-                    <p>{copy.journal.description}</p>
-                  </div>
-                  <span className="count-badge">
-                    {localizeDigits(String(data.transactions.length), locale)}
-                  </span>
-                </div>
-                {data.transactions.length === 0 ? (
-                  <p className="inline-empty">{copy.journal.empty}</p>
-                ) : (
-                  <ResponsiveRecordList className="operations-card-list" label={copy.journal.title}>
-                    {data.transactions.map((transaction) => (
-                      <li className="operation-card" key={transaction.transaction_id}>
-                        <div className="operation-card-heading">
-                          <div>
-                            <span className="status-badge active">
-                              {copy.transactionKind[transaction.transaction_kind]}
-                            </span>
-                            {transaction.correction_kind && (
-                              <span className="status-badge archived">
-                                {copy.correctionKind[transaction.correction_kind]}
-                              </span>
-                            )}
-                          </div>
-                          <time dateTime={transaction.occurred_at}>
-                            {formatTimestamp(transaction.occurred_at, locale)}
-                          </time>
-                        </div>
-                        <p>{transaction.memo ?? copy.journal.noMemo}</p>
-                        <ul className="journal-legs">
-                          {transaction.legs.map((leg) => (
-                            <li key={leg.transaction_leg_id}>
-                              <span>
-                                {leg.account_id
-                                  ? (accounts.get(leg.account_id)?.name ?? shortId(leg.account_id))
-                                  : (leg.external_counterparty ?? copy.journal.external)}
-                              </span>
-                              <strong dir="ltr">
-                                {exactDecimal(leg.quantity, locale)}{" "}
-                                {assets.get(leg.asset_id)?.symbol ?? shortId(leg.asset_id)}
-                              </strong>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="operation-lineage">
-                          <code dir="ltr">{shortId(transaction.transaction_id)}</code>
-                          <span>{copy.sourceKind[transaction.source_kind]}</span>
-                          <code dir="ltr">{transaction.source_reference}</code>
-                        </div>
-                      </li>
-                    ))}
-                  </ResponsiveRecordList>
-                )}
-              </div>
-
-              <div
-                aria-labelledby="operations-tab-holdings"
-                className="operations-panel"
-                hidden={activeTab !== "holdings"}
-                id="operations-panel-holdings"
-                role="tabpanel"
-              >
-                <div className="panel-heading holdings-controls">
-                  <div>
-                    <h3>{copy.holdings.title}</h3>
-                    <p>{copy.holdings.description}</p>
-                  </div>
-                  <div>
-                    <FormField id={`${fieldId}-holdings-method`} label={copy.holdings.method}>
-                      <Select
-                        id={`${fieldId}-holdings-method`}
-                        onValueChange={(value) => setBasisMethod(value as CostBasisMethod)}
-                        value={basisMethod}
-                        options={[
-                          { value: "fifo", label: copy.holdings.fifo },
-                          { value: "weighted_average", label: copy.holdings.weightedAverage },
-                        ]}
-                      />
-                    </FormField>
-                    <Button
-                      variant="secondary"
-                      className="secondary-button"
-                      disabled={busyAction === "rebuild"}
-                      onClick={() => void rebuildHoldings()}
-                      type="button"
-                    >
-                      {busyAction === "rebuild" ? (
-                        <Spinner label="" size="sm" />
-                      ) : (
-                        <RefreshCw aria-hidden="true" size={17} />
-                      )}
-                      {copy.holdings.rebuild}
-                    </Button>
-                  </div>
-                </div>
-                {!data.holdings || !data.lots ? (
-                  <div className="inline-empty projection-empty">
-                    <AlertTriangle aria-hidden="true" size={20} />
-                    <span>{copy.holdings.notBuilt}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="projection-checkpoint">
-                      <span>
-                        {copy.holdings.version}:{" "}
-                        <b>{data.holdings.checkpoint.projection_version}</b>
-                      </span>
-                      <span>
-                        {copy.holdings.transactions}:{" "}
-                        <b>
-                          {localizeDigits(
-                            String(data.holdings.checkpoint.journal_transaction_count),
-                            locale,
-                          )}
-                        </b>
-                      </span>
-                      <code dir="ltr">{shortId(data.holdings.checkpoint.journal_sha256)}</code>
-                    </div>
-                    <h4 className="subsection-title">{copy.holdings.positions}</h4>
-                    {data.holdings.items.length === 0 ? (
-                      <p className="inline-empty">{copy.holdings.empty}</p>
-                    ) : (
-                      <ResponsiveRecordList
-                        className="responsive-data-grid"
-                        label={copy.holdings.positions}
-                      >
-                        {data.holdings.items.map((holding) => (
-                          <li
-                            className="data-card"
-                            key={`${holding.account_id}-${holding.asset_id}`}
-                          >
-                            <div>
-                              <strong>
-                                {assets.get(holding.asset_id)?.name ?? shortId(holding.asset_id)}
-                              </strong>
-                              <span className={`basis-badge ${holding.basis_status}`}>
-                                {copy.basisStatus[holding.basis_status]}
-                              </span>
-                            </div>
-                            <dl>
-                              <div>
-                                <dt>{copy.holdings.account}</dt>
-                                <dd>
-                                  {accounts.get(holding.account_id)?.name ??
-                                    shortId(holding.account_id)}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>{copy.holdings.quantity}</dt>
-                                <dd dir="ltr">{exactDecimal(holding.quantity, locale)}</dd>
-                              </div>
-                              <div>
-                                <dt>{copy.holdings.costBasis}</dt>
-                                <dd dir="ltr">{exactDecimal(holding.total_cost_basis, locale)}</dd>
-                              </div>
-                            </dl>
-                          </li>
-                        ))}
-                      </ResponsiveRecordList>
-                    )}
-                    <h4 className="subsection-title">{copy.holdings.lots}</h4>
-                    {data.lots.items.length === 0 ? (
-                      <p className="inline-empty">{copy.holdings.noLots}</p>
-                    ) : (
-                      <ResponsiveRecordList
-                        className="responsive-data-grid"
-                        label={copy.holdings.lots}
-                      >
-                        {data.lots.items.map((lot) => (
-                          <li className="data-card" key={lot.lot_key}>
-                            <div>
-                              <strong>
-                                {assets.get(lot.asset_id)?.name ?? shortId(lot.asset_id)}
-                              </strong>
-                              <span className={`basis-badge ${lot.basis_status}`}>
-                                {copy.basisStatus[lot.basis_status]}
-                              </span>
-                            </div>
-                            <dl>
-                              <div>
-                                <dt>{copy.holdings.acquired}</dt>
-                                <dd>{formatTimestamp(lot.acquired_at, locale)}</dd>
-                              </div>
-                              <div>
-                                <dt>{copy.holdings.remaining}</dt>
-                                <dd dir="ltr">{exactDecimal(lot.remaining_quantity, locale)}</dd>
-                              </div>
-                              <div>
-                                <dt>{copy.holdings.costBasis}</dt>
-                                <dd dir="ltr">{exactDecimal(lot.remaining_cost_basis, locale)}</dd>
-                              </div>
-                            </dl>
-                          </li>
-                        ))}
-                      </ResponsiveRecordList>
-                    )}
-                  </>
-                )}
-              </div>
-
-              <div
-                aria-labelledby="operations-tab-imports"
-                className="operations-panel"
-                hidden={activeTab !== "imports"}
-                id="operations-panel-imports"
-                role="tabpanel"
-              >
-                <div className="panel-heading">
-                  <div>
-                    <h3>{copy.imports.title}</h3>
-                    <p>{copy.imports.description}</p>
-                  </div>
-                </div>
-                <form className="import-form" onSubmit={(event) => void createDryRun(event)}>
-                  <FormField id={`${fieldId}-imports-format`} label={copy.imports.format}>
-                    <Select
-                      id={`${fieldId}-imports-format`}
-                      onValueChange={(value) => setImportFormat(value as "csv" | "nexora_json")}
-                      value={importFormat}
-                      options={[
-                        { value: "csv", label: "CSV" },
-                        { value: "nexora_json", label: "Nexora JSON" },
-                      ]}
-                    />
-                  </FormField>
-                  <FormField id={`${fieldId}-imports-content`} label={copy.imports.content}>
-                    <Textarea
-                      id={`${fieldId}-imports-content`}
-                      maxLength={1_048_576}
-                      onChange={(event) => setImportContent(event.target.value)}
-                      placeholder={copy.imports.placeholder}
-                      required
-                      rows={8}
-                      value={importContent}
-                    />
-                  </FormField>
-                  <p>{copy.imports.dryRunNotice}</p>
-                  <Button
-                    className="primary-button compact-action"
-                    disabled={busyAction === "dry-run" || !importContent.trim()}
-                    type="submit"
-                  >
-                    {busyAction === "dry-run" ? (
-                      <Spinner label="" size="sm" />
-                    ) : (
-                      <FileInput aria-hidden="true" size={18} />
-                    )}
-                    {copy.imports.preview}
-                  </Button>
-                </form>
-                <ResponsiveRecordList
-                  className="operations-card-list import-batches"
-                  label={copy.imports.title}
+              }
+            >
+              {copy.retryHint}
+            </ErrorState>
+          ) : null}
+          {!recentlyReauthenticated && gated ? (
+            <Alert className="reauth-notice" tone="warning">
+              <p>{copy.reauthenticationRequired}</p>
+              {onReauthenticate ? (
+                <Button
+                  disabled={busy}
+                  onClick={() => void run(onReauthenticate, { verifying: true })}
+                  variant="secondary"
                 >
-                  {data.imports.map((batch) => (
-                    <li className="operation-card" key={batch.import_batch_id}>
-                      <div className="operation-card-heading">
-                        <div>
-                          <span className={`status-badge ${batch.status}`}>
-                            {copy.importStatus[batch.status]}
-                          </span>
-                          <b>{batch.source_format === "csv" ? "CSV" : "Nexora JSON"}</b>
-                        </div>
-                        <time dateTime={batch.created_at}>
-                          {formatTimestamp(batch.created_at, locale)}
-                        </time>
-                      </div>
-                      <div className="import-counts">
-                        <span>
-                          {copy.imports.rows}: {localizeDigits(String(batch.row_count), locale)}
-                        </span>
-                        <span>
-                          {copy.imports.ready}: {localizeDigits(String(batch.ready_count), locale)}
-                        </span>
-                        <span>
-                          {copy.imports.duplicates}:{" "}
-                          {localizeDigits(String(batch.duplicate_count), locale)}
-                        </span>
-                        <span>
-                          {copy.imports.quarantined}:{" "}
-                          {localizeDigits(String(batch.quarantined_count), locale)}
-                        </span>
-                      </div>
-                      {batch.rows.length > 0 && (
-                        <Disclosure className="import-preview" label={copy.imports.showRows}>
-                          {batch.rows.slice(0, 20).map((row) => (
-                            <div className="import-row" key={row.import_row_id}>
-                              <div>
-                                <b>#{localizeDigits(String(row.row_number), locale)}</b>
-                                <span className={`status-badge ${row.status}`}>
-                                  {copy.importRowStatus[row.status]}
-                                </span>
-                                {row.reason_code && <code dir="ltr">{row.reason_code}</code>}
-                              </div>
-                              {row.normalized_payload && (
-                                <pre dir="ltr">
-                                  {JSON.stringify(row.normalized_payload, null, 2)}
-                                </pre>
-                              )}
-                            </div>
-                          ))}
-                        </Disclosure>
-                      )}
-                      {batch.status === "dry_run" && batch.quarantined_count === 0 && (
-                        <div className="bounded-action-form">
-                          <FormField
-                            id={`${fieldId}-review-reason-${batch.import_batch_id}`}
-                            label={copy.reason}
-                          >
-                            <Input
-                              id={`${fieldId}-review-reason-${batch.import_batch_id}`}
-                              minLength={8}
-                              onChange={(event) =>
-                                setReviewReasons((current) => ({
-                                  ...current,
-                                  [batch.import_batch_id]: event.target.value,
-                                }))
-                              }
-                              value={reviewReasons[batch.import_batch_id] ?? ""}
-                            />
-                          </FormField>
-                          <Button
-                            variant="secondary"
-                            className="secondary-button"
-                            disabled={busyAction === `review-${batch.import_batch_id}`}
-                            onClick={() => void reviewBatch(batch)}
-                            type="button"
-                          >
-                            {copy.imports.review}
-                          </Button>
-                        </div>
-                      )}
-                      {batch.status === "reviewed" && (
-                        <Button
-                          variant="secondary"
-                          className="secondary-button"
-                          disabled={
-                            !recentlyReauthenticated ||
-                            busyAction === `publish-${batch.import_batch_id}`
-                          }
-                          onClick={() => void publishBatch(batch)}
-                          type="button"
-                        >
-                          {copy.imports.publish}
-                        </Button>
-                      )}
-                      {batch.status === "reviewed" && !recentlyReauthenticated && (
-                        <p className="reauth-notice">{copy.reauthenticationRequired}</p>
-                      )}
-                      <div className="operation-lineage">
-                        <code dir="ltr">{shortId(batch.import_batch_id)}</code>
-                        <code dir="ltr">sha256:{shortId(batch.content_sha256)}</code>
-                      </div>
-                    </li>
-                  ))}
-                </ResponsiveRecordList>
-                {data.imports.length === 0 && <p className="inline-empty">{copy.imports.empty}</p>}
-              </div>
-
-              <div
-                aria-labelledby="operations-tab-reconciliation"
-                className="operations-panel"
-                hidden={activeTab !== "reconciliation"}
-                id="operations-panel-reconciliation"
-                role="tabpanel"
-              >
-                <div className="panel-heading">
-                  <div>
-                    <h3>{copy.reconciliation.title}</h3>
-                    <p>{copy.reconciliation.description}</p>
-                  </div>
-                  <span className="count-badge">
-                    {localizeDigits(String(data.reconciliation.length), locale)}
-                  </span>
-                </div>
-                {data.reconciliation.length === 0 ? (
-                  <p className="inline-empty">{copy.reconciliation.empty}</p>
-                ) : (
-                  <ResponsiveRecordList
-                    className="operations-card-list"
-                    label={copy.reconciliation.title}
-                  >
-                    {data.reconciliation.map((item) => (
-                      <li className="operation-card" key={item.reconciliation_case_id}>
-                        <div className="operation-card-heading">
-                          <div>
-                            <span className={`status-badge ${item.state}`}>
-                              {copy.reconciliationState[item.state]}
-                            </span>
-                            <code dir="ltr">{item.difference_code}</code>
-                          </div>
-                          <time dateTime={item.updated_at}>
-                            {formatTimestamp(item.updated_at, locale)}
-                          </time>
-                        </div>
-                        {item.reason && <p>{item.reason}</p>}
-                        {item.state === "open" && (
-                          <div className="decision-form">
-                            <FormField
-                              id={`${fieldId}-reconciliation-decision-${item.reconciliation_case_id}`}
-                              label={copy.reconciliation.decision}
-                            >
-                              <Select
-                                id={`${fieldId}-reconciliation-decision-${item.reconciliation_case_id}`}
-                                onValueChange={(value) =>
-                                  setDecisionStates((current) => ({
-                                    ...current,
-                                    [item.reconciliation_case_id]: value as Exclude<
-                                      ReconciliationCase["state"],
-                                      "open"
-                                    >,
-                                  }))
-                                }
-                                value={decisionStates[item.reconciliation_case_id] ?? "matched"}
-                                options={(
-                                  [
-                                    "matched",
-                                    "accepted_difference",
-                                    "resolved",
-                                    "ignored_with_reason",
-                                  ] as const
-                                ).map((state) => ({
-                                  value: state,
-                                  label: copy.reconciliationState[state],
-                                }))}
-                              />
-                            </FormField>
-                            <FormField
-                              id={`${fieldId}-reconciliation-reason-${item.reconciliation_case_id}`}
-                              label={copy.reason}
-                            >
-                              <Input
-                                id={`${fieldId}-reconciliation-reason-${item.reconciliation_case_id}`}
-                                minLength={8}
-                                onChange={(event) =>
-                                  setDecisionReasons((current) => ({
-                                    ...current,
-                                    [item.reconciliation_case_id]: event.target.value,
-                                  }))
-                                }
-                                value={decisionReasons[item.reconciliation_case_id] ?? ""}
-                              />
-                            </FormField>
-                            <Button
-                              variant="secondary"
-                              className="secondary-button"
-                              disabled={
-                                !recentlyReauthenticated ||
-                                busyAction === `decision-${item.reconciliation_case_id}`
-                              }
-                              onClick={() => void decideCase(item)}
-                              type="button"
-                            >
-                              <ArrowLeftRight aria-hidden="true" size={17} />
-                              {copy.reconciliation.apply}
-                            </Button>
-                            {!recentlyReauthenticated && (
-                              <p className="reauth-notice">{copy.reauthenticationRequired}</p>
-                            )}
-                          </div>
-                        )}
-                        <div className="operation-lineage">
-                          <code dir="ltr">{shortId(item.reconciliation_case_id)}</code>
-                          <span>v{localizeDigits(String(item.row_version), locale)}</span>
-                          {item.transaction_id && (
-                            <code dir="ltr">{shortId(item.transaction_id)}</code>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ResponsiveRecordList>
-                )}
-              </div>
-            </>
-          )}
+                  {copy.reauthenticate}
+                </Button>
+              ) : null}
+            </Alert>
+          ) : null}
+          {panel ? <div className="operations-panel">{panel}</div> : null}
         </>
       )}
+      {confirmation ? (
+        <ConfirmationDialog
+          cancelLabel={copy.cancel}
+          confirmLabel={confirmation.label}
+          description={confirmation.description}
+          destructive={confirmation.sensitive}
+          onCancel={() => setConfirmation(undefined)}
+          onConfirm={() => void run(confirmation.perform, { sensitive: confirmation.sensitive })}
+          open
+          title={confirmation.title}
+        />
+      ) : null}
     </section>
   );
 }

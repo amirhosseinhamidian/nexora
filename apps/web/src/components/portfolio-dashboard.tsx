@@ -163,14 +163,18 @@ function percentage(basisPoints: number, locale: Locale): string {
 
 export function PortfolioDashboard({
   dictionary,
+  initialSelectionId,
   locale,
+  onPortfolioSelect,
   onWorkspaceChange,
   portfolioId,
   selectionOnly = false,
   showDetailsLink = false,
 }: {
   dictionary: Dictionary;
+  initialSelectionId?: string;
   locale: Locale;
+  onPortfolioSelect?: (portfolioId: string) => void;
   onWorkspaceChange?: (context?: PortfolioWorkspaceContext) => void;
   portfolioId?: string;
   selectionOnly?: boolean;
@@ -185,7 +189,7 @@ export function PortfolioDashboard({
     portfolios: [],
   });
   const [detailResult, setDetailResult] = useState<DetailResult>();
-  const [chosenPortfolioId, setChosenPortfolioId] = useState("");
+  const [chosenPortfolioId, setChosenPortfolioId] = useState(initialSelectionId ?? "");
   const selectedPortfolioId = portfolioId ?? chosenPortfolioId;
   const [registryRevision, setRegistryRevision] = useState(0);
   const [detailRevision, setDetailRevision] = useState(0);
@@ -213,6 +217,7 @@ export function PortfolioDashboard({
         setRegistry(next);
         setChosenPortfolioId((current) => {
           if (next.portfolios.some((item) => item.portfolio_id === current)) return current;
+          if (selectionOnly && (current || initialSelectionId)) return "";
           return (
             next.portfolios.find((item) => item.status === "active")?.portfolio_id ??
             next.portfolios[0]?.portfolio_id ??
@@ -226,7 +231,7 @@ export function PortfolioDashboard({
     }
     void loadRegistry();
     return () => controller.abort();
-  }, [registryRevision]);
+  }, [initialSelectionId, registryRevision, selectionOnly]);
 
   const selectedPortfolio = registry.portfolios.find(
     (item) => item.portfolio_id === selectedPortfolioId,
@@ -383,7 +388,9 @@ export function PortfolioDashboard({
         onValueChange={(value) => {
           setChosenPortfolioId(value);
           setDetailRevision((revision) => revision + 1);
+          onPortfolioSelect?.(value);
         }}
+        placeholder={copy.selectPortfolio}
         options={registry.portfolios.map((portfolio) => ({
           value: portfolio.portfolio_id,
           label: portfolio.name,

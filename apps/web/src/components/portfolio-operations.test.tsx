@@ -1,8 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import en from "../../messages/en.json";
-import { apiRequest } from "@/lib/api-client";
+import { ApiRequestError, apiRequest } from "@/lib/api-client";
 import { PortfolioOperations } from "./portfolio-operations";
 
 vi.mock("@/lib/api-client", async () => {
@@ -42,32 +42,58 @@ const checkpoint = {
   rebuilt_at: "2026-11-03T12:00:00Z",
 };
 
-function mockWorkspace({
-  imports = [],
-  reconciliation = [],
-}: { imports?: object[]; reconciliation?: object[] } = {}) {
-  request
-    .mockResolvedValueOnce({
+const batch = {
+  content_sha256: "b".repeat(64),
+  created_at: "2026-11-03T12:00:00Z",
+  duplicate_count: 0,
+  import_batch_id: "batch-1",
+  published_at: null,
+  quarantined_count: 0,
+  ready_count: 1,
+  review_reason: null,
+  reviewed_at: null,
+  row_count: 1,
+  rows: [],
+  source_format: "csv",
+  status: "dry_run",
+};
+const reconciliationCase = {
+  created_at: "2026-11-04T08:00:00Z",
+  difference_code: "ROW_VALIDATION_FAILED",
+  import_batch_id: "batch-1",
+  import_row_id: "row-1",
+  reason: null,
+  reconciliation_case_id: "case-1",
+  row_version: 3,
+  state: "open",
+  transaction_id: null,
+  updated_at: "2026-11-04T08:00:00Z",
+};
+const props = {
+  basis: "fifo" as const,
+  dictionary: en,
+  locale: "en" as const,
+  onBasisChange: vi.fn(),
+  recentlyReauthenticated: true,
+};
+
+describe("PortfolioOperations", () => {
+  beforeEach(() => request.mockReset());
+
+  it("reads only the selected portfolio's journal and displays its exact entry lines", async () => {
+    request.mockResolvedValueOnce({
       items: [
         {
-          correction_kind: null,
-          correction_of_transaction_id: null,
+          correction_kind: "reversal",
+          correction_of_transaction_id: "original-transaction",
           legs: [
             {
               account_id: "account-1",
               asset_id: "asset-btc",
               external_counterparty: null,
-              quantity: "1.25000000",
+              quantity: "-1.25000000",
               sequence: 1,
               transaction_leg_id: "leg-1",
-            },
-            {
-              account_id: null,
-              asset_id: "asset-usd",
-              external_counterparty: "market",
-              quantity: "-10000.00",
-              sequence: 2,
-              transaction_leg_id: "leg-2",
             },
           ],
           memo: "Opening evidence",
@@ -79,186 +105,160 @@ function mockWorkspace({
           transaction_kind: "buy",
         },
       ],
-    })
-    .mockResolvedValueOnce({
-      checkpoint,
-      items: [
-        {
-          account_id: "account-1",
-          asset_id: "asset-btc",
-          average_unit_cost: "8000.00",
-          basis_status: "known",
-          cost_basis_asset_id: "asset-usd",
-          quantity: "1.25000000",
-          total_cost_basis: "10000.00",
-        },
-      ],
-    })
-    .mockResolvedValueOnce({
-      checkpoint,
-      items: [
-        {
-          account_id: "account-1",
-          acquired_at: "2026-11-03T10:00:00Z",
-          acquisition_transaction_id: "transaction-1",
-          asset_id: "asset-btc",
-          basis_status: "known",
-          cost_basis_asset_id: "asset-usd",
-          lot_key: "lot-1",
-          original_cost_basis: "10000.00",
-          original_quantity: "1.25000000",
-          remaining_cost_basis: "10000.00",
-          remaining_quantity: "1.25000000",
-        },
-      ],
-    })
-    .mockResolvedValueOnce({ items: imports })
-    .mockResolvedValueOnce({ items: reconciliation });
-}
-
-describe("PortfolioOperations", () => {
-  beforeEach(() => request.mockReset());
-
-  it("renders immutable journal evidence and exact decimal legs", async () => {
-    mockWorkspace();
-    render(
-      <PortfolioOperations context={context} dictionary={en} locale="en" recentlyReauthenticated />,
-    );
+    });
+    render(<PortfolioOperations {...props} context={context} view="journal" />);
 
     expect(await screen.findByText("Opening evidence")).toBeInTheDocument();
-    expect(screen.getByText("1.25000000 BTC")).toBeInTheDocument();
-    expect(screen.getByText("-10000.00 USD")).toBeInTheDocument();
-    expect(request).toHaveBeenCalledWith("/api/v1/transactions?portfolio_id=portfolio-1", {
+    expect(screen.getByText("-1.25000000 BTC")).toBeInTheDocument();
+    expect(screen.getByText("original-transaction")).toBeInTheDocument();
+    expect(request).toHaveBeenCalledExactlyOnceWith(
+      "/api/v1/transactions?portfolio_id=portfolio-1",
+      {
+        signal: expect.any(AbortSignal),
+      },
+    );
+  });
+
+  it.each([
+    { view: "holdings" as const, empty: "This calculation has no holdings." },
+    { view: "lots" as const, empty: "This calculation has no open purchase lots." },
+  ])("loads the $view calculation for the requested method", async ({ view, empty }) => {
+    request.mockResolvedValueOnce({ checkpoint, items: [] });
+    render(
+      <PortfolioOperations {...props} basis="weighted_average" context={context} view={view} />,
+    );
+
+    expect(await screen.findByText("holdings-v1")).toBeInTheDocument();
+    expect(screen.getByText(empty)).toBeInTheDocument();
+    expect(request).toHaveBeenCalledExactlyOnceWith(
+      `/api/v1/portfolios/portfolio-1/${view}?cost_basis_method=weighted_average`,
+      { signal: expect.any(AbortSignal) },
+    );
+  });
+
+  it("asks for confirmation before rebuilding a missing calculation", async () => {
+    request.mockRejectedValueOnce(new ApiRequestError(404, "NOT_FOUND"));
+    render(<PortfolioOperations {...props} context={context} view="holdings" />);
+    const rebuild = await screen.findByRole("button", { name: "Rebuild from journal" });
+    fireEvent.click(rebuild);
+    const dialog = screen.getByRole("dialog", { name: "Rebuild accounting calculations?" });
+    expect(request).toHaveBeenCalledTimes(1);
+
+    request.mockResolvedValueOnce(checkpoint).mockResolvedValueOnce({ checkpoint, items: [] });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Rebuild from journal" }));
+
+    expect(await screen.findByText("holdings-v1")).toBeInTheDocument();
+    expect(request).toHaveBeenNthCalledWith(2, "/api/v1/portfolios/portfolio-1/holdings/rebuilds", {
+      body: { cost_basis_method: "fifo" },
+      method: "POST",
       signal: expect.any(AbortSignal),
     });
   });
 
-  it("shows checkpoint-bound holdings and lots", async () => {
-    mockWorkspace();
-    render(
-      <PortfolioOperations context={context} dictionary={en} locale="en" recentlyReauthenticated />,
-    );
-    await screen.findByText("Opening evidence");
-    fireEvent.click(screen.getByRole("tab", { name: "Holdings & lots" }));
+  it("creates a preview only after submission and refreshes the owner's imports", async () => {
+    const content = "external_row_id,portfolio_key\nrow-1,core";
+    request.mockResolvedValueOnce({ items: [] });
+    render(<PortfolioOperations {...props} view="imports" />);
+    fireEvent.change(await screen.findByLabelText("Import content"), {
+      target: { value: content },
+    });
+    expect(request).toHaveBeenCalledTimes(1);
 
-    expect(screen.getByText("holdings-v1")).toBeInTheDocument();
-    expect(screen.getAllByText("Bitcoin")).toHaveLength(2);
-    expect(screen.getAllByText("Known basis")).toHaveLength(2);
+    request.mockResolvedValueOnce(batch).mockResolvedValueOnce({ items: [batch] });
+    fireEvent.click(screen.getByRole("button", { name: "Create preview" }));
+
+    expect(await screen.findByText("Preview")).toBeInTheDocument();
+    expect(request).toHaveBeenNthCalledWith(2, "/api/v1/imports/dry-runs", {
+      body: { content, source_format: "csv" },
+      method: "POST",
+      signal: expect.any(AbortSignal),
+    });
+    expect(request).toHaveBeenLastCalledWith("/api/v1/imports", {
+      signal: expect.any(AbortSignal),
+    });
   });
 
-  it("creates a mandatory dry-run preview through the CSRF-aware client", async () => {
-    mockWorkspace();
-    render(
-      <PortfolioOperations context={context} dictionary={en} locale="en" recentlyReauthenticated />,
-    );
-    await screen.findByText("Opening evidence");
-    fireEvent.click(screen.getByRole("tab", { name: "Import preview" }));
-    fireEvent.change(screen.getByLabelText("Import content"), {
-      target: { value: "external_row_id,portfolio_key\nrow-1,core" },
-    });
-    request.mockResolvedValueOnce({
-      content_sha256: "b".repeat(64),
-      created_at: "2026-11-03T12:00:00Z",
-      duplicate_count: 0,
-      import_batch_id: "batch-1",
-      published_at: null,
-      quarantined_count: 0,
-      ready_count: 1,
-      review_reason: null,
-      reviewed_at: null,
-      row_count: 1,
-      rows: [],
-      source_format: "csv",
-      status: "dry_run",
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Create dry-run preview" }));
-
-    await waitFor(() =>
-      expect(request).toHaveBeenLastCalledWith("/api/v1/imports/dry-runs", {
-        body: {
-          content: "external_row_id,portfolio_key\nrow-1,core",
-          source_format: "csv",
-        },
-        method: "POST",
-      }),
-    );
-    expect(await screen.findByText("Dry run")).toBeInTheDocument();
-  });
-
-  it("blocks publication until the owner recently reauthenticates", async () => {
-    mockWorkspace({
-      imports: [
-        {
-          content_sha256: "c".repeat(64),
-          created_at: "2026-11-03T12:00:00Z",
-          duplicate_count: 0,
-          import_batch_id: "batch-reviewed",
-          published_at: null,
-          quarantined_count: 0,
-          ready_count: 1,
-          review_reason: "Owner checked every normalized row",
-          reviewed_at: "2026-11-03T12:05:00Z",
-          row_count: 1,
-          rows: [],
-          source_format: "csv",
-          status: "reviewed",
-        },
-      ],
-    });
-    render(
+  it("requires a fresh passkey and a separate confirmation to publish a reviewed import", async () => {
+    const reviewed = { ...batch, status: "reviewed", review_reason: "Checked the ready rows" };
+    const onReauthenticate = vi.fn().mockResolvedValue(undefined);
+    request.mockResolvedValueOnce({ items: [reviewed] });
+    const { rerender } = render(
       <PortfolioOperations
-        context={context}
-        dictionary={en}
-        locale="en"
+        {...props}
+        onReauthenticate={onReauthenticate}
         recentlyReauthenticated={false}
+        view="imports"
       />,
     );
-    await screen.findByText("Opening evidence");
-    fireEvent.click(screen.getByRole("tab", { name: "Import preview" }));
+    expect(await screen.findByRole("button", { name: "Publish import" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Verify with your passkey" }));
+    expect(
+      await screen.findByText("Passkey verified. You can now confirm the action."),
+    ).toBeInTheDocument();
+    expect(onReauthenticate).toHaveBeenCalledExactlyOnceWith(expect.any(AbortSignal));
+    expect(request).toHaveBeenCalledTimes(1);
 
-    expect(screen.getByRole("button", { name: "Publish atomically" })).toBeDisabled();
-    expect(screen.getByText(/Recent passkey authentication is required/)).toBeInTheDocument();
+    rerender(<PortfolioOperations {...props} view="imports" />);
+    fireEvent.click(screen.getByRole("button", { name: "Publish import" }));
+    const dialog = screen.getByRole("dialog", { name: "Publish this import?" });
+    expect(within(dialog).getByText("batch-1")).toBeInTheDocument();
+    expect(request).toHaveBeenCalledTimes(1);
+    const published = { ...reviewed, status: "published" };
+    request.mockResolvedValueOnce(published).mockResolvedValueOnce({ items: [published] });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Publish import" }));
+
+    expect(await screen.findByText("Published")).toBeInTheDocument();
+    expect(request).toHaveBeenNthCalledWith(2, "/api/v1/imports/batch-1/publication", {
+      body: {},
+      method: "POST",
+      signal: expect.any(AbortSignal),
+      signalSessionExpiry: false,
+    });
   });
 
-  it("records a version-checked reconciliation decision with an owner reason", async () => {
-    const reconciliationCase = {
-      created_at: "2026-11-04T08:00:00Z",
-      difference_code: "QUANTITY_MISMATCH",
-      import_batch_id: "batch-1",
-      import_row_id: "row-1",
-      reason: null,
-      reconciliation_case_id: "case-1",
-      row_version: 3,
-      state: "open",
-      transaction_id: null,
-      updated_at: "2026-11-04T08:00:00Z",
-    };
-    mockWorkspace({ reconciliation: [reconciliationCase] });
-    render(
-      <PortfolioOperations context={context} dictionary={en} locale="en" recentlyReauthenticated />,
-    );
-    await screen.findByText("Opening evidence");
-    fireEvent.click(screen.getByRole("tab", { name: "Reconciliation" }));
-    fireEvent.change(screen.getByLabelText("Owner reason"), {
-      target: { value: "Matched against the owner statement" },
-    });
-    request.mockResolvedValueOnce({
-      ...reconciliationCase,
-      reason: "Matched against the owner statement",
-      row_version: 4,
-      state: "matched",
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Record decision" }));
+  it("rechecks the session after publication loses its recent verification", async () => {
+    const onRefreshSession = vi.fn().mockResolvedValue(undefined);
+    request
+      .mockResolvedValueOnce({ items: [{ ...batch, status: "reviewed" }] })
+      .mockRejectedValueOnce(new ApiRequestError(401, "AUTHENTICATION_DENIED"));
+    render(<PortfolioOperations {...props} onRefreshSession={onRefreshSession} view="imports" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Publish import" }));
+    const dialog = screen.getByRole("dialog", { name: "Publish this import?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Publish import" }));
 
-    await waitFor(() =>
-      expect(request).toHaveBeenLastCalledWith("/api/v1/reconciliation-cases/case-1/decisions", {
-        body: {
-          expected_row_version: 3,
-          reason: "Matched against the owner statement",
-          state: "matched",
-        },
-        method: "POST",
-      }),
-    );
+    expect(
+      await screen.findByText(/Recent passkey authentication is required/),
+    ).toBeInTheDocument();
+    expect(onRefreshSession).toHaveBeenCalledExactlyOnceWith(expect.any(AbortSignal));
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
+  it("refreshes a conflicting reconciliation case without replaying a confirmed decision", async () => {
+    const reason = "Matched against the owner statement";
+    request.mockResolvedValueOnce({ items: [reconciliationCase] });
+    render(<PortfolioOperations {...props} view="reconciliation" />);
+    fireEvent.change(await screen.findByLabelText("Reason"), { target: { value: reason } });
+    fireEvent.click(screen.getByRole("button", { name: "Record decision" }));
+    const dialog = screen.getByRole("dialog", { name: "Record this decision?" });
+    expect(within(dialog).getByText(reason)).toBeInTheDocument();
+    expect(request).toHaveBeenCalledTimes(1);
+
+    request
+      .mockRejectedValueOnce(new ApiRequestError(409, "CONFLICT"))
+      .mockResolvedValueOnce({ items: [{ ...reconciliationCase, row_version: 4 }] });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record decision" }));
+
+    expect(await screen.findByText(/This record has changed/)).toBeInTheDocument();
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+    expect(request).toHaveBeenNthCalledWith(2, "/api/v1/reconciliation-cases/case-1/decisions", {
+      body: { expected_row_version: 3, reason, state: "matched" },
+      method: "POST",
+      signal: expect.any(AbortSignal),
+      signalSessionExpiry: false,
+    });
+    expect(request).toHaveBeenLastCalledWith("/api/v1/reconciliation-cases", {
+      signal: expect.any(AbortSignal),
+    });
+    expect(screen.getByLabelText("Reason")).toHaveValue(reason);
   });
 });

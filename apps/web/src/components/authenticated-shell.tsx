@@ -1,6 +1,10 @@
 "use client";
 
-import type { ActionResponse, SessionResponse } from "@nexora/contracts";
+import type {
+  ActionResponse,
+  AuthenticationOptionsResponse,
+  SessionResponse,
+} from "@nexora/contracts";
 import { Drawer, IconButton } from "@nexora/ui/primitives";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +17,7 @@ import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError, SESSION_EXPIRED_EVENT, apiRequest } from "@/lib/api-client";
+import { createPasskeyAssertion } from "@/lib/webauthn";
 
 type ShellState = "authenticated" | "expired" | "loading" | "offline";
 
@@ -23,7 +28,12 @@ type AuthenticatedShellProps = {
 };
 
 const WorkspaceContext = createContext<
-  (Omit<AuthenticatedShellProps, "children"> & { session: SessionResponse }) | null
+  | (Omit<AuthenticatedShellProps, "children"> & {
+      session: SessionResponse;
+      reauthenticate: (signal: AbortSignal) => Promise<void>;
+      refreshSession: (signal: AbortSignal) => Promise<void>;
+    })
+  | null
 >(null);
 
 export function useWorkspace() {
@@ -105,6 +115,34 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
       setSession(undefined);
       setState("expired");
     }
+  }
+
+  async function refreshSession(signal: AbortSignal) {
+    const current = await apiRequest<SessionResponse>("/api/v1/auth/session", { signal });
+    signal.throwIfAborted();
+    setSession(current);
+  }
+
+  async function reauthenticate(signal: AbortSignal) {
+    const options = await apiRequest<AuthenticationOptionsResponse>(
+      "/api/v1/auth/reauthentication/options",
+      { body: {}, method: "POST", signal, signalSessionExpiry: false },
+    );
+    const assertion = await createPasskeyAssertion(options, signal);
+    signal.throwIfAborted();
+    const verified = await apiRequest<SessionResponse>("/api/v1/auth/reauthentication/complete", {
+      body: assertion,
+      method: "POST",
+      signal,
+      signalSessionExpiry: false,
+    });
+    signal.throwIfAborted();
+    if (!verified.recently_reauthenticated || verified.owner_id !== session?.owner_id) {
+      throw new Error("Reauthentication was not confirmed");
+    }
+    setSession((current) =>
+      current?.owner_id === verified.owner_id ? { ...current, ...verified } : current,
+    );
   }
 
   if (state === "loading") {
@@ -213,7 +251,9 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
         </header>
 
         <main className="main-content" id="main-content" tabIndex={-1}>
-          <WorkspaceContext.Provider value={{ dictionary, locale, session }}>
+          <WorkspaceContext.Provider
+            value={{ dictionary, locale, reauthenticate, refreshSession, session }}
+          >
             {children}
           </WorkspaceContext.Provider>
         </main>

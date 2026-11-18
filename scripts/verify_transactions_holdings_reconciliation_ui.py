@@ -265,8 +265,20 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 
 def validate_runtime_markers() -> None:
-    component = (ROOT / "apps/web/src/components/portfolio-operations.tsx").read_text(encoding="utf-8")
-    tabs = (ROOT / "packages/ui/src/primitives/tabs.tsx").read_text(encoding="utf-8")
+    web = ROOT / "apps/web/src"
+    components = web / "components"
+    component = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (
+            components / "portfolio-operations.tsx",
+            components / "accounting-imports.tsx",
+            components / "accounting-journal.tsx",
+            components / "accounting-projection.tsx",
+            components / "accounting-reconciliation.tsx",
+            web / "lib/portfolio-accounting.ts",
+        )
+    )
+    accounting = (components / "transactions-workspace.tsx").read_text(encoding="utf-8")
     dashboard = (ROOT / "apps/web/src/components/portfolio-dashboard.tsx").read_text(encoding="utf-8")
     workspace = (ROOT / "apps/web/src/components/workspace-view.tsx").read_text(encoding="utf-8")
     navigation = (ROOT / "apps/web/src/components/workspace-navigation.tsx").read_text(encoding="utf-8")
@@ -291,18 +303,18 @@ def validate_runtime_markers() -> None:
         "expected_row_version: item.row_version",
         "recentlyReauthenticated",
         "JSON.stringify(row.normalized_payload, null, 2)",
-        "<Tabs",
-        'role="tab"',
+        "<ConfirmationDialog",
         "function exactDecimal",
     ):
         _require(marker in component, f"P2-11 runtime marker missing: {marker}")
-    _require('role="tablist"' in tabs and "onKeyDown={navigate}" in tabs, "P2-11 keyboard tablist is missing")
+    for marker in ("<nav aria-label=", "<Link", "aria-current=", "accountingHref"):
+        _require(marker in accounting, f"P2-11 keyboard-accessible navigation marker missing: {marker}")
     for forbidden in ("owner_id", "external_reference", "parseFloat(", "Number(holding", "Number(lot"):
         _require(forbidden not in component, f"P2-11 runtime includes forbidden marker: {forbidden}")
     _require("export type PortfolioWorkspaceContext" in dashboard, "portfolio context is not shared")
     _require("onWorkspaceChange?.(workspaceContext)" in dashboard, "portfolio selection is not propagated")
-    _require("<PortfolioOperations" in workspace, "P2-11 workspace is not composed")
-    _require("recentlyReauthenticated={session.recently_reauthenticated}" in workspace, "reauth state is not bound")
+    _require("<PortfolioOperations" in accounting, "P2-11 workspace is not composed")
+    _require("recentlyReauthenticated={session.recently_reauthenticated}" in accounting, "reauth state is not bound")
     _require(
         'segment: "transactions"' in navigation and "<TransactionsWorkspace" in workspace,
         "transaction journal navigation is not enabled",
@@ -311,7 +323,7 @@ def validate_runtime_markers() -> None:
         _require(marker in client, f"API client marker missing: {marker}")
     for marker in (
         ".portfolio-operations",
-        ".operations-tabs",
+        ".accounting-navigation",
         ".responsive-data-grid",
         ".decision-form",
         "min-h-11",

@@ -483,7 +483,10 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(sidebar).toBeHidden();
-  await expect(page.getByRole("tab", { name: "ژورنال" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "ژورنال", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
@@ -710,4 +713,71 @@ test("expired session presents a bounded recovery action", async ({ page }) => {
     "href",
     "/en/login",
   );
+});
+
+test("accounting routes preserve context and import files stay local until preview", async ({
+  page,
+}) => {
+  await mockPrivateRuntime(page);
+  let previewRequests = 0;
+  const csv = "external_row_id,portfolio_key\nrow-1,core";
+  await page.route("**/api/v1/imports/dry-runs", async (route) => {
+    previewRequests += 1;
+    expect(route.request().postDataJSON()).toEqual({ content: csv, source_format: "csv" });
+    await route.fulfill({ json: {} });
+  });
+
+  await page.goto("/en/transactions/holdings?portfolio=portfolio-1");
+  const navigation = page.getByRole("navigation", { name: "Portfolio accounting views" });
+  await expect(navigation.getByRole("link", { name: "Holdings", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.getByText("This calculation has no holdings.")).toBeVisible();
+
+  const weightedHoldings = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname.endsWith("/portfolio-1/holdings") &&
+      new URL(request.url()).searchParams.get("cost_basis_method") === "weighted_average",
+  );
+  await page.getByRole("combobox", { name: "Cost-basis method" }).click();
+  await page.getByRole("option", { name: "Weighted average" }).click();
+  await weightedHoldings;
+  await expect(page).toHaveURL(
+    "/en/transactions/holdings?portfolio=portfolio-1&basis=weighted_average",
+  );
+
+  const weightedLots = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname.endsWith("/portfolio-1/lots") &&
+      new URL(request.url()).searchParams.get("cost_basis_method") === "weighted_average",
+  );
+  await navigation.getByRole("link", { name: "Purchase lots" }).click();
+  await weightedLots;
+  await expect(page).toHaveURL(
+    "/en/transactions/lots?portfolio=portfolio-1&basis=weighted_average",
+  );
+  await expect(page.getByText("This calculation has no open purchase lots.")).toBeVisible();
+
+  await navigation.getByRole("link", { name: "Imports", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/en/transactions/imports?portfolio=portfolio-1&basis=weighted_average",
+  );
+  await page.getByLabel("Choose an import file", { exact: false }).setInputFiles({
+    buffer: Buffer.from(csv),
+    mimeType: "text/csv",
+    name: "records.csv",
+  });
+  await expect(page.getByLabel("Import content")).toHaveValue(csv);
+  expect(previewRequests).toBe(0);
+  await page.getByRole("button", { name: "Create preview" }).click();
+  await expect(page.getByText("Operation completed.")).toBeVisible();
+  await expect(page.getByLabel("Import content")).toHaveValue("");
+  expect(previewRequests).toBe(1);
+
+  await navigation.getByRole("link", { name: "Reconciliation", exact: true }).click();
+  await expect(page).toHaveURL(
+    "/en/transactions/reconciliation?portfolio=portfolio-1&basis=weighted_average",
+  );
+  await expect(page.getByText("No reconciliation case requires review.")).toBeVisible();
 });

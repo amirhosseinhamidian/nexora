@@ -40,7 +40,7 @@
     @apply [grid-template-columns:1fr_1fr];
   }
 
-  .decision-form .secondary-button {
+  .decision-form .nx-button {
     @apply col-span-full;
   }
 }
@@ -116,7 +116,7 @@
   .operations-heading,
   .panel-heading,
   .operation-card-heading,
-  .holdings-controls > div:last-child {
+  .accounting-controls {
     @apply grid;
   }
 
@@ -134,7 +134,7 @@
     @apply grid-cols-[1fr];
   }
 
-  .decision-form .secondary-button {
+  .decision-form .nx-button {
     @apply col-auto;
   }
 }

@@ -304,8 +304,7 @@ def validate_runtime_markers() -> None:
         "journal navigation is not enabled",
     )
     _require(
-        "index === 4" in shell
-        or ("const navigationTargets" in shell and '"#decision-journal"' in shell),
+        "index === 4" in shell or ("const navigationTargets" in shell and '"#decision-journal"' in shell),
         "journal navigation does not target the Journal item",
     )
     for marker in ('cache: "no-store"', 'credentials: "same-origin"', 'headers.set("X-CSRF-Token", csrf)'):

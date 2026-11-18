@@ -9,8 +9,14 @@
   --nx-space-2: 0.5rem;
   --nx-space-3: 0.75rem;
   --nx-space-4: 1rem;
+  --nx-space-5: 1.25rem;
   --nx-space-6: 1.5rem;
   --nx-space-8: 2rem;
+  --nx-space-10: 2.5rem;
+  --nx-space-12: 3rem;
+  --nx-control-sm: 2.25rem;
+  --nx-control-md: 2.75rem;
+  --nx-control-lg: 3.25rem;
   --nx-bg: #f6f8fb;
   --nx-sidebar: #ffffff;
   --nx-surface: #ffffff;
@@ -22,8 +28,13 @@
   --nx-primary-strong: #087f6a;
   --nx-primary-soft: #e2f8f2;
   --nx-info: #1685ea;
+  --nx-success: #087f6a;
   --nx-warning: #d98c00;
   --nx-danger: #d9435f;
+  --nx-info-soft: #e8f3ff;
+  --nx-success-soft: #e2f8f2;
+  --nx-warning-soft: #fff5dc;
+  --nx-danger-soft: #ffedf1;
   --nx-focus: #1685ea;
   --nx-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 }
@@ -41,8 +52,13 @@
   --nx-primary-strong: #5af0d2;
   --nx-primary-soft: #12372f;
   --nx-info: #43adff;
+  --nx-success: #5af0d2;
   --nx-warning: #ffb627;
   --nx-danger: #ff6b7f;
+  --nx-info-soft: #112d42;
+  --nx-success-soft: #12372f;
+  --nx-warning-soft: #382b0e;
+  --nx-danger-soft: #3b1a22;
   --nx-focus: #43adff;
   --nx-shadow: none;
 }

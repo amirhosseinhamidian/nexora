@@ -358,7 +358,7 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
 
 def validate_files_and_markers() -> None:
     expected = (
-        ("README.md", "`NEX-P4-00` is a Candidate"),
+        ("README.md", "(artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json)"),
         ("README.md", "NEX_P4_00_FREEZE=PASS"),
         ("docs/v0.1/47-phase-four-product-experience-roadmap.md", "# NEX-P4-00"),
         (".github/workflows/phase-four-product-experience-roadmap.yml", "name: Phase 4 product experience roadmap"),

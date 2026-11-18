@@ -1,5 +1,6 @@
 import "@fontsource-variable/inter";
 import "@nexora/ui/tokens.css";
+import "@nexora/ui/primitives.css";
 import "../globals.css";
 
 import type { Metadata } from "next";

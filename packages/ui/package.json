@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "exports": {
+    "./primitives": "./src/primitives.tsx",
+    "./primitives.css": "./src/primitives.css",
     "./tokens.css": "./src/tokens.css"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0"
   }
 }

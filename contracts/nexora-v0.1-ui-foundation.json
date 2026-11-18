@@ -1,0 +1,185 @@
+{
+  "schema_version": "nexora-ui-foundation-v1",
+  "decision_id": "NEX-P4-01",
+  "decision_date": "2026-11-18",
+  "status": "candidate",
+  "title": "Nexora v0.1 UI Foundation and Micro Components",
+  "phase_four_prerequisite": {
+    "decision_id": "NEX-P4-00",
+    "frozen": true,
+    "accepted_candidate_commit_sha": "1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d",
+    "freeze_commit_sha": "c880972eee63569d1509ac0ed58eceb84521d6a9",
+    "freeze_verifier_fix_sha": "079efb63e7b57b32c9d1902da30b27f75edddbe0",
+    "freeze_record_path": "artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json",
+    "freeze_record_canonical_checksum": "df373401cf0982b09708d0093d0492cdddf365c85195fbc2e1374293bc3a5584",
+    "successful_ci_run_id": 44312235596,
+    "successful_ci_run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44312235596",
+    "next_allowed_stage": "NEX-P4-01",
+    "production_readiness_claimed": false
+  },
+  "package_boundary": {
+    "package": "@nexora/ui",
+    "component_entrypoint": "@nexora/ui/primitives",
+    "token_entrypoint": "@nexora/ui/tokens.css",
+    "style_entrypoint": "@nexora/ui/primitives.css",
+    "application_imports_global_styles_once": true,
+    "feature_pages_must_not_duplicate_primitives": true,
+    "domain_logic_allowed": false,
+    "network_access_allowed": false,
+    "runtime_financial_data_allowed": false
+  },
+  "token_contract": {
+    "logical_properties_required": true,
+    "light_dark_themes_required": true,
+    "persian_english_fonts_required": true,
+    "semantic_color_roles": [
+      "background",
+      "surface",
+      "border",
+      "text",
+      "muted_text",
+      "primary",
+      "info",
+      "success",
+      "warning",
+      "danger",
+      "focus"
+    ],
+    "control_sizes": ["sm", "md", "lg"],
+    "spacing_scale_required": true,
+    "radius_scale_required": true,
+    "reduced_motion_required": true
+  },
+  "component_inventory": {
+    "actions": ["button", "icon_button"],
+    "forms": [
+      "form_field",
+      "field_error",
+      "input",
+      "textarea",
+      "select",
+      "checkbox",
+      "radio",
+      "switch",
+      "search_input"
+    ],
+    "feedback": [
+      "alert",
+      "toast_region",
+      "progress",
+      "spinner",
+      "skeleton",
+      "empty_state",
+      "error_state",
+      "offline_state",
+      "degraded_state"
+    ],
+    "overlays": [
+      "modal",
+      "confirmation_dialog",
+      "drawer",
+      "sheet",
+      "tooltip",
+      "popover",
+      "dropdown_menu"
+    ],
+    "data_presentation": [
+      "table",
+      "responsive_record_list",
+      "pagination",
+      "tabs",
+      "filter_bar",
+      "stat_card",
+      "chart_container",
+      "chart_legend",
+      "comparison_block"
+    ]
+  },
+  "state_contract": {
+    "interactive_states": [
+      "default",
+      "hover",
+      "focus_visible",
+      "active",
+      "disabled",
+      "loading",
+      "invalid"
+    ],
+    "operation_states": ["idle", "pending", "success", "warning", "failure"],
+    "data_states": ["loading", "empty", "error", "offline", "degraded", "ready"],
+    "destructive_actions_use_danger_tone": true,
+    "loading_actions_prevent_duplicate_submission": true
+  },
+  "accessibility_contract": {
+    "keyboard_required": true,
+    "visible_focus_required": true,
+    "programmatic_labels_required": true,
+    "inline_errors_use_alert_role": true,
+    "transient_feedback_uses_live_region": true,
+    "dialog_name_and_description_required": true,
+    "dialog_escape_close_required": true,
+    "dialog_focus_trap_required": true,
+    "dialog_focus_restoration_required": true,
+    "overlay_scroll_lock_required": true,
+    "touch_target_minimum_css_pixels": 36,
+    "chart_text_or_table_equivalent_required": true,
+    "color_must_not_be_only_signal": true
+  },
+  "direction_and_responsive_contract": {
+    "rtl_ltr_required": true,
+    "logical_css_properties_required": true,
+    "mobile_first_required": true,
+    "page_level_horizontal_overflow_forbidden": true,
+    "wide_table_local_scroll_allowed": true,
+    "responsive_table_record_mode_required": true,
+    "comparison_stacks_on_narrow_viewports": true,
+    "overlay_actions_stack_on_narrow_viewports": true
+  },
+  "content_contract": {
+    "plain_language_owned_by_callers": true,
+    "persian_avoids_unnecessary_english": true,
+    "errors_explain_event_and_recovery": true,
+    "technical_details_are_secondary": true,
+    "components_do_not_embed_domain_copy": true
+  },
+  "acceptance": {
+    "shared_package_exports_components": true,
+    "web_application_imports_shared_styles": true,
+    "component_contract_tests_required": true,
+    "light_dark_required": true,
+    "rtl_ltr_required": true,
+    "keyboard_and_screen_reader_required": true,
+    "reduced_motion_required": true,
+    "mobile_to_wide_required": true,
+    "no_feature_route_implementation_in_p4_01": true,
+    "production_readiness_claimed": false
+  },
+  "deferred_to_later_stages": {
+    "P4-02": ["application_routes", "collapsible_sidebar", "mobile_navigation"],
+    "P4-03": ["first_run_wizard"],
+    "P4-04": ["registry_management_pages"],
+    "P4-05": ["portfolio_analytics_charts"],
+    "P4-06": ["accounting_workflows"],
+    "P4-07": ["decision_pages"],
+    "P4-08": ["monitoring_pages"],
+    "P4-09": ["export_and_settings_pages"],
+    "P4-10": ["full_content_and_accessibility_audit"]
+  },
+  "security_boundary": {
+    "authentication_changes": false,
+    "authorization_changes": false,
+    "backend_domain_changes": false,
+    "physical_delete_capability": false,
+    "live_execution_capability": false,
+    "financial_advice": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "ready_for_candidate": true,
+    "next_allowed_stage": "NEX-P4-01-FREEZE",
+    "post_freeze_stage": "NEX-P4-02",
+    "freeze_before_next_stage": true,
+    "candidate_commit_message": "feat(nexora): deliver Phase 4 UI foundation",
+    "freeze_commit_message": "chore(nexora): freeze Phase 4 UI foundation"
+  }
+}

@@ -263,13 +263,14 @@ acceptance and same-SHA CI. Freeze commit
 acceptance artifact. Phase 3 is complete; production readiness remains
 unclaimed.
 
-`NEX-P4-00` is a Candidate. It reconciles the original Nexora v0.1 product
+`NEX-P4-00` is frozen. It reconciles the original Nexora v0.1 product
 experience, the TRD BOT UI architecture guidance and the frozen P1-P3
 repository truth into the Product Experience Completion roadmap. It keeps the
 product version at v0.1.0, separates delivery Phase 4 from product versioning,
 requires first-run Portfolio onboarding and routed bilingual pages, and
-preserves all security and private-VPS gates. No P4 feature implementation is
-open before P4-00 same-SHA CI acceptance and Freeze.
+preserves all security and private-VPS gates. `NEX-P4-01` is the current
+Candidate. It delivers shared tokens and accessible micro-components without
+opening feature routes or changing backend domains.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -449,7 +450,9 @@ NEX_P3_13_READY_FOR_ACCEPTANCE_CANDIDATE=PASS
 NEX_P3_13_FREEZE_PREREQUISITE=PASS
 NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS
 NEX_P4_00_FREEZE=PASS
-NEX_P4_01=OPEN
+NEX_P4_01_UI_FOUNDATION_CANDIDATE=PASS
+NEX_P4_01_FREEZE=PENDING_SAME_SHA_CI
+NEX_P4_02=BLOCKED_PENDING_P4_01_FREEZE
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -560,6 +563,7 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
 - [`contracts/nexora-v0.1-phase-three-final-acceptance.json`](contracts/nexora-v0.1-phase-three-final-acceptance.json)
 - [`contracts/nexora-v0.1-phase-four-product-experience-roadmap.json`](contracts/nexora-v0.1-phase-four-product-experience-roadmap.json)
+- [`contracts/nexora-v0.1-ui-foundation.json`](contracts/nexora-v0.1-ui-foundation.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)
@@ -590,3 +594,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p3-01/decision-review-journal-domain-freeze.json`](artifacts/p3-01/decision-review-journal-domain-freeze.json)
 - [`artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json`](artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json)
 - [`docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx`](docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx)
+- [`docs/v0.1/48-ui-foundation-and-micro-components.md`](docs/v0.1/48-ui-foundation-and-micro-components.md)

@@ -1,0 +1,568 @@
+{
+  "acceptance_profile": "local_reference_decision_intelligence",
+  "branch": "feature/v0.1-decision-intelligence",
+  "candidate_commit_sha": "bff9b1f3b4f84f0019eef6e25d50a22d4bc9ccb2",
+  "ci": {
+    "conclusion": "success",
+    "head_sha": "bff9b1f3b4f84f0019eef6e25d50a22d4bc9ccb2",
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44270666603"
+  },
+  "environment_label": "macbook-pro-reference",
+  "failed_gates": [],
+  "freeze_commit_policy": "acceptance-artifact-only",
+  "gates": [
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_three_final_acceptance.py"
+          ],
+          "duration_ms": 289,
+          "exit_code": 0,
+          "label": "P3-13 contract verifier",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            "tests",
+            "-q"
+          ],
+          "duration_ms": 2174,
+          "exit_code": 0,
+          "label": "Repository contract tests",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "repository_contract",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "ruff",
+            "format",
+            "--check",
+            "apps/server",
+            "alembic",
+            "scripts/run_phase_three_final_acceptance.py",
+            "scripts/verify_phase_three_final_acceptance.py",
+            "tests/test_phase_three_final_acceptance.py"
+          ],
+          "duration_ms": 68,
+          "exit_code": 0,
+          "label": "Backend format",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "ruff",
+            "check",
+            "apps/server",
+            "alembic",
+            "scripts/run_phase_three_final_acceptance.py",
+            "scripts/verify_phase_three_final_acceptance.py",
+            "tests/test_phase_three_final_acceptance.py"
+          ],
+          "duration_ms": 62,
+          "exit_code": 0,
+          "label": "Backend lint",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "mypy"
+          ],
+          "duration_ms": 942,
+          "exit_code": 0,
+          "label": "Backend typing",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "not integration",
+            "-q"
+          ],
+          "duration_ms": 14913,
+          "exit_code": 0,
+          "label": "Backend tests",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/generate_runtime_contracts.py",
+            "--check"
+          ],
+          "duration_ms": 2528,
+          "exit_code": 0,
+          "label": "Runtime contract drift",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "backend",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "upgrade",
+            "head"
+          ],
+          "duration_ms": 1491,
+          "exit_code": 0,
+          "label": "Alembic upgrade from zero",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "downgrade",
+            "base"
+          ],
+          "duration_ms": 2108,
+          "exit_code": 0,
+          "label": "Alembic downgrade",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "upgrade",
+            "head"
+          ],
+          "duration_ms": 2020,
+          "exit_code": 0,
+          "label": "Alembic rebuild",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "alembic",
+            "check"
+          ],
+          "duration_ms": 2183,
+          "exit_code": 0,
+          "label": "Alembic drift",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "migration_cycle",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "-m",
+            "pytest",
+            "-m",
+            "integration",
+            "-q"
+          ],
+          "duration_ms": 5203,
+          "exit_code": 0,
+          "label": "PostgreSQL projection and recovery",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "postgresql_projection_recovery",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_three_roadmap.py"
+          ],
+          "duration_ms": 62,
+          "exit_code": 0,
+          "label": "P3-00 roadmap Freeze",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_decision_review_journal_domain.py"
+          ],
+          "duration_ms": 65,
+          "exit_code": 0,
+          "label": "P3-01 domain Freeze",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_trd_bot_v031_integration_contract.py"
+          ],
+          "duration_ms": 65,
+          "exit_code": 0,
+          "label": "P3-02 integration contract Freeze",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_durable_decision_event_projection.py"
+          ],
+          "duration_ms": 53,
+          "exit_code": 0,
+          "label": "P3-03 durable projection",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_decision_feed_candidate_details.py"
+          ],
+          "duration_ms": 52,
+          "exit_code": 0,
+          "label": "P3-04 Decision feed",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_risk_gate_explanation.py"
+          ],
+          "duration_ms": 74,
+          "exit_code": 0,
+          "label": "P3-05 Risk Gate",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_portfolio_candidate_impact.py"
+          ],
+          "duration_ms": 76,
+          "exit_code": 0,
+          "label": "P3-06 Portfolio impact",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_human_decision_review.py"
+          ],
+          "duration_ms": 102,
+          "exit_code": 0,
+          "label": "P3-07 human review",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_alert_inbox.py"
+          ],
+          "duration_ms": 95,
+          "exit_code": 0,
+          "label": "P3-08 Alert Inbox",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_watchlists.py"
+          ],
+          "duration_ms": 95,
+          "exit_code": 0,
+          "label": "P3-09 watchlists",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_outcome_journal.py"
+          ],
+          "duration_ms": 97,
+          "exit_code": 0,
+          "label": "P3-10 Outcome Journal",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_three_export_coverage.py"
+          ],
+          "duration_ms": 92,
+          "exit_code": 0,
+          "label": "P3-11 export coverage",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_three_ui_integration.py"
+          ],
+          "duration_ms": 56,
+          "exit_code": 0,
+          "label": "P3-12 UI integration",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "phase_three_contract_chain",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_scope_contract.py"
+          ],
+          "duration_ms": 54,
+          "exit_code": 0,
+          "label": "Scope boundary",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_security_boundary.py"
+          ],
+          "duration_ms": 78,
+          "exit_code": 0,
+          "label": "Security boundary",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "scripts/verify_integration_contracts.py"
+          ],
+          "duration_ms": 69,
+          "exit_code": 0,
+          "label": "Integration contracts",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "security_inventory",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_phase_three_export_coverage.py"
+          ],
+          "duration_ms": 80,
+          "exit_code": 0,
+          "label": "Phase 3 export contract",
+          "passed": true
+        },
+        {
+          "command": [
+            "python",
+            "-m",
+            "pytest",
+            "apps/server/tests/test_portfolio_export.py",
+            "-q"
+          ],
+          "duration_ms": 1637,
+          "exit_code": 0,
+          "label": "Phase 3 export regression",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "export_coverage",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "pnpm",
+            "install",
+            "--frozen-lockfile"
+          ],
+          "duration_ms": 1349,
+          "exit_code": 0,
+          "label": "Frontend install",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "format:check"
+          ],
+          "duration_ms": 3368,
+          "exit_code": 0,
+          "label": "Frontend format",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "lint"
+          ],
+          "duration_ms": 7354,
+          "exit_code": 0,
+          "label": "Frontend lint",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "typecheck"
+          ],
+          "duration_ms": 3634,
+          "exit_code": 0,
+          "label": "Frontend typecheck",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "test"
+          ],
+          "duration_ms": 5402,
+          "exit_code": 0,
+          "label": "Frontend tests",
+          "passed": true
+        },
+        {
+          "command": [
+            "pnpm",
+            "build"
+          ],
+          "duration_ms": 7237,
+          "exit_code": 0,
+          "label": "Frontend build",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "frontend",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "pnpm",
+            "--filter",
+            "@nexora/web",
+            "test:e2e"
+          ],
+          "duration_ms": 10947,
+          "exit_code": 0,
+          "label": "Phase 3 browser acceptance",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "browser",
+      "passed": true
+    },
+    {
+      "commands": [
+        {
+          "command": [
+            "python",
+            "scripts/verify_durable_decision_event_projection.py"
+          ],
+          "duration_ms": 55,
+          "exit_code": 0,
+          "label": "Compatible provider smoke evidence",
+          "passed": true
+        }
+      ],
+      "environment_label": "macbook-pro-reference",
+      "gate_id": "provider_smoke_evidence",
+      "passed": true
+    }
+  ],
+  "generated_at": "2026-11-18T10:14:29.845505Z",
+  "manual": {
+    "compatible_provider_smoke_review": "pass",
+    "export_lineage_and_redaction_review": "pass",
+    "no_forbidden_capabilities": "pass",
+    "owner_scope_and_immutability_review": "pass",
+    "projection_replay_and_recovery_review": "pass",
+    "responsive_bilingual_accessibility_review": "pass"
+  },
+  "phase_three_scope_accepted": true,
+  "prior_stage": {
+    "accepted_commit_sha": "7fb3a707dc6b3c059eb2e65b06490385f18c3b1b",
+    "contract_checksum": "d91f605d2033ac33e9914c65bf7c9d265f775dd3fc35b6711829429fa8466fea",
+    "decision_id": "NEX-P3-12",
+    "same_sha_ci_accepted": true
+  },
+  "production_readiness_claimed": false,
+  "provider_smoke": {
+    "artifact_digest": "sha256:d1ec79aa429891ae94a36a4d65d573c3b97550ceaffa343b3df8989286d3375d",
+    "artifact_id": 13939958030,
+    "bound_by_contract": "contracts/nexora-v0.1-durable-decision-event-projection.json",
+    "provider_commit_sha": "3097276ed77cd212101797654452456b7fbc61de",
+    "provider_profile": "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json",
+    "provider_release": "0.3.1",
+    "real_local_smoke_passed": true,
+    "workflow_run_id": 43210235551
+  },
+  "ready_to_freeze_phase_three": true,
+  "record_checksum": "c42b1fc54c1b8f4d74c25a8a3e4499a87eae5eb3d0590de8ebff7e452e224149",
+  "schema_version": "nexora-phase-three-final-acceptance-record-v1",
+  "security_boundary": {
+    "autonomous_ai_execution": false,
+    "direct_trd_bot_database_access": false,
+    "exchange_credentials": false,
+    "financial_advice": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "ml_training_or_inference": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "saas": false,
+    "tax_advice": false,
+    "wallet_private_keys_or_signing": false
+  },
+  "server_deployment_acceptance": {
+    "blocks": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "planned_country_code": "DE",
+    "planned_host_type": "private_vps",
+    "production_readiness_claimed": false,
+    "status": "deferred_until_private_vps_available"
+  }
+}

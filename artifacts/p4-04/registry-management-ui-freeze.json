@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-registry-management-ui-freeze-v1",
+  "decision_id": "NEX-P4-04",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "3414507938c41acad1ab66b12f649c22f58e13ce",
+  "candidate_tree_sha": "979a32d45f0cdab721b7dab0ebbab5c8c74bbb40",
+  "candidate_predecessor_sha": "5742c742c2b713cd54590bffe0c630de01969dc7",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 registry management",
+  "registry_management_ui_contract": {
+    "path": "contracts/nexora-v0.1-registry-management-ui.json",
+    "checksum": "d4dfa5b51e293aaf23c82c120be1054282bfbff0afbe30bb0f8d48e4282fb848"
+  },
+  "p4_03_freeze_canonical_checksum": "c2bda9d47b9e6d69eacd268b5449fa77e70cefc8ef8f62647db48fd3b55078bf",
+  "github_actions": {
+    "workflow_path": ".github/workflows/registry-management-ui.yml",
+    "run_id": 44393839613,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44393839613",
+    "head_sha": "3414507938c41acad1ab66b12f649c22f58e13ce",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "registry-management-contract": {
+        "job_id": 135118326489,
+        "conclusion": "success"
+      },
+      "registry-management-web": {
+        "job_id": 135118325884,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-05",
+  "production_readiness_claimed": false
+}

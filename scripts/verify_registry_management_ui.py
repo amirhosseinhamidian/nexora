@@ -9,10 +9,13 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-registry-management-ui.json"
 P4_03_FREEZE_PATH = ROOT / "artifacts/p4-03/first-run-onboarding-freeze.json"
+FREEZE_PATH = ROOT / "artifacts/p4-04/registry-management-ui-freeze.json"
 CONTRACT_CHECKSUM = "d4dfa5b51e293aaf23c82c120be1054282bfbff0afbe30bb0f8d48e4282fb848"
+FREEZE_CHECKSUM = "fde080e0d1ac0a260ad1214340c46fee9c9fd7f9453122e485ce36d662394ef9"
 P4_03_FREEZE_CHECKSUM = "c2bda9d47b9e6d69eacd268b5449fa77e70cefc8ef8f62647db48fd3b55078bf"
 P4_03_FREEZE_SHA = "5742c742c2b713cd54590bffe0c630de01969dc7"
 P4_03_FREEZE_CI_RUN_ID = 44389551521
+P4_04_CANDIDATE_SHA = "3414507938c41acad1ab66b12f649c22f58e13ce"
 
 
 class RegistryManagementUiContractError(ValueError):
@@ -33,6 +36,10 @@ def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
 def canonical_checksum(document: dict[str, Any]) -> str:
     payload = json.dumps(document, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
+    return load_contract(path)
 
 
 def validate_prerequisite() -> None:
@@ -77,6 +84,35 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P4-04 contract checksum drift")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-registry-management-ui-freeze-v1", "invalid Freeze schema")
+    _require(record.get("decision_id") == contract.get("decision_id") == "NEX-P4-04", "Freeze decision drift")
+    _require(record.get("candidate_commit_sha") == P4_04_CANDIDATE_SHA, "P4-04 candidate SHA drift")
+    _require(record.get("candidate_predecessor_sha") == P4_03_FREEZE_SHA, "candidate is not based on the P4-03 Freeze")
+    _require(record.get("p4_03_freeze_canonical_checksum") == P4_03_FREEZE_CHECKSUM, "P4-03 Freeze drift")
+    _require(
+        record.get("registry_management_ui_contract")
+        == {"path": CONTRACT_PATH.relative_to(ROOT).as_posix(), "checksum": canonical_checksum(contract)},
+        "Freeze contract evidence drift",
+    )
+
+    workflow = record.get("github_actions")
+    _require(isinstance(workflow, dict), "GitHub Actions evidence must be an object")
+    _require(workflow.get("workflow_path") == ".github/workflows/registry-management-ui.yml", "CI workflow drift")
+    _require(workflow.get("head_sha") == P4_04_CANDIDATE_SHA, "CI head SHA drift")
+    _require(workflow.get("conclusion") == "success", "CI did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), "CI jobs must be an object")
+    _require(set(jobs) == {"registry-management-contract", "registry-management-web"}, "CI job inventory drift")
+    for name, job in jobs.items():
+        _require(isinstance(job, dict) and job.get("conclusion") == "success", f"CI job did not succeed: {name}")
+
+    _require(record.get("frozen") is True, "P4-04 is not frozen")
+    _require(record.get("next_allowed_stage") == contract["transition"]["post_freeze_stage"], "post-Freeze stage drift")
+    _require(record.get("production_readiness_claimed") is False, "Freeze production claim")
+    _require(canonical_checksum(record) == FREEZE_CHECKSUM, "P4-04 Freeze checksum drift")
+
+
 def validate_runtime_markers(contract: dict[str, Any]) -> None:
     web = ROOT / "apps/web/src"
     navigation = (web / "components/workspace-navigation.tsx").read_text(encoding="utf-8")
@@ -110,10 +146,15 @@ def main() -> int:
     validate_prerequisite()
     validate_contract(contract)
     validate_runtime_markers(contract)
+    validate_freeze_record(load_freeze_record(), contract)
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P4_03_PREREQUISITE=PASS")
     print("NEX_P4_04_REGISTRY_MANAGEMENT_UI_CANDIDATE=PASS")
+    print(f"candidate_commit_sha={P4_04_CANDIDATE_SHA}")
+    print(f"freeze_checksum={FREEZE_CHECKSUM}")
+    print("NEX_P4_04_FREEZE=PASS")
+    print("NEX_P4_05=OPEN")
     return 0
 
 

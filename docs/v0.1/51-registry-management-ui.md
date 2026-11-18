@@ -1,6 +1,6 @@
 # NEX-P4-04 — Asset, portfolio and account management
 
-Status: **Candidate**
+Status: **Frozen at candidate `3414507938c41acad1ab66b12f649c22f58e13ce`**
 
 The [P4-03 Freeze](../../artifacts/p4-03/first-run-onboarding-freeze.json)
 passed [its workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44389551521)
@@ -32,5 +32,7 @@ defines the available operations. Renaming, general edits, deletion and
 reactivation require separate contract decisions. Authenticated same-origin
 requests continue to use the workspace session and CSRF controls.
 
-The candidate opens `NEX-P4-04-FREEZE` after local verification and CI.
-Portfolio overview and analytics are assigned to P4-05.
+The [registry management workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44393839613)
+passed its contract and web jobs on the accepted commit, including Chromium
+coverage. The checksummed [Freeze record](../../artifacts/p4-04/registry-management-ui-freeze.json)
+opens `NEX-P4-05` for portfolio overview and analytics.

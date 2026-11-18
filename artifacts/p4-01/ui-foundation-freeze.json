@@ -1,0 +1,42 @@
+{
+  "schema_version": "nexora-ui-foundation-freeze-v1",
+  "decision_id": "NEX-P4-01",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-18",
+  "candidate_commit_sha": "1a05a19e47268f291ddcb09a49c0463020106035",
+  "candidate_tree_sha": "ee8ed427553f624c26e5d25c1b0007adc3c2c625",
+  "candidate_predecessor_sha": "079efb63e7b57b32c9d1902da30b27f75edddbe0",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 UI foundation",
+  "ui_foundation_contract": {
+    "path": "contracts/nexora-v0.1-ui-foundation.json",
+    "checksum": "dd1cd6090916334bcfc51614a4bf38d876b5117d07bb3555751dace42a22ec52"
+  },
+  "p4_00_freeze_canonical_checksum": "df373401cf0982b09708d0093d0492cdddf365c85195fbc2e1374293bc3a5584",
+  "github_actions": {
+    "workflow_path": ".github/workflows/ui-foundation.yml",
+    "run_id": 44317638154,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44317638154",
+    "head_sha": "1a05a19e47268f291ddcb09a49c0463020106035",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "backend-regression": {
+        "job_id": 134847876974,
+        "conclusion": "success"
+      },
+      "ui-foundation-contract": {
+        "job_id": 134847877098,
+        "conclusion": "success"
+      },
+      "web-regression": {
+        "job_id": 134847876721,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-02",
+  "production_readiness_claimed": false
+}

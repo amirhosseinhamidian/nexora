@@ -268,9 +268,10 @@ experience, the TRD BOT UI architecture guidance and the frozen P1-P3
 repository truth into the Product Experience Completion roadmap. It keeps the
 product version at v0.1.0, separates delivery Phase 4 from product versioning,
 requires first-run Portfolio onboarding and routed bilingual pages, and
-preserves all security and private-VPS gates. `NEX-P4-01` is the current
-Candidate. It delivers shared tokens and accessible micro-components without
-opening feature routes or changing backend domains.
+preserves all security and private-VPS gates. `NEX-P4-01` is frozen at candidate
+`1a05a19e47268f291ddcb09a49c0463020106035`. It delivers shared tokens and
+accessible micro-components. Its Freeze record opens `NEX-P4-02` for the
+application shell, navigation and routes.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -451,8 +452,8 @@ NEX_P3_13_FREEZE_PREREQUISITE=PASS
 NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS
 NEX_P4_00_FREEZE=PASS
 NEX_P4_01_UI_FOUNDATION_CANDIDATE=PASS
-NEX_P4_01_FREEZE=PENDING_SAME_SHA_CI
-NEX_P4_02=BLOCKED_PENDING_P4_01_FREEZE
+NEX_P4_01_FREEZE=PASS
+NEX_P4_02=OPEN
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -595,3 +596,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json`](artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json)
 - [`docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx`](docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx)
 - [`docs/v0.1/48-ui-foundation-and-micro-components.md`](docs/v0.1/48-ui-foundation-and-micro-components.md)
+- [`artifacts/p4-01/ui-foundation-freeze.json`](artifacts/p4-01/ui-foundation-freeze.json)

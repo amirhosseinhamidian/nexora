@@ -31,6 +31,27 @@ class UiFoundationContractTests(unittest.TestCase):
     def test_contract_checksum_is_deterministic(self) -> None:
         self.assertEqual(MODULE.canonical_checksum(self.contract), MODULE.CONTRACT_CHECKSUM)
 
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_freeze_record(), self.contract)
+
+    def test_freeze_record_rejects_ci_for_another_commit(self) -> None:
+        changed = MODULE.load_freeze_record()
+        changed["github_actions"]["head_sha"] = "0" * 40
+        with self.assertRaisesRegex(MODULE.UiFoundationContractError, "CI head SHA drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_requires_successful_jobs(self) -> None:
+        changed = MODULE.load_freeze_record()
+        changed["github_actions"]["jobs"]["web-regression"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.UiFoundationContractError, "CI job did not succeed"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
+    def test_freeze_record_opens_only_p4_02(self) -> None:
+        changed = MODULE.load_freeze_record()
+        changed["next_allowed_stage"] = "NEX-P4-03"
+        with self.assertRaisesRegex(MODULE.UiFoundationContractError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(changed, self.contract)
+
     def test_ui_package_boundary_cannot_drift(self) -> None:
         changed = copy.deepcopy(self.contract)
         changed["package_boundary"]["package"] = "@nexora/web"

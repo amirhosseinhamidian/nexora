@@ -1,6 +1,6 @@
 # NEX-P4-01 — UI Foundation and Micro Components
 
-Status: **Candidate — opens only `NEX-P4-01-FREEZE`**
+Status: **Frozen at candidate `1a05a19e47268f291ddcb09a49c0463020106035`**
 
 P4-01 establishes the shared product-interface foundation used by every later
 Phase 4 page. It does not add routes or domain workflows. The accepted P4-00
@@ -78,5 +78,8 @@ first-run onboarding and all domain pages remain assigned to P4-02 through
 P4-10. Authentication, authorization, backend domains, immutable evidence and
 the deferred private-server gate remain unchanged.
 
-The candidate opens only `NEX-P4-01-FREEZE`. P4-02 remains blocked until this
-candidate passes owner-run checks, same-SHA CI and a checksummed Freeze record.
+The candidate passed owner-run checks and the
+[UI foundation workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44317638154)
+on the same commit. The checksummed
+[Freeze record](../../artifacts/p4-01/ui-foundation-freeze.json) opens
+`NEX-P4-02` for the application shell, navigation and routes.

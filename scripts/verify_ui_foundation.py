@@ -9,8 +9,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-ui-foundation.json"
 P4_00_FREEZE_PATH = ROOT / "artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json"
+FREEZE_PATH = ROOT / "artifacts/p4-01/ui-foundation-freeze.json"
 
 CONTRACT_CHECKSUM = "dd1cd6090916334bcfc51614a4bf38d876b5117d07bb3555751dace42a22ec52"
+FREEZE_CHECKSUM = "5c335ffbd731d9cea0df1e2cf1bfecfdf17b575531cb218f41b091a0ae22905d"
+P4_01_CANDIDATE_SHA = "1a05a19e47268f291ddcb09a49c0463020106035"
 P4_00_FREEZE_CANONICAL_CHECKSUM = "df373401cf0982b09708d0093d0492cdddf365c85195fbc2e1374293bc3a5584"
 P4_00_CANDIDATE_SHA = "1fc09c0354876d1ced6eebd7fe8d29338a8c9e8d"
 P4_00_FREEZE_SHA = "c880972eee63569d1509ac0ed58eceb84521d6a9"
@@ -97,6 +100,10 @@ def canonical_checksum(payload: dict[str, Any]) -> str:
 
 
 def load_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
+    return _json(path)
+
+
+def load_freeze_record(path: Path = FREEZE_PATH) -> dict[str, Any]:
     return _json(path)
 
 
@@ -211,6 +218,35 @@ def validate_contract(contract: dict[str, Any]) -> None:
     _require(transition.get("freeze_before_next_stage") is True, "P4-01 Freeze gate removed")
 
 
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-ui-foundation-freeze-v1", "invalid Freeze schema")
+    _require(record.get("decision_id") == contract.get("decision_id") == "NEX-P4-01", "Freeze decision drift")
+    _require(record.get("candidate_commit_sha") == P4_01_CANDIDATE_SHA, "P4-01 candidate SHA drift")
+    _require(record.get("p4_00_freeze_canonical_checksum") == P4_00_FREEZE_CANONICAL_CHECKSUM, "P4-00 Freeze drift")
+
+    evidence = record.get("ui_foundation_contract")
+    _require(isinstance(evidence, dict), "UI foundation contract evidence must be an object")
+    _require(evidence.get("path") == CONTRACT_PATH.relative_to(ROOT).as_posix(), "Freeze contract path drift")
+    _require(
+        evidence.get("checksum") == canonical_checksum(contract) == CONTRACT_CHECKSUM, "Freeze contract checksum drift"
+    )
+
+    workflow = record.get("github_actions")
+    _require(isinstance(workflow, dict), "GitHub Actions evidence must be an object")
+    _require(workflow.get("head_sha") == P4_01_CANDIDATE_SHA, "CI head SHA drift")
+    _require(workflow.get("conclusion") == "success", "CI did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), "CI jobs must be an object")
+    _require(set(jobs) == {"ui-foundation-contract", "backend-regression", "web-regression"}, "CI job inventory drift")
+    for name, job in jobs.items():
+        _require(isinstance(job, dict) and job.get("conclusion") == "success", f"CI job did not succeed: {name}")
+
+    _require(record.get("frozen") is True, "P4-01 is not frozen")
+    _require(record.get("next_allowed_stage") == contract["transition"]["post_freeze_stage"], "post-Freeze stage drift")
+    _require(record.get("production_readiness_claimed") is False, "Freeze production claim")
+    _require(canonical_checksum(record) == FREEZE_CHECKSUM, "P4-01 Freeze checksum drift")
+
+
 def validate_runtime_markers() -> None:
     package = _json(ROOT / "packages/ui/package.json")
     exports = package.get("exports")
@@ -308,6 +344,9 @@ def validate_files_and_markers() -> None:
     for relative, marker in expected.items():
         content = (ROOT / relative).read_text(encoding="utf-8")
         _require(marker in content, f"{relative} is missing the P4-01 marker")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    _require(f"({FREEZE_PATH.relative_to(ROOT).as_posix()})" in readme, "README is missing the P4-01 Freeze link")
+    _require("NEX_P4_01_FREEZE=PASS" in readme, "README is missing the P4-01 Freeze marker")
 
 
 def main() -> int:
@@ -317,13 +356,17 @@ def main() -> int:
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P4-01 contract checksum drift")
     validate_runtime_markers()
     validate_files_and_markers()
+    freeze_record = load_freeze_record()
+    validate_freeze_record(freeze_record, contract)
     print(f"schema_version={contract['schema_version']}")
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P4_00_FREEZE_PREREQUISITE=PASS")
     print("NEX_P4_01_UI_FOUNDATION_CANDIDATE=PASS")
-    print("NEX_P4_01_FREEZE=PENDING_SAME_SHA_CI")
-    print("NEX_P4_02=BLOCKED_PENDING_P4_01_FREEZE")
+    print(f"candidate_commit_sha={P4_01_CANDIDATE_SHA}")
+    print(f"freeze_checksum={FREEZE_CHECKSUM}")
+    print("NEX_P4_01_FREEZE=PASS")
+    print("NEX_P4_02=OPEN")
     print("PRODUCTION_READINESS_CLAIMED=false")
     return 0
 

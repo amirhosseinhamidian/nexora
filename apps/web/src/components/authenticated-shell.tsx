@@ -4,6 +4,7 @@ import type { ActionResponse, SessionResponse } from "@nexora/contracts";
 import { Drawer, IconButton } from "@nexora/ui/primitives";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { FoundationControls } from "@/components/foundation-controls";
@@ -32,6 +33,7 @@ export function useWorkspace() {
 }
 
 export function AuthenticatedShell({ children, dictionary, locale }: AuthenticatedShellProps) {
+  const pathname = usePathname();
   const [state, setState] = useState<ShellState>("loading");
   const [session, setSession] = useState<SessionResponse>();
   const [servicesReady, setServicesReady] = useState(false);
@@ -131,9 +133,13 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
     );
   }
   if (state === "expired" || !session) {
+    const login =
+      pathname === `/${locale}/onboarding`
+        ? `/${locale}/login?resume=onboarding`
+        : `/${locale}/login`;
     return (
       <StatePanel
-        action={{ href: `/${locale}/login`, label: dictionary.states.signIn }}
+        action={{ href: login, label: dictionary.states.signIn }}
         description={dictionary.states.expiredDescription}
         kind="session"
         title={dictionary.states.expiredTitle}

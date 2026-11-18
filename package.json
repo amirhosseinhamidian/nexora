@@ -12,7 +12,7 @@
     "dev": "pnpm --filter @nexora/web dev",
     "format": "pnpm --filter @nexora/web format && pnpm --filter @nexora/web exec prettier --config prettier.config.mjs --write ../../packages/ui",
     "format:check": "pnpm --filter @nexora/web format:check && pnpm --filter @nexora/web exec prettier --config prettier.config.mjs --check ../../packages/ui",
-    "lint": "pnpm --filter @nexora/web lint && pnpm --filter @nexora/web exec eslint --config eslint.config.mjs ../../packages/ui/src/primitives.tsx",
+    "lint": "pnpm --filter @nexora/web lint && ./apps/web/node_modules/.bin/eslint --config apps/web/eslint.config.mjs packages/ui/src",
     "test": "pnpm --filter @nexora/web test",
     "test:e2e": "pnpm --filter @nexora/web test:e2e",
     "typecheck": "pnpm --filter @nexora/web typecheck"

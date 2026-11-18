@@ -1,7 +1,18 @@
 "use client";
 
-import { AlertTriangle, Bell, Check, Clock3, LoaderCircle, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  ResponsiveRecordList,
+  Disclosure,
+  EmptyState,
+  Button,
+  FieldError,
+  FormField,
+  Input,
+  Spinner,
+} from "@nexora/ui/primitives";
+import { AlertTriangle, Bell, Check, Clock3, RefreshCw } from "lucide-react";
+import { useId, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -76,6 +87,7 @@ function defaultSnoozeValue(): string {
 }
 
 export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
+  const fieldId = useId();
   const copy = dictionary.alertInbox;
   const [inbox, setInbox] = useState<AlertInboxResponse>();
   const [loading, setLoading] = useState(true);
@@ -154,33 +166,38 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
       </div>
 
       {loading ? (
-        <div className="alert-inbox-state" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={22} />
+        <Alert className="alert-inbox-state" role="status">
+          <Spinner label="" />
           <span>{copy.loading}</span>
-        </div>
+        </Alert>
       ) : error ? (
-        <div className="alert-inbox-state error" role="alert">
+        <Alert tone="danger" className="alert-inbox-state error" role="alert">
           <AlertTriangle aria-hidden="true" size={22} />
           <span>{copy.error}</span>
-          <button className="secondary-button" onClick={() => void load()} type="button">
+          <Button
+            variant="secondary"
+            className="secondary-button"
+            onClick={() => void load()}
+            type="button"
+          >
             <RefreshCw aria-hidden="true" size={16} />
             {copy.retry}
-          </button>
-        </div>
+          </Button>
+        </Alert>
       ) : (
         <>
           {inbox?.provider?.state !== "ready" ? (
-            <div className="provider-state" role="status">
+            <Alert tone="warning" className="provider-state" role="status">
               <AlertTriangle aria-hidden="true" size={20} />
               <div>
                 <strong>{copy.providerDegraded}</strong>
                 <p>{copy.providerStates[inbox?.provider?.state ?? "degraded"]}</p>
               </div>
-            </div>
+            </Alert>
           ) : null}
 
           {inbox?.items?.length ? (
-            <ul aria-label={copy.listLabel} className="alert-list">
+            <ResponsiveRecordList className="alert-list" label={copy.listLabel}>
               {inbox.items.map((item) => {
                 const terminal = item.local_state === "resolved" || item.local_state === "expired";
                 const itemPending = submitting && pending?.alertId === item.alert_id;
@@ -218,14 +235,13 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
                       </div>
                     </dl>
 
-                    <details>
-                      <summary>{copy.evidence}</summary>
+                    <Disclosure label={copy.evidence}>
                       <pre dir="ltr">{JSON.stringify(item.evidence, null, 2)}</pre>
-                    </details>
+                    </Disclosure>
 
                     {!terminal ? (
                       <div className="alert-actions">
-                        <button
+                        <Button
                           className="primary-button"
                           disabled={itemPending || item.local_state === "acknowledged"}
                           onClick={() => void transition(item, "acknowledge")}
@@ -235,10 +251,13 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
                           {itemPending && pending?.action === "acknowledge"
                             ? copy.saving
                             : copy.acknowledge}
-                        </button>
-                        <label>
-                          <span>{copy.snoozeUntil}</span>
-                          <input
+                        </Button>
+                        <FormField
+                          id={`${fieldId}-snooze-until-${item.alert_id}`}
+                          label={copy.snoozeUntil}
+                        >
+                          <Input
+                            id={`${fieldId}-snooze-until-${item.alert_id}`}
                             min={initialSnooze}
                             onChange={(event) =>
                               setSnoozeValues((current) => ({
@@ -249,8 +268,9 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
                             type="datetime-local"
                             value={snoozeValues[item.alert_id] ?? initialSnooze}
                           />
-                        </label>
-                        <button
+                        </FormField>
+                        <Button
+                          variant="secondary"
                           className="secondary-button"
                           disabled={itemPending}
                           onClick={() => void transition(item, "snooze")}
@@ -258,14 +278,12 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
                         >
                           <Clock3 aria-hidden="true" size={16} />
                           {itemPending && pending?.action === "snooze" ? copy.saving : copy.snooze}
-                        </button>
+                        </Button>
                       </div>
                     ) : null}
 
                     {transitionError === item.alert_id ? (
-                      <p className="form-error" role="alert">
-                        {copy.transitionError}
-                      </p>
+                      <FieldError className="form-error">{copy.transitionError}</FieldError>
                     ) : null}
                     <small className="alert-history-count">
                       {copy.historyCount.replace("{count}", String(item.history.length))}
@@ -273,15 +291,16 @@ export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; loc
                   </li>
                 );
               })}
-            </ul>
+            </ResponsiveRecordList>
           ) : (
-            <div className="empty-state-card">
-              <Bell aria-hidden="true" size={28} />
-              <div>
-                <h2>{copy.emptyTitle}</h2>
-                <p>{copy.emptyDescription}</p>
-              </div>
-            </div>
+            <EmptyState
+              className="empty-state-card"
+              headingLevel={2}
+              icon={<Bell aria-hidden="true" size={28} />}
+              title={copy.emptyTitle}
+            >
+              <p>{copy.emptyDescription}</p>
+            </EmptyState>
           )}
 
           <p className="alert-boundary">{copy.notificationDeferred}</p>

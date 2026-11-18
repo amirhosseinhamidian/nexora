@@ -1,0 +1,182 @@
+.outcome-journal-panel {
+  @apply mt-6 [padding:clamp(1rem,_3vw,_1.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+
+.outcome-journal-panel .section-heading {
+  @apply flex items-start justify-between gap-4;
+}
+
+.outcome-journal-panel .section-heading > svg {
+  @apply text-nx-primary;
+}
+
+.decision-experience :where(button, input:not([type="checkbox"]), summary),
+.decision-experience .watchlist-checkbox {
+  @apply min-block-11;
+}
+
+.decision-experience
+  :where(.decision-feed, .outcome-journal-panel, .alert-inbox, .watchlist-panel) {
+  @apply min-w-0 scroll-mbs-4;
+}
+
+.journal-search {
+  @apply grid [grid-template-columns:minmax(12rem,_1fr)_auto] [align-items:end] gap-3 mt-4;
+}
+
+.journal-state {
+  @apply flex items-center gap-3 mt-4 p-4 [border:1px_dashed_var(--nx-border)];
+  @apply rounded-nx-md text-nx-text-muted;
+}
+
+.journal-state.error {
+  @apply text-nx-warning;
+}
+
+.journal-state .secondary-button {
+  @apply ms-auto;
+}
+
+.journal-workspace {
+  @apply grid gap-4 mt-4;
+}
+
+.journal-active-decision {
+  @apply flex items-center justify-between gap-4 p-[0.8rem] rounded-nx-md [background:var(--nx-primary-soft)] text-nx-text-muted;
+}
+
+.journal-active-decision code {
+  @apply text-nx-text wrap-anywhere;
+}
+
+.journal-entry-list {
+  @apply grid gap-3 m-0 p-0 [list-style:none];
+}
+
+.journal-entry-list > li {
+  @apply p-4 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.journal-entry-heading {
+  @apply flex items-center justify-between gap-3;
+}
+
+.journal-entry-heading time {
+  @apply text-nx-text-muted text-[length:0.8rem];
+}
+
+.journal-entry-list p {
+  @apply [line-height:1.6] whitespace-pre-wrap;
+}
+
+.journal-entry-list dl {
+  @apply grid grid-cols-2 gap-[0.6rem] m-0;
+}
+
+.journal-entry-list dl > div {
+  @apply p-[0.65rem] rounded-nx-md [background:var(--nx-surface)];
+}
+
+.journal-entry-list dl .wide {
+  @apply col-span-full;
+}
+
+.journal-entry-list dt {
+  @apply text-nx-text-muted text-[length:0.75rem];
+  @apply [font-weight:700];
+}
+
+.journal-entry-list dd {
+  @apply [margin:0.25rem_0_0] wrap-anywhere;
+}
+
+.journal-form {
+  @apply p-4 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.journal-form h3 {
+  @apply mt-0;
+}
+
+.journal-form-grid,
+.journal-lineage {
+  @apply grid grid-cols-2 gap-3;
+}
+
+.journal-form-grid .wide,
+.journal-lineage .wide {
+  @apply col-span-full;
+}
+
+.journal-lineage {
+  @apply m-0 p-[0.85rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md;
+}
+
+.journal-lineage legend {
+  @apply px-[0.35rem] text-nx-text-muted text-[length:0.82rem];
+  @apply [font-weight:800];
+}
+
+.journal-form > .primary-button {
+  @apply mt-[0.85rem];
+}
+
+.journal-boundary {
+  @apply flex items-start gap-[0.55rem] [margin:1rem_0_0] p-[0.85rem] [border-inline-start:3px_solid_var(--nx-primary)];
+  @apply [background:var(--nx-primary-soft)] text-nx-text-muted [line-height:1.55];
+}
+
+.journal-boundary svg {
+  @apply [flex:0_0_auto] mt-[0.15rem];
+}
+
+@media (max-width: 700px) {
+  .decision-experience-heading,
+  .decision-context {
+    @apply items-start flex-col;
+  }
+
+  .alert-actions {
+    @apply grid-cols-[1fr];
+  }
+
+  .watchlist-create,
+  .watchlist-columns {
+    @apply grid-cols-[1fr];
+  }
+
+  .watchlist-selector {
+    @apply items-stretch flex-col;
+  }
+
+  .journal-search,
+  .journal-form-grid,
+  .journal-lineage,
+  .journal-entry-list dl {
+    @apply grid-cols-[1fr];
+  }
+
+  .journal-form-grid .wide,
+  .journal-lineage .wide,
+  .journal-entry-list dl .wide {
+    @apply col-auto;
+  }
+
+  .journal-active-decision,
+  .journal-entry-heading {
+    @apply items-start flex-col;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    @apply [scroll-behavior:auto]! [animation-duration:0.01ms]!;
+    @apply [animation-iteration-count:1]! [transition-duration:0.01ms]!;
+  }
+}

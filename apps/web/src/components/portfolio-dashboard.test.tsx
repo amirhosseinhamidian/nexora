@@ -69,8 +69,9 @@ describe("PortfolioDashboard", () => {
 
     expect(await screen.findByText("12,345.68")).toBeInTheDocument();
     expect(screen.getByText("−42.13")).toBeInTheDocument();
-    expect(screen.getByText("75.0%")).toBeInTheDocument();
-    expect(screen.getByText("25.0%")).toBeInTheDocument();
+    const allocation = screen.getByRole("table", { name: "Allocation" });
+    expect(allocation).toHaveTextContent("75.0%");
+    expect(allocation).toHaveTextContent("25.0%");
     expect(screen.getByRole("heading", { name: "Account registry" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Brokerage" })).toBeInTheDocument();
     expect(screen.getByText(/NAV includes stale valuation evidence/)).toBeInTheDocument();

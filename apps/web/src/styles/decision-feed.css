@@ -1,0 +1,259 @@
+.provider-state {
+  @apply flex items-start gap-3 [margin:1rem_0] [padding:0.9rem_1rem];
+  @apply [border:1px_solid_color-mix(in_srgb,_var(--nx-warning)_45%,_var(--nx-border))];
+  @apply rounded-nx-md [background:color-mix(in_srgb,_var(--nx-warning)_8%,_var(--nx-surface))] text-nx-warning;
+}
+
+.provider-state p {
+  @apply [margin:0.25rem_0_0] text-nx-text-muted [line-height:1.55];
+}
+
+.decision-workspace {
+  @apply grid [grid-template-columns:minmax(16rem,_0.8fr)_minmax(0,_1.6fr)] gap-4 mt-4;
+}
+
+.decision-list {
+  @apply grid [align-content:start] gap-[0.55rem];
+}
+
+.decision-list-item {
+  @apply flex w-full items-center justify-between gap-3 p-[0.85rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)] text-nx-text text-start cursor-pointer;
+}
+
+.decision-list-item[aria-pressed="true"] {
+  @apply border-nx-primary [background:var(--nx-primary-soft)];
+}
+
+.decision-list-item span {
+  @apply min-w-0;
+}
+
+.decision-list-item strong,
+.decision-list-item small {
+  @apply block overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+.decision-list-item small {
+  @apply mt-[0.3rem] text-nx-text-muted;
+}
+
+.decision-evidence {
+  @apply p-4 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.decision-evidence-heading {
+  @apply flex items-start justify-between gap-4;
+}
+
+.decision-evidence-heading h3,
+.decision-evidence h4 {
+  @apply m-0;
+}
+
+.evidence-state {
+  @apply [padding:0.35rem_0.55rem] rounded-[999px] [background:var(--nx-primary-soft)] text-nx-primary-strong text-[length:0.75rem];
+  @apply [font-weight:800] whitespace-nowrap;
+}
+
+.source-reference-grid,
+.evidence-payload {
+  @apply grid grid-cols-2 gap-[0.7rem] [margin:1rem_0];
+}
+
+.source-reference-grid > div,
+.evidence-payload > div {
+  @apply min-w-0 p-[0.7rem] rounded-nx-md [background:var(--nx-surface)];
+}
+
+.source-reference-grid .wide {
+  @apply col-span-full;
+}
+
+.source-reference-grid dt,
+.evidence-payload dt {
+  @apply text-nx-text-muted text-[length:0.75rem];
+  @apply [font-weight:700];
+}
+
+.source-reference-grid dd,
+.evidence-payload dd {
+  @apply [margin:0.3rem_0_0] wrap-anywhere;
+}
+
+.checksum {
+  @apply [font-family:ui-monospace,_SFMono-Regular,_Menlo,_monospace];
+  @apply text-[length:0.75rem];
+}
+
+.advisory-boundary {
+  @apply [margin:1rem_0_0] pt-[0.8rem] [border-top:1px_solid_var(--nx-border)] text-nx-text-muted text-[length:0.82rem];
+  @apply [line-height:1.6];
+}
+
+.risk-explanation {
+  @apply mt-4 p-4 [border:1px_solid_color-mix(in_srgb,_var(--nx-primary)_35%,_var(--nx-border))];
+  @apply rounded-nx-md [background:color-mix(in_srgb,_var(--nx-primary-soft)_35%,_var(--nx-surface-raised))];
+}
+
+.risk-explanation.unavailable p {
+  @apply mb-0 text-nx-text-muted;
+}
+
+.risk-heading,
+.risk-checks article > div {
+  @apply flex items-start justify-between gap-4;
+}
+
+.risk-heading h4,
+.risk-explanation h5 {
+  @apply m-0;
+}
+
+.risk-decision,
+.risk-checks article span {
+  @apply [padding:0.3rem_0.5rem] rounded-[999px] text-[length:0.75rem];
+  @apply [font-weight:800];
+}
+
+.risk-decision.approved,
+.risk-checks article.passed span {
+  @apply [background:color-mix(in_srgb,_var(--nx-success)_14%,_transparent)] text-nx-success;
+}
+
+.risk-decision.rejected,
+.risk-decision.reject,
+.risk-checks article.failed span {
+  @apply [background:color-mix(in_srgb,_var(--nx-danger)_14%,_transparent)] text-nx-danger;
+}
+
+.risk-decision.accept {
+  @apply [background:color-mix(in_srgb,_var(--nx-success)_14%,_transparent)] text-nx-success;
+}
+
+.risk-decision.unavailable {
+  @apply [background:color-mix(in_srgb,_var(--nx-warning)_14%,_transparent)] text-nx-warning;
+}
+
+.risk-policy-grid {
+  @apply grid grid-cols-2 gap-[0.7rem] [margin:1rem_0];
+}
+
+.risk-policy-grid > div,
+.risk-checks article,
+.risk-uncertainty {
+  @apply p-3 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)];
+}
+
+.risk-policy-grid .wide {
+  @apply col-span-full;
+}
+
+.risk-policy-grid dt {
+  @apply text-nx-text-muted text-[length:0.75rem];
+  @apply [font-weight:700];
+}
+
+.risk-policy-grid dd {
+  @apply [margin:0.3rem_0_0] wrap-anywhere;
+}
+
+.risk-reasons {
+  @apply grid gap-2 [margin:0.7rem_0_1rem] p-0 [list-style:none];
+}
+
+.risk-reasons li {
+  @apply flex gap-[0.65rem] [padding:0.65rem_0.75rem] rounded-nx-md [background:var(--nx-surface)];
+}
+
+.risk-reasons span,
+.risk-empty-reasons,
+.risk-checks small,
+.risk-uncertainty p {
+  @apply text-nx-text-muted;
+}
+
+.risk-checks {
+  @apply grid gap-[0.6rem] mt-[0.7rem];
+}
+
+.risk-checks article p,
+.risk-uncertainty p {
+  @apply [margin:0.5rem_0] [line-height:1.55];
+}
+
+.risk-uncertainty {
+  @apply block mt-[0.8rem];
+}
+
+.risk-uncertainty code {
+  @apply wrap-anywhere text-[length:0.75rem];
+}
+
+.portfolio-impact-summary,
+.portfolio-scenarios {
+  @apply grid grid-cols-2 gap-[0.7rem] [margin:0.8rem_0_1rem];
+}
+
+.portfolio-impact-summary > div,
+.portfolio-scenarios article {
+  @apply p-3 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)];
+}
+
+.portfolio-impact-summary .wide {
+  @apply col-span-full;
+}
+
+.portfolio-impact-summary dt,
+.portfolio-scenarios span,
+.portfolio-scenarios small,
+.portfolio-impact-summary small {
+  @apply text-nx-text-muted text-[length:0.75rem];
+}
+
+.portfolio-impact-summary dd {
+  @apply [margin:0.3rem_0];
+}
+
+.portfolio-scenarios article {
+  @apply grid gap-[0.35rem];
+}
+
+.decision-review {
+  @apply mt-4 p-4 [border:1px_solid_color-mix(in_srgb,_var(--nx-primary)_45%,_var(--nx-border))];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.decision-review.unavailable p,
+.decision-review > p {
+  @apply text-nx-text-muted [line-height:1.55];
+}
+
+.decision-review-form {
+  @apply grid grid-cols-2 gap-3 mt-4;
+}
+
+.decision-review-form .wide {
+  @apply col-span-full;
+}
+
+.decision-review-form textarea {
+  @apply min-h-20 resize-y;
+}
+
+.review-history {
+  @apply grid gap-[0.55rem] [margin:1rem_0_0] p-0 [list-style:none];
+}
+
+.review-history li {
+  @apply grid gap-[0.3rem] p-3 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)];
+}
+
+.review-history code,
+.review-history small {
+  @apply text-nx-text-muted wrap-anywhere;
+}

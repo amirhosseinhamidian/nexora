@@ -1,0 +1,54 @@
+.onboarding-card {
+  @apply grid max-inline-184 gap-[var(--nx-space-4)] mbs-[var(--nx-space-6)] [padding:clamp(1rem,_3vw,_2rem)];
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)] wrap-anywhere;
+}
+
+.onboarding-card :is(h2, p, dl, dd) {
+  @apply m-0;
+}
+
+.onboarding-card p,
+.onboarding-review dt {
+  @apply text-nx-text-muted [line-height:1.65];
+}
+
+.onboarding-card > a {
+  @apply [justify-self:start];
+}
+
+.onboarding-steps,
+.onboarding-actions {
+  @apply flex flex-wrap gap-[var(--nx-space-2)];
+}
+
+.onboarding-steps {
+  @apply m-0 p-0 [list-style:none];
+}
+
+.onboarding-steps li {
+  @apply [padding:var(--nx-space-1)_var(--nx-space-2)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-sm text-nx-text-muted text-[length:0.82rem];
+}
+
+.onboarding-steps [aria-current="step"] {
+  @apply border-nx-primary-strong [background:var(--nx-primary-soft)] text-nx-primary-strong [font-weight:750];
+}
+
+.onboarding-form,
+.onboarding-fields,
+.onboarding-review {
+  @apply grid gap-[var(--nx-space-4)];
+}
+
+.onboarding-fields {
+  @apply min-inline-0 m-0 p-0 [border:0];
+}
+
+.onboarding-review > div {
+  @apply grid gap-[var(--nx-space-1)] pbe-[var(--nx-space-2)] [border-block-end:1px_solid_var(--nx-border)];
+}
+
+.onboarding-resume {
+  @apply mbs-[var(--nx-space-4)];
+}

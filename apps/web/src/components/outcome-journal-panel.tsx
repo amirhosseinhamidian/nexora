@@ -1,8 +1,21 @@
 "use client";
 
-import { BookOpen, LoaderCircle, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
+import {
+  Alert,
+  ResponsiveRecordList,
+  EmptyState,
+  Button,
+  FieldError,
+  FormField,
+  Input,
+  SearchInput,
+  Select,
+  Spinner,
+  Textarea,
+} from "@nexora/ui/primitives";
+import { BookOpen, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useId, useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -84,6 +97,7 @@ export function OutcomeJournalPanel({
   dictionary: Dictionary;
   locale: Locale;
 }) {
+  const fieldId = useId();
   const copy = dictionary.outcomeJournal;
   const [decisionInput, setDecisionInput] = useState("");
   const [activeDecision, setActiveDecision] = useState<string>();
@@ -236,24 +250,25 @@ export function OutcomeJournalPanel({
       </div>
 
       <form className="journal-search" onSubmit={loadDecision}>
-        <label>
-          <span>{copy.decisionId}</span>
-          <input
+        <FormField id={`${fieldId}-decision-id`} label={copy.decisionId}>
+          <SearchInput
+            id={`${fieldId}-decision-id`}
             maxLength={160}
             onChange={(event) => setDecisionInput(event.target.value)}
             placeholder={copy.decisionPlaceholder}
             required
             value={decisionInput}
           />
-        </label>
-        <button
+        </FormField>
+        <Button
+          variant="secondary"
           className="secondary-button"
           disabled={!decisionInput.trim() || state === "loading"}
           type="submit"
         >
           <Search aria-hidden="true" size={16} />
           {copy.load}
-        </button>
+        </Button>
       </form>
 
       {state === "initial" ? (
@@ -262,24 +277,25 @@ export function OutcomeJournalPanel({
           <span>{copy.initial}</span>
         </div>
       ) : state === "loading" ? (
-        <div className="journal-state" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={22} />
+        <Alert className="journal-state" role="status">
+          <Spinner label="" />
           <span>{copy.loading}</span>
-        </div>
+        </Alert>
       ) : state === "error" ? (
-        <div className="journal-state error" role="alert">
+        <Alert tone="danger" className="journal-state error" role="alert">
           <span>{copy.error}</span>
           {decisionInput.trim() ? (
-            <button
+            <Button
+              variant="secondary"
               className="secondary-button"
               onClick={() => void load(decisionInput.trim())}
               type="button"
             >
               <RefreshCw aria-hidden="true" size={16} />
               {copy.retry}
-            </button>
+            </Button>
           ) : null}
-        </div>
+        </Alert>
       ) : activeDecision ? (
         <div className="journal-workspace">
           <div className="journal-active-decision">
@@ -288,7 +304,7 @@ export function OutcomeJournalPanel({
           </div>
 
           {entries.length ? (
-            <ol className="journal-entry-list">
+            <ResponsiveRecordList as="ol" className="journal-entry-list" label={copy.title}>
               {entries.map((entry) => (
                 <li key={entry.entry_id}>
                   <div className="journal-entry-heading">
@@ -338,39 +354,38 @@ export function OutcomeJournalPanel({
                   </dl>
                 </li>
               ))}
-            </ol>
+            </ResponsiveRecordList>
           ) : (
-            <div className="empty-state-card">
-              <BookOpen aria-hidden="true" size={28} />
-              <div>
-                <h2>{copy.emptyTitle}</h2>
-                <p>{copy.emptyDescription}</p>
-              </div>
-            </div>
+            <EmptyState
+              className="empty-state-card"
+              headingLevel={2}
+              icon={<BookOpen aria-hidden="true" size={28} />}
+              title={copy.emptyTitle}
+            >
+              <p>{copy.emptyDescription}</p>
+            </EmptyState>
           )}
 
           <form className="journal-form" onSubmit={(event) => void createEntry(event)}>
             <h3>{copy.createTitle}</h3>
             <div className="journal-form-grid">
-              <label>
-                <span>{copy.entryKind}</span>
-                <select
-                  onChange={(event) => {
-                    setEntryKind(event.target.value as EntryKind);
+              <FormField id={`${fieldId}-entry-kind`} label={copy.entryKind}>
+                <Select
+                  id={`${fieldId}-entry-kind`}
+                  onValueChange={(value) => {
+                    setEntryKind(value as EntryKind);
                     changed();
                   }}
                   value={entryKind}
-                >
-                  {Object.entries(copy.entryKinds).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{copy.occurredAt}</span>
-                <input
+                  options={Object.entries(copy.entryKinds).map(([value, label]) => ({
+                    value: value,
+                    label: label,
+                  }))}
+                />
+              </FormField>
+              <FormField id={`${fieldId}-occurred-at`} label={copy.occurredAt}>
+                <Input
+                  id={`${fieldId}-occurred-at`}
                   onChange={(event) => {
                     setOccurredAt(event.target.value);
                     changed();
@@ -379,26 +394,24 @@ export function OutcomeJournalPanel({
                   type="datetime-local"
                   value={occurredAt}
                 />
-              </label>
-              <label>
-                <span>{copy.uncertainty}</span>
-                <select
-                  onChange={(event) => {
-                    setUncertaintyLevel(event.target.value as UncertaintyLevel);
+              </FormField>
+              <FormField id={`${fieldId}-uncertainty`} label={copy.uncertainty}>
+                <Select
+                  id={`${fieldId}-uncertainty`}
+                  onValueChange={(value) => {
+                    setUncertaintyLevel(value as UncertaintyLevel);
                     changed();
                   }}
                   value={uncertaintyLevel}
-                >
-                  {Object.entries(copy.uncertaintyLevels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{copy.uncertaintyNote}</span>
-                <input
+                  options={Object.entries(copy.uncertaintyLevels).map(([value, label]) => ({
+                    value: value,
+                    label: label,
+                  }))}
+                />
+              </FormField>
+              <FormField id={`${fieldId}-uncertainty-note`} label={copy.uncertaintyNote}>
+                <Input
+                  id={`${fieldId}-uncertainty-note`}
                   maxLength={500}
                   onChange={(event) => {
                     setUncertaintyNote(event.target.value);
@@ -406,10 +419,10 @@ export function OutcomeJournalPanel({
                   }}
                   value={uncertaintyNote}
                 />
-              </label>
-              <label className="wide">
-                <span>{copy.content}</span>
-                <textarea
+              </FormField>
+              <FormField className="wide" id={`${fieldId}-content`} label={copy.content}>
+                <Textarea
+                  id={`${fieldId}-content`}
                   maxLength={4000}
                   onChange={(event) => {
                     setContent(event.target.value);
@@ -418,30 +431,34 @@ export function OutcomeJournalPanel({
                   required
                   value={content}
                 />
-              </label>
-              <label>
-                <span>{copy.reviewId}</span>
-                <input
+              </FormField>
+              <FormField id={`${fieldId}-review-id`} label={copy.reviewId}>
+                <Input
+                  id={`${fieldId}-review-id`}
                   onChange={(event) => {
                     setReviewId(event.target.value);
                     changed();
                   }}
                   value={reviewId}
                 />
-              </label>
-              <label>
-                <span>{copy.portfolioId}</span>
-                <input
+              </FormField>
+              <FormField id={`${fieldId}-portfolio-id`} label={copy.portfolioId}>
+                <Input
+                  id={`${fieldId}-portfolio-id`}
                   onChange={(event) => {
                     setPortfolioId(event.target.value);
                     changed();
                   }}
                   value={portfolioId}
                 />
-              </label>
-              <label className="wide">
-                <span>{copy.simulatedPosition}</span>
-                <input
+              </FormField>
+              <FormField
+                className="wide"
+                id={`${fieldId}-simulated-position`}
+                label={copy.simulatedPosition}
+              >
+                <Input
+                  id={`${fieldId}-simulated-position`}
                   maxLength={160}
                   onChange={(event) => {
                     setSimulatedPositionReference(event.target.value);
@@ -449,12 +466,16 @@ export function OutcomeJournalPanel({
                   }}
                   value={simulatedPositionReference}
                 />
-              </label>
+              </FormField>
 
               {entryKind === "correction" ? (
-                <label className="wide">
-                  <span>{copy.supersededEntry}</span>
-                  <input
+                <FormField
+                  className="wide"
+                  id={`${fieldId}-superseded-entry`}
+                  label={copy.supersededEntry}
+                >
+                  <Input
+                    id={`${fieldId}-superseded-entry`}
                     onChange={(event) => {
                       setSupersedesEntryId(event.target.value);
                       changed();
@@ -462,31 +483,29 @@ export function OutcomeJournalPanel({
                     required
                     value={supersedesEntryId}
                   />
-                </label>
+                </FormField>
               ) : null}
 
               {entryKind === "observed_outcome" ? (
                 <fieldset className="journal-lineage wide">
                   <legend>{copy.sourceLineage}</legend>
-                  <label>
-                    <span>{copy.sourceKind}</span>
-                    <select
-                      onChange={(event) => {
-                        setSourceKind(event.target.value as SourceKind);
+                  <FormField id={`${fieldId}-source-kind`} label={copy.sourceKind}>
+                    <Select
+                      id={`${fieldId}-source-kind`}
+                      onValueChange={(value) => {
+                        setSourceKind(value as SourceKind);
                         changed();
                       }}
                       value={sourceKind}
-                    >
-                      {Object.entries(copy.sourceKinds).map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>{copy.sourceId}</span>
-                    <input
+                      options={Object.entries(copy.sourceKinds).map(([value, label]) => ({
+                        value: value,
+                        label: label,
+                      }))}
+                    />
+                  </FormField>
+                  <FormField id={`${fieldId}-source-id`} label={copy.sourceId}>
+                    <Input
+                      id={`${fieldId}-source-id`}
                       maxLength={160}
                       onChange={(event) => {
                         setSourceId(event.target.value);
@@ -495,10 +514,10 @@ export function OutcomeJournalPanel({
                       required
                       value={sourceId}
                     />
-                  </label>
-                  <label>
-                    <span>{copy.sourceVersion}</span>
-                    <input
+                  </FormField>
+                  <FormField id={`${fieldId}-source-version`} label={copy.sourceVersion}>
+                    <Input
+                      id={`${fieldId}-source-version`}
                       maxLength={80}
                       onChange={(event) => {
                         setSourceVersion(event.target.value);
@@ -506,10 +525,10 @@ export function OutcomeJournalPanel({
                       }}
                       value={sourceVersion}
                     />
-                  </label>
-                  <label>
-                    <span>{copy.sourceObservedAt}</span>
-                    <input
+                  </FormField>
+                  <FormField id={`${fieldId}-source-observed-at`} label={copy.sourceObservedAt}>
+                    <Input
+                      id={`${fieldId}-source-observed-at`}
                       onChange={(event) => {
                         setSourceObservedAt(event.target.value);
                         changed();
@@ -518,10 +537,14 @@ export function OutcomeJournalPanel({
                       type="datetime-local"
                       value={sourceObservedAt}
                     />
-                  </label>
-                  <label className="wide">
-                    <span>{copy.sourceChecksum}</span>
-                    <input
+                  </FormField>
+                  <FormField
+                    className="wide"
+                    id={`${fieldId}-source-checksum`}
+                    label={copy.sourceChecksum}
+                  >
+                    <Input
+                      id={`${fieldId}-source-checksum`}
                       dir="ltr"
                       onChange={(event) => {
                         setSourceChecksum(event.target.value);
@@ -531,11 +554,11 @@ export function OutcomeJournalPanel({
                       required
                       value={sourceChecksum}
                     />
-                  </label>
+                  </FormField>
                 </fieldset>
               ) : null}
             </div>
-            <button
+            <Button
               className="primary-button"
               disabled={
                 submitting ||
@@ -548,13 +571,11 @@ export function OutcomeJournalPanel({
             >
               <Plus aria-hidden="true" size={16} />
               {submitting ? copy.saving : copy.create}
-            </button>
+            </Button>
           </form>
 
           {operationError ? (
-            <p className="form-error" role="alert">
-              {copy.operationError}
-            </p>
+            <FieldError className="form-error">{copy.operationError}</FieldError>
           ) : null}
         </div>
       ) : null}

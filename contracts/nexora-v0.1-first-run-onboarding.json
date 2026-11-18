@@ -1,0 +1,31 @@
+{
+  "schema_version": "nexora-first-run-onboarding-v1",
+  "decision_id": "NEX-P4-03",
+  "status": "candidate",
+  "p4_02_prerequisite": {
+    "freeze_commit_sha": "077e2abde51367235bd425421ac1f24f2f7ed142",
+    "freeze_record_path": "artifacts/p4-02/platform-shell-freeze.json",
+    "freeze_record_checksum": "bb5885b69dc6526ee22adde1f7ccdf0e1a882e4a6567d2cb380894a59317221d",
+    "successful_ci_run_id": 44324072191
+  },
+  "route": "/{locale}/onboarding",
+  "entry": "authenticated_empty_portfolio_registry",
+  "steps": ["base_asset", "portfolio", "optional_account", "review"],
+  "registry_endpoints": ["/api/v1/assets", "/api/v1/portfolios", "/api/v1/accounts"],
+  "confirmation_required_before_writes": true,
+  "retry": {
+    "owner_scoped_tab_draft": true,
+    "reuse_keys_when_retrying": true,
+    "confirm_exact_resource_before_reusing": true,
+    "resume_after_passkey_login": true
+  },
+  "boundary": {
+    "credentials_collected": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-03-FREEZE",
+    "post_freeze_stage": "NEX-P4-04"
+  }
+}

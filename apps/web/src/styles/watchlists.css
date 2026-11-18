@@ -1,0 +1,89 @@
+.watchlist-panel {
+  @apply mt-6 [padding:clamp(1rem,_3vw,_1.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+
+.watchlist-panel .section-heading {
+  @apply flex items-start justify-between gap-4;
+}
+
+.watchlist-panel .section-heading > svg {
+  @apply text-nx-primary;
+}
+
+.watchlist-panel .section-heading + .watchlist-state,
+.watchlist-workspace {
+  @apply mt-4;
+}
+
+.watchlist-state {
+  @apply flex items-center gap-3 p-4 rounded-nx-md [background:var(--nx-surface-raised)] text-nx-text-muted;
+}
+
+.watchlist-state.error {
+  @apply text-nx-warning;
+}
+
+.watchlist-state .secondary-button {
+  @apply ms-auto;
+}
+
+.watchlist-create {
+  @apply grid [grid-template-columns:minmax(12rem,_1fr)_auto] [align-items:end] gap-3;
+}
+
+.watchlist-selector {
+  @apply flex [align-items:end] justify-between gap-4 mt-4 p-[0.85rem] rounded-nx-md [background:var(--nx-primary-soft)];
+}
+
+.watchlist-selector .nx-field {
+  @apply [min-width:min(100%,_20rem)];
+}
+
+.watchlist-selector small {
+  @apply text-nx-text-muted;
+}
+
+.watchlist-columns {
+  @apply grid grid-cols-2 gap-4 mt-4;
+}
+
+.watchlist-card {
+  @apply min-w-0 p-4 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.watchlist-card h3 {
+  @apply mt-0;
+}
+
+.watchlist-card > p {
+  @apply text-nx-text-muted;
+}
+
+.watchlist-items {
+  @apply grid gap-[0.55rem] [margin:0_0_1rem] p-0 [list-style:none];
+}
+
+.watchlist-items li {
+  @apply grid [grid-template-columns:auto_minmax(0,_1fr)] items-center [gap:0.35rem_0.65rem] p-[0.65rem];
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)];
+}
+
+.watchlist-items code {
+  @apply [grid-column:2] text-nx-text-muted wrap-anywhere;
+}
+
+.watchlist-form {
+  @apply grid gap-3;
+}
+
+.watchlist-checkbox {
+  @apply justify-self-start;
+}
+
+.watchlist-boundary {
+  @apply [margin:1rem_0_0] p-[0.85rem] [border-inline-start:3px_solid_var(--nx-primary)] [background:var(--nx-primary-soft)];
+  @apply text-nx-text-muted [line-height:1.55];
+}

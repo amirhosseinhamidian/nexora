@@ -211,7 +211,7 @@ def validate_runtime_markers() -> None:
     workspace = (ROOT / "apps/web/src/components/workspace-view.tsx").read_text(encoding="utf-8")
     navigation = (ROOT / "apps/web/src/components/workspace-navigation.tsx").read_text(encoding="utf-8")
     client = (ROOT / "apps/web/src/lib/api-client.ts").read_text(encoding="utf-8")
-    styles = (ROOT / "apps/web/src/app/globals.css").read_text(encoding="utf-8")
+    styles = (ROOT / "apps/web/src/styles/portfolio-dashboard.css").read_text(encoding="utf-8")
     english = _json(ROOT / "apps/web/messages/en.json")
     persian = _json(ROOT / "apps/web/messages/fa.json")
     browser = (ROOT / "apps/web/tests/e2e/authenticated-shell.spec.ts").read_text(encoding="utf-8")
@@ -236,7 +236,7 @@ def validate_runtime_markers() -> None:
     _require('segment: "portfolios"' in navigation, "portfolio and account navigation is not enabled")
     for marker in ('cache: "no-store"', 'credentials: "same-origin"', "signal: options.signal"):
         _require(marker in client, f"API client marker missing: {marker}")
-    for marker in (".portfolio-metric-grid", ".portfolio-detail-grid", ".account-grid", "min-height: 2.75rem"):
+    for marker in (".portfolio-metric-grid", ".portfolio-detail-grid", ".account-grid", "min-h-11"):
         _require(marker in styles, f"responsive dashboard style missing: {marker}")
     for locale, dictionary in (("en", english), ("fa", persian)):
         dashboard = dictionary.get("portfolioDashboard")

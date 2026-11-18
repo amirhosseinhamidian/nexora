@@ -1,0 +1,168 @@
+.nx-button,
+.nx-input,
+.nx-choice,
+.nx-switch {
+  @apply [font:inherit];
+}
+.nx-button {
+  @apply inline-flex items-center justify-center gap-[var(--nx-space-2)] px-[var(--nx-space-4)] [border:1px_solid_transparent];
+  @apply rounded-nx-md [font-weight:750] [line-height:1] cursor-pointer;
+  @apply [transition:background-color_160ms_ease,_border-color_160ms_ease,_color_160ms_ease,_transform_160ms_ease];
+}
+.nx-button:hover:not(:disabled) {
+  @apply [transform:translateY(-1px)];
+}
+.nx-button:active:not(:disabled) {
+  @apply [transform:translateY(0)];
+}
+.nx-button:disabled {
+  @apply cursor-not-allowed opacity-[0.55];
+}
+.nx-icon-button {
+  @apply inline-[var(--nx-control-md)] px-0;
+}
+.nx-button--primary {
+  @apply [background:var(--nx-primary)] [color:#041612];
+}
+.nx-button--primary:hover:not(:disabled) {
+  @apply [background:var(--nx-primary-strong)] text-nx-surface;
+}
+.nx-button--secondary {
+  @apply border-nx-border [background:var(--nx-surface)] text-nx-text;
+}
+.nx-button--secondary:hover:not(:disabled),
+.nx-button--ghost:hover:not(:disabled) {
+  @apply border-nx-primary [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+.nx-button--ghost {
+  @apply [background:transparent] text-nx-text-muted;
+}
+.nx-button--danger {
+  @apply [background:var(--nx-danger)] [color:#fff];
+}
+.nx-button--danger:hover:not(:disabled) {
+  @apply [background:color-mix(in_srgb,_var(--nx-danger)_82%,_#000)];
+}
+.nx-control--sm {
+  @apply min-block-[var(--nx-control-sm)] text-[length:0.82rem];
+}
+.nx-control--md {
+  @apply min-block-[var(--nx-control-md)] text-[length:0.92rem];
+}
+.nx-control--lg {
+  @apply min-block-[var(--nx-control-lg)] text-[length:1rem];
+}
+.nx-field {
+  @apply grid gap-[var(--nx-space-2)];
+}
+.nx-field__label-row {
+  @apply flex items-baseline justify-between gap-[var(--nx-space-3)];
+}
+.nx-field__label-row label {
+  @apply text-nx-text text-[length:0.88rem];
+  @apply [font-weight:750];
+}
+.nx-field__label-row span,
+.nx-field__description,
+.nx-field__error {
+  @apply m-0 text-[length:0.78rem] [line-height:1.55];
+}
+.nx-field__label-row span,
+.nx-field__description {
+  @apply text-nx-text-muted;
+}
+.nx-field__error {
+  @apply text-nx-danger;
+}
+.nx-input {
+  @apply inline-full min-block-[var(--nx-control-md)] [padding:0.65rem_0.8rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)] text-nx-text [transition:border-color_160ms_ease,_box-shadow_160ms_ease];
+}
+.nx-input::placeholder {
+  @apply [color:color-mix(in_srgb,_var(--nx-text-muted)_75%,_transparent)];
+}
+.nx-input:hover:not(:disabled) {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-primary)_65%,_var(--nx-border))];
+}
+.nx-input:focus {
+  @apply border-nx-focus [box-shadow:0_0_0_3px_color-mix(in_srgb,_var(--nx-focus)_16%,_transparent)] [outline:none];
+}
+.nx-input:disabled {
+  @apply cursor-not-allowed opacity-[0.58];
+}
+.nx-field[data-invalid] .nx-input,
+.nx-input[aria-invalid="true"] {
+  @apply border-nx-danger;
+}
+.nx-textarea {
+  @apply min-block-28 resize-y;
+}
+.nx-select {
+  @apply flex min-inline-0 items-center justify-between gap-3 text-start cursor-pointer;
+}
+.nx-select__value {
+  @apply min-inline-0 truncate;
+}
+.nx-select__chevron {
+  @apply size-2 shrink-0 me-1 [border:solid_currentColor] [border-width:0_1.5px_1.5px_0] rotate-45 -translate-y-px;
+}
+.nx-select[aria-expanded="true"] .nx-select__chevron {
+  @apply -rotate-[135deg] translate-y-px;
+}
+.nx-select__list {
+  @apply fixed z-[130] m-0 [right:auto] [left:var(--nx-select-left)] [top:var(--nx-select-top)] [bottom:var(--nx-select-bottom)];
+  @apply w-[var(--nx-select-width)] max-h-[min(18rem,var(--nx-select-height))] overflow-y-auto overscroll-contain;
+  @apply list-none p-1 rounded-nx-md border border-nx-border bg-nx-surface text-nx-text [box-shadow:var(--nx-shadow)];
+}
+.nx-select__option {
+  @apply flex min-h-10 items-center justify-between gap-2 rounded-nx-sm px-3 py-2 cursor-pointer;
+}
+.nx-select__option-text {
+  @apply grid min-inline-0 gap-1 wrap-anywhere;
+}
+.nx-select__option-text small {
+  @apply text-nx-text-muted;
+}
+.nx-select__option[aria-selected="true"] {
+  @apply font-semibold text-nx-primary-strong;
+}
+.nx-select__option[data-active],
+.nx-select__option:hover:not([aria-disabled="true"]) {
+  @apply bg-nx-primary-soft outline outline-1 -outline-offset-1 outline-nx-focus;
+}
+.nx-select__option[aria-disabled="true"] {
+  @apply text-nx-text-muted opacity-65 cursor-not-allowed;
+}
+.nx-search-input {
+  @apply rounded-[999px];
+}
+.nx-choice,
+.nx-switch {
+  @apply inline-flex items-center gap-[var(--nx-space-2)] text-nx-text cursor-pointer;
+}
+.nx-choice input {
+  @apply inline-[1.1rem] block-[1.1rem] m-0 [accent-color:var(--nx-primary-strong)];
+}
+.nx-switch input {
+  @apply absolute inline-[1px] block-[1px] overflow-hidden [clip-path:inset(50%)];
+}
+.nx-switch__track {
+  @apply inline-flex inline-[2.6rem] block-6 [flex:0_0_auto] items-center p-[0.15rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-[999px] [background:var(--nx-surface-raised)] [transition:background-color_160ms_ease];
+}
+.nx-switch__track > span {
+  @apply inline-[1.05rem] block-[1.05rem] [border-radius:50%] [background:var(--nx-text-muted)] [transition:transform_160ms_ease];
+}
+.nx-switch input:checked + .nx-switch__track {
+  @apply border-nx-primary [background:var(--nx-primary-soft)];
+}
+.nx-switch input:checked + .nx-switch__track > span {
+  @apply [background:var(--nx-primary-strong)] [transform:translateX(1.05rem)];
+}
+[dir="rtl"] .nx-switch input:checked + .nx-switch__track > span {
+  @apply [transform:translateX(-1.05rem)];
+}
+.nx-switch input:focus-visible + .nx-switch__track {
+  @apply [outline:3px_solid_color-mix(in_srgb,_var(--nx-focus)_55%,_transparent)];
+  @apply [outline-offset:2px];
+}

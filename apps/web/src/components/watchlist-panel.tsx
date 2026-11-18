@@ -1,8 +1,20 @@
 "use client";
 
-import { Binoculars, LoaderCircle, Plus, RefreshCw, Save, ShieldAlert } from "lucide-react";
+import {
+  Alert,
+  EmptyState,
+  ResponsiveRecordList,
+  Button,
+  Checkbox,
+  FieldError,
+  FormField,
+  Input,
+  Select,
+  Spinner,
+} from "@nexora/ui/primitives";
+import { Binoculars, Plus, RefreshCw, Save, ShieldAlert } from "lucide-react";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useId, useCallback, useEffect, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -64,6 +76,7 @@ function isWatchlist(value: unknown): value is Watchlist {
 }
 
 export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
+  const fieldId = useId();
   const copy = dictionary.watchlists;
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -209,25 +222,30 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
       </div>
 
       {loading ? (
-        <div className="watchlist-state" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={22} />
+        <Alert className="watchlist-state" role="status">
+          <Spinner label="" />
           {copy.loading}
-        </div>
+        </Alert>
       ) : error ? (
-        <div className="watchlist-state error" role="alert">
+        <Alert tone="danger" className="watchlist-state error" role="alert">
           <ShieldAlert aria-hidden="true" size={22} />
           <span>{copy.error}</span>
-          <button className="secondary-button" onClick={() => void load()} type="button">
+          <Button
+            variant="secondary"
+            className="secondary-button"
+            onClick={() => void load()}
+            type="button"
+          >
             <RefreshCw aria-hidden="true" size={16} />
             {copy.retry}
-          </button>
-        </div>
+          </Button>
+        </Alert>
       ) : (
         <div className="watchlist-workspace">
           <form className="watchlist-create" onSubmit={(event) => void createWatchlist(event)}>
-            <label>
-              <span>{copy.name}</span>
-              <input
+            <FormField id={`${fieldId}-name`} label={copy.name}>
+              <Input
+                id={`${fieldId}-name`}
                 maxLength={120}
                 onChange={(event) => {
                   setName(event.target.value);
@@ -237,37 +255,36 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                 required
                 value={name}
               />
-            </label>
-            <button className="primary-button" disabled={submitting || !name.trim()} type="submit">
+            </FormField>
+            <Button className="primary-button" disabled={submitting || !name.trim()} type="submit">
               <Plus aria-hidden="true" size={16} />
               {submitting && pending?.operationKey === "create" ? copy.saving : copy.create}
-            </button>
+            </Button>
           </form>
 
           {watchlists.length === 0 ? (
-            <div className="empty-state-card">
-              <Binoculars aria-hidden="true" size={28} />
-              <div>
-                <h2>{copy.emptyTitle}</h2>
-                <p>{copy.emptyDescription}</p>
-              </div>
-            </div>
+            <EmptyState
+              className="empty-state-card"
+              headingLevel={2}
+              icon={<Binoculars aria-hidden="true" size={28} />}
+              title={copy.emptyTitle}
+            >
+              <p>{copy.emptyDescription}</p>
+            </EmptyState>
           ) : selected ? (
             <>
               <div className="watchlist-selector">
-                <label>
-                  <span>{copy.select}</span>
-                  <select
-                    onChange={(event) => setSelectedId(event.target.value)}
+                <FormField id={`${fieldId}-select`} label={copy.select}>
+                  <Select
+                    id={`${fieldId}-select`}
+                    onValueChange={(value) => setSelectedId(value)}
                     value={selected.watchlist_id}
-                  >
-                    {watchlists.map((item) => (
-                      <option key={item.watchlist_id} value={item.watchlist_id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    options={watchlists.map((item) => ({
+                      value: item.watchlist_id,
+                      label: item.name,
+                    }))}
+                  />
+                </FormField>
                 <small>
                   {copy.version.replace("{version}", String(selected.row_version))} · {copy.updated}{" "}
                   {new Intl.DateTimeFormat(locale, {
@@ -281,7 +298,7 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                 <section aria-label={copy.itemsTitle} className="watchlist-card">
                   <h3>{copy.itemsTitle}</h3>
                   {selected.items.length ? (
-                    <ul className="watchlist-items">
+                    <ResponsiveRecordList className="watchlist-items" label={copy.itemsTitle}>
                       {selected.items.map((item) => (
                         <li key={item.watchlist_item_id}>
                           <span className="evidence-state">{copy.itemKinds[item.item_kind]}</span>
@@ -289,30 +306,28 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                           {item.label ? <code dir="ltr">{item.reference}</code> : null}
                         </li>
                       ))}
-                    </ul>
+                    </ResponsiveRecordList>
                   ) : (
                     <p>{copy.noItems}</p>
                   )}
                   <form className="watchlist-form" onSubmit={(event) => void addItem(event)}>
-                    <label>
-                      <span>{copy.itemKind}</span>
-                      <select
-                        onChange={(event) => {
-                          setItemKind(event.target.value as ItemKind);
+                    <FormField id={`${fieldId}-item-kind`} label={copy.itemKind}>
+                      <Select
+                        id={`${fieldId}-item-kind`}
+                        onValueChange={(value) => {
+                          setItemKind(value as ItemKind);
                           changed(`item:${selected.watchlist_id}`);
                         }}
                         value={itemKind}
-                      >
-                        {Object.entries(copy.itemKinds).map(([value, text]) => (
-                          <option key={value} value={value}>
-                            {text}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{copy.reference}</span>
-                      <input
+                        options={Object.entries(copy.itemKinds).map(([value, text]) => ({
+                          value: value,
+                          label: text,
+                        }))}
+                      />
+                    </FormField>
+                    <FormField id={`${fieldId}-reference`} label={copy.reference}>
+                      <Input
+                        id={`${fieldId}-reference`}
                         maxLength={160}
                         onChange={(event) => {
                           setReference(event.target.value);
@@ -321,10 +336,10 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                         required
                         value={reference}
                       />
-                    </label>
-                    <label>
-                      <span>{copy.label}</span>
-                      <input
+                    </FormField>
+                    <FormField id={`${fieldId}-label`} label={copy.label}>
+                      <Input
+                        id={`${fieldId}-label`}
                         maxLength={120}
                         onChange={(event) => {
                           setLabel(event.target.value);
@@ -332,15 +347,16 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                         }}
                         value={label}
                       />
-                    </label>
-                    <button
+                    </FormField>
+                    <Button
+                      variant="secondary"
                       className="secondary-button"
                       disabled={submitting || !reference.trim()}
                       type="submit"
                     >
                       <Plus aria-hidden="true" size={16} />
                       {copy.addItem}
-                    </button>
+                    </Button>
                   </form>
                 </section>
 
@@ -350,53 +366,48 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
                     className="watchlist-form"
                     onSubmit={(event) => void updatePreferences(event)}
                   >
-                    <label>
-                      <span>{copy.presentationOrder}</span>
-                      <select
-                        onChange={(event) => {
-                          setPresentationOrder(event.target.value as PresentationOrder);
+                    <FormField id={`${fieldId}-presentation-order`} label={copy.presentationOrder}>
+                      <Select
+                        id={`${fieldId}-presentation-order`}
+                        onValueChange={(value) => {
+                          setPresentationOrder(value as PresentationOrder);
                           changed(`preferences:${selected.watchlist_id}`);
                         }}
                         value={presentationOrder}
-                      >
-                        {Object.entries(copy.presentationOrders).map(([value, text]) => (
-                          <option key={value} value={value}>
-                            {text}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      <span>{copy.minimumSeverity}</span>
-                      <select
-                        onChange={(event) => {
-                          setMinimumSeverity(event.target.value as MinimumSeverity);
+                        options={Object.entries(copy.presentationOrders).map(([value, text]) => ({
+                          value: value,
+                          label: text,
+                        }))}
+                      />
+                    </FormField>
+                    <FormField id={`${fieldId}-minimum-severity`} label={copy.minimumSeverity}>
+                      <Select
+                        id={`${fieldId}-minimum-severity`}
+                        onValueChange={(value) => {
+                          setMinimumSeverity(value as MinimumSeverity);
                           changed(`preferences:${selected.watchlist_id}`);
                         }}
                         value={minimumSeverity}
-                      >
-                        {Object.entries(copy.severities).map(([value, text]) => (
-                          <option key={value} value={value}>
-                            {text}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="watchlist-checkbox">
-                      <input
-                        checked={includeResolved}
-                        onChange={(event) => {
-                          setIncludeResolved(event.target.checked);
-                          changed(`preferences:${selected.watchlist_id}`);
-                        }}
-                        type="checkbox"
+                        options={Object.entries(copy.severities).map(([value, text]) => ({
+                          value: value,
+                          label: text,
+                        }))}
                       />
-                      <span>{copy.includeResolved}</span>
-                    </label>
-                    <button className="primary-button" disabled={submitting} type="submit">
+                    </FormField>
+                    <Checkbox
+                      className="watchlist-checkbox"
+                      checked={includeResolved}
+                      onChange={(event) => {
+                        setIncludeResolved(event.target.checked);
+                        changed(`preferences:${selected.watchlist_id}`);
+                      }}
+                    >
+                      {copy.includeResolved}
+                    </Checkbox>
+                    <Button className="primary-button" disabled={submitting} type="submit">
                       <Save aria-hidden="true" size={16} />
                       {copy.savePreferences}
-                    </button>
+                    </Button>
                   </form>
                 </section>
               </div>
@@ -404,9 +415,7 @@ export function WatchlistPanel({ dictionary, locale }: { dictionary: Dictionary;
           ) : null}
 
           {operationError ? (
-            <p className="form-error" role="alert">
-              {copy.operationError}
-            </p>
+            <FieldError className="form-error">{copy.operationError}</FieldError>
           ) : null}
           <p className="watchlist-boundary">{copy.boundary}</p>
         </div>

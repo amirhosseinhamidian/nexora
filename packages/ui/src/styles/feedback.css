@@ -1,0 +1,79 @@
+.nx-alert,
+.nx-toast,
+.nx-state-panel {
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+.nx-alert {
+  @apply flex gap-[var(--nx-space-3)] p-[var(--nx-space-4)] [line-height:1.65];
+}
+.nx-tone--info {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-info)_45%,_var(--nx-border))] [background:var(--nx-info-soft)];
+}
+.nx-tone--success {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-success)_45%,_var(--nx-border))] [background:var(--nx-success-soft)];
+}
+.nx-tone--warning {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-warning)_48%,_var(--nx-border))] [background:var(--nx-warning-soft)];
+}
+.nx-tone--danger {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-danger)_48%,_var(--nx-border))] [background:var(--nx-danger-soft)];
+}
+.nx-toast-region {
+  @apply fixed z-120 inset-bs-[var(--nx-space-4)];
+  @apply end-[var(--nx-space-4)] grid [inline-size:min(24rem,_calc(100vw_-_2rem))] gap-[var(--nx-space-3)] pointer-events-none;
+}
+.nx-toast {
+  @apply flex items-start justify-between gap-[var(--nx-space-3)] p-[var(--nx-space-4)] [box-shadow:0_1rem_2.5rem_rgb(3_14_24_/_0.16)];
+  @apply pointer-events-auto;
+}
+.nx-toast p {
+  @apply [margin:var(--nx-space-1)_0_0] text-nx-text-muted text-[length:0.82rem] [line-height:1.55];
+}
+.nx-progress {
+  @apply grid gap-[var(--nx-space-2)];
+}
+.nx-progress__label {
+  @apply flex justify-between gap-[var(--nx-space-3)] text-nx-text-muted text-[length:0.78rem];
+}
+.nx-progress__track {
+  @apply block-2 overflow-hidden rounded-[999px] [background:var(--nx-surface-raised)];
+}
+.nx-progress__track > span {
+  @apply block block-full inline-[var(--nx-progress-size)] [border-radius:inherit] [background:var(--nx-primary)];
+}
+.nx-progress__track > .indeterminate {
+  @apply [animation:nx-progress_1.1s_ease-in-out_infinite_alternate];
+}
+.nx-spinner {
+  @apply inline-grid place-items-center;
+}
+.nx-spinner > span {
+  @apply inline-5 block-5 [border:2px_solid_currentColor];
+  @apply [border-inline-end-color:transparent];
+  @apply [border-radius:50%] [animation:nx-spin_700ms_linear_infinite];
+}
+.nx-spinner--sm > span {
+  @apply inline-[0.95rem] block-[0.95rem];
+}
+.nx-spinner--lg > span {
+  @apply inline-7 block-7 [border-width:3px];
+}
+.nx-skeleton {
+  @apply block min-block-4 overflow-hidden rounded-nx-sm;
+  @apply [background:linear-gradient(_100deg,_var(--nx-surface-raised)_30%,_color-mix(in_srgb,_var(--nx-border)_70%,_var(--nx-surface))_50%,_var(--nx-surface-raised)_70%_)];
+  @apply [background-size:220%_100%] [animation:nx-skeleton_1.3s_ease-in-out_infinite];
+}
+.nx-state-panel {
+  @apply flex items-start justify-between gap-[var(--nx-space-5)] p-[var(--nx-space-5)];
+}
+.nx-state-panel :is(h2, h3),
+.nx-state-panel p {
+  @apply m-0;
+}
+.nx-state-panel :is(h2, h3) + div {
+  @apply mbs-[var(--nx-space-2)] text-nx-text-muted [line-height:1.65];
+}
+.nx-state-panel__content {
+  @apply min-w-0 flex-1;
+}

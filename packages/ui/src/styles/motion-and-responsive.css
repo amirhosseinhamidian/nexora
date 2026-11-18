@@ -1,0 +1,77 @@
+@keyframes nx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes nx-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(285%);
+  }
+}
+@keyframes nx-skeleton {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (max-width: 42rem) {
+  .nx-state-panel {
+    @apply items-stretch flex-col;
+  }
+
+  .nx-comparison dl {
+    @apply grid-cols-[1fr];
+  }
+
+  .nx-overlay__footer {
+    @apply items-stretch flex-col-reverse;
+  }
+
+  .nx-overlay__footer .nx-button {
+    @apply inline-full;
+  }
+
+  .nx-table--responsive thead {
+    @apply absolute inline-[1px] block-[1px] overflow-hidden [clip-path:inset(50%)];
+  }
+
+  .nx-table--responsive,
+  .nx-table--responsive tbody,
+  .nx-table--responsive tr,
+  .nx-table--responsive td {
+    @apply block inline-full;
+  }
+
+  .nx-table--responsive tr {
+    @apply p-[var(--nx-space-3)] [border-block-end:1px_solid_var(--nx-border)];
+  }
+
+  .nx-table--responsive td {
+    @apply flex justify-between gap-[var(--nx-space-4)] p-[var(--nx-space-2)] [border:0];
+  }
+
+  .nx-table--responsive td::before {
+    @apply [content:attr(data-label)] text-nx-text-muted [font-weight:750];
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-button,
+  .nx-input,
+  .nx-switch__track,
+  .nx-switch__track > span,
+  .nx-tooltip__content {
+    @apply [transition:none];
+  }
+
+  .nx-progress__track > .indeterminate,
+  .nx-spinner > span,
+  .nx-skeleton {
+    @apply [animation-duration:1ms];
+    @apply [animation-iteration-count:1];
+  }
+}

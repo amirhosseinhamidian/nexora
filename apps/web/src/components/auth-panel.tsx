@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, FieldError, FormField, Input } from "@nexora/ui/primitives";
 import type {
   AuthenticationOptionsResponse,
   BootstrapCompleteResponse,
@@ -21,6 +22,7 @@ type AuthPanelProps = {
   dictionary: Dictionary;
   locale: Locale;
   mode: "bootstrap" | "login";
+  resumeOnboarding?: boolean;
 };
 
 function errorMessage(error: unknown, dictionary: Dictionary["auth"]): string {
@@ -34,7 +36,7 @@ function errorMessage(error: unknown, dictionary: Dictionary["auth"]): string {
   return dictionary.failed;
 }
 
-export function AuthPanel({ dictionary, locale, mode }: AuthPanelProps) {
+export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPanelProps) {
   const router = useRouter();
   const [bootstrapToken, setBootstrapToken] = useState("");
   const [busy, setBusy] = useState(false);
@@ -56,7 +58,7 @@ export function AuthPanel({ dictionary, locale, mode }: AuthPanelProps) {
         method: "POST",
         signalSessionExpiry: false,
       });
-      router.replace(`/${locale}`);
+      router.replace(resumeOnboarding ? `/${locale}/onboarding` : `/${locale}`);
       router.refresh();
     } catch (caught) {
       setError(errorMessage(caught, auth));
@@ -131,10 +133,10 @@ export function AuthPanel({ dictionary, locale, mode }: AuthPanelProps) {
             <>
               <h1>{auth.loginTitle}</h1>
               <p className="auth-description">{auth.loginDescription}</p>
-              <button className="primary-button" disabled={busy} onClick={login} type="button">
+              <Button className="primary-button" disabled={busy} onClick={login} type="button">
                 <Fingerprint aria-hidden="true" size={19} />
                 {busy ? auth.working : auth.loginAction}
-              </button>
+              </Button>
               <Link className="text-link" href={`/${locale}/bootstrap`}>
                 {auth.bootstrapLink}
               </Link>
@@ -143,21 +145,20 @@ export function AuthPanel({ dictionary, locale, mode }: AuthPanelProps) {
             <>
               <h1>{auth.bootstrapTitle}</h1>
               <p className="auth-description">{auth.bootstrapDescription}</p>
-              <label className="field-label" htmlFor="bootstrap-token">
-                {auth.bootstrapToken}
-              </label>
-              <div className="secure-input">
-                <KeyRound aria-hidden="true" size={19} />
-                <input
-                  autoComplete="off"
-                  id="bootstrap-token"
-                  onChange={(event) => setBootstrapToken(event.target.value.trim())}
-                  spellCheck={false}
-                  type="password"
-                  value={bootstrapToken}
-                />
-              </div>
-              <button
+              <FormField id="bootstrap-token" label={auth.bootstrapToken}>
+                <div className="secure-input">
+                  <KeyRound aria-hidden="true" size={19} />
+                  <Input
+                    autoComplete="off"
+                    id="bootstrap-token"
+                    onChange={(event) => setBootstrapToken(event.target.value.trim())}
+                    spellCheck={false}
+                    type="password"
+                    value={bootstrapToken}
+                  />
+                </div>
+              </FormField>
+              <Button
                 className="primary-button"
                 disabled={busy || bootstrapToken.length < 32}
                 onClick={bootstrap}
@@ -165,17 +166,13 @@ export function AuthPanel({ dictionary, locale, mode }: AuthPanelProps) {
               >
                 <Fingerprint aria-hidden="true" size={19} />
                 {busy ? auth.working : auth.bootstrapAction}
-              </button>
+              </Button>
               <Link className="text-link" href={`/${locale}/login`}>
                 {auth.loginLink}
               </Link>
             </>
           )}
-          {error ? (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {error ? <FieldError className="form-error">{error}</FieldError> : null}
         </section>
       </main>
     </div>

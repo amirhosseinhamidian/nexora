@@ -9,10 +9,12 @@ import {
   FormField,
   Input,
   Progress,
+  Select,
   Switch,
   Table,
   ToastRegion,
 } from "@nexora/ui/primitives";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 describe("shared UI primitives", () => {
@@ -40,6 +42,49 @@ describe("shared UI primitives", () => {
 
     expect(screen.getByRole("checkbox", { name: "Include archived portfolios" })).toBeVisible();
     expect(screen.getByRole("switch", { name: "Compact navigation" })).toBeVisible();
+  });
+
+  it("renders custom selectable options and keeps disabled options out of keyboard navigation", () => {
+    const options = [
+      { label: "Cash", value: "cash" },
+      { label: "Archived", value: "archived", disabled: true },
+      { label: "Brokerage", value: "brokerage", description: "Manual account" },
+    ];
+
+    function AssetSelect() {
+      const [value, setValue] = useState("cash");
+      return (
+        <FormField id="account-kind" label="Account type">
+          <Select id="account-kind" onValueChange={setValue} options={options} value={value} />
+        </FormField>
+      );
+    }
+
+    render(<AssetSelect />);
+    const trigger = screen.getByRole("combobox", { name: "Account type" });
+    expect(trigger).toHaveTextContent("Cash");
+    fireEvent.click(trigger);
+    const listbox = screen.getByRole("listbox", { name: "Account type" });
+    expect(listbox).toBeVisible();
+    expect(listbox).toHaveAttribute("aria-labelledby", screen.getByText("Account type").id);
+    expect(trigger).toHaveAttribute("aria-controls", listbox.id);
+    expect(screen.getByRole("option", { name: "Cash" })).toHaveAttribute("aria-selected", "true");
+    const archived = screen.getByRole("option", { name: "Archived" });
+    expect(archived).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(archived);
+    expect(trigger).toHaveTextContent("Cash");
+
+    const brokerage = screen.getByRole("option", { name: /Brokerage/ });
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+    expect(trigger).toHaveAttribute("aria-activedescendant", brokerage.id);
+    fireEvent.keyDown(trigger, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(trigger).toHaveTextContent("Cash");
+
+    fireEvent.keyDown(trigger, { key: "b" });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    expect(trigger).toHaveTextContent("Brokerage");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("announces transient and persistent feedback with appropriate roles", () => {
@@ -126,7 +171,7 @@ describe("shared UI primitives", () => {
         }
         title="Allocation"
       >
-        <svg />
+        <svg aria-label="Allocation graphic" role="img" />
       </ChartContainer>,
     );
 
@@ -134,6 +179,7 @@ describe("shared UI primitives", () => {
       "Allocation across asset classes",
     );
     expect(screen.getByRole("table", { name: "Allocation values" })).toHaveTextContent("25%");
+    expect(screen.queryByRole("img", { name: "Allocation graphic" })).not.toBeInTheDocument();
   });
 
   it("renders reusable empty states with actions", () => {

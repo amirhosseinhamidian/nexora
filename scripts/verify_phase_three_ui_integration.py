@@ -15,7 +15,7 @@ DECISION_PATH = ROOT / "apps/web/src/components/decision-feed.tsx"
 JOURNAL_PATH = ROOT / "apps/web/src/components/outcome-journal-panel.tsx"
 ALERT_PATH = ROOT / "apps/web/src/components/alert-inbox.tsx"
 WATCHLIST_PATH = ROOT / "apps/web/src/components/watchlist-panel.tsx"
-STYLES_PATH = ROOT / "apps/web/src/app/globals.css"
+STYLES_DIR = ROOT / "apps/web/src/styles"
 E2E_PATH = ROOT / "apps/web/tests/e2e/authenticated-shell.spec.ts"
 WORKFLOW_PATH = ROOT / ".github/workflows/phase-three-ui-integration.yml"
 P3_11_ACCEPTED_SHA = "306f2d1141bec65386c961e9fe36f9ab193fee3c"
@@ -167,7 +167,10 @@ def validate_runtime_markers() -> None:
     journal = JOURNAL_PATH.read_text(encoding="utf-8")
     alert = ALERT_PATH.read_text(encoding="utf-8")
     watchlist = WATCHLIST_PATH.read_text(encoding="utf-8")
-    styles = STYLES_PATH.read_text(encoding="utf-8")
+    styles = "\n".join(
+        (STYLES_DIR / name).read_text(encoding="utf-8")
+        for name in ("shell.css", "decision-experience.css", "outcome-journal.css")
+    )
     english = load_json(ROOT / "apps/web/messages/en.json")
     persian = load_json(ROOT / "apps/web/messages/fa.json")
 
@@ -213,7 +216,7 @@ def validate_runtime_markers() -> None:
             require(marker in component, f"explicit UI state missing: {marker}")
     for marker in (
         ":focus-visible",
-        "min-block-size: 2.75rem",
+        "min-block-11",
         "prefers-reduced-motion: reduce",
         ".decision-experience",
     ):

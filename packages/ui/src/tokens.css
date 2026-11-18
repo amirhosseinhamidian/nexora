@@ -1,5 +1,32 @@
+@theme inline {
+  --color-nx-bg: var(--nx-bg);
+  --color-nx-sidebar: var(--nx-sidebar);
+  --color-nx-surface: var(--nx-surface);
+  --color-nx-surface-raised: var(--nx-surface-raised);
+  --color-nx-border: var(--nx-border);
+  --color-nx-text: var(--nx-text);
+  --color-nx-text-muted: var(--nx-text-muted);
+  --color-nx-primary: var(--nx-primary);
+  --color-nx-primary-strong: var(--nx-primary-strong);
+  --color-nx-primary-soft: var(--nx-primary-soft);
+  --color-nx-info: var(--nx-info);
+  --color-nx-success: var(--nx-success);
+  --color-nx-warning: var(--nx-warning);
+  --color-nx-danger: var(--nx-danger);
+  --color-nx-info-soft: var(--nx-info-soft);
+  --color-nx-success-soft: var(--nx-success-soft);
+  --color-nx-warning-soft: var(--nx-warning-soft);
+  --color-nx-danger-soft: var(--nx-danger-soft);
+  --color-nx-focus: var(--nx-focus);
+  --radius-nx-sm: var(--nx-radius-sm);
+  --radius-nx-md: var(--nx-radius-md);
+  --radius-nx-lg: var(--nx-radius-lg);
+  --font-nx-en: var(--nx-font-en);
+  --font-nx-fa: var(--nx-font-fa);
+}
+
 :root {
-  color-scheme: light;
+  @apply [color-scheme:light];
   --nx-font-en: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   --nx-font-fa: var(--font-vazirmatn), Vazirmatn, Tahoma, sans-serif;
   --nx-radius-sm: 0.5rem;
@@ -40,7 +67,7 @@
 }
 
 [data-theme="dark"] {
-  color-scheme: dark;
+  @apply [color-scheme:dark];
   --nx-bg: #0b1117;
   --nx-sidebar: #0e161e;
   --nx-surface: #121a22;
@@ -64,21 +91,19 @@
 }
 
 * {
-  box-sizing: border-box;
+  @apply box-border;
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--nx-focus) 55%, transparent);
-  outline-offset: 2px;
+  @apply [outline:3px_solid_color-mix(in_srgb,_var(--nx-focus)_55%,_transparent)];
+  @apply [outline-offset:2px];
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+    @apply [scroll-behavior:auto]! [transition-duration:0.01ms]! [animation-duration:0.01ms]!;
+    @apply [animation-iteration-count:1]!;
   }
 }

@@ -1,0 +1,31 @@
+.decision-experience {
+  @apply min-w-0 mt-6;
+}
+
+.decision-experience-heading {
+  @apply flex items-start justify-between gap-4 [padding:clamp(1rem,_3vw,_1.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+
+.decision-experience-heading h2,
+.decision-experience-heading p {
+  @apply mbe-0;
+}
+
+.decision-experience-heading > svg {
+  @apply [flex:0_0_auto] text-nx-primary;
+}
+
+.decision-context {
+  @apply flex items-center gap-[0.65rem] min-w-0 mt-3 [padding:0.8rem_1rem] [border-inline-start:3px_solid_var(--nx-primary)];
+  @apply rounded-nx-md [background:var(--nx-primary-soft)] text-nx-text-muted;
+}
+
+.decision-context code {
+  @apply text-nx-text wrap-anywhere;
+}
+
+.decision-feed {
+  @apply mt-6 [padding:clamp(1rem,_3vw,_1.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}

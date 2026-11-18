@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert } from "@nexora/ui/primitives";
 import { Workflow } from "lucide-react";
 import { useState } from "react";
 
@@ -31,7 +32,7 @@ export function DecisionExperience({
         <Workflow aria-hidden="true" size={28} />
       </div>
 
-      <div
+      <Alert
         aria-label={copy.activeDecision}
         aria-live="polite"
         className="decision-context"
@@ -43,7 +44,7 @@ export function DecisionExperience({
         ) : (
           <span>{copy.noActiveDecision}</span>
         )}
-      </div>
+      </Alert>
 
       <DecisionFeed
         dictionary={dictionary}

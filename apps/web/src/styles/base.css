@@ -1,0 +1,18 @@
+html,
+body {
+  @apply min-h-full;
+}
+
+body {
+  @apply m-0 [-webkit-font-smoothing:antialiased];
+}
+
+a {
+  @apply [color:inherit] [text-decoration:none];
+}
+
+button,
+input,
+textarea {
+  @apply [font:inherit];
+}

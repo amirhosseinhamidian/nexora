@@ -1,0 +1,140 @@
+@media (max-width: 900px) {
+  .application-shell {
+    @apply block;
+  }
+
+  .sidebar,
+  .topbar .sidebar-toggle {
+    @apply hidden;
+  }
+
+  .topbar .mobile-navigation-toggle {
+    @apply inline-flex;
+  }
+
+  .topbar {
+    @apply [padding:0.8rem_1rem];
+  }
+
+  .metric-grid {
+    @apply grid-cols-[1fr];
+  }
+
+  .portfolio-metric-grid {
+    @apply grid-cols-2;
+  }
+
+  .portfolio-detail-grid {
+    @apply grid-cols-[1fr];
+  }
+
+  .decision-workspace {
+    @apply grid-cols-[1fr];
+  }
+
+  .responsive-data-grid {
+    @apply grid-cols-[1fr];
+  }
+
+  .decision-form {
+    @apply [grid-template-columns:1fr_1fr];
+  }
+
+  .decision-form .secondary-button {
+    @apply col-span-full;
+  }
+}
+
+@media (max-width: 620px) {
+  .mode-pill {
+    @apply hidden;
+  }
+
+  .environment-label {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  .environment-pill {
+    @apply min-inline-0;
+  }
+
+  .environment-pill .status-dot {
+    @apply [flex:0_0_auto];
+  }
+
+  .page-heading {
+    @apply grid;
+  }
+
+  .ready-badge {
+    @apply w-[fit-content];
+  }
+
+  .boundary-list {
+    @apply grid-cols-[1fr];
+  }
+
+  .dashboard-toolbar {
+    @apply grid items-stretch;
+  }
+
+  .portfolio-selector {
+    @apply w-full;
+  }
+
+  .portfolio-metric-grid,
+  .account-grid {
+    @apply grid-cols-[1fr];
+  }
+
+  .valuation-summary {
+    @apply gap-[0.4rem];
+  }
+
+  .valuation-count {
+    @apply p-[0.65rem];
+  }
+
+  .account-card dl > div {
+    @apply grid gap-[0.2rem];
+  }
+
+  .portfolio-operations {
+    @apply p-4;
+  }
+
+  .decision-evidence-heading,
+  .source-reference-grid,
+  .evidence-payload {
+    @apply grid-cols-[1fr];
+  }
+
+  .decision-evidence-heading {
+    @apply grid;
+  }
+
+  .operations-heading,
+  .panel-heading,
+  .operation-card-heading,
+  .holdings-controls > div:last-child {
+    @apply grid;
+  }
+
+  .operations-context {
+    @apply max-w-full;
+  }
+
+  .journal-legs li,
+  .data-card dl > div {
+    @apply grid gap-1;
+  }
+
+  .bounded-action-form,
+  .decision-form {
+    @apply grid-cols-[1fr];
+  }
+
+  .decision-form .secondary-button {
+    @apply col-auto;
+  }
+}

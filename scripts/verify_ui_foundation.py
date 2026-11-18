@@ -260,9 +260,12 @@ def validate_runtime_markers() -> None:
     for name in ("format", "format:check", "lint"):
         _require("packages/ui" in scripts.get(name, ""), f"root {name} does not cover the UI package")
 
-    source = (ROOT / "packages/ui/src/primitives.tsx").read_text(encoding="utf-8")
-    css = (ROOT / "packages/ui/src/primitives.css").read_text(encoding="utf-8")
-    tokens = (ROOT / "packages/ui/src/tokens.css").read_text(encoding="utf-8")
+    ui = ROOT / "packages/ui/src"
+    entry = (ui / "primitives.tsx").read_text(encoding="utf-8")
+    source = "\n".join(path.read_text(encoding="utf-8") for path in sorted((ui / "primitives").glob("*.tsx")))
+    css = "\n".join(path.read_text(encoding="utf-8") for path in sorted((ui / "styles").glob("*.css")))
+    tokens = (ui / "tokens.css").read_text(encoding="utf-8")
+    app_css = (ROOT / "apps/web/src/app/globals.css").read_text(encoding="utf-8")
     layout = (ROOT / "apps/web/src/app/[locale]/layout.tsx").read_text(encoding="utf-8")
 
     exported = {
@@ -305,7 +308,7 @@ def validate_runtime_markers() -> None:
             "ChartLegend",
             "ComparisonBlock",
         )
-        if f"export function {name}" in source
+        if f"export function {name}(" in source and name in entry
     }
     _require(len(exported) == len(EXPECTED_COMPONENTS), "runtime component export missing")
     for marker in (
@@ -320,18 +323,21 @@ def validate_runtime_markers() -> None:
     ):
         _require(marker in source, f"accessibility runtime marker missing: {marker}")
     for marker in (
-        "inline-size",
-        "block-size",
-        "inset-inline",
+        "@apply",
+        "inline-full",
+        "min-block-",
+        "inset-bs-",
         '[dir="rtl"]',
         "prefers-reduced-motion: reduce",
         ".nx-table--responsive",
-        "overflow-x: auto",
+        "overflow-x-auto",
     ):
         _require(marker in css, f"responsive style marker missing: {marker}")
     for marker in ("--nx-control-sm", "--nx-success-soft", '[data-theme="dark"]'):
         _require(marker in tokens, f"design token missing: {marker}")
-    _require('import "@nexora/ui/primitives.css"' in layout, "shared primitive styles are not loaded")
+    for marker in ('@import "tailwindcss"', '@import "@nexora/ui/tokens.css"', '@import "@nexora/ui/primitives.css"'):
+        _require(marker in app_css, f"shared Tailwind style import missing: {marker}")
+    _require('import "../globals.css"' in layout, "Tailwind entry is not loaded")
 
 
 def validate_files_and_markers() -> None:

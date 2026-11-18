@@ -1,11 +1,13 @@
 "use client";
 
 import { CheckCircle2, ShieldCheck } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import Link from "next/link";
+import { type ReactNode, useState, useSyncExternalStore } from "react";
 
 import { AlertInbox } from "@/components/alert-inbox";
 import { useWorkspace } from "@/components/authenticated-shell";
 import { DecisionExperience } from "@/components/decision-experience";
+import { FirstRunOnboarding } from "@/components/first-run-onboarding";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
 import {
   PortfolioDashboard,
@@ -13,12 +15,14 @@ import {
 } from "@/components/portfolio-dashboard";
 import { PortfolioOperations } from "@/components/portfolio-operations";
 import { WatchlistPanel } from "@/components/watchlist-panel";
+import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
 
 type WorkspaceViewProps =
   | { section: "portfolioDetail"; portfolioId: string }
   | {
       section:
         | "overview"
+        | "onboarding"
         | "portfolios"
         | "transactions"
         | "decisions"
@@ -82,18 +86,47 @@ function TransactionsWorkspace() {
   );
 }
 
+function ResumeOnboarding() {
+  const { dictionary, locale, session } = useWorkspace();
+  const hasDraft = useSyncExternalStore(
+    () => () => undefined,
+    () => hasOnboardingDraft(session.owner_id),
+    () => false,
+  );
+  if (!hasDraft) return null;
+  return (
+    <div className="onboarding-resume">
+      <Link className="secondary-button" href={`/${locale}/onboarding`}>
+        {dictionary.onboarding.resumeLink}
+      </Link>
+    </div>
+  );
+}
+
 export function WorkspaceView(props: WorkspaceViewProps) {
-  const { dictionary, locale } = useWorkspace();
+  const { dictionary, locale, session } = useWorkspace();
   const copy = dictionary.workspacePages;
   const navigation = dictionary.navigation;
   let title: string;
   let content: ReactNode;
 
   switch (props.section) {
+    case "onboarding":
+      title = dictionary.onboarding.title;
+      content = (
+        <FirstRunOnboarding
+          copy={dictionary.onboarding}
+          key={session.owner_id}
+          locale={locale}
+          ownerId={session.owner_id}
+        />
+      );
+      break;
     case "overview":
       title = navigation.overview;
       content = (
         <>
+          <ResumeOnboarding />
           <PortfolioDashboard dictionary={dictionary} locale={locale} showDetailsLink />
           <SecurityBoundary />
         </>
@@ -101,7 +134,12 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       break;
     case "portfolios":
       title = navigation.portfolio;
-      content = <PortfolioDashboard dictionary={dictionary} locale={locale} showDetailsLink />;
+      content = (
+        <>
+          <ResumeOnboarding />
+          <PortfolioDashboard dictionary={dictionary} locale={locale} showDetailsLink />
+        </>
+      );
       break;
     case "portfolioDetail":
       title = copy.portfolioDetails;

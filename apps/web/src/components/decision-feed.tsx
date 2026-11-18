@@ -1,8 +1,20 @@
 "use client";
 
-import { AlertTriangle, ChevronRight, Database, LoaderCircle, RefreshCw } from "lucide-react";
+import {
+  Alert,
+  ResponsiveRecordList,
+  EmptyState,
+  Button,
+  FieldError,
+  FormField,
+  Input,
+  Select,
+  Spinner,
+  Textarea,
+} from "@nexora/ui/primitives";
+import { AlertTriangle, ChevronRight, Database, RefreshCw } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useId, useCallback, useEffect, useRef, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -357,11 +369,11 @@ function RiskGatePanel({
           </article>
         ))}
       </div>
-      <div className="risk-uncertainty" role="status">
+      <Alert tone="warning" className="risk-uncertainty" role="status">
         <strong>{copy.uncertainty}</strong>
         <p>{copy.uncertaintyNotSupplied}</p>
         <code>{riskGate.uncertainty.reason_code}</code>
-      </div>
+      </Alert>
       <p className="advisory-boundary">{copy.riskBoundary}</p>
     </section>
   );
@@ -484,11 +496,11 @@ function PortfolioImpactPanel({
       ) : (
         <p className="risk-empty-reasons">{copy.portfolioAnalysisUnavailable}</p>
       )}
-      <div className="risk-uncertainty" role="status">
+      <Alert tone="warning" className="risk-uncertainty" role="status">
         <strong>{copy.uncertainty}</strong>
         <p>{copy.uncertaintyNotSupplied}</p>
         <code>{impact.uncertainty.reason_code}</code>
-      </div>
+      </Alert>
       <p className="advisory-boundary">{copy.portfolioImpactBoundary}</p>
     </section>
   );
@@ -505,6 +517,7 @@ function DecisionReviewPanel({
   decisionId: string;
   onRecorded: (context: DecisionReviewContext) => void;
 }) {
+  const fieldId = useId();
   const [action, setAction] = useState<ReviewAction>("accept");
   const [reasonCode, setReasonCode] = useState(reviewReasons.accept[0]);
   const [reasonNote, setReasonNote] = useState("");
@@ -590,72 +603,67 @@ function DecisionReviewPanel({
       </div>
       <p>{copy.reviewDescription}</p>
       <form className="decision-review-form" onSubmit={(event) => void submit(event)}>
-        <label>
-          {copy.reviewAction}
-          <select
+        <FormField id={`${fieldId}-review-action`} label={copy.reviewAction}>
+          <Select
+            id={`${fieldId}-review-action`}
             value={action}
-            onChange={(event) => chooseAction(event.target.value as ReviewAction)}
-          >
-            <option value="accept">{copy.reviewActions.accept}</option>
-            <option value="reject">{copy.reviewActions.reject}</option>
-            <option value="defer">{copy.reviewActions.defer}</option>
-          </select>
-        </label>
-        <label>
-          {copy.portfolioMode}
-          <select
+            onValueChange={(value) => chooseAction(value as ReviewAction)}
+            options={[
+              { value: "accept", label: copy.reviewActions.accept },
+              { value: "reject", label: copy.reviewActions.reject },
+              { value: "defer", label: copy.reviewActions.defer },
+            ]}
+          />
+        </FormField>
+        <FormField id={`${fieldId}-portfolio-mode`} label={copy.portfolioMode}>
+          <Select
+            id={`${fieldId}-portfolio-mode`}
             value={portfolioMode}
-            onChange={(event) => setPortfolioMode(event.target.value as "paper" | "shadow")}
-          >
-            <option value="paper">Paper</option>
-            <option value="shadow">Shadow</option>
-          </select>
-        </label>
-        <label className="wide">
-          {copy.ownerReason}
-          <select
+            onValueChange={(value) => setPortfolioMode(value as "paper" | "shadow")}
+            options={[
+              { value: "paper", label: "Paper" },
+              { value: "shadow", label: "Shadow" },
+            ]}
+          />
+        </FormField>
+        <FormField className="wide" id={`${fieldId}-owner-reason`} label={copy.ownerReason}>
+          <Select
+            id={`${fieldId}-owner-reason`}
             value={reasonCode}
-            onChange={(event) => setReasonCode(event.target.value)}
+            onValueChange={(value) => setReasonCode(value)}
             dir="ltr"
-          >
-            {reviewReasons[action].map((reason) => (
-              <option key={reason}>{reason}</option>
-            ))}
-          </select>
-        </label>
-        <label className="wide">
-          {copy.reasonNote}
-          <textarea
+            options={reviewReasons[action].map((reason) => ({ value: reason, label: reason }))}
+          />
+        </FormField>
+        <FormField className="wide" id={`${fieldId}-reason-note`} label={copy.reasonNote}>
+          <Textarea
+            id={`${fieldId}-reason-note`}
             maxLength={500}
             onChange={(event) => setReasonNote(event.target.value)}
             value={reasonNote}
           />
-        </label>
+        </FormField>
         {action === "defer" ? (
-          <label className="wide">
-            {copy.revisitAt}
-            <input
+          <FormField className="wide" id={`${fieldId}-revisit-at`} label={copy.revisitAt}>
+            <Input
+              id={`${fieldId}-revisit-at`}
               onChange={(event) => setRevisitAt(event.target.value)}
               type="datetime-local"
               value={revisitAt}
             />
-          </label>
+          </FormField>
         ) : null}
-        {error ? (
-          <p className="form-error wide" role="alert">
-            {copy.reviewError}
-          </p>
-        ) : null}
-        <button
+        {error ? <FieldError className="form-error wide">{copy.reviewError}</FieldError> : null}
+        <Button
           className="primary-button wide"
           disabled={submitting || !context.reviewable}
           type="submit"
         >
           {submitting ? copy.reviewSubmitting : copy.reviewSubmit}
-        </button>
+        </Button>
       </form>
       {context.reviews.length ? (
-        <ol className="review-history">
+        <ResponsiveRecordList as="ol" className="review-history" label={copy.reviewTitle}>
           {context.reviews.toReversed().map((review) => (
             <li key={review.review_id}>
               <strong>
@@ -667,7 +675,7 @@ function DecisionReviewPanel({
               </small>
             </li>
           ))}
-        </ol>
+        </ResponsiveRecordList>
       ) : (
         <p className="risk-empty-reasons">{copy.noReviews}</p>
       )}
@@ -848,42 +856,43 @@ export function DecisionFeed({ dictionary, locale, onDecisionChange }: DecisionF
       </div>
 
       {state === "loading" ? (
-        <div aria-live="polite" className="inline-state" role="status">
-          <LoaderCircle aria-hidden="true" className="spin" size={20} /> {copy.loading}
-        </div>
+        <Alert aria-live="polite" className="inline-state" role="status">
+          <Spinner label="" /> {copy.loading}
+        </Alert>
       ) : state === "error" ? (
-        <div className="inline-state warning" role="alert">
+        <Alert tone="danger" className="inline-state warning" role="alert">
           <AlertTriangle aria-hidden="true" size={20} />
           <span>{copy.error}</span>
-          <button
+          <Button
+            variant="secondary"
             className="secondary-button"
             onClick={() => setRevision((value) => value + 1)}
             type="button"
           >
             <RefreshCw size={16} /> {copy.retry}
-          </button>
-        </div>
+          </Button>
+        </Alert>
       ) : page ? (
         <>
           {page.provider.state !== "ready" && (
-            <div className="provider-state" role="status">
+            <Alert tone="warning" className="provider-state" role="status">
               <AlertTriangle aria-hidden="true" size={19} />
               <div>
                 <strong>{copy.providerDegraded}</strong>
                 <p>{copy.providerStates[page.provider.state]}</p>
               </div>
-            </div>
+            </Alert>
           )}
           {page.items.length === 0 ? (
-            <div className="empty-state-card">
-              <h3>{copy.emptyTitle}</h3>
+            <EmptyState className="empty-state-card" title={copy.emptyTitle}>
               <p>{copy.emptyDescription}</p>
-            </div>
+            </EmptyState>
           ) : (
             <div className="decision-workspace">
               <div aria-label={copy.listLabel} className="decision-list" role="group">
                 {page.items.map((item, index) => (
-                  <button
+                  <Button
+                    variant="ghost"
                     aria-pressed={selected?.resource_id === item.resource_id}
                     className="decision-list-item"
                     key={`${item.resource_type}:${item.resource_id}`}
@@ -903,24 +912,24 @@ export function DecisionFeed({ dictionary, locale, onDecisionChange }: DecisionF
                       </small>
                     </span>
                     <ChevronRight aria-hidden="true" size={18} />
-                  </button>
+                  </Button>
                 ))}
                 {page.next_cursor && (
-                  <button
+                  <Button
+                    variant="secondary"
                     className="secondary-button"
                     onClick={() => void loadMore()}
                     type="button"
                   >
                     {copy.loadMore}
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="decision-detail">
                 {detailLoading ? (
-                  <div aria-live="polite" className="inline-state" role="status">
-                    <LoaderCircle aria-hidden="true" className="spin" size={20} />{" "}
-                    {copy.loadingDetail}
-                  </div>
+                  <Alert aria-live="polite" className="inline-state" role="status">
+                    <Spinner label="" /> {copy.loadingDetail}
+                  </Alert>
                 ) : selected ? (
                   <>
                     <EvidencePanel copy={copy} item={selected} locale={locale} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { IconButton } from "@nexora/ui/primitives";
 import { Languages, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,14 +41,15 @@ export function FoundationControls({ dictionary, locale }: FoundationControlsPro
         <Languages aria-hidden="true" size={18} />
         <span>{nextLocale.toUpperCase()}</span>
       </Link>
-      <button
+      <IconButton
+        variant="ghost"
         aria-label={`${dictionary.theme}: ${isDark ? dictionary.light : dictionary.dark}`}
         className="control-button icon-only"
         onClick={() => setTheme(isDark ? "light" : "dark")}
         type="button"
       >
         {isDark ? <Sun aria-hidden="true" size={18} /> : <Moon aria-hidden="true" size={18} />}
-      </button>
+      </IconButton>
     </div>
   );
 }

@@ -1,0 +1,293 @@
+.portfolio-dashboard {
+  @apply mt-10;
+}
+
+.dashboard-toolbar,
+.card-heading,
+.portfolio-metric-card > div,
+.account-copy > div,
+.allocation-list li > div {
+  @apply flex items-center justify-between gap-4;
+}
+
+.dashboard-toolbar {
+  @apply items-end;
+}
+
+.dashboard-toolbar h2,
+.card-heading h3,
+.accounts-heading h3,
+.account-card h4,
+.dashboard-state h2 {
+  @apply m-0;
+}
+
+.dashboard-toolbar h2 {
+  @apply text-[length:clamp(1.45rem,_3vw,_2rem)] [letter-spacing:-0.025em];
+}
+
+.section-kicker {
+  @apply [margin:0_0_0.35rem] text-nx-primary-strong text-[length:0.72rem];
+  @apply [font-weight:800] [letter-spacing:0.1em] uppercase;
+}
+
+.portfolio-selector {
+  @apply grid [min-width:min(100%,_18rem)] gap-[0.4rem] text-nx-text-muted text-[length:0.78rem];
+  @apply [font-weight:700];
+}
+
+.portfolio-context {
+  @apply flex flex-wrap items-center gap-[0.65rem] mt-4 text-nx-text-muted text-[length:0.82rem];
+}
+
+.portfolio-context code,
+.account-card code {
+  @apply text-nx-text;
+}
+
+.status-badge,
+.count-badge {
+  @apply inline-flex items-center min-h-7 [padding:0.25rem_0.6rem] rounded-[999px] text-[length:0.72rem];
+  @apply [font-weight:800];
+}
+
+.status-badge.active {
+  @apply [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+
+.status-badge.archived,
+.status-badge.closed,
+.status-badge.inactive {
+  @apply [background:color-mix(in_srgb,_var(--nx-text-muted)_13%,_var(--nx-surface))] text-nx-text-muted;
+}
+
+.dashboard-state {
+  @apply flex items-start gap-4 p-6 [border:1px_dashed_color-mix(in_srgb,_var(--nx-primary)_45%,_var(--nx-border))];
+  @apply rounded-nx-lg [background:var(--nx-primary-soft)];
+}
+
+.dashboard-state.compact {
+  @apply items-center mt-5 [padding:1rem_1.25rem];
+}
+
+.dashboard-state.error {
+  @apply [border-color:color-mix(in_srgb,_var(--nx-warning)_55%,_var(--nx-border))];
+  @apply [background:color-mix(in_srgb,_var(--nx-warning)_9%,_var(--nx-surface))];
+}
+
+.dashboard-state > svg {
+  @apply [flex:0_0_auto] text-nx-primary-strong;
+}
+
+.dashboard-state.error > svg {
+  @apply text-nx-warning;
+}
+
+.dashboard-state p {
+  @apply [margin:0.35rem_0_0] text-nx-text-muted [line-height:1.7];
+}
+
+.secondary-button {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 mt-[0.8rem] [padding:0.5rem_0.85rem];
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)] text-nx-text [font-weight:700] cursor-pointer;
+}
+
+.secondary-button:hover {
+  @apply border-nx-primary text-nx-primary-strong;
+}
+
+.portfolio-metric-grid {
+  @apply grid grid-cols-4 gap-4 mt-5;
+}
+
+.portfolio-metric-card,
+.dashboard-card,
+.accounts-section,
+.account-card {
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)] [box-shadow:var(--nx-shadow)];
+}
+
+.portfolio-metric-card {
+  @apply min-w-0 p-[1.15rem];
+}
+
+.portfolio-metric-card > div {
+  @apply text-nx-text-muted text-[length:0.8rem];
+}
+
+.portfolio-metric-card svg,
+.card-heading > svg,
+.allocation-card .nx-chart__heading > svg {
+  @apply text-nx-primary;
+}
+
+.portfolio-metric-card strong {
+  @apply block overflow-hidden mt-5 text-[length:clamp(1.3rem,_2.5vw,_1.8rem)] text-ellipsis whitespace-nowrap;
+}
+
+.portfolio-metric-card strong small {
+  @apply text-nx-text-muted text-[length:0.72rem];
+}
+
+.portfolio-metric-card p {
+  @apply [margin:0.4rem_0_0] text-nx-text-muted text-[length:0.75rem] [line-height:1.5];
+}
+
+.positive {
+  @apply text-nx-primary-strong;
+}
+
+.negative {
+  @apply text-nx-danger!;
+}
+
+.analytics-notice {
+  @apply flex items-center gap-[0.7rem] mt-4 [padding:0.85rem_1rem];
+  @apply [border:1px_solid_color-mix(in_srgb,_var(--nx-warning)_48%,_var(--nx-border))];
+  @apply rounded-nx-md [background:color-mix(in_srgb,_var(--nx-warning)_9%,_var(--nx-surface))] text-nx-text text-[length:0.86rem];
+  @apply [line-height:1.6];
+}
+
+.analytics-notice svg {
+  @apply [flex:0_0_auto] text-nx-warning;
+}
+
+.portfolio-detail-grid {
+  @apply grid [grid-template-columns:minmax(0,_0.85fr)_minmax(0,_1.15fr)] gap-4 mt-4;
+}
+
+.dashboard-card,
+.accounts-section {
+  @apply p-[1.35rem];
+}
+
+.card-heading {
+  @apply items-start;
+}
+
+.card-heading h3 {
+  @apply text-[length:1.08rem];
+}
+
+.valuation-summary {
+  @apply grid grid-cols-3 gap-[0.65rem] mt-[1.35rem];
+}
+
+.valuation-count {
+  @apply grid gap-[0.35rem] p-[0.8rem] rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.valuation-count span {
+  @apply text-nx-text-muted text-[length:0.72rem];
+}
+
+.valuation-count strong {
+  @apply text-[length:1.35rem];
+}
+
+.valuation-count.fresh {
+  @apply [box-shadow:inset_0_2px_var(--nx-primary)];
+}
+
+.valuation-count.stale {
+  @apply [box-shadow:inset_0_2px_var(--nx-warning)];
+}
+
+.valuation-count.missing {
+  @apply [box-shadow:inset_0_2px_var(--nx-danger)];
+}
+
+.allocation-card .nx-chart__heading p {
+  @apply mt-[0.35rem] text-nx-primary-strong text-[length:0.72rem] font-bold tracking-widest;
+}
+
+.allocation-card .nx-chart__visual {
+  @apply min-block-0 m-0;
+}
+
+.card-footnote,
+.inline-empty {
+  @apply [margin:1rem_0_0] text-nx-text-muted text-[length:0.82rem] [line-height:1.65];
+}
+
+.allocation-list {
+  @apply grid gap-4 [margin:1.35rem_0_0] p-0 [list-style:none];
+}
+
+.allocation-list li > div {
+  @apply text-[length:0.82rem];
+}
+
+.allocation-list li > div span {
+  @apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+.allocation-list li > div b {
+  @apply me-[0.3rem];
+}
+
+.allocation-track {
+  @apply block h-[0.45rem] mt-2 overflow-hidden rounded-[999px] [background:var(--nx-surface-raised)];
+}
+
+.allocation-track > span {
+  @apply block h-full w-[var(--nx-allocation-width)] [border-radius:inherit] [background:linear-gradient(90deg,_var(--nx-primary),_var(--nx-info))];
+}
+
+.accounts-section {
+  @apply mt-4 scroll-mt-4;
+}
+
+.accounts-heading {
+  @apply items-center;
+}
+
+.count-badge {
+  @apply min-w-8 justify-center [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+
+.account-grid {
+  @apply grid grid-cols-2 gap-[0.85rem] mt-5;
+}
+
+.account-card {
+  @apply flex min-w-0 gap-[0.85rem] p-4 [background:var(--nx-surface-raised)] [box-shadow:none];
+}
+
+.account-icon {
+  @apply grid w-10 h-10 [flex:0_0_auto] place-items-center rounded-nx-md [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+
+.account-copy {
+  @apply min-w-0 flex-1;
+}
+
+.account-copy > div {
+  @apply items-start;
+}
+
+.account-card h4 {
+  @apply overflow-hidden text-[length:0.98rem] text-ellipsis whitespace-nowrap;
+}
+
+.account-card p {
+  @apply [margin:0.3rem_0_0.8rem] text-nx-text-muted text-[length:0.78rem];
+}
+
+.account-card dl {
+  @apply grid gap-[0.45rem] m-0;
+}
+
+.account-card dl > div {
+  @apply flex justify-between gap-4 text-[length:0.74rem];
+}
+
+.account-card dt {
+  @apply text-nx-text-muted;
+}
+
+.account-card dd {
+  @apply min-w-0 m-0 overflow-hidden text-ellipsis whitespace-nowrap;
+}

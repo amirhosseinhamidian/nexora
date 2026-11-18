@@ -1,0 +1,72 @@
+.alert-inbox {
+  @apply mt-6 [padding:clamp(1rem,_3vw,_1.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+
+.alert-inbox .section-heading,
+.alert-card-heading {
+  @apply flex items-start justify-between gap-4;
+}
+
+.alert-inbox .section-heading > svg {
+  @apply text-nx-primary;
+}
+
+.alert-inbox-state {
+  @apply flex items-center gap-3 mt-4 p-4 rounded-nx-md [background:var(--nx-surface-raised)] text-nx-text-muted;
+}
+
+.alert-inbox-state.error {
+  @apply text-nx-warning;
+}
+
+.alert-inbox-state .secondary-button {
+  @apply ms-auto;
+}
+
+.alert-list {
+  @apply grid [grid-template-columns:repeat(auto-fit,_minmax(min(100%,_24rem),_1fr))] gap-4 [margin:1rem_0_0] p-0 [list-style:none];
+}
+
+.alert-card {
+  @apply min-w-0 p-4 [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.alert-card h3 {
+  @apply m-0 wrap-anywhere;
+}
+
+.alert-lineage {
+  @apply grid grid-cols-2 gap-3 [margin:1rem_0];
+}
+
+.alert-lineage .wide {
+  @apply col-span-full;
+}
+
+.alert-lineage dt {
+  @apply text-nx-text-muted text-[length:0.78rem];
+  @apply [font-weight:700];
+}
+
+.alert-lineage dd {
+  @apply [margin:0.25rem_0_0] wrap-anywhere;
+}
+
+.alert-card details pre {
+  @apply max-h-60 overflow-auto whitespace-pre-wrap;
+}
+
+.alert-actions {
+  @apply grid [grid-template-columns:auto_minmax(12rem,_1fr)_auto] [align-items:end] gap-[0.65rem] mt-4;
+}
+
+.alert-history-count {
+  @apply block mt-3 text-nx-text-muted;
+}
+
+.alert-boundary {
+  @apply [margin:1rem_0_0] p-[0.85rem] [border-inline-start:3px_solid_var(--nx-primary)] [background:var(--nx-primary-soft)];
+  @apply text-nx-text-muted [line-height:1.55];
+}

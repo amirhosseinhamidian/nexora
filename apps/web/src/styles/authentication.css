@@ -1,0 +1,93 @@
+.auth-page {
+  @apply min-h-[100vh];
+  @apply [background:radial-gradient(_circle_at_15%_15%,_color-mix(in_srgb,_var(--nx-primary)_12%,_transparent),_transparent_28rem_),_var(--nx-bg)];
+}
+
+.auth-header {
+  @apply flex min-h-20 items-center justify-between [padding:0_2rem];
+}
+
+.auth-header .brand {
+  @apply p-0;
+}
+
+.auth-main,
+.centered-state {
+  @apply grid [min-height:calc(100vh_-_5rem)] place-items-center [padding:2rem_1rem_5rem];
+}
+
+.auth-card,
+.state-card {
+  @apply [width:min(100%,_31rem)] [padding:clamp(1.5rem,_5vw,_2.5rem)] [border:1px_solid_var(--nx-border)];
+  @apply [border-radius:calc(var(--nx-radius-lg)_+_0.35rem)] [background:var(--nx-surface)];
+  @apply [box-shadow:0_1.25rem_4rem_rgb(3_14_24_/_0.12)];
+}
+
+.auth-card h1,
+.state-card h1 {
+  @apply m-0 text-[length:clamp(1.65rem,_5vw,_2.35rem)] [letter-spacing:-0.035em];
+}
+
+.auth-icon,
+.state-icon {
+  @apply grid w-13 h-13 mb-[1.4rem] place-items-center [border-radius:1rem] [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+
+.auth-description,
+.state-card p {
+  @apply [margin:0.8rem_0_1.5rem] text-nx-text-muted [line-height:1.8];
+}
+
+.secure-input {
+  @apply flex items-center gap-[0.65rem] [padding:0_0.8rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface-raised)];
+}
+
+.secure-input:focus-within {
+  @apply border-nx-focus;
+}
+
+.secure-input .nx-input {
+  @apply w-full min-h-12 [border:0] [outline:0] [background:transparent] text-nx-text;
+}
+
+.secure-input .nx-input:focus {
+  @apply shadow-none;
+}
+
+.primary-button {
+  @apply inline-flex w-full min-h-12 items-center justify-center gap-[0.6rem] mt-4 [border:0];
+  @apply rounded-nx-md [background:var(--nx-primary)] [color:#041612] [font-weight:800] cursor-pointer;
+}
+
+.primary-button:disabled {
+  @apply cursor-not-allowed opacity-[0.55];
+}
+
+.text-link {
+  @apply block mt-[1.1rem] text-nx-primary-strong text-center;
+}
+
+.form-error {
+  @apply [margin:1rem_0_0] text-nx-danger text-[length:0.88rem];
+}
+
+.recovery-codes {
+  @apply grid grid-cols-2 [gap:0.5rem_1.5rem] [padding:1rem_1rem_1rem_2.5rem] rounded-nx-md [background:var(--nx-surface-raised)];
+  @apply [font-family:ui-monospace,_SFMono-Regular,_Menlo,_monospace];
+  @apply text-[length:0.82rem];
+}
+
+.state-card {
+  @apply text-center;
+}
+
+.state-card .state-icon {
+  @apply mx-auto;
+}
+
+.state-icon.offline,
+.state-icon.error,
+.state-icon.session {
+  @apply [background:color-mix(in_srgb,_var(--nx-warning)_15%,_var(--nx-surface))] text-nx-warning;
+}

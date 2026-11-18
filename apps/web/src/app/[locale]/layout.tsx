@@ -1,6 +1,4 @@
 import "@fontsource-variable/inter";
-import "@nexora/ui/tokens.css";
-import "@nexora/ui/primitives.css";
 import "../globals.css";
 
 import type { Metadata } from "next";
@@ -50,7 +48,7 @@ export default async function LocaleLayout({
       lang={locale}
       suppressHydrationWarning
     >
-      <body className={locale === "fa" ? "font-fa" : "font-en"}>
+      <body className={`bg-nx-bg text-nx-text ${locale === "fa" ? "font-nx-fa" : "font-nx-en"}`}>
         <ThemeProvider nonce={nonce}>{children}</ThemeProvider>
       </body>
     </html>

@@ -1,0 +1,102 @@
+.nx-table-scroll {
+  @apply max-inline-full overflow-auto [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg;
+}
+.nx-table {
+  @apply inline-full border-collapse [background:var(--nx-surface)] text-[length:0.86rem];
+}
+.nx-table th,
+.nx-table td {
+  @apply [padding:0.8rem_0.9rem] [border-block-end:1px_solid_var(--nx-border)] text-start align-middle;
+}
+.nx-table th {
+  @apply [background:var(--nx-surface-raised)] text-nx-text-muted [font-weight:800];
+}
+.nx-table tbody tr:last-child td {
+  @apply [border-block-end:0];
+}
+.nx-table tbody tr:hover {
+  @apply [background:color-mix(in_srgb,_var(--nx-primary-soft)_55%,_var(--nx-surface))];
+}
+.nx-record-list {
+  @apply grid gap-[var(--nx-space-3)] m-0 p-0 [list-style:none];
+}
+:where(.nx-record-list) > li {
+  @apply p-[var(--nx-space-4)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)];
+}
+.nx-pagination,
+.nx-tabs,
+.nx-filter-bar {
+  @apply flex items-center gap-[var(--nx-space-2)];
+}
+.nx-pagination {
+  @apply justify-between;
+}
+.nx-tabs {
+  @apply max-inline-full overflow-x-auto p-[var(--nx-space-1)] rounded-nx-md [background:var(--nx-surface-raised)];
+}
+.nx-filter-bar {
+  @apply flex-wrap p-[var(--nx-space-3)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)];
+}
+.nx-stat-card,
+.nx-chart,
+.nx-comparison {
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)] [box-shadow:var(--nx-shadow)];
+}
+.nx-stat-card {
+  @apply p-[var(--nx-space-5)];
+}
+.nx-stat-card__heading,
+.nx-chart__heading {
+  @apply flex items-start justify-between gap-3;
+}
+.nx-stat-card > span,
+.nx-stat-card__heading {
+  @apply text-nx-text-muted text-[length:0.8rem];
+}
+.nx-stat-card > strong {
+  @apply block mbs-[var(--nx-space-4)] text-[length:clamp(1.4rem,_3vw,_2rem)];
+}
+.nx-chart,
+.nx-comparison {
+  @apply p-[var(--nx-space-5)];
+}
+.nx-chart h3,
+.nx-chart p,
+.nx-comparison h3,
+.nx-comparison dl {
+  @apply m-0;
+}
+.nx-chart header p {
+  @apply mbs-[var(--nx-space-2)] text-nx-text-muted [line-height:1.6];
+}
+.nx-chart__visual {
+  @apply min-block-48 mbs-[var(--nx-space-5)];
+}
+.nx-chart__table {
+  @apply mbs-[var(--nx-space-5)];
+}
+.nx-chart-legend {
+  @apply flex flex-wrap gap-[var(--nx-space-4)] m-0 p-0 text-nx-text-muted text-[length:0.78rem] [list-style:none];
+}
+.nx-chart-legend li {
+  @apply inline-flex items-center gap-[var(--nx-space-2)];
+}
+.nx-chart-legend li > span {
+  @apply inline-3 block-3 [border-radius:0.2rem] bg-[color:var(--nx-legend-color)];
+}
+.nx-comparison dl {
+  @apply grid grid-cols-2 gap-[var(--nx-space-3)] mbs-[var(--nx-space-4)];
+}
+.nx-comparison dl > div {
+  @apply p-[var(--nx-space-4)] rounded-nx-md [background:var(--nx-surface-raised)];
+}
+.nx-comparison dt {
+  @apply text-nx-text-muted text-[length:0.78rem];
+}
+.nx-comparison dd {
+  @apply [margin:var(--nx-space-2)_0_0] [font-weight:750];
+}

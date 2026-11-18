@@ -54,7 +54,10 @@ describe("WatchlistPanel", () => {
         method: "POST",
       }),
     );
-    expect(await screen.findByRole("option", { name: "Decision candidates" })).toBeInTheDocument();
+    const selector = await screen.findByRole("combobox", { name: "Active watchlist" });
+    expect(selector).toHaveTextContent(watchlist.name);
+    fireEvent.click(selector);
+    expect(screen.getByRole("option", { name: watchlist.name, selected: true })).toBeVisible();
     expect(screen.getByText(/cannot create trade instructions/)).toBeInTheDocument();
   });
 

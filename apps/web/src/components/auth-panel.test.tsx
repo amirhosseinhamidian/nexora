@@ -67,4 +67,18 @@ describe("AuthPanel", () => {
     expect(localStorage).toHaveLength(0);
     expect(sessionStorage).toHaveLength(0);
   });
+
+  it("returns to onboarding after an interrupted setup login", async () => {
+    const options = { allow_credentials: [], challenge: "q".repeat(43), rp_id: "nexora.private" };
+    request.mockResolvedValueOnce(options).mockResolvedValueOnce({});
+    assertion.mockResolvedValue({
+      challenge: options.challenge,
+      credential_id: "credential-id-1234",
+      response_json: "{}",
+    });
+
+    render(<AuthPanel dictionary={en} locale="en" mode="login" resumeOnboarding />);
+    fireEvent.click(screen.getByRole("button", { name: "Sign in with passkey" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/en/onboarding"));
+  });
 });

@@ -1,20 +1,32 @@
 "use client";
 
 import {
+  Alert,
+  Button,
+  ChartContainer,
+  EmptyState,
+  ErrorState,
+  FormField,
+  ResponsiveRecordList,
+  Select,
+  Spinner,
+  StatCard,
+  Table,
+} from "@nexora/ui/primitives";
+import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   BriefcaseBusiness,
   CircleDollarSign,
   Landmark,
-  LoaderCircle,
   PieChart,
   RefreshCw,
   ShieldAlert,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useId, type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -218,6 +230,7 @@ export function PortfolioDashboard({
   selectionOnly?: boolean;
   showDetailsLink?: boolean;
 }) {
+  const fieldId = useId();
   const copy = dictionary.portfolioDashboard;
   const [registryState, setRegistryState] = useState<"error" | "loading" | "ready">("loading");
   const [detailState, setDetailState] = useState<"error" | "loading" | "ready">("loading");
@@ -343,7 +356,7 @@ export function PortfolioDashboard({
   if (registryState === "loading") {
     return (
       <section aria-live="polite" className="dashboard-state portfolio-dashboard">
-        <LoaderCircle aria-hidden="true" className="spin" size={28} />
+        <Spinner label="" size="lg" />
         <div>
           <h2>{copy.loadingTitle}</h2>
           <p>{copy.loadingDescription}</p>
@@ -354,60 +367,73 @@ export function PortfolioDashboard({
 
   if (registryState === "error") {
     return (
-      <section className="dashboard-state error portfolio-dashboard" role="alert">
-        <ShieldAlert aria-hidden="true" size={28} />
-        <div>
-          <h2>{copy.errorTitle}</h2>
-          <p>{copy.errorDescription}</p>
-          <button className="secondary-button" onClick={retryRegistry} type="button">
-            <RefreshCw aria-hidden="true" size={17} />
-            {copy.retry}
-          </button>
-        </div>
-      </section>
+      <ErrorState
+        className="dashboard-state error portfolio-dashboard"
+        headingLevel={2}
+        icon={<ShieldAlert aria-hidden="true" size={28} />}
+        title={copy.errorTitle}
+      >
+        <p>{copy.errorDescription}</p>
+        <Button
+          variant="secondary"
+          className="secondary-button"
+          onClick={retryRegistry}
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" size={17} />
+          {copy.retry}
+        </Button>
+      </ErrorState>
     );
   }
 
   if (portfolioId !== undefined && !selectedPortfolio) {
     return (
-      <section className="dashboard-state error portfolio-dashboard">
-        <div>
-          <h2>{dictionary.workspacePages.portfolioUnavailableTitle}</h2>
-          <p>{dictionary.workspacePages.portfolioUnavailableDescription}</p>
-          <Link className="secondary-button" href={`/${locale}/portfolios`}>
-            {dictionary.workspacePages.backToPortfolios}
-          </Link>
-        </div>
-      </section>
+      <EmptyState
+        className="dashboard-state error portfolio-dashboard"
+        headingLevel={2}
+        title={dictionary.workspacePages.portfolioUnavailableTitle}
+      >
+        <p>{dictionary.workspacePages.portfolioUnavailableDescription}</p>
+        <Link className="secondary-button" href={`/${locale}/portfolios`}>
+          {dictionary.workspacePages.backToPortfolios}
+        </Link>
+      </EmptyState>
     );
   }
 
   if (registry.portfolios.length === 0) {
     return (
-      <section className="dashboard-state portfolio-dashboard">
-        <BriefcaseBusiness aria-hidden="true" size={30} />
-        <div>
-          <h2>{copy.emptyTitle}</h2>
-          <p>{copy.emptyDescription}</p>
-        </div>
-      </section>
+      <EmptyState
+        className="dashboard-state portfolio-dashboard"
+        headingLevel={2}
+        icon={<BriefcaseBusiness aria-hidden="true" size={30} />}
+        title={copy.emptyTitle}
+      >
+        <p>{copy.emptyDescription}</p>
+        <Link className="secondary-button" href={`/${locale}/onboarding`}>
+          {dictionary.onboarding.start}
+        </Link>
+      </EmptyState>
     );
   }
 
   const selector = (
-    <label className="portfolio-selector">
-      <span>{copy.selectPortfolio}</span>
-      <select
+    <FormField
+      className="portfolio-selector"
+      id={`${fieldId}-select-portfolio`}
+      label={copy.selectPortfolio}
+    >
+      <Select
+        id={`${fieldId}-select-portfolio`}
         value={selectedPortfolioId}
-        onChange={(event) => setChosenPortfolioId(event.target.value)}
-      >
-        {registry.portfolios.map((portfolio) => (
-          <option key={portfolio.portfolio_id} value={portfolio.portfolio_id}>
-            {portfolio.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        onValueChange={(value) => setChosenPortfolioId(value)}
+        options={registry.portfolios.map((portfolio) => ({
+          value: portfolio.portfolio_id,
+          label: portfolio.name,
+        }))}
+      />
+    </FormField>
   );
 
   if (selectionOnly) return <div className="workspace-portfolio-picker">{selector}</div>;
@@ -454,63 +480,73 @@ export function PortfolioDashboard({
 
       {detailState === "loading" ? (
         <div aria-live="polite" className="dashboard-state compact">
-          <LoaderCircle aria-hidden="true" className="spin" size={24} />
+          <Spinner label="" size="lg" />
           <p>{copy.loadingAnalytics}</p>
         </div>
       ) : detailState === "error" || !details ? (
-        <div className="dashboard-state compact error" role="alert">
+        <Alert tone="danger" className="dashboard-state compact error" role="alert">
           <AlertTriangle aria-hidden="true" size={24} />
           <div>
             <p>{copy.analyticsError}</p>
-            <button
+            <Button
+              variant="secondary"
               className="secondary-button"
               onClick={() => setDetailRevision((revision) => revision + 1)}
               type="button"
             >
               <RefreshCw aria-hidden="true" size={17} />
               {copy.retry}
-            </button>
+            </Button>
           </div>
-        </div>
+        </Alert>
       ) : (
         <>
           <div className="portfolio-metric-grid">
-            <article className="portfolio-metric-card">
-              <div>
-                <span>{copy.nav}</span>
-                <CircleDollarSign aria-hidden="true" size={20} />
-              </div>
-              <strong dir="ltr">
-                {formatExactDecimal(details.analytics.nav, locale)}{" "}
-                <small>{baseAsset?.symbol ?? ""}</small>
-              </strong>
+            <StatCard
+              className="portfolio-metric-card"
+              icon={<CircleDollarSign aria-hidden="true" size={20} />}
+              label={copy.nav}
+              value={
+                <>
+                  {formatExactDecimal(details.analytics.nav, locale)}{" "}
+                  <small>{baseAsset?.symbol ?? ""}</small>
+                </>
+              }
+              valueDirection="ltr"
+            >
               <p>
                 {copy.asOf} {formatTimestamp(details.analytics.as_of, locale)}
               </p>
-            </article>
-            <article className="portfolio-metric-card">
-              <div>
-                <span>{copy.unrealizedPnl}</span>
-                {pnlNegative ? (
+            </StatCard>
+            <StatCard
+              className="portfolio-metric-card"
+              icon={
+                pnlNegative ? (
                   <ArrowDownRight aria-hidden="true" className="negative" size={20} />
                 ) : (
                   <ArrowUpRight aria-hidden="true" size={20} />
-                )}
-              </div>
-              <strong className={pnlNegative ? "negative" : "positive"} dir="ltr">
-                {formatExactDecimal(pnl, locale)} <small>{baseAsset?.symbol ?? ""}</small>
-              </strong>
+                )
+              }
+              label={copy.unrealizedPnl}
+              value={
+                <>
+                  {formatExactDecimal(pnl, locale)} <small>{baseAsset?.symbol ?? ""}</small>
+                </>
+              }
+              valueClassName={pnlNegative ? "negative" : "positive"}
+              valueDirection="ltr"
+            >
               <p>
                 {copy.realizedPnl}:{" "}
                 <b dir="ltr">{formatExactDecimal(details.analytics.realized_pnl, locale)}</b>
               </p>
-            </article>
-            <article className="portfolio-metric-card">
-              <div>
-                <span>{copy.accounts}</span>
-                <WalletCards aria-hidden="true" size={20} />
-              </div>
-              <strong>{localizeDigits(String(selectedAccounts.length), locale)}</strong>
+            </StatCard>
+            <StatCard
+              className="portfolio-metric-card"
+              icon={<WalletCards aria-hidden="true" size={20} />}
+              label={copy.accounts}
+              value={localizeDigits(String(selectedAccounts.length), locale)}
+            >
               <p>
                 {copy.activeAccounts}:{" "}
                 {localizeDigits(
@@ -518,24 +554,26 @@ export function PortfolioDashboard({
                   locale,
                 )}
               </p>
-            </article>
-            <article className="portfolio-metric-card">
-              <div>
-                <span>{copy.valuationHealth}</span>
-                <Landmark aria-hidden="true" size={20} />
-              </div>
-              <strong>
-                {localizeDigits(`${valuationCounts.fresh}/${totalValuations}`, locale)}
-              </strong>
+            </StatCard>
+            <StatCard
+              className="portfolio-metric-card"
+              icon={<Landmark aria-hidden="true" size={20} />}
+              label={copy.valuationHealth}
+              value={localizeDigits(`${valuationCounts.fresh}/${totalValuations}`, locale)}
+            >
               <p>{copy.freshEvidence}</p>
-            </article>
+            </StatCard>
           </div>
 
           {details.analytics.state !== "complete" && (
-            <div className={`analytics-notice ${details.analytics.state}`} role="status">
+            <Alert
+              tone="warning"
+              className={`analytics-notice ${details.analytics.state}`}
+              role="status"
+            >
               <AlertTriangle aria-hidden="true" size={20} />
               <span>{copy.analyticsState[details.analytics.state]}</span>
-            </div>
+            </Alert>
           )}
 
           <div className="portfolio-detail-grid">
@@ -558,14 +596,36 @@ export function PortfolioDashboard({
               <p className="card-footnote">{copy.valuationFootnote}</p>
             </article>
 
-            <article className="dashboard-card allocation-card">
-              <div className="card-heading">
-                <div>
-                  <p className="section-kicker">{copy.pricedPositions}</p>
-                  <h3>{copy.allocation}</h3>
-                </div>
-                <PieChart aria-hidden="true" size={22} />
-              </div>
+            <ChartContainer
+              className="dashboard-card allocation-card"
+              description={copy.pricedPositions}
+              icon={<PieChart aria-hidden="true" size={22} />}
+              table={
+                allocation.length > 0 ? (
+                  <Table>
+                    <caption>{copy.allocation}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">{copy.allocationAsset}</th>
+                        <th scope="col">{copy.allocationShare}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allocation.map((item) => (
+                        <tr key={item.assetId}>
+                          <th scope="row">
+                            <bdi>{item.symbol}</bdi> {item.label}
+                          </th>
+                          <td>{percentage(item.basisPoints, locale)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                ) : null
+              }
+              tableClassName="sr-only"
+              title={copy.allocation}
+            >
               {allocation.length === 0 ? (
                 <p className="inline-empty">{copy.noAllocation}</p>
               ) : (
@@ -579,13 +639,19 @@ export function PortfolioDashboard({
                         <strong>{percentage(item.basisPoints, locale)}</strong>
                       </div>
                       <span aria-hidden="true" className="allocation-track">
-                        <span style={{ width: `${item.basisPoints / 100}%` }} />
+                        <span
+                          style={
+                            {
+                              "--nx-allocation-width": `${item.basisPoints / 100}%`,
+                            } as CSSProperties
+                          }
+                        />
                       </span>
                     </li>
                   ))}
                 </ul>
               )}
-            </article>
+            </ChartContainer>
           </div>
         </>
       )}
@@ -603,9 +669,9 @@ export function PortfolioDashboard({
         {selectedAccounts.length === 0 ? (
           <p className="inline-empty">{copy.noAccounts}</p>
         ) : (
-          <div className="account-grid">
+          <ResponsiveRecordList className="account-grid" label={copy.accountRegistry}>
             {selectedAccounts.map((account) => (
-              <article className="account-card" key={account.account_id}>
+              <li className="account-card" key={account.account_id}>
                 <div className="account-icon">
                   <WalletCards aria-hidden="true" size={20} />
                 </div>
@@ -630,9 +696,9 @@ export function PortfolioDashboard({
                     </div>
                   </dl>
                 </div>
-              </article>
+              </li>
             ))}
-          </div>
+          </ResponsiveRecordList>
         )}
       </section>
     </section>

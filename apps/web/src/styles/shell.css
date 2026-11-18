@@ -1,0 +1,159 @@
+.skip-link {
+  @apply fixed inset-bs-3;
+  @apply start-3 z-100 [padding:0.65rem_0.9rem] rounded-nx-sm [background:var(--nx-primary)] [color:#041612];
+  @apply [transform:translateY(-150%)];
+}
+
+.skip-link:focus {
+  @apply [transform:translateY(0)];
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  @apply [outline:3px_solid_var(--nx-primary-strong)];
+  @apply [outline-offset:3px];
+}
+
+.application-shell {
+  @apply grid [grid-template-columns:var(--sidebar-width,_15rem)_minmax(0,_1fr)] min-block-[100vh];
+}
+
+.application-shell[data-sidebar-collapsed="true"] {
+  --sidebar-width: 4.5rem;
+}
+
+.sidebar {
+  @apply sticky inset-bs-0 flex [grid-column:1] block-[100dvh] flex-col gap-[var(--nx-space-4)] overflow-auto [padding:1.35rem_1rem];
+  @apply [border-inline-end:1px_solid_var(--nx-border)] [background:var(--nx-sidebar)];
+}
+
+.sidebar .brand {
+  @apply pbe-[var(--nx-space-2)];
+}
+
+[data-sidebar-collapsed="true"] .sidebar {
+  @apply px-[var(--nx-space-2)];
+}
+
+[data-sidebar-collapsed="true"] .sidebar :is(.brand, .navigation-link) {
+  @apply justify-center px-0;
+}
+
+.shell-sr-only,
+[data-sidebar-collapsed="true"] .sidebar :is(.sidebar-brand-name, .navigation-label) {
+  @apply absolute inline-[1px] block-[1px] overflow-hidden [clip-path:inset(50%)] whitespace-nowrap;
+}
+
+[data-sidebar-collapsed="true"] .sidebar-session {
+  @apply hidden;
+}
+
+.brand {
+  @apply flex items-center gap-3 [padding:0_0.6rem_1.75rem] [font-weight:800] [letter-spacing:0.16em];
+}
+
+.brand-mark {
+  @apply grid w-8 h-8 place-items-center [border-radius:0.65rem] [background:var(--nx-primary)] [color:#041612];
+}
+
+.navigation-list {
+  @apply grid gap-[0.35rem] m-0 p-0 [list-style:none];
+}
+
+.navigation-link {
+  @apply flex min-block-[var(--nx-control-md)] items-center gap-3 [padding:0.75rem_0.85rem] rounded-nx-md text-nx-text-muted;
+}
+
+.navigation-link svg {
+  @apply [flex:0_0_auto];
+}
+
+.navigation-link:hover,
+.navigation-link.active {
+  @apply [background:var(--nx-primary-soft)] text-nx-primary-strong;
+}
+
+.sidebar-session {
+  @apply grid gap-1 mbs-auto p-[0.8rem] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md text-nx-text-muted text-[length:0.75rem];
+}
+
+.sidebar-session code {
+  @apply text-nx-text;
+}
+
+.workspace {
+  @apply min-inline-0 [grid-column:2];
+}
+
+.topbar {
+  @apply flex min-h-18 items-center justify-between gap-4 [padding:0_2rem] [border-bottom:1px_solid_var(--nx-border)];
+  @apply [background:color-mix(in_srgb,_var(--nx-surface)_92%,_transparent)] [backdrop-filter:blur(12px)];
+}
+
+.topbar-leading {
+  @apply flex min-inline-0 items-center gap-[var(--nx-space-2)];
+}
+
+.topbar :is(.sidebar-toggle, .mobile-navigation-toggle) {
+  @apply [flex:0_0_auto];
+}
+
+.topbar .mobile-navigation-toggle {
+  @apply hidden;
+}
+
+[dir="rtl"] .sidebar-toggle-icon {
+  @apply [scale:-1_1];
+}
+
+.environment-pill,
+.mode-pill,
+.ready-badge,
+.control-button {
+  @apply inline-flex items-center gap-2 [border:1px_solid_var(--nx-border)];
+  @apply rounded-[999px] [background:var(--nx-surface)] text-nx-text-muted text-[length:0.82rem];
+}
+
+.environment-pill,
+.mode-pill,
+.ready-badge {
+  @apply [padding:0.45rem_0.75rem];
+}
+
+.status-dot {
+  @apply w-2 h-2 [border-radius:50%] [background:var(--nx-primary)] [box-shadow:0_0_0_4px_var(--nx-primary-soft)];
+}
+
+.status-dot.limited {
+  @apply [background:var(--nx-warning)] [box-shadow:0_0_0_4px_color-mix(in_srgb,_var(--nx-warning)_18%,_transparent)];
+}
+
+.topbar-actions,
+.foundation-controls {
+  @apply flex items-center gap-[0.6rem];
+}
+
+.control-button {
+  @apply min-h-[2.35rem] [padding:0.4rem_0.7rem] cursor-pointer;
+}
+
+.control-button:hover {
+  @apply border-nx-primary text-nx-primary-strong;
+}
+
+.control-button.icon-only {
+  @apply w-[2.35rem] justify-center p-0;
+}
+
+.main-content {
+  @apply min-inline-0 [padding-block:clamp(2rem,_5vw,_3.5rem)];
+  @apply [padding-inline:clamp(1rem,_3vw,_2.5rem)];
+}
+
+.workspace-page-note {
+  @apply max-inline-[65ch] mbs-[var(--nx-space-6)] text-nx-text-muted;
+}
+
+.workspace-portfolio-picker {
+  @apply max-inline-96 mbs-[var(--nx-space-6)];
+}

@@ -1,0 +1,66 @@
+.nx-overlay {
+  @apply fixed z-110 [inset:0] grid place-items-center p-[var(--nx-space-4)] [background:rgb(3_14_24_/_0.58)];
+  @apply [backdrop-filter:blur(4px)];
+}
+.nx-overlay__panel {
+  @apply flex [inline-size:min(34rem,_100%)] [max-block-size:min(44rem,_calc(100vh_-_2rem))] flex-col overflow-auto;
+  @apply [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-lg [background:var(--nx-surface)] [box-shadow:0_1.5rem_4rem_rgb(3_14_24_/_0.28)];
+}
+.nx-overlay__panel > header,
+.nx-overlay__panel > footer,
+.nx-overlay__panel > div {
+  @apply p-[var(--nx-space-5)];
+}
+.nx-overlay__panel > header {
+  @apply [border-block-end:1px_solid_var(--nx-border)];
+}
+.nx-overlay__header {
+  @apply flex items-start justify-between gap-[var(--nx-space-4)];
+}
+.nx-overlay__header > div {
+  @apply min-inline-0;
+}
+.nx-overlay__panel > header h2,
+.nx-overlay__panel > header p {
+  @apply m-0;
+}
+.nx-overlay__panel > header p {
+  @apply mbs-[var(--nx-space-2)] text-nx-text-muted [line-height:1.65];
+}
+.nx-overlay__footer {
+  @apply flex justify-end gap-[var(--nx-space-2)] [border-block-start:1px_solid_var(--nx-border)];
+}
+.nx-overlay--drawer,
+.nx-overlay--sheet {
+  @apply [place-items:stretch_start] p-0;
+}
+.nx-overlay--drawer .nx-overlay__panel,
+.nx-overlay--sheet .nx-overlay__panel {
+  @apply [inline-size:min(26rem,_calc(100vw_-_2rem))] max-block-[100vh] min-block-[100vh] [border-block:0];
+  @apply [border-inline-start:0];
+  @apply [border-radius:0];
+  @apply [border-start-end-radius:var(--nx-radius-lg)];
+  @apply [border-end-end-radius:var(--nx-radius-lg)];
+}
+.nx-tooltip {
+  @apply relative inline-flex;
+}
+.nx-tooltip__trigger {
+  @apply inline-flex;
+}
+.nx-tooltip__content {
+  @apply absolute z-130 [inset-block-end:calc(100%_+_0.5rem)];
+  @apply start-[50%] inline-[max-content] [max-inline-size:min(18rem,_calc(100vw_-_2rem))] [padding:0.45rem_0.65rem] rounded-nx-sm;
+  @apply [background:var(--nx-text)] text-nx-surface text-[length:0.76rem] [line-height:1.45] opacity-[0] pointer-events-none;
+  @apply [transform:translateX(-50%)_translateY(0.25rem)] [transition:opacity_120ms_ease,_transform_120ms_ease];
+}
+.nx-tooltip:hover .nx-tooltip__content,
+.nx-tooltip:focus-within .nx-tooltip__content {
+  @apply opacity-[1] [transform:translateX(-50%)_translateY(0)];
+}
+.nx-popover,
+.nx-dropdown {
+  @apply z-100 min-inline-48 p-[var(--nx-space-2)] [border:1px_solid_var(--nx-border)];
+  @apply rounded-nx-md [background:var(--nx-surface)] [box-shadow:0_0.8rem_2rem_rgb(3_14_24_/_0.14)];
+}

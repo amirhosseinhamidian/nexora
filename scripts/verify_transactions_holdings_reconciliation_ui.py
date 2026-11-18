@@ -266,11 +266,12 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 def validate_runtime_markers() -> None:
     component = (ROOT / "apps/web/src/components/portfolio-operations.tsx").read_text(encoding="utf-8")
+    tabs = (ROOT / "packages/ui/src/primitives/tabs.tsx").read_text(encoding="utf-8")
     dashboard = (ROOT / "apps/web/src/components/portfolio-dashboard.tsx").read_text(encoding="utf-8")
     workspace = (ROOT / "apps/web/src/components/workspace-view.tsx").read_text(encoding="utf-8")
     navigation = (ROOT / "apps/web/src/components/workspace-navigation.tsx").read_text(encoding="utf-8")
     client = (ROOT / "apps/web/src/lib/api-client.ts").read_text(encoding="utf-8")
-    styles = (ROOT / "apps/web/src/app/globals.css").read_text(encoding="utf-8")
+    styles = (ROOT / "apps/web/src/styles/portfolio-operations.css").read_text(encoding="utf-8")
     english = _json(ROOT / "apps/web/messages/en.json")
     persian = _json(ROOT / "apps/web/messages/fa.json")
     browser = (ROOT / "apps/web/tests/e2e/authenticated-shell.spec.ts").read_text(encoding="utf-8")
@@ -290,10 +291,12 @@ def validate_runtime_markers() -> None:
         "expected_row_version: item.row_version",
         "recentlyReauthenticated",
         "JSON.stringify(row.normalized_payload, null, 2)",
-        'role="tablist"',
+        "<Tabs",
+        'role="tab"',
         "function exactDecimal",
     ):
         _require(marker in component, f"P2-11 runtime marker missing: {marker}")
+    _require('role="tablist"' in tabs and "onKeyDown={navigate}" in tabs, "P2-11 keyboard tablist is missing")
     for forbidden in ("owner_id", "external_reference", "parseFloat(", "Number(holding", "Number(lot"):
         _require(forbidden not in component, f"P2-11 runtime includes forbidden marker: {forbidden}")
     _require("export type PortfolioWorkspaceContext" in dashboard, "portfolio context is not shared")
@@ -311,7 +314,7 @@ def validate_runtime_markers() -> None:
         ".operations-tabs",
         ".responsive-data-grid",
         ".decision-form",
-        "min-height: 2.75rem",
+        "min-h-11",
     ):
         _require(marker in styles, f"responsive P2-11 style missing: {marker}")
     for locale, dictionary in (("en", english), ("fa", persian)):

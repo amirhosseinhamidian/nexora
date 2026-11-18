@@ -1,18 +1,29 @@
 "use client";
 
 import {
+  Alert,
+  Button,
+  Disclosure,
+  FormField,
+  Input,
+  ResponsiveRecordList,
+  Select,
+  Spinner,
+  Tabs,
+  Textarea,
+} from "@nexora/ui/primitives";
+import {
   AlertTriangle,
   ArrowLeftRight,
   Boxes,
   CheckCircle2,
   FileInput,
   History,
-  LoaderCircle,
   RefreshCw,
   Scale,
   ShieldAlert,
 } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useId, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { PortfolioWorkspaceContext } from "@/components/portfolio-dashboard";
 import type { Locale } from "@/i18n/config";
@@ -187,6 +198,7 @@ export function PortfolioOperations({
   locale: Locale;
   recentlyReauthenticated: boolean;
 }) {
+  const fieldId = useId();
   const copy = dictionary.portfolioOperations;
   const [activeTab, setActiveTab] = useState<Tab>("journal");
   const [basisMethod, setBasisMethod] = useState<CostBasisMethod>("fifo");
@@ -396,9 +408,10 @@ export function PortfolioOperations({
         </div>
       ) : (
         <>
-          <div aria-label={copy.tabs.label} className="operations-tabs" role="tablist">
+          <Tabs className="operations-tabs" label={copy.tabs.label}>
             {tabs.map(({ icon: Icon, id, label }) => (
-              <button
+              <Button
+                variant="ghost"
                 aria-controls={`operations-panel-${id}`}
                 aria-selected={activeTab === id}
                 className={activeTab === id ? "active" : ""}
@@ -406,16 +419,17 @@ export function PortfolioOperations({
                 key={id}
                 onClick={() => setActiveTab(id)}
                 role="tab"
+                tabIndex={activeTab === id ? 0 : -1}
                 type="button"
               >
                 <Icon aria-hidden="true" size={18} />
                 {label}
-              </button>
+              </Button>
             ))}
-          </div>
+          </Tabs>
 
           {feedback && (
-            <div
+            <Alert
               className={`operations-feedback ${feedback.error ? "error" : "success"}`}
               role="status"
             >
@@ -425,25 +439,30 @@ export function PortfolioOperations({
                 <CheckCircle2 aria-hidden="true" size={18} />
               )}
               <span>{feedback.text}</span>
-            </div>
+            </Alert>
           )}
 
           {state === "loading" ? (
             <div aria-live="polite" className="dashboard-state compact">
-              <LoaderCircle aria-hidden="true" className="spin" size={24} />
+              <Spinner label="" size="lg" />
               <p>{copy.loading}</p>
             </div>
           ) : state === "error" ? (
-            <div className="dashboard-state compact error" role="alert">
+            <Alert tone="danger" className="dashboard-state compact error" role="alert">
               <ShieldAlert aria-hidden="true" size={24} />
               <div>
                 <p>{copy.loadError}</p>
-                <button className="secondary-button" onClick={retry} type="button">
+                <Button
+                  variant="secondary"
+                  className="secondary-button"
+                  onClick={retry}
+                  type="button"
+                >
                   <RefreshCw aria-hidden="true" size={17} />
                   {copy.retry}
-                </button>
+                </Button>
               </div>
-            </div>
+            </Alert>
           ) : (
             <>
               <div
@@ -465,9 +484,9 @@ export function PortfolioOperations({
                 {data.transactions.length === 0 ? (
                   <p className="inline-empty">{copy.journal.empty}</p>
                 ) : (
-                  <div className="operations-card-list">
+                  <ResponsiveRecordList className="operations-card-list" label={copy.journal.title}>
                     {data.transactions.map((transaction) => (
-                      <article className="operation-card" key={transaction.transaction_id}>
+                      <li className="operation-card" key={transaction.transaction_id}>
                         <div className="operation-card-heading">
                           <div>
                             <span className="status-badge active">
@@ -504,9 +523,9 @@ export function PortfolioOperations({
                           <span>{copy.sourceKind[transaction.source_kind]}</span>
                           <code dir="ltr">{transaction.source_reference}</code>
                         </div>
-                      </article>
+                      </li>
                     ))}
-                  </div>
+                  </ResponsiveRecordList>
                 )}
               </div>
 
@@ -523,29 +542,31 @@ export function PortfolioOperations({
                     <p>{copy.holdings.description}</p>
                   </div>
                   <div>
-                    <label>
-                      <span>{copy.holdings.method}</span>
-                      <select
-                        onChange={(event) => setBasisMethod(event.target.value as CostBasisMethod)}
+                    <FormField id={`${fieldId}-holdings-method`} label={copy.holdings.method}>
+                      <Select
+                        id={`${fieldId}-holdings-method`}
+                        onValueChange={(value) => setBasisMethod(value as CostBasisMethod)}
                         value={basisMethod}
-                      >
-                        <option value="fifo">{copy.holdings.fifo}</option>
-                        <option value="weighted_average">{copy.holdings.weightedAverage}</option>
-                      </select>
-                    </label>
-                    <button
+                        options={[
+                          { value: "fifo", label: copy.holdings.fifo },
+                          { value: "weighted_average", label: copy.holdings.weightedAverage },
+                        ]}
+                      />
+                    </FormField>
+                    <Button
+                      variant="secondary"
                       className="secondary-button"
                       disabled={busyAction === "rebuild"}
                       onClick={() => void rebuildHoldings()}
                       type="button"
                     >
                       {busyAction === "rebuild" ? (
-                        <LoaderCircle aria-hidden="true" className="spin" size={17} />
+                        <Spinner label="" size="sm" />
                       ) : (
                         <RefreshCw aria-hidden="true" size={17} />
                       )}
                       {copy.holdings.rebuild}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {!data.holdings || !data.lots ? (
@@ -575,9 +596,12 @@ export function PortfolioOperations({
                     {data.holdings.items.length === 0 ? (
                       <p className="inline-empty">{copy.holdings.empty}</p>
                     ) : (
-                      <div className="responsive-data-grid">
+                      <ResponsiveRecordList
+                        className="responsive-data-grid"
+                        label={copy.holdings.positions}
+                      >
                         {data.holdings.items.map((holding) => (
-                          <article
+                          <li
                             className="data-card"
                             key={`${holding.account_id}-${holding.asset_id}`}
                           >
@@ -606,17 +630,20 @@ export function PortfolioOperations({
                                 <dd dir="ltr">{exactDecimal(holding.total_cost_basis, locale)}</dd>
                               </div>
                             </dl>
-                          </article>
+                          </li>
                         ))}
-                      </div>
+                      </ResponsiveRecordList>
                     )}
                     <h4 className="subsection-title">{copy.holdings.lots}</h4>
                     {data.lots.items.length === 0 ? (
                       <p className="inline-empty">{copy.holdings.noLots}</p>
                     ) : (
-                      <div className="responsive-data-grid">
+                      <ResponsiveRecordList
+                        className="responsive-data-grid"
+                        label={copy.holdings.lots}
+                      >
                         {data.lots.items.map((lot) => (
-                          <article className="data-card" key={lot.lot_key}>
+                          <li className="data-card" key={lot.lot_key}>
                             <div>
                               <strong>
                                 {assets.get(lot.asset_id)?.name ?? shortId(lot.asset_id)}
@@ -639,9 +666,9 @@ export function PortfolioOperations({
                                 <dd dir="ltr">{exactDecimal(lot.remaining_cost_basis, locale)}</dd>
                               </div>
                             </dl>
-                          </article>
+                          </li>
                         ))}
-                      </div>
+                      </ResponsiveRecordList>
                     )}
                   </>
                 )}
@@ -661,21 +688,20 @@ export function PortfolioOperations({
                   </div>
                 </div>
                 <form className="import-form" onSubmit={(event) => void createDryRun(event)}>
-                  <label>
-                    <span>{copy.imports.format}</span>
-                    <select
-                      onChange={(event) =>
-                        setImportFormat(event.target.value as "csv" | "nexora_json")
-                      }
+                  <FormField id={`${fieldId}-imports-format`} label={copy.imports.format}>
+                    <Select
+                      id={`${fieldId}-imports-format`}
+                      onValueChange={(value) => setImportFormat(value as "csv" | "nexora_json")}
                       value={importFormat}
-                    >
-                      <option value="csv">CSV</option>
-                      <option value="nexora_json">Nexora JSON</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>{copy.imports.content}</span>
-                    <textarea
+                      options={[
+                        { value: "csv", label: "CSV" },
+                        { value: "nexora_json", label: "Nexora JSON" },
+                      ]}
+                    />
+                  </FormField>
+                  <FormField id={`${fieldId}-imports-content`} label={copy.imports.content}>
+                    <Textarea
+                      id={`${fieldId}-imports-content`}
                       maxLength={1_048_576}
                       onChange={(event) => setImportContent(event.target.value)}
                       placeholder={copy.imports.placeholder}
@@ -683,24 +709,27 @@ export function PortfolioOperations({
                       rows={8}
                       value={importContent}
                     />
-                  </label>
+                  </FormField>
                   <p>{copy.imports.dryRunNotice}</p>
-                  <button
+                  <Button
                     className="primary-button compact-action"
                     disabled={busyAction === "dry-run" || !importContent.trim()}
                     type="submit"
                   >
                     {busyAction === "dry-run" ? (
-                      <LoaderCircle aria-hidden="true" className="spin" size={18} />
+                      <Spinner label="" size="sm" />
                     ) : (
                       <FileInput aria-hidden="true" size={18} />
                     )}
                     {copy.imports.preview}
-                  </button>
+                  </Button>
                 </form>
-                <div className="operations-card-list import-batches">
+                <ResponsiveRecordList
+                  className="operations-card-list import-batches"
+                  label={copy.imports.title}
+                >
                   {data.imports.map((batch) => (
-                    <article className="operation-card" key={batch.import_batch_id}>
+                    <li className="operation-card" key={batch.import_batch_id}>
                       <div className="operation-card-heading">
                         <div>
                           <span className={`status-badge ${batch.status}`}>
@@ -729,8 +758,7 @@ export function PortfolioOperations({
                         </span>
                       </div>
                       {batch.rows.length > 0 && (
-                        <details className="import-preview">
-                          <summary>{copy.imports.showRows}</summary>
+                        <Disclosure className="import-preview" label={copy.imports.showRows}>
                           {batch.rows.slice(0, 20).map((row) => (
                             <div className="import-row" key={row.import_row_id}>
                               <div>
@@ -747,13 +775,16 @@ export function PortfolioOperations({
                               )}
                             </div>
                           ))}
-                        </details>
+                        </Disclosure>
                       )}
                       {batch.status === "dry_run" && batch.quarantined_count === 0 && (
                         <div className="bounded-action-form">
-                          <label>
-                            <span>{copy.reason}</span>
-                            <input
+                          <FormField
+                            id={`${fieldId}-review-reason-${batch.import_batch_id}`}
+                            label={copy.reason}
+                          >
+                            <Input
+                              id={`${fieldId}-review-reason-${batch.import_batch_id}`}
                               minLength={8}
                               onChange={(event) =>
                                 setReviewReasons((current) => ({
@@ -763,19 +794,21 @@ export function PortfolioOperations({
                               }
                               value={reviewReasons[batch.import_batch_id] ?? ""}
                             />
-                          </label>
-                          <button
+                          </FormField>
+                          <Button
+                            variant="secondary"
                             className="secondary-button"
                             disabled={busyAction === `review-${batch.import_batch_id}`}
                             onClick={() => void reviewBatch(batch)}
                             type="button"
                           >
                             {copy.imports.review}
-                          </button>
+                          </Button>
                         </div>
                       )}
                       {batch.status === "reviewed" && (
-                        <button
+                        <Button
+                          variant="secondary"
                           className="secondary-button"
                           disabled={
                             !recentlyReauthenticated ||
@@ -785,7 +818,7 @@ export function PortfolioOperations({
                           type="button"
                         >
                           {copy.imports.publish}
-                        </button>
+                        </Button>
                       )}
                       {batch.status === "reviewed" && !recentlyReauthenticated && (
                         <p className="reauth-notice">{copy.reauthenticationRequired}</p>
@@ -794,12 +827,10 @@ export function PortfolioOperations({
                         <code dir="ltr">{shortId(batch.import_batch_id)}</code>
                         <code dir="ltr">sha256:{shortId(batch.content_sha256)}</code>
                       </div>
-                    </article>
+                    </li>
                   ))}
-                  {data.imports.length === 0 && (
-                    <p className="inline-empty">{copy.imports.empty}</p>
-                  )}
-                </div>
+                </ResponsiveRecordList>
+                {data.imports.length === 0 && <p className="inline-empty">{copy.imports.empty}</p>}
               </div>
 
               <div
@@ -821,9 +852,12 @@ export function PortfolioOperations({
                 {data.reconciliation.length === 0 ? (
                   <p className="inline-empty">{copy.reconciliation.empty}</p>
                 ) : (
-                  <div className="operations-card-list">
+                  <ResponsiveRecordList
+                    className="operations-card-list"
+                    label={copy.reconciliation.title}
+                  >
                     {data.reconciliation.map((item) => (
-                      <article className="operation-card" key={item.reconciliation_case_id}>
+                      <li className="operation-card" key={item.reconciliation_case_id}>
                         <div className="operation-card-heading">
                           <div>
                             <span className={`status-badge ${item.state}`}>
@@ -838,37 +872,41 @@ export function PortfolioOperations({
                         {item.reason && <p>{item.reason}</p>}
                         {item.state === "open" && (
                           <div className="decision-form">
-                            <label>
-                              <span>{copy.reconciliation.decision}</span>
-                              <select
-                                onChange={(event) =>
+                            <FormField
+                              id={`${fieldId}-reconciliation-decision-${item.reconciliation_case_id}`}
+                              label={copy.reconciliation.decision}
+                            >
+                              <Select
+                                id={`${fieldId}-reconciliation-decision-${item.reconciliation_case_id}`}
+                                onValueChange={(value) =>
                                   setDecisionStates((current) => ({
                                     ...current,
-                                    [item.reconciliation_case_id]: event.target.value as Exclude<
+                                    [item.reconciliation_case_id]: value as Exclude<
                                       ReconciliationCase["state"],
                                       "open"
                                     >,
                                   }))
                                 }
                                 value={decisionStates[item.reconciliation_case_id] ?? "matched"}
-                              >
-                                {(
+                                options={(
                                   [
                                     "matched",
                                     "accepted_difference",
                                     "resolved",
                                     "ignored_with_reason",
                                   ] as const
-                                ).map((state) => (
-                                  <option key={state} value={state}>
-                                    {copy.reconciliationState[state]}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label>
-                              <span>{copy.reason}</span>
-                              <input
+                                ).map((state) => ({
+                                  value: state,
+                                  label: copy.reconciliationState[state],
+                                }))}
+                              />
+                            </FormField>
+                            <FormField
+                              id={`${fieldId}-reconciliation-reason-${item.reconciliation_case_id}`}
+                              label={copy.reason}
+                            >
+                              <Input
+                                id={`${fieldId}-reconciliation-reason-${item.reconciliation_case_id}`}
                                 minLength={8}
                                 onChange={(event) =>
                                   setDecisionReasons((current) => ({
@@ -878,8 +916,9 @@ export function PortfolioOperations({
                                 }
                                 value={decisionReasons[item.reconciliation_case_id] ?? ""}
                               />
-                            </label>
-                            <button
+                            </FormField>
+                            <Button
+                              variant="secondary"
                               className="secondary-button"
                               disabled={
                                 !recentlyReauthenticated ||
@@ -890,7 +929,7 @@ export function PortfolioOperations({
                             >
                               <ArrowLeftRight aria-hidden="true" size={17} />
                               {copy.reconciliation.apply}
-                            </button>
+                            </Button>
                             {!recentlyReauthenticated && (
                               <p className="reauth-notice">{copy.reauthenticationRequired}</p>
                             )}
@@ -903,9 +942,9 @@ export function PortfolioOperations({
                             <code dir="ltr">{shortId(item.transaction_id)}</code>
                           )}
                         </div>
-                      </article>
+                      </li>
                     ))}
-                  </div>
+                  </ResponsiveRecordList>
                 )}
               </div>
             </>

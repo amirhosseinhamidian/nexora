@@ -1,0 +1,48 @@
+{
+  "schema_version": "nexora-platform-shell-v1",
+  "decision_id": "NEX-P4-02",
+  "status": "candidate",
+  "p4_01_prerequisite": {
+    "freeze_commit_sha": "a89a4cbeab3a6b4846638ca47d2e5a051c6e16d7",
+    "freeze_record_path": "artifacts/p4-01/ui-foundation-freeze.json",
+    "freeze_record_checksum": "5c335ffbd731d9cea0df1e2cf1bfecfdf17b575531cb218f41b091a0ae22905d",
+    "successful_ci_run_id": 44319372484
+  },
+  "routes": [
+    "/{locale}/overview",
+    "/{locale}/portfolios",
+    "/{locale}/portfolios/{portfolio_id}",
+    "/{locale}/transactions",
+    "/{locale}/decisions",
+    "/{locale}/alerts",
+    "/{locale}/journal",
+    "/{locale}/exports",
+    "/{locale}/settings"
+  ],
+  "locale_root_redirect": "/{locale}/overview",
+  "public_entry_routes": ["/{locale}/login", "/{locale}/bootstrap"],
+  "navigation": {
+    "desktop_sidebar_edge": { "fa": "right", "en": "left" },
+    "desktop_collapsible": true,
+    "mobile_keyboard_drawer": true,
+    "visible_active_route": true,
+    "full_width_responsive_main": true
+  },
+  "session": {
+    "existing_session_gate_required": true,
+    "session_expiry_recovery_required": true,
+    "same_origin_api_required": true,
+    "owner_scope_required": true,
+    "recent_reauthentication_required_for_sensitive_operations": true
+  },
+  "deferred": {
+    "first_run_wizard": "NEX-P4-03",
+    "registry_management": "NEX-P4-04",
+    "exports_and_settings": "NEX-P4-09"
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-02-FREEZE",
+    "post_freeze_stage": "NEX-P4-03",
+    "production_readiness_claimed": false
+  }
+}

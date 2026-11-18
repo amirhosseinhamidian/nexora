@@ -394,31 +394,106 @@ async function mockPrivateRuntime(page: import("@playwright/test").Page) {
 
 test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await mockPrivateRuntime(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/fa");
+  await expect(page).toHaveURL("/fa/overview");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("عملیات پورتفولیو");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("نمای کلی");
   await expect(page.locator(".ready-badge")).toHaveText("نشست مالک فعال است");
   await expect(page.getByRole("heading", { name: "نمای کلی پورتفولیو" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "دفتر حساب‌ها" })).toBeVisible();
+  const sidebar = page.locator("#desktop-sidebar");
+  const main = page.getByRole("main");
+  expect((await sidebar.boundingBox())!.x).toBeGreaterThan((await main.boundingBox())!.x);
+
+  await page.getByRole("button", { name: "جمع کردن نوار کناری" }).click();
+  await expect(page.getByRole("button", { name: "باز کردن نوار کناری" })).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await page.getByRole("link", { name: "تراکنش‌ها" }).click();
+  await expect(page).toHaveURL("/fa/transactions");
+  await expect(page.getByRole("link", { name: "تراکنش‌ها" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   await expect(page.getByRole("heading", { name: "ژورنال، دارایی‌ها و تطبیق" })).toBeVisible();
   await expect(page.getByText("Opening evidence")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "فضای کاری هوشمندی تصمیم" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "فهرست تصمیم‌ها و جزئیات Candidate" }),
-  ).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.getByRole("navigation")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Brokerage" })).toBeVisible();
+  await expect(sidebar).toBeHidden();
   await expect(page.getByRole("tab", { name: "ژورنال" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+
+  const menu = page.getByRole("button", { name: "باز کردن منو" });
+  await menu.focus();
+  await menu.press("Enter");
+  const drawer = page.getByRole("dialog", { name: "منوی فضای کاری" });
+  await expect(drawer.getByRole("button", { name: "بستن منو" })).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
+  const close = drawer.getByRole("button", { name: "بستن منو" });
+  await close.press("Shift+Tab");
+  await expect(drawer.getByRole("link", { name: "تنظیمات" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(drawer).toBeHidden();
+  await expect(menu).toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe("");
+
+  await menu.click();
+  await drawer.getByRole("link", { name: "تصمیم‌ها" }).click();
+  await expect(page).toHaveURL("/fa/decisions");
+  await expect(drawer).toBeHidden();
+  await expect(page.getByRole("heading", { name: "فضای کاری هوشمندی تصمیم" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "فهرست تصمیم‌ها و جزئیات Candidate" }),
+  ).toBeVisible();
+});
+
+test("English workspace routes share a left sidebar and support portfolio deep links", async ({
+  page,
+}) => {
+  await mockPrivateRuntime(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/en");
+  await expect(page).toHaveURL("/en/overview");
+  const navigation = page.getByRole("navigation", { name: "Workspace navigation" });
+  await expect(navigation).toBeVisible();
+  expect((await navigation.boundingBox())!.x).toBeLessThan(
+    (await page.getByRole("main").boundingBox())!.x,
+  );
+
+  await navigation.getByRole("link", { name: "Portfolios" }).click();
+  await expect(page).toHaveURL("/en/portfolios");
+  await page.getByRole("link", { name: "View portfolio details" }).click();
+  await expect(page).toHaveURL("/en/portfolios/portfolio-1");
+  await expect(page.getByRole("heading", { name: "Core portfolio" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Brokerage" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Portfolios" })).toHaveAttribute(
+    "aria-current",
+    "location",
+  );
+
+  for (const [path, title] of [
+    ["alerts", "Alerts"],
+    ["journal", "Journal"],
+    ["exports", "Exports"],
+    ["settings", "Settings"],
+  ]) {
+    await navigation.getByRole("link", { name: title, exact: true }).click();
+    await expect(page).toHaveURL(`/en/${path}`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+  }
+
+  await page.goto("/en/portfolios/missing");
+  await expect(page.getByRole("heading", { name: "Portfolio not found" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Brokerage" })).toHaveCount(0);
 });
 
 test("Phase 3 Decision workflow is keyboard integrated and fixture backed", async ({ page }) => {
   await mockPrivateRuntime(page);
-  await page.goto("/en");
+  await page.goto("/en/decisions");
 
   await expect(
     page.getByRole("heading", { name: "Decision intelligence workspace" }),
@@ -448,9 +523,9 @@ test("Phase 3 Decision workflow is keyboard integrated and fixture backed", asyn
   await expect(page.getByText("Accept · v1")).toBeVisible();
   await expect(page.getByRole("heading", { name: "No active alerts" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No watchlist yet" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Watchlists" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Alerts", exact: true })).toHaveAttribute(
     "href",
-    "#watchlists",
+    "/en/alerts",
   );
 });
 
@@ -492,7 +567,7 @@ test("Phase 3 surfaces degraded, empty and error states explicitly", async ({ pa
   );
   await page.route("**/api/v1/watchlists?**", (route) => route.abort("failed"));
 
-  await page.goto("/en");
+  await page.goto("/en/decisions");
   await expect(page.getByText("Loading the active decision projection…")).toBeVisible();
   releaseDecision();
   await expect(page.getByText("Provider evidence is degraded")).toBeVisible();

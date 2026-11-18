@@ -3,13 +3,28 @@
   "skipToContent": "Skip to content",
   "navigation": {
     "overview": "Overview",
-    "portfolio": "Portfolio",
+    "portfolio": "Portfolios",
+    "transactions": "Transactions",
     "decisions": "Decisions",
     "alerts": "Alerts",
     "journal": "Journal",
     "watchlists": "Watchlists",
     "exports": "Exports",
     "settings": "Settings"
+  },
+  "workspacePages": {
+    "navigationLabel": "Workspace navigation",
+    "openNavigation": "Open navigation",
+    "closeNavigation": "Close navigation",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "portfolioDetails": "Portfolio details",
+    "openPortfolioDetails": "View portfolio details",
+    "backToPortfolios": "Back to portfolios",
+    "portfolioUnavailableTitle": "Portfolio not found",
+    "portfolioUnavailableDescription": "This portfolio is unavailable. Open the portfolio list to choose another one.",
+    "exportsDescription": "Export creation and history will be available in a later update.",
+    "settingsDescription": "More workspace preferences will be available in a later update. You can change the language and appearance from the top bar now."
   },
   "header": {
     "environment": "Private workspace",

@@ -51,29 +51,53 @@ textarea {
 
 .application-shell {
   display: grid;
-  grid-template-columns: 15rem minmax(0, 1fr);
-  min-height: 100vh;
+  grid-template-columns: var(--sidebar-width, 15rem) minmax(0, 1fr);
+  min-block-size: 100vh;
 }
 
-[dir="rtl"] .application-shell {
-  grid-template-columns: minmax(0, 1fr) 15rem;
+.application-shell[data-sidebar-collapsed="true"] {
+  --sidebar-width: 4.5rem;
 }
 
 .sidebar {
   position: sticky;
-  top: 0;
+  inset-block-start: 0;
+  display: flex;
   grid-column: 1;
-  grid-row: 1;
-  height: 100vh;
+  block-size: 100dvh;
+  flex-direction: column;
+  gap: var(--nx-space-4);
+  overflow: auto;
   padding: 1.35rem 1rem;
   border-inline-end: 1px solid var(--nx-border);
   background: var(--nx-sidebar);
 }
 
-[dir="rtl"] .sidebar {
-  grid-column: 2;
-  border-inline-end: 0;
-  border-inline-start: 1px solid var(--nx-border);
+.sidebar .brand {
+  padding-block-end: var(--nx-space-2);
+}
+
+[data-sidebar-collapsed="true"] .sidebar {
+  padding-inline: var(--nx-space-2);
+}
+
+[data-sidebar-collapsed="true"] .sidebar :is(.brand, .navigation-link) {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.shell-sr-only,
+[data-sidebar-collapsed="true"] .sidebar :is(.sidebar-brand-name, .navigation-label) {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[data-sidebar-collapsed="true"] .sidebar-session {
+  display: none;
 }
 
 .brand {
@@ -105,11 +129,16 @@ textarea {
 
 .navigation-link {
   display: flex;
+  min-block-size: var(--nx-control-md);
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 0.85rem;
   border-radius: var(--nx-radius-md);
   color: var(--nx-text-muted);
+}
+
+.navigation-link svg {
+  flex: 0 0 auto;
 }
 
 .navigation-link:hover,
@@ -118,17 +147,10 @@ textarea {
   color: var(--nx-primary-strong);
 }
 
-.navigation-link.disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
 .sidebar-session {
-  position: absolute;
-  inset-inline: 1rem;
-  inset-block-end: 1.25rem;
   display: grid;
   gap: 0.25rem;
+  margin-block-start: auto;
   padding: 0.8rem;
   border: 1px solid var(--nx-border);
   border-radius: var(--nx-radius-md);
@@ -141,13 +163,8 @@ textarea {
 }
 
 .workspace {
-  min-width: 0;
+  min-inline-size: 0;
   grid-column: 2;
-}
-
-[dir="rtl"] .workspace {
-  grid-column: 1;
-  grid-row: 1;
 }
 
 .topbar {
@@ -160,6 +177,25 @@ textarea {
   border-bottom: 1px solid var(--nx-border);
   background: color-mix(in srgb, var(--nx-surface) 92%, transparent);
   backdrop-filter: blur(12px);
+}
+
+.topbar-leading {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--nx-space-2);
+}
+
+.topbar :is(.sidebar-toggle, .mobile-navigation-toggle) {
+  flex: 0 0 auto;
+}
+
+.topbar .mobile-navigation-toggle {
+  display: none;
+}
+
+[dir="rtl"] .sidebar-toggle-icon {
+  scale: -1 1;
 }
 
 .environment-pill,
@@ -220,9 +256,20 @@ textarea {
 }
 
 .main-content {
-  width: min(74rem, calc(100% - 3rem));
-  margin: 0 auto;
-  padding: 3.5rem 0;
+  min-inline-size: 0;
+  padding-block: clamp(2rem, 5vw, 3.5rem);
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+}
+
+.workspace-page-note {
+  max-inline-size: 65ch;
+  margin-block-start: var(--nx-space-6);
+  color: var(--nx-text-muted);
+}
+
+.workspace-portfolio-picker {
+  max-inline-size: 24rem;
+  margin-block-start: var(--nx-space-6);
 }
 
 .page-heading,
@@ -2444,35 +2491,17 @@ textarea {
 }
 
 @media (max-width: 900px) {
-  .application-shell,
-  [dir="rtl"] .application-shell {
+  .application-shell {
     display: block;
   }
 
-  .sidebar {
-    position: static;
-    width: auto;
-    height: auto;
-    padding: 1rem;
-    border: 0;
-    border-bottom: 1px solid var(--nx-border);
-  }
-
-  .sidebar-session {
+  .sidebar,
+  .topbar .sidebar-toggle {
     display: none;
   }
 
-  .brand {
-    padding-bottom: 1rem;
-  }
-
-  .navigation-list {
-    display: flex;
-    overflow-x: auto;
-  }
-
-  .navigation-link {
-    white-space: nowrap;
+  .topbar .mobile-navigation-toggle {
+    display: inline-flex;
   }
 
   .topbar {
@@ -2513,9 +2542,18 @@ textarea {
     display: none;
   }
 
-  .main-content {
-    width: min(100% - 2rem, 74rem);
-    padding: 2rem 0;
+  .environment-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .environment-pill {
+    min-inline-size: 0;
+  }
+
+  .environment-pill .status-dot {
+    flex: 0 0 auto;
   }
 
   .page-heading {

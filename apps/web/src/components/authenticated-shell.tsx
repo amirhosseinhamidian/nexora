@@ -1,57 +1,57 @@
 "use client";
 
 import type { ActionResponse, SessionResponse } from "@nexora/contracts";
-import {
-  Bell,
-  Binoculars,
-  BookOpen,
-  BriefcaseBusiness,
-  CheckCircle2,
-  Download,
-  FileChartColumn,
-  LayoutDashboard,
-  LogOut,
-  ShieldCheck,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Drawer, IconButton } from "@nexora/ui/primitives";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
-import { DecisionExperience } from "@/components/decision-experience";
 import { FoundationControls } from "@/components/foundation-controls";
-import {
-  PortfolioDashboard,
-  type PortfolioWorkspaceContext,
-} from "@/components/portfolio-dashboard";
-import { PortfolioOperations } from "@/components/portfolio-operations";
 import { StatePanel } from "@/components/state-panel";
+import { WorkspaceNavigation } from "@/components/workspace-navigation";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError, SESSION_EXPIRED_EVENT, apiRequest } from "@/lib/api-client";
 
-const navigationIcons = [
-  LayoutDashboard,
-  BriefcaseBusiness,
-  FileChartColumn,
-  Bell,
-  BookOpen,
-  Binoculars,
-  Download,
-  SlidersHorizontal,
-] as const;
-
 type ShellState = "authenticated" | "expired" | "loading" | "offline";
 
 type AuthenticatedShellProps = {
+  children: ReactNode;
   dictionary: Dictionary;
   locale: Locale;
 };
 
-export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellProps) {
+const WorkspaceContext = createContext<
+  (Omit<AuthenticatedShellProps, "children"> & { session: SessionResponse }) | null
+>(null);
+
+export function useWorkspace() {
+  const context = useContext(WorkspaceContext);
+  if (!context) throw new Error("Workspace content requires the authenticated shell.");
+  return context;
+}
+
+export function AuthenticatedShell({ children, dictionary, locale }: AuthenticatedShellProps) {
   const [state, setState] = useState<ShellState>("loading");
   const [session, setSession] = useState<SessionResponse>();
   const [servicesReady, setServicesReady] = useState(false);
-  const [portfolioContext, setPortfolioContext] = useState<PortfolioWorkspaceContext>();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const closeMobile = () => setMobileOpen(false);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(width > 900px)");
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileOpen(false);
+    };
+    const closeOnHistoryChange = () => setMobileOpen(false);
+    desktop.addEventListener("change", closeOnDesktop);
+    window.addEventListener("popstate", closeOnHistoryChange);
+    return () => {
+      desktop.removeEventListener("change", closeOnDesktop);
+      window.removeEventListener("popstate", closeOnHistoryChange);
+    };
+  }, []);
 
   const restore = useCallback(async () => {
     try {
@@ -76,8 +76,14 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
 
   useEffect(() => {
     const initialRestore = window.setTimeout(() => void restore(), 0);
-    const expire = () => setState("expired");
-    const offline = () => setState("offline");
+    const expire = () => {
+      setMobileOpen(false);
+      setState("expired");
+    };
+    const offline = () => {
+      setMobileOpen(false);
+      setState("offline");
+    };
     const online = () => void restore();
     window.addEventListener(SESSION_EXPIRED_EVENT, expire);
     window.addEventListener("offline", offline);
@@ -135,61 +141,24 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
     );
   }
 
-  const navigation = Object.values(dictionary.navigation);
-  const navigationTargets = [
-    `/${locale}`,
-    "#accounts",
-    "#decisions",
-    "#alerts",
-    "#decision-journal",
-    "#watchlists",
-    null,
-    null,
-  ] as const;
+  const copy = dictionary.workspacePages;
+  const SidebarIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   const status = servicesReady ? dictionary.shell.ready : dictionary.shell.limited;
   return (
-    <div className="application-shell">
+    <div className="application-shell" data-sidebar-collapsed={collapsed}>
       <a className="skip-link" href="#main-content">
         {dictionary.skipToContent}
       </a>
-      <aside className="sidebar">
-        <Link className="brand" dir="ltr" href={`/${locale}`}>
+      <aside className="sidebar" id="desktop-sidebar">
+        <Link aria-label={dictionary.brand} className="brand" href={`/${locale}/overview`}>
           <span aria-hidden="true" className="brand-mark">
             N
           </span>
-          <span>{dictionary.brand}</span>
+          <span className="sidebar-brand-name" dir="ltr">
+            {dictionary.brand}
+          </span>
         </Link>
-        <nav aria-label={dictionary.navigation.overview}>
-          <ul className="navigation-list">
-            {navigation.map((label, index) => {
-              const Icon = navigationIcons[index];
-              const href = navigationTargets[index];
-              return (
-                <li key={label}>
-                  {href ? (
-                    <Link
-                      aria-current={index === 0 ? "page" : undefined}
-                      className={`navigation-link ${index === 0 ? "active" : ""}`}
-                      href={href}
-                    >
-                      <Icon aria-hidden="true" size={19} />
-                      <span>{label}</span>
-                    </Link>
-                  ) : (
-                    <span
-                      aria-disabled="true"
-                      className="navigation-link disabled"
-                      title={dictionary.shell.phaseTwo}
-                    >
-                      <Icon aria-hidden="true" size={19} />
-                      <span>{label}</span>
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        <WorkspaceNavigation dictionary={dictionary} locale={locale} />
         <div className="sidebar-session">
           <span>{dictionary.shell.owner}</span>
           <code dir="ltr">{session.owner_id.slice(0, 8)}…</code>
@@ -198,67 +167,60 @@ export function AuthenticatedShell({ dictionary, locale }: AuthenticatedShellPro
 
       <div className="workspace">
         <header className="topbar">
-          <div className="environment-pill" title={status}>
-            <span className={`status-dot ${servicesReady ? "" : "limited"}`} />
-            {dictionary.header.environment}
+          <div className="topbar-leading">
+            <IconButton
+              aria-controls="desktop-sidebar"
+              aria-expanded={!collapsed}
+              aria-label={collapsed ? copy.expandSidebar : copy.collapseSidebar}
+              className="sidebar-toggle"
+              onClick={() => setCollapsed((current) => !current)}
+              title={collapsed ? copy.expandSidebar : copy.collapseSidebar}
+            >
+              <SidebarIcon aria-hidden="true" className="sidebar-toggle-icon" size={19} />
+            </IconButton>
+            <IconButton
+              aria-controls="mobile-navigation"
+              aria-expanded={mobileOpen}
+              aria-haspopup="dialog"
+              aria-label={copy.openNavigation}
+              className="mobile-navigation-toggle"
+              onClick={(event) => {
+                event.currentTarget.focus();
+                setMobileOpen(true);
+              }}
+            >
+              <Menu aria-hidden="true" size={19} />
+            </IconButton>
+            <div className="environment-pill" title={status}>
+              <span className={`status-dot ${servicesReady ? "" : "limited"}`} />
+              <span className="environment-label">{dictionary.header.environment}</span>
+              <span className="shell-sr-only">{status}</span>
+            </div>
           </div>
           <div className="topbar-actions">
             <span className="mode-pill">{dictionary.header.mode}</span>
             <FoundationControls dictionary={dictionary.header} locale={locale} />
-            <button
-              aria-label={dictionary.shell.logout}
-              className="control-button icon-only"
-              onClick={logout}
-              type="button"
-            >
+            <IconButton aria-label={dictionary.shell.logout} onClick={logout}>
               <LogOut aria-hidden="true" size={18} />
-            </button>
+            </IconButton>
           </div>
         </header>
 
-        <main className="main-content" id="main-content">
-          <div className="page-heading">
-            <div>
-              <p className="eyebrow">{dictionary.shell.eyebrow}</p>
-              <h1>{dictionary.shell.title}</h1>
-              <p>{dictionary.shell.description}</p>
-            </div>
-            <div className="ready-badge">
-              <CheckCircle2 aria-hidden="true" size={18} />
-              {dictionary.shell.authenticated}
-            </div>
-          </div>
-
-          <PortfolioDashboard
-            dictionary={dictionary}
-            locale={locale}
-            onWorkspaceChange={setPortfolioContext}
-          />
-
-          <DecisionExperience dictionary={dictionary} locale={locale} />
-
-          <PortfolioOperations
-            context={portfolioContext}
-            dictionary={dictionary}
-            locale={locale}
-            recentlyReauthenticated={session.recently_reauthenticated}
-          />
-
-          <section className="boundary-card">
-            <div className="boundary-heading">
-              <h2>{dictionary.shell.securityTitle}</h2>
-              <ShieldCheck aria-hidden="true" size={28} />
-            </div>
-            <ul className="boundary-list">
-              {Object.values(dictionary.shell.securityItems).map((item) => (
-                <li key={item}>
-                  <CheckCircle2 aria-hidden="true" size={18} />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+        <main className="main-content" id="main-content" tabIndex={-1}>
+          <WorkspaceContext.Provider value={{ dictionary, locale, session }}>
+            {children}
+          </WorkspaceContext.Provider>
         </main>
+      </div>
+      <div id="mobile-navigation">
+        <Drawer
+          closeLabel={copy.closeNavigation}
+          onClose={closeMobile}
+          open={mobileOpen}
+          title={copy.navigationLabel}
+        >
+          <WorkspaceNavigation dictionary={dictionary} locale={locale} onNavigate={closeMobile} />
+        </Drawer>
       </div>
     </div>
   );

@@ -8,7 +8,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-three-ui-integration.json"
 P3_11_CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-three-export-coverage.json"
-SHELL_PATH = ROOT / "apps/web/src/components/authenticated-shell.tsx"
+WORKSPACE_PATH = ROOT / "apps/web/src/components/workspace-view.tsx"
+NAVIGATION_PATH = ROOT / "apps/web/src/components/workspace-navigation.tsx"
 EXPERIENCE_PATH = ROOT / "apps/web/src/components/decision-experience.tsx"
 DECISION_PATH = ROOT / "apps/web/src/components/decision-feed.tsx"
 JOURNAL_PATH = ROOT / "apps/web/src/components/outcome-journal-panel.tsx"
@@ -159,7 +160,8 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 
 def validate_runtime_markers() -> None:
-    shell = SHELL_PATH.read_text(encoding="utf-8")
+    workspace = WORKSPACE_PATH.read_text(encoding="utf-8")
+    navigation = NAVIGATION_PATH.read_text(encoding="utf-8")
     experience = EXPERIENCE_PATH.read_text(encoding="utf-8")
     decision = DECISION_PATH.read_text(encoding="utf-8")
     journal = JOURNAL_PATH.read_text(encoding="utf-8")
@@ -169,8 +171,11 @@ def validate_runtime_markers() -> None:
     english = load_json(ROOT / "apps/web/messages/en.json")
     persian = load_json(ROOT / "apps/web/messages/fa.json")
 
-    require("<DecisionExperience" in shell, "integrated Decision experience is not composed")
-    require('"#watchlists"' in shell, "Watchlists navigation is not enabled")
+    require("<DecisionExperience" in workspace, "integrated Decision experience is not composed")
+    require(
+        'segment: "alerts"' in navigation and "<WatchlistPanel" in workspace,
+        "Watchlists navigation through Alerts is not enabled",
+    )
     for marker in (
         "export function DecisionExperience",
         "onDecisionChange={setActiveDecisionId}",
@@ -229,7 +234,7 @@ def validate_browser_acceptance() -> None:
         "Phase 3 surfaces degraded, empty and error states explicitly",
         "Loading the active decision projection…",
         'page.goto("/fa")',
-        'page.goto("/en")',
+        'page.goto("/en/decisions")',
         'candidateButton.press("End")',
         'secondDecision.press("Home")',
         'name: "Record immutable review"',

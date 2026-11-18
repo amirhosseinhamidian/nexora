@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import en from "../../messages/en.json";
 import { apiRequest } from "@/lib/api-client";
@@ -8,9 +8,7 @@ import { AuthenticatedShell } from "./authenticated-shell";
 vi.mock("@/components/foundation-controls", () => ({
   FoundationControls: () => <div>controls</div>,
 }));
-vi.mock("@/components/decision-experience", () => ({
-  DecisionExperience: () => <section>decision experience</section>,
-}));
+vi.mock("next/navigation", () => ({ usePathname: () => "/en/overview" }));
 vi.mock("@/lib/api-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-client")>("@/lib/api-client");
   return { ...actual, apiRequest: vi.fn() };
@@ -19,7 +17,16 @@ vi.mock("@/lib/api-client", async () => {
 const request = vi.mocked(apiRequest);
 
 describe("AuthenticatedShell", () => {
-  beforeEach(() => request.mockReset());
+  beforeEach(() => {
+    request.mockReset();
+    vi.stubGlobal("matchMedia", () => ({
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
 
   it("renders the owner shell and logs out through the CSRF-aware client", async () => {
     request
@@ -29,22 +36,22 @@ describe("AuthenticatedShell", () => {
         rotation_required: false,
       })
       .mockResolvedValueOnce({ status: "ready" })
-      .mockResolvedValueOnce({ items: [] })
-      .mockResolvedValueOnce({ items: [] })
-      .mockResolvedValueOnce({ items: [] })
-      .mockResolvedValueOnce({ items: [] })
-      .mockResolvedValueOnce({ items: [], schema_version: "nexora-watchlists-v1" })
       .mockResolvedValueOnce({ status: "completed" });
 
-    render(<AuthenticatedShell dictionary={en} locale="en" />);
-    expect(
-      await screen.findByRole("heading", { name: "Portfolio operations" }),
-    ).toBeInTheDocument();
+    render(
+      <AuthenticatedShell dictionary={en} locale="en">
+        <h1>Private page</h1>
+      </AuthenticatedShell>,
+    );
+    expect(screen.queryByRole("heading", { name: "Private page" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Private page" })).toBeInTheDocument();
     expect(screen.getByText("113f777b…")).toBeInTheDocument();
-    expect(screen.getByTitle("Ready")).toBeInTheDocument();
-    expect(
-      await screen.findByRole("heading", { name: "No portfolio is registered yet" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByTitle("Ready")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Transactions" })).toHaveAttribute(
+      "href",
+      "/en/transactions",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     await waitFor(() =>

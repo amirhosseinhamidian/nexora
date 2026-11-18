@@ -267,7 +267,8 @@ def validate_contract(contract: dict[str, Any]) -> None:
 def validate_runtime_markers() -> None:
     component = (ROOT / "apps/web/src/components/portfolio-operations.tsx").read_text(encoding="utf-8")
     dashboard = (ROOT / "apps/web/src/components/portfolio-dashboard.tsx").read_text(encoding="utf-8")
-    shell = (ROOT / "apps/web/src/components/authenticated-shell.tsx").read_text(encoding="utf-8")
+    workspace = (ROOT / "apps/web/src/components/workspace-view.tsx").read_text(encoding="utf-8")
+    navigation = (ROOT / "apps/web/src/components/workspace-navigation.tsx").read_text(encoding="utf-8")
     client = (ROOT / "apps/web/src/lib/api-client.ts").read_text(encoding="utf-8")
     styles = (ROOT / "apps/web/src/app/globals.css").read_text(encoding="utf-8")
     english = _json(ROOT / "apps/web/messages/en.json")
@@ -297,15 +298,11 @@ def validate_runtime_markers() -> None:
         _require(forbidden not in component, f"P2-11 runtime includes forbidden marker: {forbidden}")
     _require("export type PortfolioWorkspaceContext" in dashboard, "portfolio context is not shared")
     _require("onWorkspaceChange?.(workspaceContext)" in dashboard, "portfolio selection is not propagated")
-    _require("<PortfolioOperations" in shell, "P2-11 workspace is not composed")
-    _require("recentlyReauthenticated={session.recently_reauthenticated}" in shell, "reauth state is not bound")
+    _require("<PortfolioOperations" in workspace, "P2-11 workspace is not composed")
+    _require("recentlyReauthenticated={session.recently_reauthenticated}" in workspace, "reauth state is not bound")
     _require(
-        any(target in shell for target in ('"#portfolio-operations"', '"#decision-journal"')),
-        "journal navigation is not enabled",
-    )
-    _require(
-        "index === 4" in shell or ("const navigationTargets" in shell and '"#decision-journal"' in shell),
-        "journal navigation does not target the Journal item",
+        'segment: "transactions"' in navigation and "<TransactionsWorkspace" in workspace,
+        "transaction journal navigation is not enabled",
     )
     for marker in ('cache: "no-store"', 'credentials: "same-origin"', 'headers.set("X-CSRF-Token", csrf)'):
         _require(marker in client, f"API client marker missing: {marker}")

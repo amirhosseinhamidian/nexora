@@ -13,6 +13,7 @@ import {
   ShieldAlert,
   WalletCards,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Locale } from "@/i18n/config";
@@ -206,10 +207,16 @@ export function PortfolioDashboard({
   dictionary,
   locale,
   onWorkspaceChange,
+  portfolioId,
+  selectionOnly = false,
+  showDetailsLink = false,
 }: {
   dictionary: Dictionary;
   locale: Locale;
   onWorkspaceChange?: (context?: PortfolioWorkspaceContext) => void;
+  portfolioId?: string;
+  selectionOnly?: boolean;
+  showDetailsLink?: boolean;
 }) {
   const copy = dictionary.portfolioDashboard;
   const [registryState, setRegistryState] = useState<"error" | "loading" | "ready">("loading");
@@ -220,7 +227,8 @@ export function PortfolioDashboard({
     portfolios: [],
   });
   const [details, setDetails] = useState<DetailData>();
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState("");
+  const [chosenPortfolioId, setChosenPortfolioId] = useState("");
+  const selectedPortfolioId = portfolioId ?? chosenPortfolioId;
   const [registryRevision, setRegistryRevision] = useState(0);
   const [detailRevision, setDetailRevision] = useState(0);
 
@@ -245,7 +253,7 @@ export function PortfolioDashboard({
           portfolios: portfolioResponse.items,
         };
         setRegistry(next);
-        setSelectedPortfolioId((current) => {
+        setChosenPortfolioId((current) => {
           if (next.portfolios.some((item) => item.portfolio_id === current)) return current;
           return (
             next.portfolios.find((item) => item.status === "active")?.portfolio_id ??
@@ -262,25 +270,30 @@ export function PortfolioDashboard({
     return () => controller.abort();
   }, [registryRevision]);
 
+  const selectedPortfolio = registry.portfolios.find(
+    (item) => item.portfolio_id === selectedPortfolioId,
+  );
+  const analyticsPortfolioId = selectionOnly ? undefined : selectedPortfolio?.portfolio_id;
+
   useEffect(() => {
-    if (!selectedPortfolioId || registryState !== "ready") {
+    if (!analyticsPortfolioId || registryState !== "ready") {
       return;
     }
     const controller = new AbortController();
-    async function loadDetails() {
+    async function loadDetails(id: string) {
       setDetailState("loading");
       const asOf = new Date().toISOString();
       const encoded = encodeURIComponent(asOf);
       try {
         const [analytics, valuation] = await Promise.all([
           apiRequest<PortfolioAnalytics>(
-            `/api/v1/portfolios/${encodeURIComponent(selectedPortfolioId)}/analytics?as_of=${encoded}`,
+            `/api/v1/portfolios/${encodeURIComponent(id)}/analytics?as_of=${encoded}`,
             {
               signal: controller.signal,
             },
           ),
           apiRequest<ValuationResponse>(
-            `/api/v1/portfolios/${encodeURIComponent(selectedPortfolioId)}/valuation-status?as_of=${encoded}`,
+            `/api/v1/portfolios/${encodeURIComponent(id)}/valuation-status?as_of=${encoded}`,
             {
               signal: controller.signal,
             },
@@ -293,13 +306,10 @@ export function PortfolioDashboard({
         if (!controller.signal.aborted) setDetailState("error");
       }
     }
-    void loadDetails();
+    void loadDetails(analyticsPortfolioId);
     return () => controller.abort();
-  }, [detailRevision, registryState, selectedPortfolioId]);
+  }, [analyticsPortfolioId, detailRevision, registryState]);
 
-  const selectedPortfolio = registry.portfolios.find(
-    (item) => item.portfolio_id === selectedPortfolioId,
-  );
   const selectedAccounts = useMemo(
     () => registry.accounts.filter((item) => item.portfolio_id === selectedPortfolioId),
     [registry.accounts, selectedPortfolioId],
@@ -358,6 +368,20 @@ export function PortfolioDashboard({
     );
   }
 
+  if (portfolioId !== undefined && !selectedPortfolio) {
+    return (
+      <section className="dashboard-state error portfolio-dashboard">
+        <div>
+          <h2>{dictionary.workspacePages.portfolioUnavailableTitle}</h2>
+          <p>{dictionary.workspacePages.portfolioUnavailableDescription}</p>
+          <Link className="secondary-button" href={`/${locale}/portfolios`}>
+            {dictionary.workspacePages.backToPortfolios}
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   if (registry.portfolios.length === 0) {
     return (
       <section className="dashboard-state portfolio-dashboard">
@@ -369,6 +393,24 @@ export function PortfolioDashboard({
       </section>
     );
   }
+
+  const selector = (
+    <label className="portfolio-selector">
+      <span>{copy.selectPortfolio}</span>
+      <select
+        value={selectedPortfolioId}
+        onChange={(event) => setChosenPortfolioId(event.target.value)}
+      >
+        {registry.portfolios.map((portfolio) => (
+          <option key={portfolio.portfolio_id} value={portfolio.portfolio_id}>
+            {portfolio.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  if (selectionOnly) return <div className="workspace-portfolio-picker">{selector}</div>;
 
   const baseAsset = selectedPortfolio ? assets.get(selectedPortfolio.base_asset_id) : undefined;
   const valuationCounts = { fresh: 0, missing: 0, stale: 0 };
@@ -386,22 +428,21 @@ export function PortfolioDashboard({
       <div className="dashboard-toolbar">
         <div>
           <p className="section-kicker">{copy.eyebrow}</p>
-          <h2 id="portfolio-dashboard-title">{copy.title}</h2>
+          <h2 id="portfolio-dashboard-title">
+            {portfolioId ? selectedPortfolio?.name : copy.title}
+          </h2>
         </div>
-        <label className="portfolio-selector">
-          <span>{copy.selectPortfolio}</span>
-          <select
-            value={selectedPortfolioId}
-            onChange={(event) => setSelectedPortfolioId(event.target.value)}
-          >
-            {registry.portfolios.map((portfolio) => (
-              <option key={portfolio.portfolio_id} value={portfolio.portfolio_id}>
-                {portfolio.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {portfolioId === undefined ? selector : null}
       </div>
+
+      {showDetailsLink && selectedPortfolio ? (
+        <Link
+          className="secondary-button"
+          href={`/${locale}/portfolios/${encodeURIComponent(selectedPortfolio.portfolio_id)}`}
+        >
+          {dictionary.workspacePages.openPortfolioDetails}
+        </Link>
+      ) : null}
 
       <div className="portfolio-context">
         <span className={`status-badge ${selectedPortfolio?.status}`}>

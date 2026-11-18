@@ -271,7 +271,8 @@ requires first-run Portfolio onboarding and routed bilingual pages, and
 preserves all security and private-VPS gates. `NEX-P4-01` is frozen at candidate
 `1a05a19e47268f291ddcb09a49c0463020106035`. It delivers shared tokens and
 accessible micro-components. Its Freeze record opens `NEX-P4-02` for the
-application shell, navigation and routes.
+application shell, navigation and routes. The P4-02 candidate provides the
+locale-prefixed workspace pages and the responsive sidebar and mobile drawer.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -453,7 +454,9 @@ NEX_P4_00_PRODUCT_EXPERIENCE_ROADMAP_CANDIDATE=PASS
 NEX_P4_00_FREEZE=PASS
 NEX_P4_01_UI_FOUNDATION_CANDIDATE=PASS
 NEX_P4_01_FREEZE=PASS
-NEX_P4_02=OPEN
+NEX_P4_02_PLATFORM_SHELL_CANDIDATE=PASS
+NEX_P4_02_FREEZE=PENDING_SAME_SHA_CI
+NEX_P4_03=BLOCKED_PENDING_P4_02_FREEZE
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -597,3 +600,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx`](docs/v0.1/Nexora_Phase_4_Product_Experience_Roadmap_FA.docx)
 - [`docs/v0.1/48-ui-foundation-and-micro-components.md`](docs/v0.1/48-ui-foundation-and-micro-components.md)
 - [`artifacts/p4-01/ui-foundation-freeze.json`](artifacts/p4-01/ui-foundation-freeze.json)
+- [`contracts/nexora-v0.1-platform-shell.json`](contracts/nexora-v0.1-platform-shell.json)
+- [`docs/v0.1/49-platform-shell-navigation-and-routes.md`](docs/v0.1/49-platform-shell-navigation-and-routes.md)

@@ -194,7 +194,8 @@ def validate_files_and_runtime_markers() -> None:
         "apps/web/src/components/authenticated-shell.tsx": (
             'type ShellState = "authenticated" | "expired" | "loading" | "offline"',
             "SESSION_EXPIRED_EVENT",
-            'aria-disabled="true"',
+            'if (state === "expired" || !session)',
+            "<WorkspaceContext.Provider",
         ),
         "apps/web/src/lib/api-client.ts": (
             'const CSRF_COOKIE = "__Host-nexora_csrf"',

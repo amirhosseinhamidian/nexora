@@ -3,13 +3,28 @@
   "skipToContent": "رفتن به محتوای اصلی",
   "navigation": {
     "overview": "نمای کلی",
-    "portfolio": "پورتفولیو",
+    "portfolio": "پرتفوی‌ها",
+    "transactions": "تراکنش‌ها",
     "decisions": "تصمیم‌ها",
     "alerts": "هشدارها",
-    "journal": "ژورنال",
-    "watchlists": "Watchlistها",
+    "journal": "دفتر نتایج",
+    "watchlists": "فهرست‌های پایش",
     "exports": "خروجی‌ها",
     "settings": "تنظیمات"
+  },
+  "workspacePages": {
+    "navigationLabel": "منوی فضای کاری",
+    "openNavigation": "باز کردن منو",
+    "closeNavigation": "بستن منو",
+    "collapseSidebar": "جمع کردن نوار کناری",
+    "expandSidebar": "باز کردن نوار کناری",
+    "portfolioDetails": "جزئیات پرتفوی",
+    "openPortfolioDetails": "مشاهده جزئیات پرتفوی",
+    "backToPortfolios": "بازگشت به پرتفوی‌ها",
+    "portfolioUnavailableTitle": "پرتفوی پیدا نشد",
+    "portfolioUnavailableDescription": "این پرتفوی در دسترس نیست. از فهرست پرتفوی‌ها می‌توانید مورد دیگری انتخاب کنید.",
+    "exportsDescription": "ساخت و مشاهدهٔ تاریخچهٔ خروجی‌ها در به‌روزرسانی بعدی در دسترس قرار می‌گیرد.",
+    "settingsDescription": "تنظیمات بیشتر در به‌روزرسانی بعدی اضافه می‌شود. زبان و ظاهر برنامه را همین حالا می‌توانید از نوار بالا تغییر دهید."
   },
   "header": {
     "environment": "فضای کاری خصوصی",

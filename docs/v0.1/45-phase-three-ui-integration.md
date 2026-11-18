@@ -1,6 +1,6 @@
 # NEX-P3-12 — UI Integration, Accessibility and End-to-end
 
-Status: **Candidate — requires same-SHA CI acceptance**
+Status: **Accepted — same-SHA CI passed at `7fb3a707dc6b3c059eb2e65b06490385f18c3b1b`**
 
 P3-12 integrates the Phase 3 Decision Intelligence experience inside the
 existing authenticated, single-owner shell. It adds no backend route, database
@@ -62,7 +62,7 @@ pnpm --filter @nexora/web test:e2e
 
 ## Transition
 
-P3-12 is accepted only when its dedicated workflow and all regression gates
-pass on the implementation SHA. Successful CI acceptance opens only
+P3-12 passed its dedicated workflow and regression gates at
+`7fb3a707dc6b3c059eb2e65b06490385f18c3b1b`. This acceptance opens only
 `NEX-P3-13 — Phase 3 Acceptance and Freeze`. Production readiness and the
 private-server deployment gate remain explicitly unsatisfied.

@@ -1,0 +1,118 @@
+{
+  "schema_version": "nexora-phase-three-final-acceptance-v1",
+  "decision_id": "NEX-P3-13",
+  "decision_date": "2026-11-18",
+  "status": "candidate",
+  "title": "Phase 3 Acceptance and Freeze",
+  "p3_12_prerequisite": {
+    "decision_id": "NEX-P3-12",
+    "accepted_commit_sha": "7fb3a707dc6b3c059eb2e65b06490385f18c3b1b",
+    "contract_path": "contracts/nexora-v0.1-phase-three-ui-integration.json",
+    "same_sha_ci_accepted": true,
+    "opens_stage": "NEX-P3-13"
+  },
+  "evidence": {
+    "same_candidate_sha_required": true,
+    "same_environment_label_required": true,
+    "github_actions_success_required": true,
+    "checksums_required": true,
+    "final_record_schema": "nexora-phase-three-final-acceptance-record-v1"
+  },
+  "automated_gates": [
+    "repository_contract",
+    "backend",
+    "migration_cycle",
+    "postgresql_projection_recovery",
+    "phase_three_contract_chain",
+    "security_inventory",
+    "export_coverage",
+    "frontend",
+    "browser",
+    "provider_smoke_evidence"
+  ],
+  "destructive_database_boundary": {
+    "required_database_name": "nexora_phase_three_acceptance",
+    "postgresql_major": 17,
+    "production_database_allowed": false,
+    "development_database_allowed": false,
+    "dsn_recorded_in_artifact": false
+  },
+  "phase_three_acceptance": {
+    "migration_from_zero_required": true,
+    "migration_drift_required": true,
+    "backend_required": true,
+    "postgresql_required": true,
+    "frontend_required": true,
+    "browser_required": true,
+    "contract_and_schema_drift_required": true,
+    "duplicate_delivery_required": true,
+    "idempotent_replay_required": true,
+    "aggregate_gap_recovery_required": true,
+    "full_resync_recovery_required": true,
+    "fixture_end_to_end_required": true,
+    "compatible_provider_smoke_required": true,
+    "private_complete_export_required": true,
+    "ai_safe_export_required": true,
+    "accessibility_required": true,
+    "security_inventory_required": true
+  },
+  "provider_smoke_evidence": {
+    "provider_release": "0.3.1",
+    "provider_commit_sha": "3097276ed77cd212101797654452456b7fbc61de",
+    "workflow_run_id": 43210235551,
+    "artifact_id": 13939958030,
+    "artifact_digest": "sha256:d1ec79aa429891ae94a36a4d65d573c3b97550ceaffa343b3df8989286d3375d",
+    "provider_profile": "contracts/integration/v1/trd-bot-v0.3.1-provider-profile.json",
+    "bound_by_contract": "contracts/nexora-v0.1-durable-decision-event-projection.json",
+    "real_local_smoke_passed": true
+  },
+  "manual_evidence": [
+    "projection_replay_and_recovery_review",
+    "owner_scope_and_immutability_review",
+    "export_lineage_and_redaction_review",
+    "responsive_bilingual_accessibility_review",
+    "compatible_provider_smoke_review",
+    "no_forbidden_capabilities"
+  ],
+  "server_deployment_acceptance": {
+    "status": "deferred_until_private_vps_available",
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "planned_host_type": "private_vps",
+    "planned_country_code": "DE",
+    "required_before": [
+      "v0.1-production-deployment",
+      "v0.1-release"
+    ],
+    "production_readiness_claimed": false
+  },
+  "acceptance_boundary": {
+    "phase_three_scope_may_be_frozen": true,
+    "local_acceptance_is_production_acceptance": false,
+    "private_vps_production_readiness_claimed": false,
+    "public_production_readiness_claimed": false,
+    "freeze_commit_policy": "acceptance-artifact-only",
+    "freeze_does_not_deploy_or_tag": true
+  },
+  "security_boundary": {
+    "saas": false,
+    "multi_user": false,
+    "public_internet_deployment": false,
+    "exchange_credentials": false,
+    "wallet_private_keys_or_signing": false,
+    "fund_transfer": false,
+    "live_order_capability": false,
+    "autonomous_ai_execution": false,
+    "ml_training_or_inference": false,
+    "financial_advice": false,
+    "tax_advice": false,
+    "direct_trd_bot_database_access": false
+  },
+  "transition": {
+    "ready_for_acceptance_candidate": true,
+    "next_allowed_stage": "NEX-P3-13-ACCEPTANCE",
+    "phase_three_complete_after_freeze": true,
+    "post_freeze_stage": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "production_readiness_claimed": false
+  }
+}

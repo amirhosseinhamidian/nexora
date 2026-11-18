@@ -244,11 +244,15 @@ forbidden. `NEX-P3-11` is accepted at
 `306f2d1141bec65386c961e9fe36f9ab193fee3c`. It extends deterministic,
 owner-scoped `private_complete` and `ai_safe` exports across the complete Phase
 3 Decision, review, Alert, watchlist and outcome history while preserving source
-checksums and excluding security material. `NEX-P3-12` is the current candidate;
-it integrates the bilingual Decision workflow, connects selected evidence to the
-Outcome Journal, adds keyboard and reduced-motion support, and supplies
-fixture-backed browser acceptance for responsive, empty, error and degraded
-states.
+checksums and excluding security material. `NEX-P3-12` is accepted at
+`7fb3a707dc6b3c059eb2e65b06490385f18c3b1b`; it integrates the bilingual
+Decision workflow, connects selected evidence to the Outcome Journal, adds
+keyboard and reduced-motion support, and supplies fixture-backed browser
+acceptance for responsive, empty, error and degraded states. `NEX-P3-13` is the
+current candidate tooling. It binds migrations, PostgreSQL projection recovery,
+the complete contract chain, exports, accessibility, browser coverage and the
+compatible-provider smoke evidence to one SHA before the artifact-only Phase 3
+Freeze. Production readiness remains unclaimed.
 Personal-asset binding remains deferred until a versioned provider asset map
 exists.
 
@@ -315,6 +319,7 @@ uv run python scripts/verify_watchlists.py
 uv run python scripts/verify_outcome_journal.py
 uv run python scripts/verify_phase_three_export_coverage.py
 uv run python scripts/verify_phase_three_ui_integration.py
+uv run python scripts/verify_phase_three_final_acceptance.py
 python3 -m unittest discover -s tests -v
 ```
 
@@ -421,6 +426,10 @@ NEX_P3_11_ACCEPTED_SHA=PASS
 NEX_P3_12_UI_INTEGRATION=COMPLETE
 NEX_P3_12_ACCESSIBILITY_AND_BROWSER_E2E=COMPLETE
 NEX_P3_13=BLOCKED_PENDING_P3_12_CI_ACCEPTANCE
+NEX_P3_12_ACCEPTED_SHA=PASS
+NEX_P3_13_FINAL_ACCEPTANCE_TOOLING=PASS
+NEX_P3_13_PROVIDER_SMOKE_EVIDENCE=BOUND
+NEX_P3_13_READY_FOR_ACCEPTANCE_CANDIDATE=PASS
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -446,7 +455,9 @@ P3-10 accepted contract: [`contracts/nexora-v0.1-outcome-journal.json`](contract
 
 P3-11 accepted contract: [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
 
-P3-12 candidate contract: [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
+P3-12 accepted contract: [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
+
+P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.json`](contracts/nexora-v0.1-phase-three-final-acceptance.json)
 
 - [`docs/v0.1/00-scope-and-system-boundary.md`](docs/v0.1/00-scope-and-system-boundary.md)
 - [`docs/v0.1/01-technical-baseline-and-repository-architecture.md`](docs/v0.1/01-technical-baseline-and-repository-architecture.md)
@@ -493,6 +504,7 @@ P3-12 candidate contract: [`contracts/nexora-v0.1-phase-three-ui-integration.jso
 - [`docs/v0.1/43-decision-and-outcome-journal.md`](docs/v0.1/43-decision-and-outcome-journal.md)
 - [`docs/v0.1/44-phase-three-export-coverage.md`](docs/v0.1/44-phase-three-export-coverage.md)
 - [`docs/v0.1/45-phase-three-ui-integration.md`](docs/v0.1/45-phase-three-ui-integration.md)
+- [`docs/v0.1/46-phase-three-final-acceptance.md`](docs/v0.1/46-phase-three-final-acceptance.md)
 - [`docs/adr/`](docs/adr/)
 - [`contracts/nexora-v0.1-scope.json`](contracts/nexora-v0.1-scope.json)
 - [`contracts/nexora-v0.1-technical-baseline.json`](contracts/nexora-v0.1-technical-baseline.json)
@@ -524,6 +536,8 @@ P3-12 candidate contract: [`contracts/nexora-v0.1-phase-three-ui-integration.jso
 - [`contracts/nexora-v0.1-decision-review-journal-domain.json`](contracts/nexora-v0.1-decision-review-journal-domain.json)
 - [`contracts/nexora-v0.1-trd-bot-v031-integration.json`](contracts/nexora-v0.1-trd-bot-v031-integration.json)
 - [`contracts/nexora-v0.1-phase-three-export-coverage.json`](contracts/nexora-v0.1-phase-three-export-coverage.json)
+- [`contracts/nexora-v0.1-phase-three-ui-integration.json`](contracts/nexora-v0.1-phase-three-ui-integration.json)
+- [`contracts/nexora-v0.1-phase-three-final-acceptance.json`](contracts/nexora-v0.1-phase-three-final-acceptance.json)
 - [`contracts/runtime/v1/`](contracts/runtime/v1/)
 - [`contracts/acceptance/v1/phase-zero-traceability.json`](contracts/acceptance/v1/phase-zero-traceability.json)
 - [`artifacts/p0-01/scope-freeze.json`](artifacts/p0-01/scope-freeze.json)

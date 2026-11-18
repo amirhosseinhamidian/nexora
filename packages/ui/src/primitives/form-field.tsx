@@ -22,10 +22,7 @@ export function FormField({
   optionalLabel,
 }: FieldProps) {
   return (
-    <div
-      className={classes("nx-field", className)}
-      data-invalid={Boolean(error) || undefined}
-    >
+    <div className={classes("nx-field", className)} data-invalid={Boolean(error) || undefined}>
       <div className="nx-field__label-row">
         <label htmlFor={id} id={`${id}-label`}>
           {label}

@@ -49,17 +49,11 @@ export function Select({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const selectedIndex = options.findIndex((option) => option.value === value);
-  const enabled = options.flatMap((option, index) =>
-    option.disabled ? [] : [index],
-  );
-  const initialIndex = enabled.includes(selectedIndex)
-    ? selectedIndex
-    : enabled[0];
+  const enabled = options.flatMap((option, index) => (option.disabled ? [] : [index]));
+  const initialIndex = enabled.includes(selectedIndex) ? selectedIndex : enabled[0];
   const unavailable = disabled || enabled.length === 0;
   const expanded = open && !unavailable;
-  const active = enabled.includes(activeIndex)
-    ? activeIndex
-    : (enabled[0] ?? -1);
+  const active = enabled.includes(activeIndex) ? activeIndex : (enabled[0] ?? -1);
 
   function close() {
     search.current = { text: "", time: 0 };
@@ -68,8 +62,7 @@ export function Select({
 
   function choose(index: number) {
     const option = options[index];
-    if (option && !option.disabled && option.value !== value)
-      onValueChange(option.value);
+    if (option && !option.disabled && option.value !== value) onValueChange(option.value);
     close();
   }
 
@@ -96,10 +89,7 @@ export function Select({
       popup.style.setProperty("--nx-select-left", `${rect.left}px`);
       popup.style.setProperty("--nx-select-width", `${rect.width}px`);
       popup.style.setProperty("--nx-select-height", `${height}px`);
-      popup.style.setProperty(
-        "--nx-select-top",
-        above ? "auto" : `${rect.bottom + 4}px`,
-      );
+      popup.style.setProperty("--nx-select-top", above ? "auto" : `${rect.bottom + 4}px`);
       popup.style.setProperty(
         "--nx-select-bottom",
         above ? `${window.innerHeight - rect.top + 4}px` : "auto",
@@ -112,16 +102,10 @@ export function Select({
       close();
     }
 
-    if (
-      !popup.hasAttribute("aria-label") &&
-      !popup.hasAttribute("aria-labelledby")
-    ) {
+    if (!popup.hasAttribute("aria-label") && !popup.hasAttribute("aria-labelledby")) {
       const labels = Array.from(anchor.labels ?? []);
       if (labels.length && labels.every((label) => label.id)) {
-        popup.setAttribute(
-          "aria-labelledby",
-          labels.map((label) => label.id).join(" "),
-        );
+        popup.setAttribute("aria-labelledby", labels.map((label) => label.id).join(" "));
       } else {
         const text = labels
           .map((label) => label.textContent?.trim())
@@ -164,8 +148,7 @@ export function Select({
     if (!expanded || !popup || !option) return;
     const bounds = popup.getBoundingClientRect();
     const row = option.getBoundingClientRect();
-    if (row.bottom > bounds.bottom)
-      popup.scrollTop += row.bottom - bounds.bottom;
+    if (row.bottom > bounds.bottom) popup.scrollTop += row.bottom - bounds.bottom;
     if (row.top < bounds.top) popup.scrollTop += row.top - bounds.top;
   }, [active, expanded]);
 
@@ -194,19 +177,12 @@ export function Select({
       else {
         const index = enabled.indexOf(expanded ? active : selectedIndex);
         const offset = event.key === "ArrowDown" ? 1 : -1;
-        const next =
-          index === -1 && offset === -1 ? enabled.length - 1 : index + offset;
+        const next = index === -1 && offset === -1 ? enabled.length - 1 : index + offset;
         show(enabled[Math.max(0, Math.min(next, enabled.length - 1))]);
       }
       return;
     }
-    if (
-      event.key.length !== 1 ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.altKey
-    )
-      return;
+    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
 
     const now = Date.now();
     const key = event.key.toLocaleLowerCase();
@@ -218,9 +194,7 @@ export function Select({
     const match = enabled
       .slice(Math.max(0, offset))
       .concat(enabled.slice(0, Math.max(0, offset)))
-      .find((index) =>
-        options[index].label.toLocaleLowerCase().startsWith(query),
-      );
+      .find((index) => options[index].label.toLocaleLowerCase().startsWith(query));
     if (match !== undefined) show(match);
   }
 
@@ -243,9 +217,7 @@ export function Select({
         type="button"
         value={value}
       >
-        <span className="nx-select__value">
-          {options[selectedIndex]?.label ?? placeholder}
-        </span>
+        <span className="nx-select__value">{options[selectedIndex]?.label ?? placeholder}</span>
         <span aria-hidden="true" className="nx-select__chevron" />
       </button>
       {expanded ? (
@@ -274,13 +246,9 @@ export function Select({
             >
               <span className="nx-select__option-text">
                 <span>{option.label}</span>
-                {option.description ? (
-                  <small>{option.description}</small>
-                ) : null}
+                {option.description ? <small>{option.description}</small> : null}
               </span>
-              {index === selectedIndex ? (
-                <span aria-hidden="true">✓</span>
-              ) : null}
+              {index === selectedIndex ? <span aria-hidden="true">✓</span> : null}
             </li>
           ))}
         </ul>

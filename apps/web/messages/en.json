@@ -260,20 +260,78 @@
     "emptyTitle": "No portfolio is registered yet",
     "emptyDescription": "Use the setup guide to create your first portfolio.",
     "nav": "Net asset value",
+    "unavailable": "Unavailable",
+    "pricedValue": "Value of holdings with a price",
+    "navIncomplete": "Net asset value is incomplete because one or more holdings have no market value.",
     "unrealizedPnl": "Unrealized P&L",
     "realizedPnl": "Realized P&L",
     "accounts": "Accounts",
     "activeAccounts": "Active accounts",
     "valuationHealth": "Valuation health",
-    "freshEvidence": "positions have fresh evidence",
+    "freshEvidence": "Assets with fresh evidence",
     "asOf": "As of",
     "evidence": "EVIDENCE STATUS",
-    "pricedPositions": "PRICED POSITIONS ONLY",
+    "pricedPositions": "Shares are calculated from holdings with a positive market value.",
     "allocation": "Allocation",
     "allocationAsset": "Asset",
-    "allocationShare": "Share of portfolio",
-    "noAllocation": "No priced position is available for allocation.",
-    "valuationFootnote": "Stale and missing evidence stays visible and keeps NAV explicitly incomplete.",
+    "allocationShare": "Share of priced holdings",
+    "showAllocationData": "Show allocation data",
+    "noAllocation": "There are no holdings with positive market value to compare.",
+    "valuationFootnote": "These counts cover assets in the valuation report. Holdings below show evidence for each position.",
+    "valuationUnavailable": "The valuation report could not be loaded. Try again to see the status counts.",
+    "holdings": {
+      "title": "Holdings",
+      "description": "Amounts and valuations by account at the snapshot time.",
+      "empty": "This portfolio had no holdings at the snapshot time.",
+      "account": "Account",
+      "quantity": "Quantity",
+      "value": "Market value",
+      "evidenceAt": "Valuation date",
+      "costBasis": "Purchase cost status",
+      "basisStates": {
+        "known": "Known",
+        "mixed": "Partly known",
+        "unknown": "Unknown"
+      }
+    },
+    "performance": {
+      "title": "Portfolio performance",
+      "range": "Performance period",
+      "periods": {
+        "week": "Past 7 days",
+        "month": "Past 30 days",
+        "quarter": "Past 90 days"
+      },
+      "loading": "Loading performance",
+      "error": "Performance could not be loaded",
+      "retryHint": "Try again or choose another period.",
+      "emptyTitle": "No performance samples yet",
+      "emptyDescription": "There are no samples to compare for this period.",
+      "unavailableReturn": "Cumulative return is unavailable for this period. The table shows which values and flows are available.",
+      "partialReturn": "Cumulative return could only be calculated for part of this period. Open the table to see the affected dates.",
+      "comparison": "Net asset value at the start and end",
+      "startValue": "Starting value",
+      "endValue": "Ending value",
+      "description": "Return accounts for deposits and withdrawals. Gaps indicate dates when the cumulative return could not be calculated.",
+      "showData": "Show performance data",
+      "dataTable": "Performance data",
+      "date": "Sample date",
+      "externalFlow": "Net deposits and withdrawals",
+      "periodReturn": "Return since previous sample",
+      "cumulativeReturn": "Cumulative return",
+      "state": "Sample status",
+      "states": {
+        "available": "Available",
+        "stale": "Stale evidence",
+        "unavailable": "Unavailable"
+      },
+      "reasons": {
+        "missingValue": "A net asset value is missing.",
+        "missingFlow": "A deposit or withdrawal lacks a valuation.",
+        "zeroStart": "Net asset value started at zero.",
+        "incompleteHistory": "An earlier return is unavailable."
+      }
+    },
     "registry": "OWNER-SCOPED REGISTRY",
     "accountRegistry": "Account registry",
     "noAccounts": "No account belongs to this portfolio.",
@@ -297,8 +355,8 @@
       "missing": "Missing"
     },
     "analyticsState": {
-      "stale": "NAV includes stale valuation evidence. Review timestamps before using this snapshot.",
-      "missing": "NAV is incomplete because one or more positions have no valid valuation evidence."
+      "stale": "This report includes stale valuation evidence. Check the valuation dates.",
+      "missing": "Some figures are unavailable because the valuation or purchase cost is missing."
     },
     "accountKind": {
       "exchange": "Exchange registry (no credentials)",

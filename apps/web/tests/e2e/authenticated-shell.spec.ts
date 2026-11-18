@@ -112,7 +112,17 @@ async function mockPrivateRuntime(page: import("@playwright/test").Page) {
       json: {
         as_of: "2026-11-03T12:00:00Z",
         nav: "12500",
-        positions: [{ asset_id: "asset-btc", market_value: "12500", state: "fresh" }],
+        positions: [
+          {
+            account_id: "account-1",
+            asset_id: "asset-btc",
+            basis_status: "known",
+            evidence_at: "2026-11-03T11:55:00Z",
+            market_value: "12500",
+            quantity: "0.12500001",
+            state: "fresh",
+          },
+        ],
         priced_value: "12500",
         realized_pnl: "120",
         state: "complete",
@@ -126,6 +136,57 @@ async function mockPrivateRuntime(page: import("@playwright/test").Page) {
       json: { as_of: "2026-11-03T12:00:00Z", items: [{ asset_id: "asset-btc", state: "fresh" }] },
     }),
   );
+  await page.route("**/api/v1/portfolios/portfolio-1/performance?**", (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const start = query.get("start_at")!;
+    const end = query.get("end_at")!;
+    const sampleTime = (fraction: number) =>
+      new Date(Date.parse(start) + (Date.parse(end) - Date.parse(start)) * fraction).toISOString();
+    return route.fulfill({
+      json: {
+        start_at: start,
+        end_at: end,
+        points: [
+          {
+            as_of: start,
+            nav: "11500",
+            external_flow: "0",
+            period_return: null,
+            cumulative_return: "0",
+            state: "available",
+            reason_code: null,
+          },
+          {
+            as_of: sampleTime(1 / 3),
+            nav: "12500",
+            external_flow: "137.5",
+            period_return: "0.075",
+            cumulative_return: "0.075",
+            state: "stale",
+            reason_code: null,
+          },
+          {
+            as_of: sampleTime(2 / 3),
+            nav: "12600",
+            external_flow: null,
+            period_return: null,
+            cumulative_return: null,
+            state: "unavailable",
+            reason_code: "MISSING_EXTERNAL_FLOW_VALUATION",
+          },
+          {
+            as_of: end,
+            nav: "12500",
+            external_flow: "0",
+            period_return: "-0.0079365079365",
+            cumulative_return: null,
+            state: "available",
+            reason_code: null,
+          },
+        ],
+      },
+    });
+  });
   await page.route("**/api/v1/transactions?**", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -449,6 +510,48 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "فهرست تصمیم‌ها و جزئیات Candidate" }),
   ).toBeVisible();
+});
+
+test("shows sampled performance gaps and precise holdings on a Persian mobile page", async ({
+  page,
+}) => {
+  await mockPrivateRuntime(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/fa/portfolios/portfolio-1");
+
+  const holdings = page.getByRole("table", { name: "موجودی دارایی‌ها" });
+  await expect(holdings).toContainText("۰٫۱۲۵۰۰۰۰۱");
+  await expect(holdings).toContainText("Brokerage");
+
+  const performance = page.getByRole("region", { name: "عملکرد پرتفوی" });
+  const range = performance.getByRole("combobox", { name: "بازهٔ زمانی عملکرد", exact: true });
+  await range.click();
+  const requestedWeek = page.waitForRequest(
+    (request) =>
+      request.url().includes("/performance?") &&
+      new URL(request.url()).searchParams.get("point_count") === "8",
+  );
+  await performance
+    .getByRole("listbox", { name: "بازهٔ زمانی عملکرد", exact: true })
+    .getByRole("option", { name: "۷ روز گذشته", exact: true })
+    .click();
+  const query = new URL((await requestedWeek).url()).searchParams;
+  expect(query.get("end_at")).toBe("2026-11-03T12:00:00Z");
+  expect(query.get("start_at")).toBe("2026-10-27T12:00:00.000Z");
+
+  await expect(performance.locator(".performance-chart-line")).toHaveCount(1);
+  await expect(performance.locator(".performance-chart-line[data-stale]")).toHaveCount(1);
+  await expect(
+    performance.getByRole("heading", { name: "ارزش خالص دارایی در آغاز و پایان بازه" }),
+  ).toBeVisible();
+  await performance.getByText("نمایش داده‌های عملکرد", { exact: true }).click();
+  const data = performance.getByRole("table", { name: "داده‌های عملکرد" });
+  await expect(data).toContainText("۷٫۵۰٪");
+  await expect(data).toContainText("ارزش یک واریز یا برداشت مشخص نیست.");
+  await expect(data).toContainText("بازده یکی از بازه‌های قبلی در دسترس نیست.");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 });
 
 test("English workspace routes share a left sidebar and support portfolio deep links", async ({

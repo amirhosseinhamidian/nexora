@@ -1,0 +1,40 @@
+{
+  "schema_version": "nexora-portfolio-analytics-ui-v1",
+  "decision_id": "NEX-P4-05",
+  "status": "candidate",
+  "p4_04_prerequisite": {
+    "freeze_commit_sha": "ea7025148103004a6441377077b14aee1014f328",
+    "freeze_record_path": "artifacts/p4-04/registry-management-ui-freeze.json",
+    "freeze_record_checksum": "fde080e0d1ac0a260ad1214340c46fee9c9fd7f9453122e485ce36d662394ef9",
+    "successful_ci_run_id": 44395721270
+  },
+  "routes": ["/{locale}/overview", "/{locale}/portfolios/{portfolio_id}"],
+  "read_operations": {
+    "/v1/portfolios/{portfolio_id}/analytics": "getPortfolioAnalytics",
+    "/v1/portfolios/{portfolio_id}/valuation-status": "getPortfolioValuationStatus",
+    "/v1/portfolios/{portfolio_id}/performance": "getPortfolioPerformance"
+  },
+  "holdings_source": "analytics.positions",
+  "performance": {
+    "as_of_anchored_windows": {
+      "week": { "days": 7, "points": 8 },
+      "month": { "days": 30, "points": 11 },
+      "quarter": { "days": 90, "points": 13 }
+    },
+    "default_window": "month",
+    "chart_gap_for_unavailable_values": true,
+    "stale_evidence_visible": true,
+    "text_or_table_equivalent_required": true
+  },
+  "boundary": {
+    "existing_owner_session_required": true,
+    "decimal_string_arithmetic": true,
+    "invented_returns_or_values": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-05-FREEZE",
+    "post_freeze_stage": "NEX-P4-06"
+  }
+}

@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   ChartContainer,
+  Disclosure,
   EmptyState,
   ErrorState,
   FormField,
@@ -20,20 +21,34 @@ import {
   BriefcaseBusiness,
   CircleDollarSign,
   Landmark,
+  Minus,
   PieChart,
   RefreshCw,
+  Scale,
   ShieldAlert,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { useId, type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 
+import { PortfolioHoldings } from "@/components/portfolio-holdings";
+import { PortfolioPerformance } from "@/components/portfolio-performance";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
+import {
+  addExact,
+  align,
+  compareExact,
+  formatExactDecimal,
+  formatTimestamp,
+  localizeDigits,
+  parseDecimal,
+  type PositionValuation,
+  type ValuationState,
+} from "@/lib/portfolio-analytics";
 
 type RegistryStatus = "active" | "archived" | "closed" | "inactive";
-type ValuationState = "fresh" | "missing" | "stale";
 type AnalyticsState = "complete" | "missing" | "stale";
 
 type Portfolio = {
@@ -65,20 +80,15 @@ export type PortfolioWorkspaceAccount = {
 export type PortfolioWorkspaceAsset = {
   asset_id: string;
   name: string;
+  precision?: number;
   status: RegistryStatus;
   symbol: string;
-};
-
-type Position = {
-  asset_id: string;
-  market_value: string | null;
-  state: ValuationState;
 };
 
 type PortfolioAnalytics = {
   as_of: string;
   nav: string | null;
-  positions: Position[];
+  positions: PositionValuation[];
   priced_value: string;
   realized_pnl: string | null;
   state: AnalyticsState;
@@ -106,75 +116,18 @@ export type PortfolioWorkspaceContext = {
   portfolioName: string;
 };
 
-type DetailData = {
-  analytics: PortfolioAnalytics;
-  valuation: ValuationResponse;
-};
+type DetailQuery = { portfolioId: string; revision: number };
+type DetailResult = DetailQuery &
+  (
+    | { status: "ready"; analytics: PortfolioAnalytics; valuation?: ValuationResponse }
+    | { status: "error" }
+  );
 
-type ExactDecimal = { scale: number; units: bigint };
-
-const decimalPattern = /^(-?)(0|[1-9][0-9]*)(?:\.([0-9]+))?$/;
-
-function parseDecimal(value: string): ExactDecimal {
-  const match = decimalPattern.exec(value);
-  if (!match) throw new Error("invalid canonical decimal");
-  const fraction = match[3] ?? "";
-  const units = BigInt(`${match[2]}${fraction}`) * (match[1] === "-" ? -1n : 1n);
-  return { scale: fraction.length, units };
-}
-
-function powerOfTen(exponent: number): bigint {
-  return 10n ** BigInt(exponent);
-}
-
-function align(value: ExactDecimal, scale: number): bigint {
-  return value.units * powerOfTen(scale - value.scale);
-}
-
-function addExact(left: ExactDecimal, right: ExactDecimal): ExactDecimal {
-  const scale = Math.max(left.scale, right.scale);
-  return { scale, units: align(left, scale) + align(right, scale) };
-}
-
-function compareExact(left: ExactDecimal, right: ExactDecimal): number {
-  const scale = Math.max(left.scale, right.scale);
-  const difference = align(left, scale) - align(right, scale);
-  return difference < 0n ? -1 : difference > 0n ? 1 : 0;
-}
-
-function localizeDigits(value: string, locale: Locale): string {
-  if (locale === "en") return value;
-  return value.replace(/[0-9]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹"[Number(digit)]);
-}
-
-export function formatExactDecimal(
-  value: string | null,
-  locale: Locale,
-  fractionDigits = 2,
-): string {
-  if (value === null) return "—";
-  const parsed = parseDecimal(value);
-  const negative = parsed.units < 0n;
-  let absolute = negative ? -parsed.units : parsed.units;
-  if (parsed.scale > fractionDigits) {
-    const divisor = powerOfTen(parsed.scale - fractionDigits);
-    const remainder = absolute % divisor;
-    absolute /= divisor;
-    if (remainder * 2n >= divisor) absolute += 1n;
-  } else {
-    absolute *= powerOfTen(fractionDigits - parsed.scale);
-  }
-  const scaleDivisor = powerOfTen(fractionDigits);
-  const integer = absolute / scaleDivisor;
-  const fraction =
-    fractionDigits === 0 ? "" : (absolute % scaleDivisor).toString().padStart(fractionDigits, "0");
-  const grouped = integer.toString().replace(/\B(?=(\d{3})+(?!\d))/g, locale === "fa" ? "٬" : ",");
-  const decimal = fraction ? `${locale === "fa" ? "٫" : "."}${fraction}` : "";
-  return localizeDigits(`${negative ? "−" : ""}${grouped}${decimal}`, locale);
-}
-
-function allocationRows(positions: Position[], assets: Map<string, PortfolioWorkspaceAsset>) {
-  const grouped = new Map<string, ExactDecimal>();
+function allocationRows(
+  positions: PositionValuation[],
+  assets: Map<string, PortfolioWorkspaceAsset>,
+) {
+  const grouped = new Map<string, ReturnType<typeof parseDecimal>>();
   for (const position of positions) {
     if (position.market_value === null) continue;
     const value = parseDecimal(position.market_value);
@@ -208,13 +161,6 @@ function percentage(basisPoints: number, locale: Locale): string {
   return localizeDigits(`${integer}${locale === "fa" ? "٫" : "."}${fraction}%`, locale);
 }
 
-function formatTimestamp(value: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
 export function PortfolioDashboard({
   dictionary,
   locale,
@@ -233,13 +179,12 @@ export function PortfolioDashboard({
   const fieldId = useId();
   const copy = dictionary.portfolioDashboard;
   const [registryState, setRegistryState] = useState<"error" | "loading" | "ready">("loading");
-  const [detailState, setDetailState] = useState<"error" | "loading" | "ready">("loading");
   const [registry, setRegistry] = useState<RegistryData>({
     accounts: [],
     assets: [],
     portfolios: [],
   });
-  const [details, setDetails] = useState<DetailData>();
+  const [detailResult, setDetailResult] = useState<DetailResult>();
   const [chosenPortfolioId, setChosenPortfolioId] = useState("");
   const selectedPortfolioId = portfolioId ?? chosenPortfolioId;
   const [registryRevision, setRegistryRevision] = useState(0);
@@ -287,6 +232,11 @@ export function PortfolioDashboard({
     (item) => item.portfolio_id === selectedPortfolioId,
   );
   const analyticsPortfolioId = selectionOnly ? undefined : selectedPortfolio?.portfolio_id;
+  const currentDetail =
+    detailResult?.portfolioId === analyticsPortfolioId && detailResult?.revision === detailRevision
+      ? detailResult
+      : undefined;
+  const details = currentDetail?.status === "ready" ? currentDetail : undefined;
 
   useEffect(() => {
     if (!analyticsPortfolioId || registryState !== "ready") {
@@ -294,30 +244,30 @@ export function PortfolioDashboard({
     }
     const controller = new AbortController();
     async function loadDetails(id: string) {
-      setDetailState("loading");
       const asOf = new Date().toISOString();
       const encoded = encodeURIComponent(asOf);
-      try {
-        const [analytics, valuation] = await Promise.all([
-          apiRequest<PortfolioAnalytics>(
-            `/api/v1/portfolios/${encodeURIComponent(id)}/analytics?as_of=${encoded}`,
-            {
-              signal: controller.signal,
-            },
-          ),
-          apiRequest<ValuationResponse>(
-            `/api/v1/portfolios/${encodeURIComponent(id)}/valuation-status?as_of=${encoded}`,
-            {
-              signal: controller.signal,
-            },
-          ),
-        ]);
-        if (controller.signal.aborted) return;
-        setDetails({ analytics, valuation });
-        setDetailState("ready");
-      } catch {
-        if (!controller.signal.aborted) setDetailState("error");
+      const [analytics, valuation] = await Promise.allSettled([
+        apiRequest<PortfolioAnalytics>(
+          `/api/v1/portfolios/${encodeURIComponent(id)}/analytics?as_of=${encoded}`,
+          { signal: controller.signal },
+        ),
+        apiRequest<ValuationResponse>(
+          `/api/v1/portfolios/${encodeURIComponent(id)}/valuation-status?as_of=${encoded}`,
+          { signal: controller.signal },
+        ),
+      ]);
+      if (controller.signal.aborted) return;
+      const query = { portfolioId: id, revision: detailRevision };
+      if (analytics.status === "rejected") {
+        setDetailResult({ ...query, status: "error" });
+        return;
       }
+      setDetailResult({
+        ...query,
+        analytics: analytics.value,
+        status: "ready",
+        valuation: valuation.status === "fulfilled" ? valuation.value : undefined,
+      });
     }
     void loadDetails(analyticsPortfolioId);
     return () => controller.abort();
@@ -335,7 +285,10 @@ export function PortfolioDashboard({
     () => allocationRows(details?.analytics.positions ?? [], assets),
     [assets, details?.analytics.positions],
   );
-  const retryRegistry = useCallback(() => setRegistryRevision((revision) => revision + 1), []);
+  const retryRegistry = useCallback(() => {
+    setRegistryRevision((revision) => revision + 1);
+    setDetailRevision((revision) => revision + 1);
+  }, []);
   const workspaceContext = useMemo<PortfolioWorkspaceContext | undefined>(
     () =>
       selectedPortfolio
@@ -427,7 +380,10 @@ export function PortfolioDashboard({
       <Select
         id={`${fieldId}-select-portfolio`}
         value={selectedPortfolioId}
-        onValueChange={(value) => setChosenPortfolioId(value)}
+        onValueChange={(value) => {
+          setChosenPortfolioId(value);
+          setDetailRevision((revision) => revision + 1);
+        }}
         options={registry.portfolios.map((portfolio) => ({
           value: portfolio.portfolio_id,
           label: portfolio.name,
@@ -440,10 +396,19 @@ export function PortfolioDashboard({
 
   const baseAsset = selectedPortfolio ? assets.get(selectedPortfolio.base_asset_id) : undefined;
   const valuationCounts = { fresh: 0, missing: 0, stale: 0 };
-  for (const item of details?.valuation.items ?? []) valuationCounts[item.state] += 1;
+  for (const item of details?.valuation?.items ?? []) valuationCounts[item.state] += 1;
   const totalValuations = valuationCounts.fresh + valuationCounts.stale + valuationCounts.missing;
   const pnl = details?.analytics.unrealized_pnl ?? null;
   const pnlNegative = pnl?.startsWith("-") ?? false;
+  const money = (value: string | null) =>
+    value === null ? (
+      copy.unavailable
+    ) : (
+      <bdi dir="ltr">
+        {formatExactDecimal(value, locale, baseAsset?.precision)}{" "}
+        <small>{baseAsset?.symbol ?? ""}</small>
+      </bdi>
+    );
 
   return (
     <section
@@ -478,12 +443,12 @@ export function PortfolioDashboard({
         <code dir="ltr">{selectedPortfolio?.portfolio_key}</code>
       </div>
 
-      {detailState === "loading" ? (
+      {!currentDetail ? (
         <div aria-live="polite" className="dashboard-state compact">
           <Spinner label="" size="lg" />
           <p>{copy.loadingAnalytics}</p>
         </div>
-      ) : detailState === "error" || !details ? (
+      ) : !details ? (
         <Alert tone="danger" className="dashboard-state compact error" role="alert">
           <AlertTriangle aria-hidden="true" size={24} />
           <div>
@@ -506,41 +471,36 @@ export function PortfolioDashboard({
               className="portfolio-metric-card"
               icon={<CircleDollarSign aria-hidden="true" size={20} />}
               label={copy.nav}
-              value={
-                <>
-                  {formatExactDecimal(details.analytics.nav, locale)}{" "}
-                  <small>{baseAsset?.symbol ?? ""}</small>
-                </>
-              }
-              valueDirection="ltr"
+              value={money(details.analytics.nav)}
             >
               <p>
-                {copy.asOf} {formatTimestamp(details.analytics.as_of, locale)}
+                {copy.asOf}{" "}
+                <time dateTime={details.analytics.as_of}>
+                  {formatTimestamp(details.analytics.as_of, locale)}
+                </time>
               </p>
             </StatCard>
             <StatCard
               className="portfolio-metric-card"
               icon={
-                pnlNegative ? (
+                pnl === null ? (
+                  <Minus aria-hidden="true" size={20} />
+                ) : pnlNegative ? (
                   <ArrowDownRight aria-hidden="true" className="negative" size={20} />
                 ) : (
                   <ArrowUpRight aria-hidden="true" size={20} />
                 )
               }
               label={copy.unrealizedPnl}
-              value={
-                <>
-                  {formatExactDecimal(pnl, locale)} <small>{baseAsset?.symbol ?? ""}</small>
-                </>
-              }
-              valueClassName={pnlNegative ? "negative" : "positive"}
-              valueDirection="ltr"
-            >
-              <p>
-                {copy.realizedPnl}:{" "}
-                <b dir="ltr">{formatExactDecimal(details.analytics.realized_pnl, locale)}</b>
-              </p>
-            </StatCard>
+              value={money(pnl)}
+              valueClassName={pnl === null ? undefined : pnlNegative ? "negative" : "positive"}
+            />
+            <StatCard
+              className="portfolio-metric-card"
+              icon={<Scale aria-hidden="true" size={20} />}
+              label={copy.realizedPnl}
+              value={money(details.analytics.realized_pnl)}
+            />
             <StatCard
               className="portfolio-metric-card"
               icon={<WalletCards aria-hidden="true" size={20} />}
@@ -555,14 +515,6 @@ export function PortfolioDashboard({
                 )}
               </p>
             </StatCard>
-            <StatCard
-              className="portfolio-metric-card"
-              icon={<Landmark aria-hidden="true" size={20} />}
-              label={copy.valuationHealth}
-              value={localizeDigits(`${valuationCounts.fresh}/${totalValuations}`, locale)}
-            >
-              <p>{copy.freshEvidence}</p>
-            </StatCard>
           </div>
 
           {details.analytics.state !== "complete" && (
@@ -572,7 +524,16 @@ export function PortfolioDashboard({
               role="status"
             >
               <AlertTriangle aria-hidden="true" size={20} />
-              <span>{copy.analyticsState[details.analytics.state]}</span>
+              <span>
+                {details.analytics.nav === null
+                  ? copy.navIncomplete
+                  : copy.analyticsState[details.analytics.state]}
+              </span>
+              {details.analytics.nav === null ? (
+                <span>
+                  {copy.pricedValue} {money(details.analytics.priced_value)}
+                </span>
+              ) : null}
             </Alert>
           )}
 
@@ -585,15 +546,35 @@ export function PortfolioDashboard({
                 </div>
                 <Landmark aria-hidden="true" size={22} />
               </div>
-              <div className="valuation-summary">
-                {(["fresh", "stale", "missing"] as const).map((state) => (
-                  <div className={`valuation-count ${state}`} key={state}>
-                    <span>{copy.valuationState[state]}</span>
-                    <strong>{localizeDigits(String(valuationCounts[state]), locale)}</strong>
+              {details.valuation ? (
+                <>
+                  <p className="card-footnote">
+                    {copy.freshEvidence}{" "}
+                    <bdi>
+                      {localizeDigits(`${valuationCounts.fresh}/${totalValuations}`, locale)}
+                    </bdi>
+                  </p>
+                  <div className="valuation-summary">
+                    {(["fresh", "stale", "missing"] as const).map((state) => (
+                      <div className={`valuation-count ${state}`} key={state}>
+                        <span>{copy.valuationState[state]}</span>
+                        <strong>{localizeDigits(String(valuationCounts[state]), locale)}</strong>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <p className="card-footnote">{copy.valuationFootnote}</p>
+                  <p className="card-footnote">{copy.valuationFootnote}</p>
+                </>
+              ) : (
+                <Alert tone="warning">
+                  <p>{copy.valuationUnavailable}</p>
+                  <Button
+                    onClick={() => setDetailRevision((revision) => revision + 1)}
+                    variant="secondary"
+                  >
+                    {copy.retry}
+                  </Button>
+                </Alert>
+              )}
             </article>
 
             <ChartContainer
@@ -602,28 +583,29 @@ export function PortfolioDashboard({
               icon={<PieChart aria-hidden="true" size={22} />}
               table={
                 allocation.length > 0 ? (
-                  <Table>
-                    <caption>{copy.allocation}</caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">{copy.allocationAsset}</th>
-                        <th scope="col">{copy.allocationShare}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allocation.map((item) => (
-                        <tr key={item.assetId}>
-                          <th scope="row">
-                            <bdi>{item.symbol}</bdi> {item.label}
-                          </th>
-                          <td>{percentage(item.basisPoints, locale)}</td>
+                  <Disclosure className="portfolio-chart-data" label={copy.showAllocationData}>
+                    <Table>
+                      <caption className="sr-only">{copy.allocation}</caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">{copy.allocationAsset}</th>
+                          <th scope="col">{copy.allocationShare}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
+                      </thead>
+                      <tbody>
+                        {allocation.map((item) => (
+                          <tr key={item.assetId}>
+                            <th scope="row">
+                              <bdi>{item.symbol}</bdi> {item.label}
+                            </th>
+                            <td>{percentage(item.basisPoints, locale)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </Disclosure>
                 ) : null
               }
-              tableClassName="sr-only"
               title={copy.allocation}
             >
               {allocation.length === 0 ? (
@@ -653,6 +635,24 @@ export function PortfolioDashboard({
               )}
             </ChartContainer>
           </div>
+          <PortfolioHoldings
+            accounts={selectedAccounts}
+            assets={assets}
+            basePrecision={baseAsset?.precision}
+            baseSymbol={baseAsset?.symbol}
+            dictionary={dictionary}
+            locale={locale}
+            positions={details.analytics.positions}
+          />
+          <PortfolioPerformance
+            asOf={details.analytics.as_of}
+            basePrecision={baseAsset?.precision}
+            baseSymbol={baseAsset?.symbol}
+            copy={copy}
+            key={details.portfolioId}
+            locale={locale}
+            portfolioId={details.portfolioId}
+          />
         </>
       )}
 

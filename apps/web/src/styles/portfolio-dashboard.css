@@ -124,7 +124,7 @@
 }
 
 .portfolio-metric-card strong {
-  @apply block overflow-hidden mt-5 text-[length:clamp(1.3rem,_2.5vw,_1.8rem)] text-ellipsis whitespace-nowrap;
+  @apply block mt-5 wrap-anywhere text-[length:clamp(1.3rem,_2.5vw,_1.8rem)];
 }
 
 .portfolio-metric-card strong small {
@@ -200,11 +200,105 @@
 }
 
 .allocation-card .nx-chart__heading p {
-  @apply mt-[0.35rem] text-nx-primary-strong text-[length:0.72rem] font-bold tracking-widest;
+  @apply mt-[0.35rem] text-nx-text-muted text-[length:0.82rem];
 }
 
 .allocation-card .nx-chart__visual {
   @apply min-block-0 m-0;
+}
+
+.portfolio-analysis-section {
+  @apply min-w-0 mt-4;
+}
+
+.portfolio-analysis-section h3 {
+  @apply m-0 text-[length:1.08rem];
+}
+
+.portfolio-analysis-section .nx-table-scroll {
+  @apply mt-3;
+}
+
+.portfolio-analysis-table {
+  @apply min-w-[40rem];
+}
+
+.valuation-label {
+  @apply inline-flex rounded-full bg-nx-surface-raised px-2 py-1 font-semibold text-nx-text-muted;
+}
+
+.valuation-label[data-state="available"],
+.valuation-label[data-state="fresh"] {
+  @apply bg-nx-primary-soft text-nx-primary-strong;
+}
+
+.valuation-label[data-state="stale"] {
+  @apply bg-[var(--nx-warning-soft)] text-nx-warning;
+}
+
+.portfolio-performance {
+  @apply grid gap-3;
+}
+
+.portfolio-performance-toolbar {
+  @apply flex flex-wrap items-end justify-between gap-3;
+}
+
+.portfolio-performance-toolbar .nx-field {
+  @apply w-full sm:w-auto sm:min-w-40;
+}
+
+.portfolio-performance .nx-comparison time,
+.performance-reason {
+  @apply block mt-1 text-sm text-nx-text-muted;
+}
+
+.portfolio-performance-chart .nx-chart__visual {
+  @apply min-block-0;
+}
+
+.portfolio-performance-chart .nx-chart__visual:empty {
+  @apply hidden;
+}
+
+.portfolio-performance-chart {
+  @apply min-w-0;
+}
+
+.performance-chart {
+  @apply block h-40 w-full sm:h-52;
+}
+
+.performance-chart-bounds {
+  @apply flex flex-wrap justify-between gap-2 wrap-anywhere text-xs text-nx-text-muted;
+}
+
+.performance-chart-zero {
+  @apply stroke-nx-border [stroke-dasharray:3_3];
+}
+
+.performance-chart-line {
+  @apply stroke-2 stroke-nx-primary-strong;
+}
+
+.performance-chart-point {
+  @apply fill-nx-primary-strong;
+}
+
+.performance-chart-line[data-stale] {
+  @apply stroke-nx-warning [stroke-dasharray:5_4];
+}
+
+.performance-chart-point[data-stale] {
+  @apply fill-nx-warning;
+}
+
+.portfolio-performance-chart .nx-chart-legend {
+  @apply mt-3;
+}
+
+.portfolio-chart-data summary {
+  @apply cursor-pointer font-semibold text-nx-primary-strong;
 }
 
 .card-footnote,

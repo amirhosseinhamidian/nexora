@@ -1,0 +1,44 @@
+from __future__ import annotations
+
+import importlib.util
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location(
+    "verify_portfolio_analytics_ui", ROOT / "scripts/verify_portfolio_analytics_ui.py"
+)
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError("unable to load P4-05 verifier")
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+
+
+class PortfolioAnalyticsUiContractTests(unittest.TestCase):
+    def test_candidate_routes_and_frozen_prerequisite_are_valid(self) -> None:
+        contract = MODULE.load_contract()
+        MODULE.validate_prerequisite()
+        MODULE.validate_contract(contract)
+        MODULE.validate_runtime_markers(contract)
+
+    def test_unavailable_returns_must_leave_chart_gaps(self) -> None:
+        contract = MODULE.load_contract()
+        contract["performance"]["chart_gap_for_unavailable_values"] = False
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "chart_gap_for_unavailable_values"):
+            MODULE.validate_contract(contract)
+
+    def test_holdings_cannot_use_a_different_snapshot(self) -> None:
+        contract = MODULE.load_contract()
+        contract["holdings_source"] = "latest_holdings_projection"
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "snapshot positions"):
+            MODULE.validate_contract(contract)
+
+    def test_p4_06_requires_freeze(self) -> None:
+        contract = MODULE.load_contract()
+        contract["transition"]["next_allowed_stage"] = "NEX-P4-06"
+        with self.assertRaisesRegex(MODULE.PortfolioAnalyticsUiContractError, "stage transition drift"):
+            MODULE.validate_contract(contract)
+
+
+if __name__ == "__main__":
+    unittest.main()

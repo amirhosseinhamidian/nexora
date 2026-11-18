@@ -208,6 +208,7 @@ def validate_contract(contract: dict[str, Any]) -> None:
 
 def validate_runtime_markers() -> None:
     component = (ROOT / "apps/web/src/components/portfolio-dashboard.tsx").read_text(encoding="utf-8")
+    precision = (ROOT / "apps/web/src/lib/portfolio-analytics.ts").read_text(encoding="utf-8")
     workspace = (ROOT / "apps/web/src/components/workspace-view.tsx").read_text(encoding="utf-8")
     navigation = (ROOT / "apps/web/src/components/workspace-navigation.tsx").read_text(encoding="utf-8")
     client = (ROOT / "apps/web/src/lib/api-client.ts").read_text(encoding="utf-8")
@@ -223,13 +224,13 @@ def validate_runtime_markers() -> None:
         '"/api/v1/assets"',
         "/analytics?as_of=",
         "/valuation-status?as_of=",
-        "function parseDecimal",
-        "BigInt(",
         "allocationRows(",
         'details.analytics.state !== "complete"',
         'id="accounts"',
     ):
         _require(marker in component, f"dashboard runtime marker missing: {marker}")
+    for marker in ("function parseDecimal", "BigInt("):
+        _require(marker in precision, f"dashboard decimal arithmetic marker missing: {marker}")
     for forbidden in ("external_reference", 'method: "POST"', "owner_id"):
         _require(forbidden not in component, f"dashboard renders or sends forbidden field: {forbidden}")
     _require("<PortfolioDashboard" in workspace, "dashboard is not composed")

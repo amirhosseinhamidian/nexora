@@ -281,6 +281,8 @@ portfolio and account management. `NEX-P4-04` is frozen at candidate
 `3414507938c41acad1ab66b12f649c22f58e13ce`. It provides routed lists, record
 creation and confirmed lifecycle actions through the existing registry API.
 Its Freeze record opens `NEX-P4-05` for portfolio overview and analytics.
+The P4-05 candidate shows snapshot holdings, valuation health and sampled
+performance on Overview and portfolio detail pages.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -468,7 +470,9 @@ NEX_P4_03_FIRST_RUN_ONBOARDING_CANDIDATE=PASS
 NEX_P4_03_FREEZE=PASS
 NEX_P4_04_REGISTRY_MANAGEMENT_UI_CANDIDATE=PASS
 NEX_P4_04_FREEZE=PASS
-NEX_P4_05=OPEN
+NEX_P4_05_PORTFOLIO_ANALYTICS_UI_CANDIDATE=PASS
+NEX_P4_05_FREEZE=PENDING_SAME_SHA_CI
+NEX_P4_06=BLOCKED_PENDING_P4_05_FREEZE
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -621,3 +625,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-registry-management-ui.json`](contracts/nexora-v0.1-registry-management-ui.json)
 - [`docs/v0.1/51-registry-management-ui.md`](docs/v0.1/51-registry-management-ui.md)
 - [`artifacts/p4-04/registry-management-ui-freeze.json`](artifacts/p4-04/registry-management-ui-freeze.json)
+- [`contracts/nexora-v0.1-portfolio-analytics-ui.json`](contracts/nexora-v0.1-portfolio-analytics-ui.json)
+- [`docs/v0.1/52-portfolio-analytics-ui.md`](docs/v0.1/52-portfolio-analytics-ui.md)

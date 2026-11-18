@@ -33,6 +33,27 @@ class FirstRunOnboardingContractTests(unittest.TestCase):
         with self.assertRaisesRegex(MODULE.FirstRunOnboardingContractError, "stage transition drift"):
             MODULE.validate_contract(contract)
 
+    def test_freeze_record_is_valid(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_freeze_record(), MODULE.load_contract())
+
+    def test_freeze_binds_ci_to_the_final_candidate(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["head_sha"] = MODULE.P4_03_IMPLEMENTATION_SHA
+        with self.assertRaisesRegex(MODULE.FirstRunOnboardingContractError, "CI head SHA drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_requires_successful_web_and_browser_checks(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["github_actions"]["jobs"]["first-run-onboarding-web"]["conclusion"] = "failure"
+        with self.assertRaisesRegex(MODULE.FirstRunOnboardingContractError, "CI job did not succeed"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
+    def test_freeze_only_opens_p4_04(self) -> None:
+        record = MODULE.load_freeze_record()
+        record["next_allowed_stage"] = "NEX-P4-05"
+        with self.assertRaisesRegex(MODULE.FirstRunOnboardingContractError, "post-Freeze stage drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())
+
 
 if __name__ == "__main__":
     unittest.main()

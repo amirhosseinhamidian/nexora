@@ -1,0 +1,43 @@
+{
+  "schema_version": "nexora-first-run-onboarding-freeze-v1",
+  "decision_id": "NEX-P4-03",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-18",
+  "candidate_commit_sha": "7f48919ff2940d9634477d71d6d2ab68f910c83e",
+  "candidate_tree_sha": "8eea57c0fbddef8a7039771821ca0b61aa9f92e3",
+  "candidate_predecessor_sha": "670ac0cf52fc7c2503688e3e3fef43f2c7386036",
+  "candidate_commit_message": "fix(nexora): format shared select and form field",
+  "candidate_base_sha": "077e2abde51367235bd425421ac1f24f2f7ed142",
+  "candidate_lineage": [
+    "670ac0cf52fc7c2503688e3e3fef43f2c7386036",
+    "7f48919ff2940d9634477d71d6d2ab68f910c83e"
+  ],
+  "first_run_onboarding_contract": {
+    "path": "contracts/nexora-v0.1-first-run-onboarding.json",
+    "checksum": "b32b6772259881401160ce5e436453c1a149dff61c4afccb8bc72f15b597f597"
+  },
+  "p4_02_freeze_canonical_checksum": "bb5885b69dc6526ee22adde1f7ccdf0e1a882e4a6567d2cb380894a59317221d",
+  "github_actions": {
+    "workflow_path": ".github/workflows/first-run-onboarding.yml",
+    "run_id": 44387482135,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44387482135",
+    "head_sha": "7f48919ff2940d9634477d71d6d2ab68f910c83e",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "first-run-onboarding-contract": {
+        "job_id": 135095864160,
+        "conclusion": "success"
+      },
+      "first-run-onboarding-web": {
+        "job_id": 135095863611,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-04",
+  "production_readiness_claimed": false
+}

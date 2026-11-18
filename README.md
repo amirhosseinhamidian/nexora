@@ -273,9 +273,11 @@ preserves all security and private-VPS gates. `NEX-P4-01` is frozen at candidate
 accessible micro-components. Its Freeze record opens `NEX-P4-02` for the
 application shell, navigation and routes. `NEX-P4-02` is frozen at candidate
 `cd3dd588c830707860fa872e09f1ec122cc4eb03`. Its Freeze record opens
-`NEX-P4-03` for first-run onboarding and first portfolio creation. The P4-03
-candidate guides the owner through base asset selection or registration,
-portfolio creation, an optional account and confirmation.
+`NEX-P4-03` for first-run onboarding and first portfolio creation. `NEX-P4-03`
+is frozen at candidate `7f48919ff2940d9634477d71d6d2ab68f910c83e`. The guide
+covers base asset selection or registration, portfolio creation, an optional
+account and confirmation. Its Freeze record opens `NEX-P4-04` for asset,
+portfolio and account management.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -460,8 +462,8 @@ NEX_P4_01_FREEZE=PASS
 NEX_P4_02_PLATFORM_SHELL_CANDIDATE=PASS
 NEX_P4_02_FREEZE=PASS
 NEX_P4_03_FIRST_RUN_ONBOARDING_CANDIDATE=PASS
-NEX_P4_03_FREEZE=PENDING_SAME_SHA_CI
-NEX_P4_04=BLOCKED_PENDING_P4_03_FREEZE
+NEX_P4_03_FREEZE=PASS
+NEX_P4_04=OPEN
 PRODUCTION_READINESS_CLAIMED=false
 ```
 
@@ -610,3 +612,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p4-02/platform-shell-freeze.json`](artifacts/p4-02/platform-shell-freeze.json)
 - [`contracts/nexora-v0.1-first-run-onboarding.json`](contracts/nexora-v0.1-first-run-onboarding.json)
 - [`docs/v0.1/50-first-run-onboarding.md`](docs/v0.1/50-first-run-onboarding.md)
+- [`artifacts/p4-03/first-run-onboarding-freeze.json`](artifacts/p4-03/first-run-onboarding-freeze.json)

@@ -1,6 +1,6 @@
 # NEX-P4-03 — First-run onboarding
 
-Status: **Candidate**
+Status: **Frozen at candidate `7f48919ff2940d9634477d71d6d2ab68f910c83e`**
 
 The private workspace offers an onboarding link when the owner has no
 registered portfolios. In the guide, the owner chooses an active base asset
@@ -25,5 +25,8 @@ existing registry constraints to prevent a retry from creating another copy.
 
 The prerequisite is the [P4-02 Freeze](../../artifacts/p4-02/platform-shell-freeze.json)
 verified by [GitHub Actions](https://github.com/amirhosseinhamidian/nexora/actions/runs/44324072191).
-Following local verification and CI, the candidate opens `NEX-P4-03-FREEZE`.
-General registry management is assigned to P4-04.
+The accepted candidate includes the onboarding implementation and its
+formatting fix. The [onboarding workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44387482135)
+passed its contract and web jobs on that commit, including Chromium coverage.
+The checksummed [Freeze record](../../artifacts/p4-03/first-run-onboarding-freeze.json)
+opens `NEX-P4-04` for asset, portfolio and account management.

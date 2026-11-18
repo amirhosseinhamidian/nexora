@@ -14,6 +14,7 @@ import {
   type PortfolioWorkspaceContext,
 } from "@/components/portfolio-dashboard";
 import { PortfolioOperations } from "@/components/portfolio-operations";
+import { RegistryManagement } from "@/components/registry-management";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
 
@@ -24,6 +25,8 @@ type WorkspaceViewProps =
         | "overview"
         | "onboarding"
         | "portfolios"
+        | "assets"
+        | "accounts"
         | "transactions"
         | "decisions"
         | "alerts"
@@ -137,8 +140,25 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       content = (
         <>
           <ResumeOnboarding />
-          <PortfolioDashboard dictionary={dictionary} locale={locale} showDetailsLink />
+          <RegistryManagement
+            dictionary={dictionary}
+            key={session.owner_id}
+            locale={locale}
+            section="portfolios"
+          />
         </>
+      );
+      break;
+    case "assets":
+    case "accounts":
+      title = navigation[props.section];
+      content = (
+        <RegistryManagement
+          dictionary={dictionary}
+          key={`${session.owner_id}-${props.section}`}
+          locale={locale}
+          section={props.section}
+        />
       );
       break;
     case "portfolioDetail":

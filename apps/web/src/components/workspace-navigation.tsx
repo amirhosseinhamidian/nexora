@@ -4,11 +4,13 @@ import {
   Bell,
   BookOpen,
   BriefcaseBusiness,
+  Coins,
   Download,
   FileChartColumn,
   LayoutDashboard,
   List,
   SlidersHorizontal,
+  WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +21,8 @@ import type { Dictionary } from "@/i18n/dictionaries";
 const destinations = [
   { segment: "overview", label: "overview", icon: LayoutDashboard },
   { segment: "portfolios", label: "portfolio", icon: BriefcaseBusiness },
+  { segment: "assets", label: "assets", icon: Coins },
+  { segment: "accounts", label: "accounts", icon: WalletCards },
   { segment: "transactions", label: "transactions", icon: List },
   { segment: "decisions", label: "decisions", icon: FileChartColumn },
   { segment: "alerts", label: "alerts", icon: Bell },

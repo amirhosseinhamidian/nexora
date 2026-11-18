@@ -1,0 +1,54 @@
+.registry-management {
+  @apply grid min-w-0 gap-4;
+}
+
+.registry-toolbar {
+  @apply flex flex-wrap items-center justify-between gap-3;
+}
+
+.registry-toolbar p {
+  @apply m-0 min-w-0 text-nx-text-muted;
+}
+
+.registry-management .nx-filter-bar > .nx-field {
+  @apply min-w-0 flex-[1_1_13rem];
+}
+
+.registry-records {
+  @apply grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))];
+}
+
+.registry-record {
+  @apply grid min-w-0 grid-rows-[auto_1fr_auto] gap-4 wrap-anywhere;
+}
+
+.registry-record__heading,
+.registry-record__actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.registry-record__heading {
+  @apply justify-between;
+}
+
+.registry-record__heading h3,
+.registry-record__details,
+.registry-record__details dd {
+  @apply m-0;
+}
+
+.registry-record__details {
+  @apply grid gap-2;
+}
+
+.registry-record__details div {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.registry-record__details dt {
+  @apply text-nx-text-muted;
+}
+
+.registry-record__actions a {
+  @apply text-center no-underline;
+}

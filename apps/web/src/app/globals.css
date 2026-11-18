@@ -6,6 +6,7 @@
 @import "../styles/onboarding.css" layer(components);
 @import "../styles/workspace.css" layer(components);
 @import "../styles/portfolio-dashboard.css" layer(components);
+@import "../styles/registry-management.css" layer(components);
 @import "../styles/portfolio-operations.css" layer(components);
 @import "../styles/authentication.css" layer(components);
 @import "../styles/decision-experience.css" layer(components);

@@ -1,40 +1,20 @@
 import { ApiRequestError, apiRequest } from "@/lib/api-client";
+import {
+  accountKinds,
+  assetClasses,
+  listRegistryItems,
+  normalizeRegistryName as name,
+  portfolioKinds,
+  type AccountInput,
+  type AssetInput,
+  type PortfolioInput,
+} from "@/lib/portfolio-registry";
 
-export const assetClasses = ["fiat", "crypto", "equity", "fund", "commodity", "other"] as const;
-export const portfolioKinds = ["personal", "paper", "shadow"] as const;
-export const accountKinds = [
-  "cash",
-  "brokerage_manual",
-  "wallet_watch_only",
-  "exchange",
-  "paper",
-  "shadow",
-  "other_manual",
-] as const;
+export { accountKinds, assetClasses, portfolioKinds };
 
-type AssetClass = (typeof assetClasses)[number];
-type PortfolioKind = (typeof portfolioKinds)[number];
-type AccountKind = (typeof accountKinds)[number];
-
-type AssetInput = {
-  asset_key: string;
-  asset_class: AssetClass;
-  name: string;
-  precision: number;
-  symbol: string;
-};
-type PortfolioInput = {
-  portfolio_key: string;
-  name: string;
-  kind: PortfolioKind;
-  base_asset_id: string;
-};
-type AccountInput = {
-  account_key: string;
-  name: string;
-  kind: AccountKind;
-  portfolio_id: string;
-};
+type AssetClass = AssetInput["asset_class"];
+type PortfolioKind = PortfolioInput["kind"];
+type AccountKind = AccountInput["kind"];
 export type SetupAsset = AssetInput & { asset_id: string; status: string };
 export type SetupPortfolio = PortfolioInput & { portfolio_id: string; status: string };
 type SetupAccount = AccountInput & { account_id: string; status: string };
@@ -143,21 +123,12 @@ export function writeOnboardingDraft(ownerId: string, draft: OnboardingDraft | u
   }
 }
 
-async function list<T>(path: string, signal: AbortSignal): Promise<T[]> {
-  const response = await apiRequest<{ items: T[] }>(path, { signal });
-  return response.items;
-}
-
 export async function loadSetupRegistry(signal: AbortSignal) {
   const [assets, portfolios] = await Promise.all([
-    list<SetupAsset>(setupApi.assets, signal),
-    list<SetupPortfolio>(setupApi.portfolios, signal),
+    listRegistryItems<SetupAsset>(setupApi.assets, signal),
+    listRegistryItems<SetupPortfolio>(setupApi.portfolios, signal),
   ]);
   return { assets: assets.filter((asset) => asset.status === "active"), portfolios };
-}
-
-function name(value: string) {
-  return value.trim().replace(/\s+/g, " ");
 }
 
 export function canResumePortfolio(draft: OnboardingDraft, portfolio: SetupPortfolio) {
@@ -249,7 +220,7 @@ export async function completeOnboarding(
       setupApi.assets,
       input,
       async () => {
-        const existing = (await list<SetupAsset>(setupApi.assets, signal)).find(
+        const existing = (await listRegistryItems<SetupAsset>(setupApi.assets, signal)).find(
           (item) => item.asset_key === input.asset_key,
         );
         if (existing && existing.status !== "active") throw new OnboardingError("assetUnavailable");
@@ -276,7 +247,7 @@ export async function completeOnboarding(
       setupApi.portfolios,
       portfolioInput,
       async () => {
-        const portfolios = await list<SetupPortfolio>(setupApi.portfolios, signal);
+        const portfolios = await listRegistryItems<SetupPortfolio>(setupApi.portfolios, signal);
         const existing = portfolios.find(
           (item) => item.status === "active" && matches(item, portfolioInput),
         );
@@ -305,7 +276,7 @@ export async function completeOnboarding(
       setupApi.accounts,
       input,
       async () => {
-        const existing = (await list<SetupAccount>(setupApi.accounts, signal)).find(
+        const existing = (await listRegistryItems<SetupAccount>(setupApi.accounts, signal)).find(
           (item) => item.account_key === input.account_key,
         );
         if (existing && (existing.status !== "active" || !matches(existing, input))) {

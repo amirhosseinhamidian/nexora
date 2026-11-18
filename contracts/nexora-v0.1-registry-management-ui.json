@@ -1,0 +1,40 @@
+{
+  "schema_version": "nexora-registry-management-ui-v1",
+  "decision_id": "NEX-P4-04",
+  "status": "candidate",
+  "p4_03_prerequisite": {
+    "freeze_commit_sha": "5742c742c2b713cd54590bffe0c630de01969dc7",
+    "freeze_record_path": "artifacts/p4-03/first-run-onboarding-freeze.json",
+    "freeze_record_checksum": "c2bda9d47b9e6d69eacd268b5449fa77e70cefc8ef8f62647db48fd3b55078bf",
+    "successful_ci_run_id": 44389551521
+  },
+  "routes": ["/{locale}/assets", "/{locale}/portfolios", "/{locale}/accounts"],
+  "registry_operations": {
+    "/v1/assets": { "get": "listAssets", "post": "createAsset" },
+    "/v1/assets/{asset_id}/identifiers": { "post": "createAssetIdentifier" },
+    "/v1/assets/{asset_id}/deactivate": { "post": "deactivateAsset" },
+    "/v1/portfolios": { "get": "listPortfolios", "post": "createPortfolio" },
+    "/v1/portfolios/{portfolio_id}/archive": { "post": "archivePortfolio" },
+    "/v1/accounts": { "get": "listAccounts", "post": "createAccount" },
+    "/v1/accounts/{account_id}/close": { "post": "closeAccount" }
+  },
+  "lifecycle": {
+    "confirmation_required": true,
+    "requires_expected_row_version": true,
+    "refresh_after_conflict": true,
+    "history_retained": true
+  },
+  "boundary": {
+    "first_portfolio_uses_onboarding": true,
+    "existing_owner_session_required": true,
+    "rename_or_general_update": false,
+    "delete": false,
+    "credentials_collected": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-04-FREEZE",
+    "post_freeze_stage": "NEX-P4-05"
+  }
+}

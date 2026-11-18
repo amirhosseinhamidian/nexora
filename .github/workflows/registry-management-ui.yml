@@ -1,0 +1,55 @@
+name: Asset portfolio and account management
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  registry-management-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify P4-03 Freeze
+        run: python3 scripts/verify_first_run_onboarding.py
+      - name: Verify P4-04 registry management
+        run: python3 scripts/verify_registry_management_ui.py
+      - name: Run repository contract regressions
+        run: python3 -m unittest discover -s tests -v
+
+  registry-management-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check Web format
+        run: pnpm format:check
+      - name: Lint Web
+        run: pnpm lint
+      - name: Typecheck Web
+        run: pnpm typecheck
+      - name: Test Web
+        run: pnpm test
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Build and test registry management in Chromium
+        run: pnpm test:e2e

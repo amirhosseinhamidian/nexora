@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { defaultLocale, isLocale } from "@/i18n/config";
+import { LOCALE_PREFERENCE_COOKIE } from "@/lib/display-preferences";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const firstSegment = pathname.split("/")[1];
+  const preferredLocale = request.cookies.get(LOCALE_PREFERENCE_COOKIE)?.value;
+  const entryLocale =
+    preferredLocale && isLocale(preferredLocale) ? preferredLocale : defaultLocale;
 
   if (!firstSegment) {
-    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url));
+    const target = request.nextUrl.clone();
+    target.pathname = `/${entryLocale}`;
+    const response = NextResponse.redirect(target);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   if (!isLocale(firstSegment)) {

@@ -1,8 +1,8 @@
 import { Alert } from "@nexora/ui/primitives";
 
 import { DecisionPolicyChecks } from "@/components/decision-policy-checks";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { RiskGateExplanation } from "@/lib/decision-intelligence";
 
@@ -42,9 +42,7 @@ export function RiskGatePanel({
         <div>
           <dt>{copy.evaluatedAt}</dt>
           <dd>
-            <time dateTime={riskGate.evaluated_at}>
-              {formatTimestamp(riskGate.evaluated_at, locale)}
-            </time>
+            <WorkspaceTime dateTime={riskGate.evaluated_at} locale={locale} />
           </dd>
         </div>
         <div className="wide">

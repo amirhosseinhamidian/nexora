@@ -21,12 +21,12 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useId, useCallback, useEffect, useRef, useState } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
 import { decisionHref } from "@/lib/decision-intelligence";
 import { journalHref, monitoringFailure, monitoringId } from "@/lib/monitoring";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 type EntryKind =
   | "correction"
@@ -434,12 +434,7 @@ export function OutcomeJournalPanel({
                 <li id={`journal-entry-${entry.entry_id}`} key={entry.entry_id}>
                   <div className="journal-entry-heading">
                     <span className="evidence-state">{copy.entryKinds[entry.entry_kind]}</span>
-                    <time dateTime={entry.occurred_at}>
-                      {new Intl.DateTimeFormat(locale, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(entry.occurred_at))}
-                    </time>
+                    <WorkspaceTime dateTime={entry.occurred_at} locale={locale} />
                   </div>
                   <p dir="auto">{entry.content}</p>
                   <dl>
@@ -452,9 +447,7 @@ export function OutcomeJournalPanel({
                     <div>
                       <dt>{labels.entryRecorded}</dt>
                       <dd>
-                        <time dateTime={entry.recorded_at}>
-                          {formatTimestamp(entry.recorded_at, locale)}
-                        </time>
+                        <WorkspaceTime dateTime={entry.recorded_at} locale={locale} />
                       </dd>
                     </div>
                     <div>

@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AlertRecordCard } from "@/components/alert-record-card";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
@@ -30,7 +31,6 @@ import {
   type AlertItem,
   type MonitoringPreferences,
 } from "@/lib/monitoring";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 type PresentationWatchlist = {
   watchlist_id: string;
@@ -339,7 +339,10 @@ export function AlertInbox({
             <>
               <bdi>{confirmation.alertId}</bdi>
               {confirmation.body.snooze_until ? (
-                <> · {formatTimestamp(confirmation.body.snooze_until, locale)}</>
+                <>
+                  {" "}
+                  · <WorkspaceTime dateTime={confirmation.body.snooze_until} locale={locale} />
+                </>
               ) : null}
             </>
           }

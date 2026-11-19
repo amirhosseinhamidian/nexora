@@ -13,6 +13,7 @@ import {
 } from "@nexora/ui/primitives";
 import { useId, useState, type FormEvent } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
@@ -21,7 +22,7 @@ import {
   type ImportBatch,
   type ImportFormat,
 } from "@/lib/portfolio-accounting";
-import { formatTimestamp, localizeDigits } from "@/lib/portfolio-analytics";
+import { localizeDigits } from "@/lib/portfolio-analytics";
 
 type AccountingCopy = Dictionary["portfolioOperations"];
 const formats = { csv: "CSV", nexora_json: "Nexora JSON" };
@@ -114,7 +115,7 @@ function ImportBatchCard({
           <span className={`status-badge ${batch.status}`}>{copy.importStatus[batch.status]}</span>
           <b>{formats[batch.source_format]}</b>
         </div>
-        <time dateTime={batch.created_at}>{formatTimestamp(batch.created_at, locale)}</time>
+        <WorkspaceTime dateTime={batch.created_at} locale={locale} />
       </div>
       <dl className="import-counts">
         <div>
@@ -160,9 +161,7 @@ function ImportBatchCard({
             <div>
               <dt>{copy.imports.publishedAt}</dt>
               <dd>
-                <time dateTime={batch.published_at}>
-                  {formatTimestamp(batch.published_at, locale)}
-                </time>
+                <WorkspaceTime dateTime={batch.published_at} locale={locale} />
               </dd>
             </div>
           ) : null}

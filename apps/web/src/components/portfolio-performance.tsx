@@ -16,13 +16,13 @@ import {
 } from "@nexora/ui/primitives";
 import { useEffect, useId, useState } from "react";
 
+import { useWorkspaceTimeZone, WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
 import {
   formatExactDecimal,
   formatExactPercent,
-  formatTimestamp,
   performancePath,
   performancePeriods,
   performancePlot,
@@ -95,7 +95,7 @@ function PerformanceTable({
             return (
               <tr key={point.as_of}>
                 <th scope="row">
-                  <time dateTime={point.as_of}>{formatTimestamp(point.as_of, locale)}</time>
+                  <WorkspaceTime dateTime={point.as_of} locale={locale} />
                 </th>
                 <td>{money(point.nav)}</td>
                 <td>{index === 0 ? "—" : money(point.external_flow)}</td>
@@ -129,11 +129,13 @@ function PerformanceChart({
   startAt: string;
   endAt: string;
 }) {
+  const timeZone = useWorkspaceTimeZone();
   const plot = performancePlot(points, locale);
   if (!plot) return null;
 
   const date = new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-GB", {
     dateStyle: "medium",
+    timeZone,
   });
   return (
     <>
@@ -257,7 +259,7 @@ export function PortfolioPerformance({
           {formatExactDecimal(point.nav, locale, basePrecision)} {baseSymbol}
         </bdi>
       )}
-      <time dateTime={point.as_of}>{formatTimestamp(point.as_of, locale)}</time>
+      <WorkspaceTime dateTime={point.as_of} locale={locale} />
     </>
   );
 

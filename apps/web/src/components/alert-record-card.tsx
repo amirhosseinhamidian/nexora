@@ -2,6 +2,7 @@ import { Button, Disclosure, FormField, Input, ResponsiveRecordList } from "@nex
 import Link from "next/link";
 import { useId, useState } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { decisionHref } from "@/lib/decision-intelligence";
@@ -13,7 +14,7 @@ import {
   type AlertAction,
   type AlertItem,
 } from "@/lib/monitoring";
-import { formatTimestamp, localizeDigits } from "@/lib/portfolio-analytics";
+import { localizeDigits } from "@/lib/portfolio-analytics";
 
 function defaultSnoozeValue() {
   const value = new Date(Date.now() + 60 * 60 * 1000);
@@ -85,9 +86,7 @@ export function AlertRecordCard({
         <div>
           <dt>{copy.observedAt}</dt>
           <dd>
-            <time dateTime={item.source.observed_at}>
-              {formatTimestamp(item.source.observed_at, locale)}
-            </time>
+            <WorkspaceTime dateTime={item.source.observed_at} locale={locale} />
           </dd>
         </div>
         <div>
@@ -110,7 +109,7 @@ export function AlertRecordCard({
           <div>
             <dt>{copy.snoozeUntil}</dt>
             <dd>
-              <time dateTime={item.snooze_until}>{formatTimestamp(item.snooze_until, locale)}</time>
+              <WorkspaceTime dateTime={item.snooze_until} locale={locale} />
             </dd>
           </div>
         ) : null}
@@ -185,15 +184,11 @@ export function AlertRecordCard({
                     )}{" "}
                     · {copy.states[entry.state]}
                   </strong>
-                  <time dateTime={entry.recorded_at}>
-                    {formatTimestamp(entry.recorded_at, locale)}
-                  </time>
+                  <WorkspaceTime dateTime={entry.recorded_at} locale={locale} />
                   {entry.snooze_until ? (
                     <small>
                       {copy.snoozeUntil} ·{" "}
-                      <time dateTime={entry.snooze_until}>
-                        {formatTimestamp(entry.snooze_until, locale)}
-                      </time>
+                      <WorkspaceTime dateTime={entry.snooze_until} locale={locale} />
                     </small>
                   ) : null}
                 </li>

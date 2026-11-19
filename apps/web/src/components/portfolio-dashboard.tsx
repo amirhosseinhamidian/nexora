@@ -33,6 +33,7 @@ import { useId, type CSSProperties, useCallback, useEffect, useMemo, useState } 
 
 import { PortfolioHoldings } from "@/components/portfolio-holdings";
 import { PortfolioPerformance } from "@/components/portfolio-performance";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
@@ -41,7 +42,6 @@ import {
   align,
   compareExact,
   formatExactDecimal,
-  formatTimestamp,
   localizeDigits,
   parseDecimal,
   type PositionValuation,
@@ -481,10 +481,7 @@ export function PortfolioDashboard({
               value={money(details.analytics.nav)}
             >
               <p>
-                {copy.asOf}{" "}
-                <time dateTime={details.analytics.as_of}>
-                  {formatTimestamp(details.analytics.as_of, locale)}
-                </time>
+                {copy.asOf} <WorkspaceTime dateTime={details.analytics.as_of} locale={locale} />
               </p>
             </StatCard>
             <StatCard

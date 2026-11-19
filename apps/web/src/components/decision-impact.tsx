@@ -2,11 +2,11 @@ import { Alert, ChartContainer, ComparisonBlock, EmptyState, Table } from "@nexo
 import type { CSSProperties } from "react";
 
 import { DecisionPolicyChecks } from "@/components/decision-policy-checks";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { PortfolioImpact } from "@/lib/decision-intelligence";
 import { exactDecimal } from "@/lib/portfolio-accounting";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 export function PortfolioImpactPanel({
   dictionary,
@@ -46,9 +46,7 @@ export function PortfolioImpactPanel({
             <div>
               <dt>{labels.snapshotAt}</dt>
               <dd>
-                <time dateTime={analysis.snapshot.as_of}>
-                  {formatTimestamp(analysis.snapshot.as_of, locale)}
-                </time>
+                <WorkspaceTime dateTime={analysis.snapshot.as_of} locale={locale} />
               </dd>
             </div>
             <div>
@@ -96,7 +94,7 @@ export function PortfolioImpactPanel({
         <div>
           <dt>{copy.evaluatedAt}</dt>
           <dd>
-            <time dateTime={impact.analyzed_at}>{formatTimestamp(impact.analyzed_at, locale)}</time>
+            <WorkspaceTime dateTime={impact.analyzed_at} locale={locale} />
           </dd>
         </div>
         <div className="wide">

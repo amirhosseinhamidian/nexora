@@ -4,12 +4,12 @@ import type {
   PortfolioWorkspaceAccount,
   PortfolioWorkspaceAsset,
 } from "@/components/portfolio-dashboard";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
   formatExactDecimal,
   formatExactQuantity,
-  formatTimestamp,
   type PositionValuation,
 } from "@/lib/portfolio-analytics";
 
@@ -95,9 +95,7 @@ export function PortfolioHoldings({
                 </td>
                 <td>
                   {position.evidence_at ? (
-                    <time dateTime={position.evidence_at}>
-                      {formatTimestamp(position.evidence_at, locale)}
-                    </time>
+                    <WorkspaceTime dateTime={position.evidence_at} locale={locale} />
                   ) : (
                     dashboard.unavailable
                   )}

@@ -125,10 +125,11 @@ function formatPercent(value: ExactDecimal, locale: Locale): string {
   return `${formatDecimal(scaled, locale, 2)}${locale === "fa" ? "٪" : "%"}`;
 }
 
-export function formatTimestamp(value: string, locale: Locale): string {
+export function formatTimestamp(value: string, locale: Locale, timeZone?: string): string {
   return new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone,
   }).format(new Date(value));
 }
 

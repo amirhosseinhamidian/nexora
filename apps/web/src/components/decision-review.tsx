@@ -13,6 +13,7 @@ import {
 } from "@nexora/ui/primitives";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError } from "@/lib/api-client";
@@ -23,7 +24,7 @@ import {
   type ReviewAction,
   type ReviewSubmission,
 } from "@/lib/decision-intelligence";
-import { formatTimestamp, localizeDigits } from "@/lib/portfolio-analytics";
+import { localizeDigits } from "@/lib/portfolio-analytics";
 
 const reviewReasons = {
   accept: [
@@ -333,16 +334,11 @@ export function DecisionReviewPanel({
               {review.reason_note ? <bdi>{review.reason_note}</bdi> : null}
               <small>
                 {labels.delivery[review.delivery_status]} ·{" "}
-                <time dateTime={review.recorded_at}>
-                  {formatTimestamp(review.recorded_at, locale)}
-                </time>
+                <WorkspaceTime dateTime={review.recorded_at} locale={locale} />
               </small>
               {review.revisit_at ? (
                 <small>
-                  {copy.revisitAt} ·{" "}
-                  <time dateTime={review.revisit_at}>
-                    {formatTimestamp(review.revisit_at, locale)}
-                  </time>
+                  {copy.revisitAt} · <WorkspaceTime dateTime={review.revisit_at} locale={locale} />
                 </small>
               ) : null}
             </li>
@@ -375,7 +371,7 @@ export function DecisionReviewPanel({
               {confirmation.body.revisit_at ? (
                 <>
                   <br />
-                  {formatTimestamp(confirmation.body.revisit_at, locale)}
+                  <WorkspaceTime dateTime={confirmation.body.revisit_at} locale={locale} />
                 </>
               ) : null}
             </>

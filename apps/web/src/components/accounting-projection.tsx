@@ -10,6 +10,7 @@ import {
 import { useId, type ReactNode } from "react";
 
 import type { PortfolioWorkspaceContext } from "@/components/portfolio-dashboard";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
@@ -17,7 +18,7 @@ import {
   type AccountingData,
   type CostBasisMethod,
 } from "@/lib/portfolio-accounting";
-import { formatTimestamp, localizeDigits } from "@/lib/portfolio-analytics";
+import { localizeDigits } from "@/lib/portfolio-analytics";
 
 export function AccountingProjection({
   basis,
@@ -102,9 +103,7 @@ export function AccountingProjection({
               <div>
                 <dt>{copy.holdings.rebuiltAt}</dt>
                 <dd>
-                  <time dateTime={checkpoint.rebuilt_at}>
-                    {formatTimestamp(checkpoint.rebuilt_at, locale)}
-                  </time>
+                  <WorkspaceTime dateTime={checkpoint.rebuilt_at} locale={locale} />
                 </dd>
               </div>
               <div>
@@ -127,9 +126,7 @@ export function AccountingProjection({
                   details = [
                     [
                       copy.holdings.acquired,
-                      <time key="acquired" dateTime={row.acquired_at}>
-                        {formatTimestamp(row.acquired_at, locale)}
-                      </time>,
+                      <WorkspaceTime key="acquired" dateTime={row.acquired_at} locale={locale} />,
                     ],
                     [copy.holdings.originalQuantity, amount(row.original_quantity, row.asset_id)],
                     [copy.holdings.remaining, amount(row.remaining_quantity, row.asset_id)],

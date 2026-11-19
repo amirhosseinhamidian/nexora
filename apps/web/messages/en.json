@@ -24,9 +24,7 @@
     "openPortfolioDetails": "View portfolio details",
     "backToPortfolios": "Back to portfolios",
     "portfolioUnavailableTitle": "Portfolio not found",
-    "portfolioUnavailableDescription": "This portfolio is unavailable. Open the portfolio list to choose another one.",
-    "exportsDescription": "Export creation and history will be available in a later update.",
-    "settingsDescription": "More workspace preferences will be available in a later update. You can change the language and appearance from the top bar now."
+    "portfolioUnavailableDescription": "This portfolio is unavailable. Open the portfolio list to choose another one."
   },
   "registry": {
     "assets": {
@@ -756,6 +754,111 @@
     "reviewError": "The review was not confirmed. Retry uses the same idempotency key.",
     "noReviews": "No owner review has been recorded for this Decision.",
     "reviewBoundary": "A review is human decision evidence only. It cannot authorize execution, create an OrderIntent, post a Transaction, submit an order, move funds or expose exchange credentials."
+  },
+  "exports": {
+    "createTitle": "Create an export",
+    "createDescription": "Export your workspace’s portfolio and decision records as a private ZIP file.",
+    "profile": "Export profile",
+    "profiles": {
+      "ai_safe": "Reduced for AI review",
+      "private_complete": "Complete private export"
+    },
+    "profileDescriptions": {
+      "ai_safe": "Removes free text, raw source data and other sensitive fields. Portfolio records are still private.",
+      "private_complete": "Includes the full set of exportable records, including notes and source details. Keep this file private."
+    },
+    "formatsTitle": "File formats inside the ZIP",
+    "formats": {
+      "json": "JSON",
+      "csv": "CSV",
+      "parquet": "Parquet"
+    },
+    "formatRequired": "Choose at least one file format.",
+    "pin": "Keep this export",
+    "retentionHint": "Standard exports are eligible for cleanup after 30 days. Keeping an export excludes it from that cleanup.",
+    "pinned": "Kept",
+    "standardRetention": "Standard retention",
+    "retention": "Retention",
+    "create": "Create export",
+    "confirmCreate": "Create this export?",
+    "cancel": "Cancel",
+    "history": "Export history",
+    "historyScope": "This browser shows up to 20 receipts from exports you created here. Each file stays on the private server until you download it.",
+    "empty": "No export receipts in this browser.",
+    "bundleSize": "ZIP size",
+    "bytes": "bytes",
+    "records": "Records",
+    "receiptDetails": "Receipt details",
+    "exportId": "Export ID",
+    "version": "File version",
+    "bundleChecksum": "ZIP fingerprint",
+    "snapshotChecksum": "Data fingerprint",
+    "verify": "Verify file",
+    "download": "Download ZIP",
+    "notifications": "Export notifications",
+    "dismiss": "Dismiss notification",
+    "created": "Export created.",
+    "historyUnavailable": "The export was created. This browser could not save its receipt after this page closes.",
+    "capacity": "The export exceeds the available capacity.",
+    "createFailed": "The export result could not be confirmed.",
+    "verified": "The file matches its receipt.",
+    "downloadStarted": "Verified ZIP download started.",
+    "operations": {
+      "creating": "Creating your export…",
+      "verifying": "Verifying the file…",
+      "downloading": "Verifying the file for download…"
+    },
+    "statuses": {
+      "ready": "Created",
+      "verified": "Verified",
+      "unavailable": "File unavailable",
+      "integrityFailed": "The file did not pass verification",
+      "checkFailed": "The file could not be checked"
+    }
+  },
+  "settings": {
+    "display": "Display",
+    "displayScope": "These preferences are saved in this browser.",
+    "language": "Language",
+    "theme": "Theme",
+    "themes": {
+      "system": "Use device setting",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "timeZone": "Display time zone",
+    "timeZoneHint": "Saved dates use this time zone for display. Date and time fields use the device clock.",
+    "timeZones": {
+      "browser": "Device time zone",
+      "UTC": "UTC",
+      "Asia/Tehran": "Tehran",
+      "Europe/London": "London",
+      "America/New_York": "New York"
+    },
+    "sidebar": "Desktop sidebar",
+    "sidebarStates": {
+      "expanded": "Expanded",
+      "collapsed": "Collapsed"
+    },
+    "monitoring": "Monitoring preferences",
+    "monitoringHint": "Open a watchlist to edit its alert order and visibility.",
+    "openMonitoring": "Manage watchlists",
+    "provider": "Data source status",
+    "providerLoading": "Loading data source status…",
+    "providerError": "Data source status could not be loaded.",
+    "providerStates": {
+      "ready": "Available",
+      "degraded": "Limited",
+      "disabled_incompatible": "Incompatible"
+    },
+    "providerVersion": "Source version",
+    "providerContract": "Data contract version",
+    "unavailable": "Unavailable",
+    "retry": "Try again",
+    "saved": "Display preference saved.",
+    "storageUnavailable": "The preference is active for this visit. This browser could not save it.",
+    "notifications": "Settings notifications",
+    "dismiss": "Dismiss notification"
   },
   "monitoring": {
     "navigation": "Monitoring pages",

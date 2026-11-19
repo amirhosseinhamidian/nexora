@@ -1,10 +1,10 @@
 import { Disclosure, EmptyState, ResponsiveRecordList } from "@nexora/ui/primitives";
 
 import type { PortfolioWorkspaceContext } from "@/components/portfolio-dashboard";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { exactDecimal, type Transaction } from "@/lib/portfolio-accounting";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 export function AccountingJournal({
   context,
@@ -44,9 +44,7 @@ export function AccountingJournal({
                   </span>
                 ) : null}
               </div>
-              <time dateTime={transaction.occurred_at}>
-                {formatTimestamp(transaction.occurred_at, locale)}
-              </time>
+              <WorkspaceTime dateTime={transaction.occurred_at} locale={locale} />
             </div>
             <p>{transaction.memo ?? copy.journal.noMemo}</p>
             <ResponsiveRecordList className="journal-legs" label={copy.journal.legs}>
@@ -81,9 +79,7 @@ export function AccountingJournal({
                 <div>
                   <dt>{copy.journal.recordedAt}</dt>
                   <dd>
-                    <time dateTime={transaction.recorded_at}>
-                      {formatTimestamp(transaction.recorded_at, locale)}
-                    </time>
+                    <WorkspaceTime dateTime={transaction.recorded_at} locale={locale} />
                   </dd>
                 </div>
                 {transaction.correction_of_transaction_id ? (

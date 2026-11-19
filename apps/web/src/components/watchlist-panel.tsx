@@ -19,6 +19,7 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useId, useCallback, useEffect, useRef, useState } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
@@ -368,10 +369,7 @@ export function WatchlistPanel({
               <div className="watchlist-selector">
                 <small>
                   {copy.version.replace("{version}", String(selected.row_version))} · {copy.updated}{" "}
-                  {new Intl.DateTimeFormat(locale, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }).format(new Date(selected.updated_at))}
+                  <WorkspaceTime dateTime={selected.updated_at} locale={locale} />
                 </small>
               </div>
 

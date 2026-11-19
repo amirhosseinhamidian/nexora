@@ -1,9 +1,9 @@
 import { Disclosure } from "@nexora/ui/primitives";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { DecisionFeedItem } from "@/lib/decision-intelligence";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 function displayValue(value: unknown): string {
   if (value === null || value === undefined) return "—";
@@ -34,7 +34,9 @@ export function EvidencePanel({
       <dl className="source-reference-grid">
         <div>
           <dt>{copy.observedAt}</dt>
-          <dd>{formatTimestamp(item.source.observed_at, locale)}</dd>
+          <dd>
+            <WorkspaceTime dateTime={item.source.observed_at} locale={locale} />
+          </dd>
         </div>
         <div>
           <dt>{copy.providerVersion}</dt>

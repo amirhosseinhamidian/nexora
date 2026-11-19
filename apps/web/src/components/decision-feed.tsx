@@ -6,6 +6,7 @@ import Link from "next/link";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import { EvidencePanel } from "@/components/decision-evidence";
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
@@ -15,7 +16,6 @@ import {
   type DecisionFeedItem,
   type DecisionFeedPage,
 } from "@/lib/decision-intelligence";
-import { formatTimestamp } from "@/lib/portfolio-analytics";
 
 type FeedState =
   { status: "loading" | "error" } | { status: "ready"; page: DecisionFeedPage; selected: number };
@@ -178,7 +178,7 @@ export function DecisionFeed({
                       <strong>{item.resource_id}</strong>
                       <small>
                         {copy.resourceTypes[item.resource_type]} ·{" "}
-                        {formatTimestamp(item.source.observed_at, locale)}
+                        <WorkspaceTime dateTime={item.source.observed_at} locale={locale} />
                       </small>
                     </span>
                     <ChevronRight aria-hidden="true" size={18} />

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { expect, test } from "@playwright/test";
 
 async function mockPrivateRuntime(page: import("@playwright/test").Page) {
@@ -949,4 +951,119 @@ test("monitoring preferences lead from a linked alert to its outcome journal", a
   await expect(page).toHaveURL(`/en/journal?decision=${decisionId}`);
   await expect(page.getByLabel("Decision ID")).toHaveValue(decisionId);
   await expect(page.getByRole("heading", { name: "No journal entry yet" })).toBeVisible();
+});
+
+test("creates a private export receipt and verifies bytes before download", async ({ page }) => {
+  await mockPrivateRuntime(page);
+  const archive = Buffer.from("504b0506000000000000000000000000000000000000", "hex");
+  const digest = createHash("sha256").update(archive).digest("hex");
+  const id = `pex_${"a".repeat(24)}`;
+  const version = `v1-${digest.slice(0, 16)}`;
+  const path = `/v1/exports/portfolio-export/${id}/versions/${version}/download`;
+  let writes = 0;
+  let corrupt = true;
+  await page.route("**/api/v1/portfolio-exports", (route) => {
+    writes += 1;
+    expect(route.request().postDataJSON()).toEqual({
+      profile: "private_complete",
+      formats: ["json", "csv"],
+      pinned: true,
+    });
+    return route.fulfill({
+      status: 201,
+      json: {
+        schema_version: "nexora-portfolio-export-publication-v1",
+        manifest: {
+          schema_version: "nexora-portfolio-export-manifest-v1",
+          export_id: id,
+          profile: "private_complete",
+          delivery_format: "zip_bundle",
+          content_formats: ["csv", "json"],
+          generated_at: "2026-11-17T10:00:00Z",
+          complete: true,
+          public_download: false,
+          snapshot_sha256: "b".repeat(64),
+          record_count: 4,
+        },
+        artifact_version: version,
+        artifact_sha256: digest,
+        artifact_size_bytes: archive.length,
+        retention_class: "pinned_export",
+        download_path: path,
+      },
+    });
+  });
+  await page.route(`**/api${path}`, (route) => {
+    const body = Buffer.from(archive);
+    if (corrupt) body[0] ^= 1;
+    return route.fulfill({
+      headers: {
+        "content-type": "application/zip",
+        "x-artifact-sha256": digest,
+        "content-length": String(body.length),
+      },
+      body,
+    });
+  });
+
+  await page.goto("/en/exports");
+  await page.getByRole("combobox", { name: "Export profile" }).click();
+  await page.getByRole("option", { name: "Complete private export" }).click();
+  await page.getByRole("checkbox", { name: "CSV" }).check();
+  await page.getByRole("checkbox", { name: "Keep this export" }).check();
+  await page.getByRole("button", { name: "Create export" }).click();
+  const confirm = page.getByRole("dialog", { name: "Create this export?" });
+  await expect(confirm).toContainText("Complete private export");
+  expect(writes).toBe(0);
+  await confirm.getByRole("button", { name: "Create export" }).click();
+  await expect(page.getByText("Export created.")).toBeVisible();
+  expect(writes).toBe(1);
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Complete private export" })).toBeVisible();
+  const notifications = page.getByRole("region", { name: "Export notifications" });
+  await page.getByRole("button", { name: "Verify file" }).click();
+  await expect(notifications.getByText("The file did not pass verification")).toBeVisible();
+
+  corrupt = false;
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download ZIP" }).click();
+  const saved = await download;
+  expect(saved.suggestedFilename()).toBe(`${id}.zip`);
+  await expect(notifications.getByText("Verified ZIP download started.")).toBeVisible();
+  expect(writes).toBe(1);
+});
+
+test("persists presentation settings and uses the chosen time zone for evidence", async ({
+  page,
+}) => {
+  await mockPrivateRuntime(page);
+  await page.goto("/fa/settings");
+  await page.getByRole("link", { name: "English", exact: true }).click();
+  await expect(page).toHaveURL("/en/settings");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.getByRole("combobox", { name: "Theme", exact: true }).click();
+  await page.getByRole("option", { name: "Dark", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  await page.getByRole("combobox", { name: "Display time zone" }).click();
+  await page.getByRole("option", { name: "Tehran", exact: true }).click();
+  await page.getByRole("combobox", { name: "Desktop sidebar" }).click();
+  await page.getByRole("option", { name: "Collapsed", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Display time zone" })).toHaveText("Tehran");
+  await expect(page.locator(".application-shell")).toHaveAttribute(
+    "data-sidebar-collapsed",
+    "true",
+  );
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("link", { name: "Manage watchlists" })).toHaveAttribute(
+    "href",
+    "/en/alerts/watchlists",
+  );
+  await expect(page.getByText("0.3.1", { exact: true })).toBeVisible();
+  await page.goto("/en/decisions/candidates/candidate-1");
+  await expect(page.locator('time[datetime="2026-11-14T10:00:00Z"]')).toContainText("13:30");
+  await page.goto("/");
+  await expect(page).toHaveURL("/en/overview");
 });

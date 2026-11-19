@@ -1,0 +1,68 @@
+.settings-workspace {
+  @apply grid min-w-0 gap-4;
+}
+
+.settings-card {
+  @apply min-w-0 rounded-nx-lg border border-nx-border bg-nx-surface p-4 sm:p-6;
+}
+
+.settings-card > p,
+.export-form > div > p {
+  @apply my-2 text-sm text-nx-text-muted;
+}
+
+.settings-fields,
+.export-form {
+  @apply grid gap-4 mt-4;
+}
+
+.settings-fields {
+  @apply grid-cols-1 lg:grid-cols-2;
+}
+
+.settings-fields nav {
+  @apply mt-2;
+}
+
+.export-format-options {
+  @apply flex flex-wrap gap-4 min-w-0 border-0 p-0 m-0;
+}
+
+.export-format-options legend {
+  @apply mb-2 text-sm font-semibold;
+}
+
+.export-form > button {
+  @apply justify-self-start;
+}
+
+.export-records {
+  @apply mt-4;
+}
+
+.export-record,
+.export-record-heading > div {
+  @apply min-w-0;
+}
+
+.export-record-heading {
+  @apply flex flex-wrap items-start justify-between gap-3;
+}
+
+.export-record-heading time {
+  @apply text-sm text-nx-text-muted;
+}
+
+.export-record-info {
+  @apply grid grid-cols-1 gap-2 mt-3 sm:grid-cols-2;
+}
+
+.export-record-info dt {
+  @apply text-sm text-nx-text-muted;
+}
+
+.export-status-integrityFailed,
+.export-status-checkFailed,
+.export-status-unavailable {
+  @apply text-nx-danger;
+}

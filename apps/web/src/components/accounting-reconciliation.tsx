@@ -9,10 +9,11 @@ import {
 } from "@nexora/ui/primitives";
 import { useId, useState } from "react";
 
+import { WorkspaceTime } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { ReconciliationCase, ReconciliationDecision } from "@/lib/portfolio-accounting";
-import { formatTimestamp, localizeDigits } from "@/lib/portfolio-analytics";
+import { localizeDigits } from "@/lib/portfolio-analytics";
 
 type AccountingCopy = Dictionary["portfolioOperations"];
 const decisions = ["matched", "accepted_difference", "resolved", "ignored_with_reason"] as const;
@@ -51,7 +52,7 @@ function ReconciliationCard({
     <li className="operation-card">
       <div className="operation-card-heading">
         <span className={`status-badge ${item.state}`}>{copy.reconciliationState[item.state]}</span>
-        <time dateTime={item.updated_at}>{formatTimestamp(item.updated_at, locale)}</time>
+        <WorkspaceTime dateTime={item.updated_at} locale={locale} />
       </div>
       {item.reason ? <p>{item.reason}</p> : null}
       <Disclosure className="accounting-disclosure" label={copy.reconciliation.evidence}>

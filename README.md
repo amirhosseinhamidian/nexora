@@ -298,6 +298,8 @@ assessment against a specific evidence version. Its Freeze record opens
 It links those pages to Decision evidence, applies saved display preferences
 in the inbox and confirms changes before recording an alert transition or a
 new journal entry. Its Freeze record opens `NEX-P4-09` for exports and settings.
+The `NEX-P4-09` candidate adds private export creation and verification,
+browser-scoped receipts, display preferences and read-only provider status.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -652,3 +654,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-monitoring-experience-ui.json`](contracts/nexora-v0.1-monitoring-experience-ui.json)
 - [`docs/v0.1/55-monitoring-experience-ui.md`](docs/v0.1/55-monitoring-experience-ui.md)
 - [`artifacts/p4-08/monitoring-experience-ui-freeze.json`](artifacts/p4-08/monitoring-experience-ui-freeze.json)
+- [`contracts/nexora-v0.1-exports-settings-ui.json`](contracts/nexora-v0.1-exports-settings-ui.json)
+- [`docs/v0.1/56-exports-settings-ui.md`](docs/v0.1/56-exports-settings-ui.md)

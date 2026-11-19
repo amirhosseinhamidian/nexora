@@ -9,6 +9,7 @@ import { useSyncExternalStore } from "react";
 
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { rememberLocale } from "@/lib/display-preferences";
 
 type FoundationControlsProps = {
   dictionary: Dictionary["header"];
@@ -37,6 +38,7 @@ export function FoundationControls({ dictionary, locale }: FoundationControlsPro
         className="control-button"
         href={localePath}
         hrefLang={nextLocale}
+        onNavigate={() => rememberLocale(nextLocale)}
       >
         <Languages aria-hidden="true" size={18} />
         <span>{nextLocale.toUpperCase()}</span>

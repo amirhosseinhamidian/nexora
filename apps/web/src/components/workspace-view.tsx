@@ -9,11 +9,13 @@ import { AlertInbox } from "@/components/alert-inbox";
 import { useWorkspace } from "@/components/authenticated-shell";
 import { DecisionExperience } from "@/components/decision-experience";
 import { DecisionRecordWorkspace } from "@/components/decision-record-workspace";
+import { ExportsWorkspace } from "@/components/exports-workspace";
 import { FirstRunOnboarding } from "@/components/first-run-onboarding";
 import { MonitoringNavigation } from "@/components/monitoring-navigation";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
 import { PortfolioDashboard } from "@/components/portfolio-dashboard";
 import { RegistryManagement } from "@/components/registry-management";
+import { SettingsWorkspace } from "@/components/settings-workspace";
 import { TransactionsWorkspace } from "@/components/transactions-workspace";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
@@ -246,11 +248,11 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       break;
     case "exports":
       title = navigation.exports;
-      content = <p className="workspace-page-note">{copy.exportsDescription}</p>;
+      content = <ExportsWorkspace key={session.owner_id} />;
       break;
     case "settings":
       title = navigation.settings;
-      content = <p className="workspace-page-note">{copy.settingsDescription}</p>;
+      content = <SettingsWorkspace key={session.owner_id} />;
       break;
   }
   return (

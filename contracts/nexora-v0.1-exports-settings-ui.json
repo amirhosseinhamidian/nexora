@@ -1,0 +1,42 @@
+{
+  "schema_version": "nexora-exports-settings-ui-v1",
+  "decision_id": "NEX-P4-09",
+  "status": "candidate",
+  "p4_08_prerequisite": {
+    "freeze_commit_sha": "c10ecffd33a3b12bfce61b7f10da31a3719e6fea",
+    "freeze_record_path": "artifacts/p4-08/monitoring-experience-ui-freeze.json",
+    "freeze_record_checksum": "225a153858bfd377d9bd6f6691770d7e4eedb7be2e7634ea68ca9790a6b4ef92",
+    "successful_ci_run_id": 44484280599
+  },
+  "routes": ["/{locale}/exports", "/{locale}/settings"],
+  "export": {
+    "create_path": "/v1/portfolio-exports",
+    "create_operation": "createPortfolioExport",
+    "authenticated_download_path": "/v1/exports/{artifact_type}/{artifact_id}/versions/{version}/download",
+    "profiles": ["ai_safe", "private_complete"],
+    "formats": ["json", "csv", "parquet"],
+    "history_scope": "owner_browser_receipts",
+    "history_max_entries": 20,
+    "downloads_verify_sha256_and_size": true,
+    "public_download": false
+  },
+  "settings": {
+    "locale_and_theme_scope": "browser",
+    "time_zone_and_sidebar_scope": "owner_browser",
+    "time_zone_changes_display_only": true,
+    "monitoring_path": "/{locale}/alerts/watchlists",
+    "provider_status_operation": "listDecisionFeed",
+    "provider_status_read_only": true
+  },
+  "boundary": {
+    "existing_owner_session_required": true,
+    "export_creation_requires_confirmation": true,
+    "export_payload_stored_in_browser_history": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-09-FREEZE",
+    "post_freeze_stage": "NEX-P4-10"
+  }
+}

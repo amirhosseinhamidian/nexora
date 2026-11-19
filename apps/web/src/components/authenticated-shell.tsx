@@ -14,9 +14,16 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import { FoundationControls } from "@/components/foundation-controls";
 import { StatePanel } from "@/components/state-panel";
 import { WorkspaceNavigation } from "@/components/workspace-navigation";
+import { WorkspaceTimeZone } from "@/components/workspace-time";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { ApiRequestError, SESSION_EXPIRED_EVENT, apiRequest } from "@/lib/api-client";
+import {
+  defaultDisplayPreferences,
+  readDisplayPreferences,
+  writeDisplayPreferences,
+  type DisplayPreferences,
+} from "@/lib/display-preferences";
 import { createPasskeyAssertion } from "@/lib/webauthn";
 
 type ShellState = "authenticated" | "expired" | "loading" | "offline";
@@ -32,6 +39,8 @@ const WorkspaceContext = createContext<
       session: SessionResponse;
       reauthenticate: (signal: AbortSignal) => Promise<void>;
       refreshSession: (signal: AbortSignal) => Promise<void>;
+      displayPreferences: DisplayPreferences;
+      updateDisplayPreferences: (patch: Partial<DisplayPreferences>) => boolean;
     })
   | null
 >(null);
@@ -47,7 +56,7 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
   const [state, setState] = useState<ShellState>("loading");
   const [session, setSession] = useState<SessionResponse>();
   const [servicesReady, setServicesReady] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [display, setDisplay] = useState<{ ownerId: string; preferences: DisplayPreferences }>();
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = () => setMobileOpen(false);
 
@@ -70,6 +79,12 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
       const current = await apiRequest<SessionResponse>("/api/v1/auth/session", {
         signalSessionExpiry: false,
       });
+      const preferences = readDisplayPreferences(current.owner_id);
+      setDisplay((previous) =>
+        previous?.ownerId === current.owner_id
+          ? previous
+          : { ownerId: current.owner_id, preferences },
+      );
       setSession(current);
       setState("authenticated");
       try {
@@ -186,6 +201,16 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
   }
 
   const copy = dictionary.workspacePages;
+  const displayPreferences =
+    display?.ownerId === session.owner_id ? display.preferences : defaultDisplayPreferences;
+  const collapsed = displayPreferences.sidebarCollapsed;
+
+  function updateDisplayPreferences(patch: Partial<DisplayPreferences>) {
+    if (!session) return false;
+    const preferences = { ...displayPreferences, ...patch };
+    setDisplay({ ownerId: session.owner_id, preferences });
+    return writeDisplayPreferences(session.owner_id, preferences);
+  }
   const SidebarIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   const status = servicesReady ? dictionary.shell.ready : dictionary.shell.limited;
   return (
@@ -217,7 +242,7 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
               aria-expanded={!collapsed}
               aria-label={collapsed ? copy.expandSidebar : copy.collapseSidebar}
               className="sidebar-toggle"
-              onClick={() => setCollapsed((current) => !current)}
+              onClick={() => updateDisplayPreferences({ sidebarCollapsed: !collapsed })}
               title={collapsed ? copy.expandSidebar : copy.collapseSidebar}
             >
               <SidebarIcon aria-hidden="true" className="sidebar-toggle-icon" size={19} />
@@ -252,9 +277,23 @@ export function AuthenticatedShell({ children, dictionary, locale }: Authenticat
 
         <main className="main-content" id="main-content" tabIndex={-1}>
           <WorkspaceContext.Provider
-            value={{ dictionary, locale, reauthenticate, refreshSession, session }}
+            value={{
+              dictionary,
+              displayPreferences,
+              locale,
+              reauthenticate,
+              refreshSession,
+              session,
+              updateDisplayPreferences,
+            }}
           >
-            {children}
+            <WorkspaceTimeZone.Provider
+              value={
+                displayPreferences.timeZone === "browser" ? undefined : displayPreferences.timeZone
+              }
+            >
+              {children}
+            </WorkspaceTimeZone.Provider>
           </WorkspaceContext.Provider>
         </main>
       </div>

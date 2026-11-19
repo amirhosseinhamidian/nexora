@@ -23,6 +23,21 @@ class ProductAcceptanceContractTests(unittest.TestCase):
         MODULE.validate_prerequisite(self.contract)
         MODULE.validate_repository(self.contract)
 
+    def test_freeze_binds_ci_and_manual_review_to_the_candidate(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_json(MODULE.FREEZE_PATH), self.contract)
+
+    def test_freeze_rejects_browser_evidence_from_another_candidate(self) -> None:
+        record = MODULE.load_json(MODULE.FREEZE_PATH)
+        record["browser_evidence"]["candidate_commit_sha"] = "c" * 40
+        with self.assertRaisesRegex(MODULE.ProductAcceptanceError, "browser evidence candidate_commit_sha"):
+            MODULE.validate_freeze_record(record, self.contract)
+
+    def test_freeze_requires_an_explicit_pass_for_every_manual_profile(self) -> None:
+        record = MODULE.load_json(MODULE.FREEZE_PATH)
+        record["manual_visual"]["record"]["results"][0]["result"] = "pending"
+        with self.assertRaisesRegex(MODULE.ProductAcceptanceError, "manual profiles awaiting a pass"):
+            MODULE.validate_freeze_record(record, self.contract)
+
     def test_manual_requires_passes_for_both_themes_at_each_width_and_language(self) -> None:
         record = MODULE.manual_template(self.contract, self.identity)
         self.assertEqual(len(record["results"]), 16)

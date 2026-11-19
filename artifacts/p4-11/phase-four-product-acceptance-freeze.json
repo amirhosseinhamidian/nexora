@@ -1,0 +1,247 @@
+{
+  "schema_version": "nexora-phase-four-product-acceptance-freeze-v1",
+  "decision_id": "NEX-P4-11",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c",
+  "candidate_tree_sha": "5540f76b257865707fb58e5f6c082ff31e1704ec",
+  "candidate_predecessor_sha": "d4896ec250c8f70fedcd42b488235a8099e37f17",
+  "product_acceptance_contract": {
+    "path": "contracts/nexora-v0.1-phase-four-product-acceptance.json",
+    "checksum": "436c29ae20c4d24069d4b86b94ccfce42da3bfc2af4da2451ad086875b330637"
+  },
+  "p4_10_freeze_canonical_checksum": "c611dd65bc15bb3f91f56f2da2191b56b139502a102dca5f408c958c7bd5c070",
+  "github_actions": {
+    "workflow_path": ".github/workflows/phase-four-product-acceptance.yml",
+    "run_id": 44506955235,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44506955235",
+    "head_sha": "102a3c711e72aeecfb75b505d5afa890628c762c",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "product-acceptance-browser": {
+        "job_id": 135500945412,
+        "conclusion": "success"
+      },
+      "product-acceptance-contract": {
+        "job_id": 135500945774,
+        "conclusion": "success"
+      }
+    },
+    "browser_artifact": {
+      "name": "p4-11-browser-evidence",
+      "artifact_id": 14519764085,
+      "digest": "sha256:10225f1eb0ec4f02a10d16af7d03202ed303a06d5b8b8edf4db33a59db91d3dc"
+    }
+  },
+  "browser_evidence": {
+    "schema_version": "nexora-phase-four-browser-evidence-v1",
+    "contract_checksum": "436c29ae20c4d24069d4b86b94ccfce42da3bfc2af4da2451ad086875b330637",
+    "candidate_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c",
+    "candidate_tree_sha": "5540f76b257865707fb58e5f6c082ff31e1704ec",
+    "github_actions": {
+      "run_id": 44506955235,
+      "attempt": 1
+    },
+    "playwright_report_sha256": "e036900ec5fc183b7abf589e466cbbce68ea0173485319996f99c6c76a2b5e6b",
+    "journeys": {
+      "access_and_accounting": {
+        "result": "pass",
+        "journeys": [
+          "bootstrap",
+          "login",
+          "overview",
+          "session_recovery",
+          "import_preview",
+          "import_publication",
+          "holdings_rebuild"
+        ]
+      },
+      "first_portfolio": {
+        "result": "pass",
+        "journeys": ["asset_registration", "first_portfolio", "optional_account_creation"]
+      },
+      "skip_optional_account": {
+        "result": "pass",
+        "journeys": ["optional_account_skip"]
+      },
+      "decision_review": {
+        "result": "pass",
+        "journeys": ["decision_review"]
+      },
+      "monitoring_and_outcomes": {
+        "result": "pass",
+        "journeys": ["alert_transition", "journal_entry"]
+      },
+      "export": {
+        "result": "pass",
+        "journeys": ["export"]
+      }
+    },
+    "automated_viewports": [
+      {
+        "locale": "en",
+        "theme": "light",
+        "width_px": 320,
+        "result": "pass"
+      },
+      {
+        "locale": "fa",
+        "theme": "dark",
+        "width_px": 320,
+        "result": "pass"
+      },
+      {
+        "locale": "en",
+        "theme": "dark",
+        "width_px": 768,
+        "result": "pass"
+      },
+      {
+        "locale": "fa",
+        "theme": "light",
+        "width_px": 768,
+        "result": "pass"
+      },
+      {
+        "locale": "en",
+        "theme": "light",
+        "width_px": 1280,
+        "result": "pass"
+      },
+      {
+        "locale": "fa",
+        "theme": "dark",
+        "width_px": 1280,
+        "result": "pass"
+      },
+      {
+        "locale": "en",
+        "theme": "dark",
+        "width_px": 1920,
+        "result": "pass"
+      },
+      {
+        "locale": "fa",
+        "theme": "light",
+        "width_px": 1920,
+        "result": "pass"
+      }
+    ],
+    "record_checksum": "5163c6f5884666f02e5432a201f113f7b6739d57edb954a4344c9d91f83d448f"
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-12",
+  "production_readiness_claimed": false,
+  "manual_visual": {
+    "record_checksum": "6e5c21f5abf2c87429830415acd8ceae96e27abfe4614553b7ff75ae2894d1a8",
+    "record": {
+      "schema_version": "nexora-phase-four-manual-visual-evidence-v1",
+      "contract_checksum": "436c29ae20c4d24069d4b86b94ccfce42da3bfc2af4da2451ad086875b330637",
+      "candidate_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c",
+      "candidate_tree_sha": "5540f76b257865707fb58e5f6c082ff31e1704ec",
+      "reviewer_role": "owner",
+      "created_at": "2026-11-19T10:48:35+00:00",
+      "results": [
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 1920,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 1920,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 1920,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 1920,
+          "result": "pass"
+        }
+      ]
+    }
+  }
+}

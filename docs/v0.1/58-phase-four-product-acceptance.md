@@ -26,7 +26,7 @@ candidate commit and tree, workflow run and attempt, case results and the
 SHA-256 of the Playwright report.
 [Chromium WebAuthn protocol](https://chromium.googlesource.com/chromium/src/+/530cafad9050e539f69b1178d75cf253814ae57b/third_party/blink/public/devtools_protocol/domains/WebAuthn.pdl).
 
-## Local verification before committing
+## Local candidate verification
 
 ```zsh
 eval "$(fnm env --shell zsh)"
@@ -84,5 +84,17 @@ NEXORA_P411_MANUAL="/tmp/nexora-p4-11-$(git rev-parse --short HEAD)-visual.json"
 .venv/bin/python scripts/verify_phase_four_product_acceptance.py verify-manual "$NEXORA_P411_MANUAL"
 ```
 
-پس از موفق شدن CI همان کامیت و تأیید هر ۱۶ ردیف، فایل نتیجه و پیوند اجرای
-CI برای ثبت نهایی P4-11 لازم هستند. پذیرش نهایی فاز در P4-12 انجام می‌شود.
+## Freeze
+
+`NEX-P4-11` is frozen at candidate `102a3c711e72aeecfb75b505d5afa890628c762c`.
+The contract and browser jobs passed in
+[GitHub Actions run 44506955235](https://github.com/amirhosseinhamidian/nexora/actions/runs/44506955235).
+The owner confirmed all 16 visual profiles on the same candidate.
+The [Freeze record](../../artifacts/p4-11/phase-four-product-acceptance-freeze.json)
+stores both evidence records, the browser artifact identity and their checksums.
+It opens `NEX-P4-12` for final acceptance of the local Phase 4 experience.
+
+```zsh
+.venv/bin/python scripts/verify_phase_four_product_acceptance.py
+.venv/bin/python -m unittest discover -s tests -v
+```

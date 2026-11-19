@@ -14,6 +14,10 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-phase-four-product-acceptance.json"
 CONTRACT_CHECKSUM = "436c29ae20c4d24069d4b86b94ccfce42da3bfc2af4da2451ad086875b330637"
+FREEZE_PATH = ROOT / "artifacts/p4-11/phase-four-product-acceptance-freeze.json"
+FREEZE_CHECKSUM = "30ba72c475b19997adf8b4b86c04916ea42533e1b012d918f5427995fe00e2fe"
+CANDIDATE_SHA = "102a3c711e72aeecfb75b505d5afa890628c762c"
+CANDIDATE_TREE = "5540f76b257865707fb58e5f6c082ff31e1704ec"
 E2E_ROOT = ROOT / "apps/web/tests/e2e"
 MANUAL_SCHEMA = "nexora-phase-four-manual-visual-evidence-v1"
 BROWSER_SCHEMA = "nexora-phase-four-browser-evidence-v1"
@@ -124,6 +128,23 @@ def _collect_specs(suite: dict[str, Any], specs: dict[tuple[str, str], list[dict
         _collect_specs(child, specs)
 
 
+def _browser_viewports(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    manual = contract["manual_visual"]
+    profiles = []
+    for index, width in enumerate(manual["viewport_widths_px"]):
+        for locale in manual["locales"]:
+            theme = "light" if (index % 2 == 0) == (locale == "en") else "dark"
+            profiles.append({"locale": locale, "theme": theme, "width_px": width, "result": "pass"})
+    return profiles
+
+
+def _browser_journeys(contract: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: {"result": "pass", "journeys": scenario["journeys"]}
+        for key, scenario in contract["browser"]["scenarios"].items()
+    }
+
+
 def browser_results(contract: dict[str, Any], report: dict[str, Any]) -> dict[str, Any]:
     require(report.get("errors") == [], "Playwright reported run-level errors")
     require(report["stats"].get("unexpected") == 0, "Playwright has failed cases")
@@ -142,19 +163,67 @@ def browser_results(contract: dict[str, Any], report: dict[str, Any]) -> dict[st
             f"required browser case did not pass: {title}",
         )
 
-    journeys = {}
-    for key, scenario in contract["browser"]["scenarios"].items():
+    for scenario in contract["browser"]["scenarios"].values():
         require_passed(scenario["file"], scenario["title"])
-        journeys[key] = {"result": "pass", "journeys": scenario["journeys"]}
 
-    widths = contract["manual_visual"]["viewport_widths_px"]
-    profiles = []
-    for index, width in enumerate(widths):
-        for locale in contract["manual_visual"]["locales"]:
-            theme = "light" if (index % 2 == 0) == (locale == "en") else "dark"
-            require_passed("authenticated-shell.spec.ts", f"workspace audit · {locale} · {theme} · {width}px")
-            profiles.append({"locale": locale, "theme": theme, "width_px": width, "result": "pass"})
-    return {"journeys": journeys, "automated_viewports": profiles}
+    profiles = _browser_viewports(contract)
+    for row in profiles:
+        title = f"workspace audit · {row['locale']} · {row['theme']} · {row['width_px']}px"
+        require_passed("authenticated-shell.spec.ts", title)
+    return {"journeys": _browser_journeys(contract), "automated_viewports": profiles}
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    require(record.get("schema_version") == "nexora-phase-four-product-acceptance-freeze-v1", "Freeze schema drift")
+    require(record.get("decision_id") == contract["decision_id"], "Freeze decision drift")
+    identity = {"candidate_commit_sha": CANDIDATE_SHA, "candidate_tree_sha": CANDIDATE_TREE}
+    for key, value in identity.items():
+        require(record.get(key) == value, f"Freeze {key} drift")
+    prerequisite = contract["p4_10_prerequisite"]
+    require(record.get("candidate_predecessor_sha") == prerequisite["freeze_commit_sha"], "P4-10 Freeze commit drift")
+    require(
+        record.get("p4_10_freeze_canonical_checksum") == prerequisite["freeze_record_checksum"],
+        "P4-10 Freeze checksum drift",
+    )
+    require(
+        record.get("product_acceptance_contract")
+        == {"path": CONTRACT_PATH.relative_to(ROOT).as_posix(), "checksum": checksum(contract)},
+        "Freeze contract evidence drift",
+    )
+
+    workflow = record["github_actions"]
+    require(workflow.get("workflow_path") == contract["browser"]["workflow_path"], "CI workflow drift")
+    require(workflow.get("head_sha") == CANDIDATE_SHA, "CI head SHA drift")
+    require(workflow.get("event") == "push" and workflow.get("conclusion") == "success", "CI push did not succeed")
+    jobs = workflow["jobs"]
+    require(set(jobs) == {"product-acceptance-browser", "product-acceptance-contract"}, "CI job inventory drift")
+    for name, job in jobs.items():
+        require(job.get("conclusion") == "success", f"CI job did not succeed: {name}")
+    require(workflow["browser_artifact"].get("name") == contract["browser"]["artifact_name"], "browser artifact drift")
+
+    browser = record["browser_evidence"]
+    require(browser.get("schema_version") == BROWSER_SCHEMA, "browser evidence schema drift")
+    require(browser.get("contract_checksum") == CONTRACT_CHECKSUM, "browser evidence contract checksum drift")
+    for key, value in identity.items():
+        require(browser.get(key) == value, f"browser evidence {key} does not match the candidate")
+    require(
+        browser.get("github_actions") == {"run_id": workflow["run_id"], "attempt": workflow["attempt"]},
+        "browser evidence CI run drift",
+    )
+    require(browser.get("journeys") == _browser_journeys(contract), "browser evidence journey results drift")
+    require(
+        browser.get("automated_viewports") == _browser_viewports(contract), "browser evidence viewport results drift"
+    )
+    browser_payload = {key: value for key, value in browser.items() if key != "record_checksum"}
+    require(browser.get("record_checksum") == checksum(browser_payload), "browser evidence record checksum drift")
+
+    manual = record["manual_visual"]
+    validate_manual(manual["record"], contract, identity)
+    require(manual.get("record_checksum") == checksum(manual["record"]), "manual evidence record checksum drift")
+    require(record.get("frozen") is True, "P4-11 is not frozen")
+    require(record.get("next_allowed_stage") == contract["transition"]["post_freeze_stage"], "post-Freeze stage drift")
+    require(record.get("production_readiness_claimed") is False, "Freeze production claim")
+    require(checksum(record) == FREEZE_CHECKSUM, "P4-11 Freeze checksum drift")
 
 
 def write_evidence(path: Path, record: dict[str, Any]) -> None:
@@ -209,11 +278,15 @@ def main() -> int:
             print("NEX_P4_11_BROWSER_EVIDENCE=PASS")
         else:
             validate_repository(contract)
+            validate_freeze_record(load_json(FREEZE_PATH), contract)
             print(f"decision_id={contract['decision_id']}")
             print(f"contract_checksum={CONTRACT_CHECKSUM}")
             print("NEX_P4_10_PREREQUISITE=PASS")
             print("NEX_P4_11_PRODUCT_ACCEPTANCE_CANDIDATE=PASS")
-            print("NEX_P4_11_FREEZE=PENDING_CANDIDATE_CI_AND_MANUAL_VISUAL")
+            print(f"candidate_commit_sha={CANDIDATE_SHA}")
+            print(f"freeze_checksum={FREEZE_CHECKSUM}")
+            print("NEX_P4_11_FREEZE=PASS")
+            print("NEX_P4_12=OPEN")
     except (KeyError, OSError, TypeError, ValueError, subprocess.CalledProcessError) as error:
         parser.exit(1, f"P4-11: {error}\n")
     return 0

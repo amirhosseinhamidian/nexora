@@ -1,0 +1,355 @@
+{
+  "schema_version": "nexora-phase-four-final-acceptance-record-v1",
+  "decision_id": "NEX-P4-12",
+  "contract_checksum": "cee37b921999fb4eed8202bd0f26156b9d43b2894ba8ebc4a5947defc5d9ca17",
+  "product_version": "0.1.0",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_branch": "feature/v0.1-decision-intelligence",
+  "candidate_commit_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+  "candidate_tree_sha": "1f5ad0126159be647faa47cea4fea1c0c9314f2e",
+  "p4_11_prerequisite": {
+    "freeze_commit_sha": "87f2eb4d48d033d879c6fe9998b46fa99ae56c94",
+    "freeze_tree_sha": "61c79347978b8a6a4f568b822ca80b65ad743aa7",
+    "successful_ci_run_id": 44513286286,
+    "accepted_product_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c"
+  },
+  "passed_gates": {
+    "phase_four_contract_chain": {
+      "passed": true,
+      "workflow": ".github/workflows/phase-four-final-acceptance.yml",
+      "run_id": 44517089318,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517089318",
+      "run_attempt": 1,
+      "job_id": 135535797208,
+      "passed_steps": [
+        "Verify Phase 4 final acceptance candidate",
+        "Run repository contract regressions"
+      ]
+    },
+    "backend_regressions": {
+      "passed": true,
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "run_id": 44517088793,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517088793",
+      "run_attempt": 1,
+      "job_id": 135535795484,
+      "passed_steps": [
+        "Typecheck backend",
+        "Run backend tests",
+        "Check generated runtime contracts"
+      ]
+    },
+    "postgresql_migration_from_zero": {
+      "passed": true,
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "run_id": 44517088793,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517088793",
+      "run_attempt": 1,
+      "job_id": 135535795524,
+      "passed_steps": [
+        "Upgrade repository head from zero",
+        "Run PostgreSQL projection and recovery tests",
+        "Downgrade to base",
+        "Rebuild repository head",
+        "Check migration drift"
+      ]
+    },
+    "web_regressions_and_reconciliation": {
+      "passed": true,
+      "workflow": ".github/workflows/accounting-experience-ui.yml",
+      "run_id": 44517088928,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517088928",
+      "run_attempt": 1,
+      "job_id": 135535796203,
+      "passed_steps": [
+        "Check Web format",
+        "Lint Web",
+        "Typecheck Web",
+        "Test Web",
+        "Build and test accounting paths in Chromium"
+      ]
+    },
+    "private_scope_and_security": {
+      "passed": true,
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "run_id": 44517088793,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517088793",
+      "run_attempt": 1,
+      "job_id": 135535794873,
+      "passed_steps": [
+        "Verify scope boundary",
+        "Verify security inventory",
+        "Verify integration contracts"
+      ]
+    },
+    "product_browser_journeys": {
+      "passed": true,
+      "workflow": ".github/workflows/phase-four-product-acceptance.yml",
+      "run_id": 44517089506,
+      "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44517089506",
+      "run_attempt": 1,
+      "job_id": 135535796488,
+      "passed_steps": [
+        "Build and exercise the owner journeys",
+        "Bind browser evidence to the candidate",
+        "Upload browser evidence"
+      ]
+    },
+    "owner_visual_review": {
+      "passed": true,
+      "reviewed_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c",
+      "reviewer_role": "owner",
+      "profile_count": 16,
+      "record_checksum": "6e5c21f5abf2c87429830415acd8ceae96e27abfe4614553b7ff75ae2894d1a8",
+      "reviewed_product_tree_checksum": "e8982a9d49b7a6d8bced7614acbbd0415e0c0f25269331cd8d98524419919666"
+    }
+  },
+  "failed_gates": [],
+  "ci_evidence": {
+    "workflows": {
+      ".github/workflows/phase-four-final-acceptance.yml": {
+        "run_id": 44517089318,
+        "attempt": 1,
+        "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+        "head_branch": "feature/v0.1-decision-intelligence",
+        "event": "push",
+        "conclusion": "success",
+        "jobs": {
+          "phase-four-final-contract": {
+            "job_id": 135535797208,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Verify Phase 4 final acceptance candidate": "success",
+              "Run repository contract regressions": "success"
+            }
+          }
+        }
+      },
+      ".github/workflows/phase-three-final-acceptance.yml": {
+        "run_id": 44517088793,
+        "attempt": 1,
+        "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+        "head_branch": "feature/v0.1-decision-intelligence",
+        "event": "push",
+        "conclusion": "success",
+        "jobs": {
+          "backend": {
+            "job_id": 135535795484,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Typecheck backend": "success",
+              "Run backend tests": "success",
+              "Check generated runtime contracts": "success"
+            }
+          },
+          "postgresql-17": {
+            "job_id": 135535795524,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Upgrade repository head from zero": "success",
+              "Run PostgreSQL projection and recovery tests": "success",
+              "Downgrade to base": "success",
+              "Rebuild repository head": "success",
+              "Check migration drift": "success"
+            }
+          },
+          "phase-three-evidence": {
+            "job_id": 135535794873,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Verify scope boundary": "success",
+              "Verify security inventory": "success",
+              "Verify integration contracts": "success"
+            }
+          }
+        }
+      },
+      ".github/workflows/accounting-experience-ui.yml": {
+        "run_id": 44517088928,
+        "attempt": 1,
+        "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+        "head_branch": "feature/v0.1-decision-intelligence",
+        "event": "push",
+        "conclusion": "success",
+        "jobs": {
+          "accounting-experience-web": {
+            "job_id": 135535796203,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Check Web format": "success",
+              "Lint Web": "success",
+              "Typecheck Web": "success",
+              "Test Web": "success",
+              "Build and test accounting paths in Chromium": "success"
+            }
+          }
+        }
+      },
+      ".github/workflows/phase-four-product-acceptance.yml": {
+        "run_id": 44517089506,
+        "attempt": 1,
+        "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+        "head_branch": "feature/v0.1-decision-intelligence",
+        "event": "push",
+        "conclusion": "success",
+        "jobs": {
+          "product-acceptance-browser": {
+            "job_id": 135535796488,
+            "head_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+            "run_attempt": 1,
+            "conclusion": "success",
+            "steps": {
+              "Build and exercise the owner journeys": "success",
+              "Bind browser evidence to the candidate": "success",
+              "Upload browser evidence": "success"
+            }
+          }
+        }
+      }
+    },
+    "browser_evidence": {
+      "schema_version": "nexora-phase-four-browser-evidence-v1",
+      "contract_checksum": "436c29ae20c4d24069d4b86b94ccfce42da3bfc2af4da2451ad086875b330637",
+      "candidate_commit_sha": "b90d23ddac20ef318dfc977612f79281a023e402",
+      "candidate_tree_sha": "1f5ad0126159be647faa47cea4fea1c0c9314f2e",
+      "github_actions": {
+        "run_id": 44517089506,
+        "attempt": 1
+      },
+      "playwright_report_sha256": "bb3d63b415a27eaa4dee9ed39985a01ac1b64dbb5c346d3906ef45362fc9b880",
+      "journeys": {
+        "access_and_accounting": {
+          "result": "pass",
+          "journeys": [
+            "bootstrap",
+            "login",
+            "overview",
+            "session_recovery",
+            "import_preview",
+            "import_publication",
+            "holdings_rebuild"
+          ]
+        },
+        "first_portfolio": {
+          "result": "pass",
+          "journeys": ["asset_registration", "first_portfolio", "optional_account_creation"]
+        },
+        "skip_optional_account": {
+          "result": "pass",
+          "journeys": ["optional_account_skip"]
+        },
+        "decision_review": {
+          "result": "pass",
+          "journeys": ["decision_review"]
+        },
+        "monitoring_and_outcomes": {
+          "result": "pass",
+          "journeys": ["alert_transition", "journal_entry"]
+        },
+        "export": {
+          "result": "pass",
+          "journeys": ["export"]
+        }
+      },
+      "automated_viewports": [
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 320,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 768,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "light",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "dark",
+          "width_px": 1280,
+          "result": "pass"
+        },
+        {
+          "locale": "en",
+          "theme": "dark",
+          "width_px": 1920,
+          "result": "pass"
+        },
+        {
+          "locale": "fa",
+          "theme": "light",
+          "width_px": 1920,
+          "result": "pass"
+        }
+      ],
+      "record_checksum": "fca8fb5b0e3c21c9a375b297d6629759ff9df0a78f82429bc88a6d2def3c9ba1"
+    },
+    "browser_artifact": {
+      "name": "p4-11-browser-evidence",
+      "artifact_id": 14526392293,
+      "run_id": 44517089506,
+      "digest": "sha256:91e1f441e96b9b9dd673088f670c7dc4ac195ccbde9ba5bdc53770931da58abe"
+    }
+  },
+  "known_limitations": {
+    "browser_automation": "Chromium acceptance uses synthetic API responses and a virtual passkey authenticator. The owner reviewed the 16 visual profiles locally.",
+    "provider_compatibility": "The local reference configuration disables incompatible TRD Bot 0.3.0. It preserves existing compatible-provider evidence from Phase 3 and makes no new claim of live provider sync.",
+    "portfolio_analytics": "Portfolio charts use sampled snapshots and can show gaps where valuations are unavailable.",
+    "export_history": "Export history shows up to 20 receipt summaries captured in the current browser for the owner."
+  },
+  "deferred": [
+    "ai_copilot",
+    "portfolio_ml",
+    "connected_financial_accounts",
+    "exchange_trade_credentials",
+    "wallet_keys_and_fund_transfer",
+    "live_trading",
+    "multi_user_saas",
+    "public_registration",
+    "native_mobile_application",
+    "autonomous_ai_actions",
+    "financial_or_tax_advice"
+  ],
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "required_before": ["v0.1-production-deployment", "v0.1-release"],
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "production_readiness_claimed": false,
+  "phase_four_scope_accepted": true,
+  "ready_to_freeze_phase_four": true,
+  "record_checksum": "1713717fa22fd5bbe051c3df8c370335f88c6dcec3f36686ac8f75df3f9b8f38"
+}

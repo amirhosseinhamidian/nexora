@@ -7,6 +7,7 @@ import { type ReactNode, useSyncExternalStore } from "react";
 import { AlertInbox } from "@/components/alert-inbox";
 import { useWorkspace } from "@/components/authenticated-shell";
 import { DecisionExperience } from "@/components/decision-experience";
+import { DecisionRecordWorkspace } from "@/components/decision-record-workspace";
 import { FirstRunOnboarding } from "@/components/first-run-onboarding";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
 import { PortfolioDashboard } from "@/components/portfolio-dashboard";
@@ -14,11 +15,13 @@ import { RegistryManagement } from "@/components/registry-management";
 import { TransactionsWorkspace } from "@/components/transactions-workspace";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
+import type { DecisionRoute } from "@/lib/decision-intelligence";
 import type { AccountingQuery, AccountingView } from "@/lib/portfolio-accounting";
 
 type WorkspaceViewProps =
   | { section: "portfolioDetail"; portfolioId: string }
   | { section: "transactions"; query: AccountingQuery; view: AccountingView }
+  | { section: "decisionRecord"; route: DecisionRoute }
   | {
       section:
         | "overview"
@@ -169,6 +172,15 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     case "decisions":
       title = navigation.decisions;
       content = <DecisionExperience dictionary={dictionary} locale={locale} />;
+      break;
+    case "decisionRecord":
+      title = dictionary.decisionPages.panels[props.route.panel];
+      content = (
+        <DecisionRecordWorkspace
+          key={JSON.stringify([session.owner_id, props.route])}
+          route={props.route}
+        />
+      );
       break;
     case "alerts":
       title = navigation.alerts;

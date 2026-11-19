@@ -195,7 +195,7 @@ def validate_runtime_markers() -> None:
         'event.key === "Home"',
         'event.key === "End"',
         "onKeyDown",
-        "selectionSequence",
+        "controller.abort()",
     ):
         require(marker in decision, f"keyboard Decision marker missing: {marker}")
     for marker in (
@@ -233,7 +233,7 @@ def validate_runtime_markers() -> None:
 def validate_browser_acceptance() -> None:
     browser = E2E_PATH.read_text(encoding="utf-8")
     for marker in (
-        "Phase 3 Decision workflow is keyboard integrated and fixture backed",
+        "Decision workflow is keyboard integrated and uses routed evidence",
         "Phase 3 surfaces degraded, empty and error states explicitly",
         "Loading the active decision projection…",
         'page.goto("/fa")',

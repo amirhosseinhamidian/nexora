@@ -14,7 +14,7 @@ REPOSITORY_PATH = ROOT / "apps/server/src/nexora/adapters/postgresql/decision_re
 MODELS_PATH = ROOT / "apps/server/src/nexora/adapters/postgresql/models.py"
 MIGRATION_PATH = ROOT / "alembic/versions/20261116_0012_human_decision_reviews.py"
 API_PATH = ROOT / "apps/server/src/nexora/api.py"
-WEB_PATH = ROOT / "apps/web/src/components/decision-feed.tsx"
+WEB_PATH = ROOT / "apps/web/src/components/decision-review.tsx"
 
 
 class HumanDecisionReviewContractError(ValueError):

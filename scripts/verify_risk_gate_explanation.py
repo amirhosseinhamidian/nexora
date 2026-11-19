@@ -11,7 +11,7 @@ CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-risk-gate-explanation.json"
 P3_04_CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-decision-feed-candidate-details.json"
 SERVICE_PATH = ROOT / "apps/server/src/nexora/risk_gate_explanation.py"
 API_PATH = ROOT / "apps/server/src/nexora/api.py"
-WEB_PATH = ROOT / "apps/web/src/components/decision-feed.tsx"
+WEB_PATH = ROOT / "apps/web/src/components/decision-risk.tsx"
 
 
 class RiskGateExplanationContractError(ValueError):

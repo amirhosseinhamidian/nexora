@@ -12,6 +12,47 @@
   @apply grid [grid-template-columns:minmax(16rem,_0.8fr)_minmax(0,_1.6fr)] gap-4 mt-4;
 }
 
+.decision-record-page,
+.decision-record-content {
+  @apply grid min-w-0 gap-4;
+}
+
+.decision-open-record {
+  @apply w-fit;
+}
+
+.decision-detail .decision-open-record {
+  @apply mt-3;
+}
+
+.decision-evidence-heading h3 {
+  @apply wrap-anywhere;
+}
+
+.decision-scenarios {
+  @apply min-w-0;
+}
+
+.decision-scenarios > p {
+  @apply mb-3;
+}
+
+.decision-scenario-bars {
+  @apply grid gap-2 px-0;
+}
+
+.decision-scenario-bars li {
+  @apply grid items-center grid-cols-[auto_minmax(1rem,1fr)_auto] gap-2 text-sm;
+}
+
+.decision-scenario-track {
+  @apply h-3 overflow-hidden rounded-full bg-nx-surface-raised;
+}
+
+.decision-scenario-bar {
+  @apply h-full w-(--scenario-width) rounded-full bg-nx-primary;
+}
+
 .decision-list {
   @apply grid [align-content:start] gap-[0.55rem];
 }

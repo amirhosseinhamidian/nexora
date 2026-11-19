@@ -289,6 +289,9 @@ for accounting and reconciliation. `NEX-P4-06` is frozen at candidate
 holdings, purchase-lot, import and reconciliation pages, with recent passkey
 verification for publication and reconciliation decisions. Its Freeze record
 opens `NEX-P4-07` for the Decision Intelligence pages.
+The `NEX-P4-07` candidate adds direct Decision and Candidate pages, with
+separate risk, simulated portfolio impact, scenarios and review history.
+Reviews record the owner's assessment against a specific evidence version.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -637,3 +640,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-accounting-experience-ui.json`](contracts/nexora-v0.1-accounting-experience-ui.json)
 - [`docs/v0.1/53-accounting-reconciliation-experience.md`](docs/v0.1/53-accounting-reconciliation-experience.md)
 - [`artifacts/p4-06/accounting-experience-ui-freeze.json`](artifacts/p4-06/accounting-experience-ui-freeze.json)
+- [`contracts/nexora-v0.1-decision-intelligence-ui.json`](contracts/nexora-v0.1-decision-intelligence-ui.json)
+- [`docs/v0.1/54-decision-intelligence-ui.md`](docs/v0.1/54-decision-intelligence-ui.md)

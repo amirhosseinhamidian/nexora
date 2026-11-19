@@ -390,6 +390,7 @@ async function mockPrivateRuntime(page: import("@playwright/test").Page) {
     const decisionId = new URL(route.request().url()).pathname.split("/")[4];
     const review = {
       action: "accept",
+      decision_id: decisionId,
       delivery_status: "accepted",
       order_intent_created: false,
       reason_code: "owner.accept.evidence_sufficient",
@@ -511,7 +512,7 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await expect(drawer).toBeHidden();
   await expect(page.getByRole("heading", { name: "فضای کاری هوشمندی تصمیم" })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "فهرست تصمیم‌ها و جزئیات Candidate" }),
+    page.getByRole("heading", { name: "تصمیم‌ها و پیشنهادها", exact: true }),
   ).toBeVisible();
 });
 
@@ -597,7 +598,7 @@ test("English workspace routes share a left sidebar and support portfolio deep l
   await expect(page.getByRole("heading", { name: "Brokerage" })).toHaveCount(0);
 });
 
-test("Phase 3 Decision workflow is keyboard integrated and fixture backed", async ({ page }) => {
+test("Decision workflow is keyboard integrated and uses routed evidence", async ({ page }) => {
   await mockPrivateRuntime(page);
   await page.goto("/en/decisions");
 
@@ -622,16 +623,61 @@ test("Phase 3 Decision workflow is keyboard integrated and fixture backed", asyn
 
   await secondDecision.press("Home");
   await expect(candidateButton).toBeFocused();
-  await expect(page.getByRole("heading", { name: "Risk Gate explanation" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Candidate portfolio impact" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Accept, reject or defer" })).toBeVisible();
-  await page.getByRole("button", { name: "Record immutable review" }).click();
-  await expect(page.getByText("Accept · v1")).toBeVisible();
   await expect(page.getByRole("heading", { name: "No active alerts" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No watchlist yet" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Alerts", exact: true })).toHaveAttribute(
     "href",
     "/en/alerts",
+  );
+
+  await page.getByRole("link", { name: "Open evidence" }).click();
+  const candidatePath = "/en/decisions/candidates/candidate-1";
+  await expect(page).toHaveURL(candidatePath);
+  const sections = page.getByRole("navigation", { name: "Decision evidence pages" });
+
+  await sections.getByRole("link", { name: "Risk Gate" }).click();
+  await expect(page).toHaveURL(`${candidatePath}/risk`);
+  await expect(page.getByRole("heading", { name: "Risk Gate explanation" })).toBeVisible();
+  await expect(page.getByText("decision-risk-v1")).toBeVisible();
+  await sections.getByRole("link", { name: "Portfolio impact" }).click();
+  await expect(page).toHaveURL(`${candidatePath}/impact`);
+  await expect(page.getByRole("heading", { name: "Candidate portfolio impact" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Exposure as a share of equity" })).toBeVisible();
+  await sections.getByRole("link", { name: "Scenarios" }).click();
+  const scenarioTable = page.getByRole("table", { name: "Scenarios" });
+  await expect(scenarioTable.getByText("9900.00000000", { exact: true })).toBeVisible();
+
+  const reviewRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().endsWith("/reviews")) {
+      reviewRequests.push(request.url());
+    }
+  });
+  await sections.getByRole("link", { name: "Reviews" }).click();
+  await expect(page).toHaveURL(`${candidatePath}/reviews`);
+  await expect(page.getByRole("heading", { name: "Accept, reject or defer" })).toBeVisible();
+  await page.getByRole("button", { name: "Record immutable review" }).click();
+  const confirm = page.getByRole("dialog", { name: "Record this review?" });
+  await expect(confirm).toContainText("decision-evaluation-1");
+  expect(reviewRequests).toHaveLength(0);
+  await confirm.getByRole("button", { name: "Record immutable review" }).click();
+  await expect(page.getByText("Accept · v1")).toBeVisible();
+  expect(reviewRequests).toHaveLength(1);
+});
+
+test("Decision evidence can be opened directly on a Persian mobile page", async ({ page }) => {
+  await mockPrivateRuntime(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/fa/decisions/records/decision-evaluation-2");
+  await expect(page.getByRole("heading", { name: "decision-evaluation-2" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  const navigation = page.getByRole("navigation", { name: "صفحه‌های شواهد تصمیم" });
+  await expect(navigation.getByRole("link", { name: "شواهد", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
   );
 });
 

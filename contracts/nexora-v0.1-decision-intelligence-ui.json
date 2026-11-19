@@ -1,0 +1,45 @@
+{
+  "schema_version": "nexora-decision-intelligence-ui-v1",
+  "decision_id": "NEX-P4-07",
+  "status": "candidate",
+  "p4_06_prerequisite": {
+    "freeze_commit_sha": "3866c0b01b2a97f3987f86d5bec3f75e619d086b",
+    "freeze_record_path": "artifacts/p4-06/accounting-experience-ui-freeze.json",
+    "freeze_record_checksum": "5892cbd085c9f81f26a38b41e02d9a1c9a0ec852aad0fa433c3c77b008c6d67f",
+    "successful_ci_run_id": 44411490611
+  },
+  "routes": {
+    "feed": "/{locale}/decisions",
+    "decision": "/{locale}/decisions/records/{decision_id}",
+    "candidate": "/{locale}/decisions/candidates/{candidate_id}"
+  },
+  "record_panels": ["evidence", "risk", "impact", "scenarios", "reviews"],
+  "locales": ["en", "fa"],
+  "read_operations": {
+    "/v1/decisions": "listDecisionFeed",
+    "/v1/candidates/{candidate_id}": "getCandidateDetail",
+    "/v1/risk-gates/{evaluation_id}": "getRiskGateExplanation",
+    "/v1/portfolio-impacts/{evaluation_id}": "getPortfolioCandidateImpact",
+    "/v1/decisions/{decision_id}/reviews": "getDecisionReviewContext"
+  },
+  "write_operations": {
+    "/v1/decisions/{decision_id}/reviews": "createDecisionReview"
+  },
+  "boundary": {
+    "owner_scoped": true,
+    "linked_evidence_checks_provider_generation": true,
+    "scenario_source": "provider_supplied_paper_shadow_snapshot",
+    "scenario_table_retains_exact_values": true,
+    "review_actions": ["accept", "reject", "defer"],
+    "review_requires_confirmation": true,
+    "review_uses_expected_version_and_source_checksum": true,
+    "review_replays_only_an_identical_confirmation": true,
+    "execution_authorization": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-07-FREEZE",
+    "post_freeze_stage": "NEX-P4-08"
+  }
+}

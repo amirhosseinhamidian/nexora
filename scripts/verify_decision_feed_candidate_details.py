@@ -90,7 +90,9 @@ def validate_implementation() -> None:
     service = SERVICE_PATH.read_text(encoding="utf-8")
     repository = REPOSITORY_PATH.read_text(encoding="utf-8")
     api = API_PATH.read_text(encoding="utf-8")
-    web = WEB_PATH.read_text(encoding="utf-8")
+    evidence = WEB_PATH.with_name("decision-evidence.tsx")
+    client = WEB_PATH.parent.parent / "lib/decision-intelligence.ts"
+    web = "\n".join(path.read_text(encoding="utf-8") for path in (WEB_PATH, evidence, client))
     for marker in (
         "VISIBLE_RESOURCE_TYPES",
         "DecisionProjectionRecord.model_validate",

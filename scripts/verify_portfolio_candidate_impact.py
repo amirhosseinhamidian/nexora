@@ -11,7 +11,7 @@ CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-portfolio-candidate-impact.json"
 P3_05_CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-risk-gate-explanation.json"
 SERVICE_PATH = ROOT / "apps/server/src/nexora/portfolio_candidate_impact.py"
 API_PATH = ROOT / "apps/server/src/nexora/api.py"
-WEB_PATH = ROOT / "apps/web/src/components/decision-feed.tsx"
+WEB_PATH = ROOT / "apps/web/src/components/decision-impact.tsx"
 
 
 class PortfolioCandidateImpactContractError(ValueError):
@@ -124,7 +124,8 @@ def validate_implementation() -> None:
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     service = SERVICE_PATH.read_text(encoding="utf-8")
     api = API_PATH.read_text(encoding="utf-8")
-    web = WEB_PATH.read_text(encoding="utf-8")
+    client = WEB_PATH.parent.parent / "lib/decision-intelligence.ts"
+    web = WEB_PATH.read_text(encoding="utf-8") + client.read_text(encoding="utf-8")
     for marker in (
         "ProviderPortfolioPayload",
         "ProviderRiskGatePayload",
@@ -137,7 +138,7 @@ def validate_implementation() -> None:
     ):
         require(marker in service, f"service behavior missing: {marker}")
     require('"/v1/portfolio-impacts/{evaluation_id}"' in api, "portfolio impact route missing")
-    for marker in ("portfolioImpact", "analysis.scenarios", "analysis.checks", "Promise.allSettled"):
+    for marker in ("portfolioImpact", "analysis.scenarios", "analysis.checks", "response?.provider.generation"):
         require(marker in web, f"Web behavior missing: {marker}")
     combined = service + api + web
     for forbidden in ("exchange_api_key", "wallet_private_key", "fund_transfer(", "submit_order("):

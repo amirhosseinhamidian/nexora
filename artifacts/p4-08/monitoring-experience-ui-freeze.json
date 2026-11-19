@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-monitoring-experience-ui-freeze-v1",
+  "decision_id": "NEX-P4-08",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "c2f521bfaca55ec3abe013614ac7a1fadbff0b47",
+  "candidate_tree_sha": "80318d8618aa3f8e3f93f45178f7b1425e39bfb4",
+  "candidate_predecessor_sha": "567fdc1f12b64ce5549e692a0c1082f1c5afe00f",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 monitoring experience",
+  "monitoring_experience_ui_contract": {
+    "path": "contracts/nexora-v0.1-monitoring-experience-ui.json",
+    "checksum": "6f4e10dc45962fd413654bece79c5c6be247b79f02a4ebd435e5967df3592f89"
+  },
+  "p4_07_freeze_canonical_checksum": "77d48a9e5ec278bcb6fe122993ddb90b0f517b1fee98be267fbad0c0d76618be",
+  "github_actions": {
+    "workflow_path": ".github/workflows/monitoring-experience-ui.yml",
+    "run_id": 44482081483,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44482081483",
+    "head_sha": "c2f521bfaca55ec3abe013614ac7a1fadbff0b47",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "monitoring-experience-contract": {
+        "job_id": 135416480150,
+        "conclusion": "success"
+      },
+      "monitoring-experience-web": {
+        "job_id": 135416480811,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-09",
+  "production_readiness_claimed": false
+}

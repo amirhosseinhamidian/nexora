@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-exports-settings-ui-freeze-v1",
+  "decision_id": "NEX-P4-09",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "fadb47a482c6ee2b39c12ef94adff19eb061e4ad",
+  "candidate_tree_sha": "eb15aa4f81185e28057dcf60b7a7a9d2f79d6238",
+  "candidate_predecessor_sha": "c10ecffd33a3b12bfce61b7f10da31a3719e6fea",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 exports and settings",
+  "exports_settings_ui_contract": {
+    "path": "contracts/nexora-v0.1-exports-settings-ui.json",
+    "checksum": "d0e0077c92f3c02399fc01647b531b1c2d75c58f32a9ae7e9c8d4cb2ccb63930"
+  },
+  "p4_08_freeze_canonical_checksum": "225a153858bfd377d9bd6f6691770d7e4eedb7be2e7634ea68ca9790a6b4ef92",
+  "github_actions": {
+    "workflow_path": ".github/workflows/exports-settings-ui.yml",
+    "run_id": 44487892642,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44487892642",
+    "head_sha": "fadb47a482c6ee2b39c12ef94adff19eb061e4ad",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "exports-settings-contract": {
+        "job_id": 135435845138,
+        "conclusion": "success"
+      },
+      "exports-settings-web": {
+        "job_id": 135435844759,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-10",
+  "production_readiness_claimed": false
+}

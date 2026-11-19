@@ -52,7 +52,9 @@ pnpm test:e2e
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The [candidate contract](../../contracts/nexora-v0.1-exports-settings-ui.json)
-requires CI on the candidate commit before `NEX-P4-09-FREEZE`. Its Freeze
-opens `NEX-P4-10` for content, localization, accessibility and responsive
-hardening.
+The [exports and settings workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44487892642)
+passed its contract and Chromium jobs on candidate
+`fadb47a482c6ee2b39c12ef94adff19eb061e4ad`. The checksummed
+[Freeze record](../../artifacts/p4-09/exports-settings-ui-freeze.json)
+binds that run to the [candidate contract](../../contracts/nexora-v0.1-exports-settings-ui.json)
+and opens `NEX-P4-10` for content, localization, accessibility and responsive hardening.

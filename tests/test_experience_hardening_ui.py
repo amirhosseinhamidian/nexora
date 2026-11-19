@@ -34,3 +34,12 @@ class ExperienceHardeningUiContractTests(unittest.TestCase):
         invalid = stylesheet.replace("--nx-warning: #885100;", "--nx-warning: #fff5dc;")
         with self.assertRaisesRegex(MODULE.ExperienceHardeningUiContractError, "warning/warning-soft contrast"):
             MODULE.validate_contrast(contract, invalid)
+
+    def test_freeze_binds_the_candidate_and_successful_ci(self) -> None:
+        MODULE.validate_freeze_record(MODULE.load_contract(MODULE.FREEZE_PATH), MODULE.load_contract())
+
+    def test_freeze_rejects_ci_from_another_commit(self) -> None:
+        record = MODULE.load_contract(MODULE.FREEZE_PATH)
+        record["github_actions"]["head_sha"] = record["candidate_predecessor_sha"]
+        with self.assertRaisesRegex(MODULE.ExperienceHardeningUiContractError, "CI head SHA drift"):
+            MODULE.validate_freeze_record(record, MODULE.load_contract())

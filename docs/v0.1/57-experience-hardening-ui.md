@@ -61,6 +61,11 @@ pnpm test:e2e
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The [candidate contract](../../contracts/nexora-v0.1-experience-hardening-ui.json)
-requires CI on the candidate commit before `NEX-P4-10-FREEZE`.
-That Freeze opens `NEX-P4-11` for product acceptance.
+## Freeze
+
+`NEX-P4-10` is frozen at candidate `721a6af24043bb85cfe0fe148d53856d4adafbe6`.
+The contract and Chromium jobs passed on that commit in
+[GitHub Actions run 44496297500](https://github.com/amirhosseinhamidian/nexora/actions/runs/44496297500).
+The [Freeze record](../../artifacts/p4-10/experience-hardening-ui-freeze.json)
+binds those jobs to the [candidate contract](../../contracts/nexora-v0.1-experience-hardening-ui.json)
+and opens `NEX-P4-11` for end-to-end product acceptance.

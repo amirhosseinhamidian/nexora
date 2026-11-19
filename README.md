@@ -302,9 +302,10 @@ new journal entry. Its Freeze record opens `NEX-P4-09` for exports and settings.
 It delivers private export creation and verification, browser-scoped receipts,
 display preferences and read-only provider status. Its Freeze record opens
 `NEX-P4-10` for content, localization, accessibility and responsive hardening.
-The `NEX-P4-10` candidate clarifies workspace copy, preserves deep links across
-language changes and improves keyboard access, contrast and narrow layouts.
-Its candidate checks cover Persian and English routes at four viewport widths.
+`NEX-P4-10` is frozen at candidate `721a6af24043bb85cfe0fe148d53856d4adafbe6`.
+It clarifies workspace copy, preserves deep links across language changes,
+and improves keyboard access, contrast and narrow layouts. Its Freeze record
+opens `NEX-P4-11` for end-to-end product acceptance.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -664,3 +665,4 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`artifacts/p4-09/exports-settings-ui-freeze.json`](artifacts/p4-09/exports-settings-ui-freeze.json)
 - [`docs/v0.1/57-experience-hardening-ui.md`](docs/v0.1/57-experience-hardening-ui.md)
 - [`contracts/nexora-v0.1-experience-hardening-ui.json`](contracts/nexora-v0.1-experience-hardening-ui.json)
+- [`artifacts/p4-10/experience-hardening-ui-freeze.json`](artifacts/p4-10/experience-hardening-ui-freeze.json)

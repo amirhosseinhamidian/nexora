@@ -10,9 +10,12 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "contracts/nexora-v0.1-experience-hardening-ui.json"
 PREREQUISITE_PATH = ROOT / "artifacts/p4-09/exports-settings-ui-freeze.json"
+FREEZE_PATH = ROOT / "artifacts/p4-10/experience-hardening-ui-freeze.json"
 TOKENS_PATH = ROOT / "packages/ui/src/tokens.css"
 PREREQUISITE_CHECKSUM = "142d49d36483801bd1089d84756abfb681c74b7bc214f5f159a9103270f5d943"
 CONTRACT_CHECKSUM = "cf476b87530f1028cb1bb531dc0ab2aaebca0808b5f735ec24066329087da2d6"
+FREEZE_CHECKSUM = "c611dd65bc15bb3f91f56f2da2191b56b139502a102dca5f408c958c7bd5c070"
+CANDIDATE_SHA = "721a6af24043bb85cfe0fe148d53856d4adafbe6"
 
 TEXT_PAIRS = (
     ("text", "surface"),
@@ -77,6 +80,38 @@ def validate_contract(contract: dict[str, Any]) -> None:
         "stage transition drift",
     )
     _require(canonical_checksum(contract) == CONTRACT_CHECKSUM, "P4-10 contract checksum drift")
+
+
+def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
+    _require(record.get("schema_version") == "nexora-experience-hardening-ui-freeze-v1", "Freeze schema drift")
+    _require(record.get("decision_id") == contract["decision_id"], "Freeze decision drift")
+    _require(record.get("candidate_commit_sha") == CANDIDATE_SHA, "P4-10 candidate SHA drift")
+    _require(
+        record.get("candidate_predecessor_sha") == contract["p4_09_prerequisite"]["freeze_commit_sha"],
+        "candidate is not based on the P4-09 Freeze",
+    )
+    _require(record.get("p4_09_freeze_canonical_checksum") == PREREQUISITE_CHECKSUM, "P4-09 Freeze drift")
+    _require(
+        record.get("experience_hardening_ui_contract")
+        == {"path": CONTRACT_PATH.relative_to(ROOT).as_posix(), "checksum": canonical_checksum(contract)},
+        "Freeze contract evidence drift",
+    )
+
+    workflow = record.get("github_actions")
+    _require(isinstance(workflow, dict), "GitHub Actions evidence must be an object")
+    _require(workflow.get("workflow_path") == ".github/workflows/experience-hardening-ui.yml", "CI workflow drift")
+    _require(workflow.get("head_sha") == CANDIDATE_SHA, "CI head SHA drift")
+    _require(workflow.get("event") == "push" and workflow.get("conclusion") == "success", "CI push did not succeed")
+    jobs = workflow.get("jobs")
+    _require(isinstance(jobs, dict), "CI jobs must be an object")
+    _require(set(jobs) == {"experience-hardening-contract", "experience-hardening-web"}, "CI job inventory drift")
+    for name, job in jobs.items():
+        _require(isinstance(job, dict) and job.get("conclusion") == "success", f"CI job did not succeed: {name}")
+
+    _require(record.get("frozen") is True, "P4-10 is not frozen")
+    _require(record.get("next_allowed_stage") == contract["transition"]["post_freeze_stage"], "post-Freeze stage drift")
+    _require(record.get("production_readiness_claimed") is False, "Freeze production claim")
+    _require(canonical_checksum(record) == FREEZE_CHECKSUM, "P4-10 Freeze checksum drift")
 
 
 def _luminance(color: str) -> float:
@@ -166,12 +201,15 @@ def main() -> int:
     )
     validate_contrast(contract, TOKENS_PATH.read_text(encoding="utf-8"))
     validate_runtime_markers(contract)
+    validate_freeze_record(load_contract(FREEZE_PATH), contract)
     print(f"decision_id={contract['decision_id']}")
     print(f"contract_checksum={CONTRACT_CHECKSUM}")
     print("NEX_P4_09_PREREQUISITE=PASS")
     print("NEX_P4_10_EXPERIENCE_HARDENING_UI_CANDIDATE=PASS")
-    print("NEX_P4_10_FREEZE=PENDING_SAME_SHA_CI")
-    print("NEX_P4_11=BLOCKED_PENDING_P4_10_FREEZE")
+    print(f"candidate_commit_sha={CANDIDATE_SHA}")
+    print(f"freeze_checksum={FREEZE_CHECKSUM}")
+    print("NEX_P4_10_FREEZE=PASS")
+    print("NEX_P4_11=OPEN")
     return 0
 
 

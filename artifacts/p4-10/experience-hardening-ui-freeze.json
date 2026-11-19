@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-experience-hardening-ui-freeze-v1",
+  "decision_id": "NEX-P4-10",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "721a6af24043bb85cfe0fe148d53856d4adafbe6",
+  "candidate_tree_sha": "cf85e143010ddd9037d633079aaa3ee80281a732",
+  "candidate_predecessor_sha": "86c013131de77e036e0a8b81c98ea8a2644b6891",
+  "candidate_commit_message": "feat(nexora): harden Phase 4 product experience",
+  "experience_hardening_ui_contract": {
+    "path": "contracts/nexora-v0.1-experience-hardening-ui.json",
+    "checksum": "cf476b87530f1028cb1bb531dc0ab2aaebca0808b5f735ec24066329087da2d6"
+  },
+  "p4_09_freeze_canonical_checksum": "142d49d36483801bd1089d84756abfb681c74b7bc214f5f159a9103270f5d943",
+  "github_actions": {
+    "workflow_path": ".github/workflows/experience-hardening-ui.yml",
+    "run_id": 44496297500,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44496297500",
+    "head_sha": "721a6af24043bb85cfe0fe148d53856d4adafbe6",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "experience-hardening-contract": {
+        "job_id": 135464211320,
+        "conclusion": "success"
+      },
+      "experience-hardening-web": {
+        "job_id": 135464211812,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-11",
+  "production_readiness_claimed": false
+}

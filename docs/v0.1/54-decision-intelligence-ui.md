@@ -55,6 +55,9 @@ pnpm test:e2e
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The [candidate contract](../../contracts/nexora-v0.1-decision-intelligence-ui.json)
-requires CI on the candidate commit before `NEX-P4-07-FREEZE`. The Freeze
-opens `NEX-P4-08` for Alerts, Watchlists and Outcome Journal.
+The [Decision Intelligence workflow](https://github.com/amirhosseinhamidian/nexora/actions/runs/44476714525)
+passed its contract and Chromium jobs on candidate
+`19ce64b95ddc9ef8d26b62b65a884a68690363d3`. The checksummed
+[Freeze record](../../artifacts/p4-07/decision-intelligence-ui-freeze.json)
+binds this run to the [candidate contract](../../contracts/nexora-v0.1-decision-intelligence-ui.json)
+and opens `NEX-P4-08` for Alerts, Watchlists and Outcome Journal.

@@ -1,0 +1,38 @@
+{
+  "schema_version": "nexora-decision-intelligence-ui-freeze-v1",
+  "decision_id": "NEX-P4-07",
+  "repository": "amirhosseinhamidian/nexora",
+  "recorded_on": "2026-11-19",
+  "candidate_commit_sha": "19ce64b95ddc9ef8d26b62b65a884a68690363d3",
+  "candidate_tree_sha": "6bcdb530141e50a6ca40a505717585d2f508a116",
+  "candidate_predecessor_sha": "3866c0b01b2a97f3987f86d5bec3f75e619d086b",
+  "candidate_commit_message": "feat(nexora): deliver Phase 4 decision intelligence pages",
+  "decision_intelligence_ui_contract": {
+    "path": "contracts/nexora-v0.1-decision-intelligence-ui.json",
+    "checksum": "95e952e82b3b493b7e5a866e41fc24e5ecb434d864dee3d583eb1b9151f582d7"
+  },
+  "p4_06_freeze_canonical_checksum": "5892cbd085c9f81f26a38b41e02d9a1c9a0ec852aad0fa433c3c77b008c6d67f",
+  "github_actions": {
+    "workflow_path": ".github/workflows/decision-intelligence-ui.yml",
+    "run_id": 44476714525,
+    "run_url": "https://github.com/amirhosseinhamidian/nexora/actions/runs/44476714525",
+    "head_sha": "19ce64b95ddc9ef8d26b62b65a884a68690363d3",
+    "head_branch": "feature/v0.1-decision-intelligence",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "success",
+    "jobs": {
+      "decision-intelligence-contract": {
+        "job_id": 135398920467,
+        "conclusion": "success"
+      },
+      "decision-intelligence-web": {
+        "job_id": 135398920046,
+        "conclusion": "success"
+      }
+    }
+  },
+  "frozen": true,
+  "next_allowed_stage": "NEX-P4-08",
+  "production_readiness_claimed": false
+}

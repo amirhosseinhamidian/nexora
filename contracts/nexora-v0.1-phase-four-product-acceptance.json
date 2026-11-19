@@ -1,0 +1,71 @@
+{
+  "schema_version": "nexora-phase-four-product-acceptance-v1",
+  "decision_id": "NEX-P4-11",
+  "status": "candidate",
+  "p4_10_prerequisite": {
+    "freeze_commit_sha": "d4896ec250c8f70fedcd42b488235a8099e37f17",
+    "freeze_record_path": "artifacts/p4-10/experience-hardening-ui-freeze.json",
+    "freeze_record_checksum": "c611dd65bc15bb3f91f56f2da2191b56b139502a102dca5f408c958c7bd5c070",
+    "successful_ci_run_id": 44499153316
+  },
+  "browser": {
+    "workflow_path": ".github/workflows/phase-four-product-acceptance.yml",
+    "artifact_name": "p4-11-browser-evidence",
+    "scenarios": {
+      "access_and_accounting": {
+        "file": "authenticated-shell.spec.ts",
+        "title": "registers a passkey, restores the session, publishes an import and rebuilds holdings",
+        "journeys": [
+          "bootstrap",
+          "login",
+          "overview",
+          "session_recovery",
+          "import_preview",
+          "import_publication",
+          "holdings_rebuild"
+        ]
+      },
+      "first_portfolio": {
+        "file": "first-run-onboarding.spec.ts",
+        "title": "creates a first portfolio and recovers a saved account after a lost response",
+        "journeys": ["asset_registration", "first_portfolio", "optional_account_creation"]
+      },
+      "skip_optional_account": {
+        "file": "first-run-onboarding.spec.ts",
+        "title": "lets the owner skip an optional account after a conflict without recreating the portfolio",
+        "journeys": ["optional_account_skip"]
+      },
+      "decision_review": {
+        "file": "authenticated-shell.spec.ts",
+        "title": "Decision workflow is keyboard integrated and uses routed evidence",
+        "journeys": ["decision_review"]
+      },
+      "monitoring_and_outcomes": {
+        "file": "authenticated-shell.spec.ts",
+        "title": "monitoring preferences lead from a linked alert to its outcome journal",
+        "journeys": ["alert_transition", "journal_entry"]
+      },
+      "export": {
+        "file": "authenticated-shell.spec.ts",
+        "title": "creates a private export receipt and verifies bytes before download",
+        "journeys": ["export"]
+      }
+    }
+  },
+  "manual_visual": {
+    "locales": ["en", "fa"],
+    "themes": ["light", "dark"],
+    "viewport_widths_px": [320, 768, 1280, 1920],
+    "reviewer": "owner"
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-11-FREEZE",
+    "post_freeze_stage": "NEX-P4-12"
+  },
+  "boundary": {
+    "browser_api_mode": "synthetic_fixtures",
+    "candidate_ci_and_manual_evidence_must_match": true,
+    "server_deployment_gate_status": "deferred_until_private_vps_available",
+    "production_readiness_claimed": false
+  }
+}

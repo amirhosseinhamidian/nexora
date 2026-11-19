@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
 async function mockPrivateRuntime(page: import("@playwright/test").Page) {
   let reviewRecorded = false;
@@ -836,12 +836,338 @@ test("accounting routes preserve context and import files stay local until previ
   await expect(page.getByText("No reconciliation case requires review.")).toBeVisible();
 });
 
+async function mockAcceptancePasskey(page: Page) {
+  const origin = "http://localhost:3000";
+  const device = await page.context().newCDPSession(page);
+  await device.send("WebAuthn.enable");
+  await device.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      automaticPresenceSimulation: true,
+      isUserVerified: true,
+    },
+  });
+
+  const setupCode = "fixture-only-setup-code".repeat(2);
+  const registration = Buffer.alloc(32, 1).toString("base64url");
+  const login = Buffer.alloc(32, 2).toString("base64url");
+  const confirmation = Buffer.alloc(32, 3).toString("base64url");
+  let credentialId: string | undefined;
+  let signedIn = false;
+  let verified = false;
+  const session = () => ({
+    owner_id: "acceptance-owner",
+    recently_reauthenticated: verified,
+    rotation_required: false,
+  });
+
+  await page.route("**/api/v1/auth/session", (route) =>
+    signedIn
+      ? route.fulfill({ json: session() })
+      : route.fulfill({
+          status: 401,
+          json: { error: { code: "AUTHENTICATION_DENIED" } },
+        }),
+  );
+  await page.route("**/api/v1/auth/bootstrap/options", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ bootstrap_token: setupCode });
+    return route.fulfill({
+      json: {
+        algorithms: ["ES256"],
+        challenge: registration,
+        rp_id: "localhost",
+        timeout_ms: 10_000,
+      },
+    });
+  });
+  await page.route("**/api/v1/auth/bootstrap/complete", (route) => {
+    const { bootstrap_token, response_json } = route.request().postDataJSON();
+    expect(bootstrap_token).toBe(setupCode);
+    const credential = JSON.parse(response_json);
+    expect(credential.type).toBe("public-key");
+    expect(credential.response.attestationObject).toBeTruthy();
+    const clientData = JSON.parse(
+      Buffer.from(credential.response.clientDataJSON, "base64url").toString(),
+    );
+    expect(clientData).toMatchObject({ type: "webauthn.create", origin, challenge: registration });
+    credentialId = credential.id;
+    return route.fulfill({ json: { recovery_codes: ["fixture-recovery-code"] } });
+  });
+
+  for (const [operation, challenge] of [
+    ["authentication", login],
+    ["reauthentication", confirmation],
+  ] as const) {
+    await page.route(`**/api/v1/auth/${operation}/options`, (route) => {
+      expect(credentialId).toBeTruthy();
+      return route.fulfill({
+        json: {
+          allow_credentials: [{ credential_id: credentialId, transports: ["internal"] }],
+          challenge,
+          rp_id: "localhost",
+          timeout_ms: 10_000,
+        },
+      });
+    });
+    await page.route(`**/api/v1/auth/${operation}/complete`, (route) => {
+      const request = route.request().postDataJSON();
+      expect(request).toMatchObject({ challenge, credential_id: credentialId });
+      const assertion = JSON.parse(request.response_json);
+      expect(assertion.id).toBe(credentialId);
+      expect(assertion.response.signature).toBeTruthy();
+      const clientData = JSON.parse(
+        Buffer.from(assertion.response.clientDataJSON, "base64url").toString(),
+      );
+      expect(clientData).toMatchObject({ type: "webauthn.get", origin, challenge });
+      signedIn = true;
+      verified = operation === "reauthentication";
+      return route.fulfill({ json: session() });
+    });
+  }
+
+  return {
+    origin,
+    setupCode,
+    expire() {
+      signedIn = false;
+      verified = false;
+    },
+    isVerified: () => verified,
+  };
+}
+
+test("registers a passkey, restores the session, publishes an import and rebuilds holdings", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await mockPrivateRuntime(page);
+  const identity = await mockAcceptancePasskey(page);
+
+  await test.step("Bootstrap, sign in and restore an expired session", async () => {
+    await page.goto(`${identity.origin}/en/login`);
+    await page.getByRole("link", { name: "First-time setup" }).click();
+    await page.getByLabel("One-time setup code").fill(identity.setupCode);
+    await page.getByRole("button", { name: "Register owner passkey" }).click();
+    await expect(page.getByRole("heading", { name: "Save recovery codes now" })).toBeVisible();
+    await expect(page.getByText("fixture-recovery-code", { exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "I saved the recovery codes" }).click();
+    await page.getByRole("button", { name: "Sign in with passkey" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();
+    await expect(page.getByText("Core portfolio", { exact: true }).first()).toBeVisible();
+
+    identity.expire();
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Session expired" })).toBeVisible();
+    await page.getByRole("link", { name: "Go to sign in" }).click();
+    await page.getByRole("button", { name: "Sign in with passkey" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();
+    await expect(page.locator(".application-shell")).toBeVisible();
+  });
+
+  let batchStatus: "dry_run" | "reviewed" | "published" | undefined;
+  let rebuilt = false;
+  const writes: string[] = [];
+  const reason = "Checked the source records";
+  const memo = "Imported acceptance entry";
+  const importedAt = "2026-11-04T10:00:00Z";
+  const quantity = "0.12345678";
+  const legs = [
+    { asset_id: "asset-btc", account_id: "account-1", quantity },
+    { asset_id: "asset-btc", external_counterparty: "fixture-source", quantity: `-${quantity}` },
+  ];
+  const csvLegs = JSON.stringify(legs).replaceAll('"', '""');
+  const csv = `row_id,portfolio_id,transaction_kind,occurred_at,memo,legs\nrow-1,portfolio-1,deposit,${importedAt},${memo},"${csvLegs}"`;
+  const batch = () => ({
+    import_batch_id: "acceptance-batch",
+    content_sha256: createHash("sha256").update(csv).digest("hex"),
+    created_at: importedAt,
+    duplicate_count: 0,
+    published_at: batchStatus === "published" ? importedAt : null,
+    quarantined_count: 0,
+    ready_count: 1,
+    review_reason: batchStatus === "dry_run" ? null : reason,
+    reviewed_at: batchStatus === "dry_run" ? null : importedAt,
+    row_count: 1,
+    rows: [
+      {
+        external_row_id: "row-1",
+        import_row_id: "acceptance-import-row",
+        normalized_payload: null,
+        reason_code: null,
+        row_number: 1,
+        status: batchStatus === "published" ? "published" : "ready",
+      },
+    ],
+    source_format: "csv",
+    status: batchStatus,
+  });
+  await page.route("**/api/v1/imports", (route) =>
+    route.fulfill({ json: { items: batchStatus ? [batch()] : [] } }),
+  );
+  await page.route("**/api/v1/imports/dry-runs", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ content: csv, source_format: "csv" });
+    writes.push("preview");
+    batchStatus = "dry_run";
+    return route.fulfill({ json: batch() });
+  });
+  await page.route("**/api/v1/imports/acceptance-batch/reviews", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ reason });
+    expect(batchStatus).toBe("dry_run");
+    writes.push("review");
+    batchStatus = "reviewed";
+    return route.fulfill({ json: batch() });
+  });
+  await page.route("**/api/v1/imports/acceptance-batch/publication", (route) => {
+    expect(identity.isVerified()).toBe(true);
+    expect(batchStatus).toBe("reviewed");
+    writes.push("publish");
+    batchStatus = "published";
+    return route.fulfill({ json: batch() });
+  });
+  await page.route("**/api/v1/transactions?**", (route) =>
+    route.fulfill({
+      json: {
+        items:
+          batchStatus === "published"
+            ? [
+                {
+                  transaction_id: "acceptance-entry",
+                  transaction_kind: "deposit",
+                  occurred_at: importedAt,
+                  recorded_at: importedAt,
+                  source_kind: "import",
+                  source_reference: "acceptance-batch",
+                  memo,
+                  legs: legs.map((leg, index) => ({
+                    ...leg,
+                    transaction_leg_id: `acceptance-leg-${index}`,
+                  })),
+                },
+              ]
+            : [],
+      },
+    }),
+  );
+  await page.route("**/api/v1/portfolios/portfolio-1/holdings?**", (route) =>
+    rebuilt
+      ? route.fulfill({
+          json: {
+            checkpoint: {
+              cost_basis_method: "fifo",
+              journal_sha256: "b".repeat(64),
+              journal_transaction_count: 1,
+              projection_version: "holdings-v1",
+              rebuilt_at: importedAt,
+            },
+            items: [
+              {
+                account_id: "account-1",
+                asset_id: "asset-btc",
+                basis_status: "unknown",
+                quantity,
+                total_cost_basis: null,
+                average_unit_cost: null,
+                cost_basis_asset_id: null,
+              },
+            ],
+          },
+        })
+      : route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND" } } }),
+  );
+  await page.route("**/api/v1/portfolios/portfolio-1/holdings/rebuilds", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ cost_basis_method: "fifo" });
+    expect(batchStatus).toBe("published");
+    writes.push("rebuild");
+    rebuilt = true;
+    return route.fulfill({ json: {} });
+  });
+
+  await test.step("Preview, review and publish only after passkey verification and confirmation", async () => {
+    await page.goto(`${identity.origin}/en/transactions/imports?portfolio=portfolio-1`);
+    await page.getByLabel("Import content").fill(csv);
+    expect(writes).toEqual([]);
+    await page.getByRole("button", { name: "Create preview" }).click();
+    await page.getByLabel("Reason", { exact: true }).fill(reason);
+    await page.getByRole("button", { name: "Approve import" }).click();
+    const review = page.getByRole("dialog", { name: "Approve this import?" });
+    await expect(review).toContainText(reason);
+    expect(writes).toEqual(["preview"]);
+    await review.getByRole("button", { name: "Approve import" }).click();
+    const publishButton = page.getByRole("button", { name: "Publish import", exact: true });
+    await expect(publishButton).toBeDisabled();
+    await page.getByRole("button", { name: "Verify with your passkey" }).click();
+    await expect(publishButton).toBeEnabled();
+    await publishButton.click();
+    const publish = page.getByRole("dialog", { name: "Publish this import?" });
+    await expect(publish).toContainText("acceptance-batch");
+    expect(writes).toEqual(["preview", "review"]);
+    await publish.getByRole("button", { name: "Publish import" }).click();
+    const importBatch = page
+      .getByRole("list", { name: "Import preview", exact: true })
+      .getByRole("listitem")
+      .filter({ has: page.getByText("acceptance-batch", { exact: true }) });
+    await expect(
+      importBatch.locator(".operation-card-heading").getByText("Published", { exact: true }),
+    ).toBeVisible();
+  });
+
+  await test.step("Read the published entry and rebuild holdings from the selected journal", async () => {
+    const accounting = page.getByRole("navigation", { name: "Portfolio accounting views" });
+    await accounting.getByRole("link", { name: "Journal", exact: true }).click();
+    await expect(page.getByText(memo, { exact: true })).toBeVisible();
+    await accounting.getByRole("link", { name: "Holdings", exact: true }).click();
+    await expect(page.getByText("No calculation is available", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Rebuild from journal", exact: true }).click();
+    const rebuild = page.getByRole("dialog", { name: "Rebuild accounting calculations?" });
+    await expect(rebuild).toContainText("Core portfolio");
+    expect(writes).toEqual(["preview", "review", "publish"]);
+    await rebuild.getByRole("button", { name: "Rebuild from journal" }).click();
+    await expect(page.getByText(`${quantity} BTC`, { exact: true })).toBeVisible();
+    await expect(page.getByText("holdings-v1", { exact: true })).toBeVisible();
+    expect(writes).toEqual(["preview", "review", "publish", "rebuild"]);
+  });
+});
+
 test("monitoring preferences lead from a linked alert to its outcome journal", async ({ page }) => {
   await mockPrivateRuntime(page);
   const checksum = `sha256:${"a".repeat(64)}`;
   const watchlistId = "watchlist-1";
   const decisionId = "decision-evaluation-2";
   const primaryAlert = "critical-alert";
+  const outcome = "Reviewed the linked alert after checking the evidence.";
+  let entry: Record<string, unknown> | undefined;
+  let journalWrites = 0;
+  await page.route(`**/api/v1/decisions/${decisionId}/journal?**`, (route) =>
+    route.fulfill({
+      json: {
+        decision_id: decisionId,
+        items: entry ? [entry] : [],
+        schema_version: "nexora-outcome-journal-v1",
+      },
+    }),
+  );
+  await page.route(`**/api/v1/decisions/${decisionId}/journal`, (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toMatchObject({ content: outcome, entry_kind: "owner_note" });
+    expect(route.request().headers()["idempotency-key"]).toMatch(/^nexora-outcome-journal-/);
+    journalWrites += 1;
+    entry = {
+      ...body,
+      entry_id: "outcome-entry-1",
+      decision_id: decisionId,
+      decision_evidence_checksum: checksum,
+      decision_evidence_generation: 3,
+      recorded_at: new Date().toISOString(),
+      author_kind: "owner",
+      append_only: true,
+      ai_generated: false,
+      provider_rewritable: false,
+    };
+    return route.fulfill({ status: 201, json: entry });
+  });
   let preferences = {
     include_resolved: false,
     minimum_severity: "info",
@@ -953,6 +1279,18 @@ test("monitoring preferences lead from a linked alert to its outcome journal", a
   await expect(page).toHaveURL(`/en/journal?decision=${decisionId}`);
   await expect(page.getByLabel("Decision ID")).toHaveValue(decisionId);
   await expect(page.getByRole("heading", { name: "No journal entry yet" })).toBeVisible();
+  await page.getByLabel("Occurred at", { exact: true }).fill("2026-11-14T10:00");
+  await page.getByLabel("Owner-authored content").fill(outcome);
+  await page.getByRole("button", { name: "Append entry" }).click();
+  const entryDialog = page.getByRole("dialog", { name: "Append this entry?" });
+  await expect(entryDialog).toContainText(decisionId);
+  expect(journalWrites).toBe(0);
+  await entryDialog.getByRole("button", { name: "Append entry" }).click();
+  await expect(page.getByText("Entry added to the journal.")).toBeVisible();
+  await expect(page.getByText(outcome, { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(outcome, { exact: true })).toBeVisible();
+  expect(journalWrites).toBe(1);
 });
 
 test("creates a private export receipt and verifies bytes before download", async ({ page }) => {

@@ -1,0 +1,64 @@
+name: Phase 4 product acceptance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  product-acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify P4-10 Freeze
+        run: python3 scripts/verify_experience_hardening_ui.py
+      - name: Verify P4-11 candidate
+        run: python3 scripts/verify_phase_four_product_acceptance.py
+      - name: Run repository contract regressions
+        run: python3 -m unittest discover -s tests -v
+
+  product-acceptance-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "10.34.8"
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: pnpm
+      - name: Install locked Web dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @nexora/web exec playwright install --with-deps chromium
+      - name: Build and exercise the owner journeys
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_FILE="$RUNNER_TEMP/p4-11-playwright.json" \
+            pnpm --filter @nexora/web exec playwright test --reporter=line,json
+      - name: Bind browser evidence to the candidate
+        run: |
+          python3 scripts/verify_phase_four_product_acceptance.py browser-evidence \
+            "$RUNNER_TEMP/p4-11-playwright.json" "$RUNNER_TEMP/p4-11-browser-evidence.json"
+      - name: Upload browser evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p4-11-browser-evidence
+          path: ${{ runner.temp }}/p4-11-browser-evidence.json
+          if-no-files-found: error

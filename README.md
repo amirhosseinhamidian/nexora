@@ -306,6 +306,8 @@ display preferences and read-only provider status. Its Freeze record opens
 It clarifies workspace copy, preserves deep links across language changes,
 and improves keyboard access, contrast and narrow layouts. Its Freeze record
 opens `NEX-P4-11` for end-to-end product acceptance.
+The `NEX-P4-11` candidate captures browser evidence for the complete owner
+journeys and binds the owner's visual review to the same candidate commit.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -666,3 +668,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`docs/v0.1/57-experience-hardening-ui.md`](docs/v0.1/57-experience-hardening-ui.md)
 - [`contracts/nexora-v0.1-experience-hardening-ui.json`](contracts/nexora-v0.1-experience-hardening-ui.json)
 - [`artifacts/p4-10/experience-hardening-ui-freeze.json`](artifacts/p4-10/experience-hardening-ui-freeze.json)
+- [`contracts/nexora-v0.1-phase-four-product-acceptance.json`](contracts/nexora-v0.1-phase-four-product-acceptance.json)
+- [`docs/v0.1/58-phase-four-product-acceptance.md`](docs/v0.1/58-phase-four-product-acceptance.md)

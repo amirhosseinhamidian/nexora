@@ -59,7 +59,7 @@
 }
 
 .alert-actions {
-  @apply grid [grid-template-columns:auto_minmax(12rem,_1fr)_auto] [align-items:end] gap-[0.65rem] mt-4;
+  @apply grid [grid-template-columns:auto_minmax(0,_1fr)_auto] [align-items:end] gap-[0.65rem] mt-4;
 }
 
 .alert-history-count {
@@ -69,4 +69,11 @@
 .alert-boundary {
   @apply [margin:1rem_0_0] p-[0.85rem] [border-inline-start:3px_solid_var(--nx-primary)] [background:var(--nx-primary-soft)];
   @apply text-nx-text-muted [line-height:1.55];
+}
+.monitoring-links {
+  @apply flex flex-wrap items-center gap-2 mt-3;
+}
+
+.monitoring-filter {
+  @apply mt-4 min-w-0 rounded-nx-md bg-nx-primary-soft p-3 wrap-anywhere;
 }

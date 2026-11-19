@@ -2,310 +2,355 @@
 
 import {
   Alert,
-  ResponsiveRecordList,
-  Disclosure,
-  EmptyState,
   Button,
-  FieldError,
-  FormField,
-  Input,
+  ConfirmationDialog,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  ResponsiveRecordList,
   Spinner,
+  ToastRegion,
 } from "@nexora/ui/primitives";
-import { AlertTriangle, Bell, Check, Clock3, RefreshCw } from "lucide-react";
-import { useId, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AlertRecordCard } from "@/components/alert-record-card";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { apiRequest } from "@/lib/api-client";
+import {
+  alertDecisionId,
+  alertsHref,
+  monitoringFailure,
+  visibleAlerts,
+  watchlistsHref,
+  type AlertAction,
+  type AlertHistory,
+  type AlertInboxResponse,
+  type AlertItem,
+  type MonitoringPreferences,
+} from "@/lib/monitoring";
+import { formatTimestamp } from "@/lib/portfolio-analytics";
 
-type ProviderStatus = {
-  contract_version: string | null;
-  generation: number | null;
-  provider_version: string | null;
-  reason_code: string;
-  state: "degraded" | "disabled_incompatible" | "ready";
-};
-
-type AlertState = "acknowledged" | "expired" | "open" | "resolved" | "snoozed";
-
-type AlertSource = {
-  aggregate_id: string | null;
-  aggregate_type: string | null;
-  aggregate_version: number | null;
-  checksum: string;
-  event_id: string | null;
-  observed_at: string;
-  resource_id: string;
-  resource_schema_version: string;
-  resource_type: "alert";
-  schema_version: "nexora-source-reference-v1";
-  source_product: "trd_bot";
-  source_version: string;
-};
-
-type AlertHistory = {
-  alert_history_id: string;
-  evidence_generation: number;
-  occurred_at: string;
-  reason_code: string;
-  recorded_at: string;
-  snooze_until: string | null;
-  source_evidence_checksum: string;
-  state: AlertState;
-  state_version: number;
-};
-
-type AlertItem = {
-  alert_id: string;
-  current_version: number;
-  evidence: Record<string, unknown>;
-  evidence_sha256: string;
-  history: AlertHistory[];
-  local_state: AlertState;
-  snooze_until: string | null;
-  source: AlertSource;
-};
-
-type AlertInboxResponse = {
-  items: AlertItem[];
-  notification_delivery_enabled: false;
-  provider: ProviderStatus;
-  schema_version: "nexora-alert-inbox-v1";
+type PresentationWatchlist = {
+  watchlist_id: string;
+  name: string;
+  preferences: MonitoringPreferences;
 };
 
 type PendingSubmission = {
-  action: "acknowledge" | "snooze";
   alertId: string;
-  body: Record<string, unknown>;
+  body: {
+    action: AlertAction;
+    evidence_generation: number;
+    expected_version: number;
+    occurred_at: string;
+    snooze_until: string | null;
+    source_evidence_checksum: string;
+  };
   key: string;
 };
 
-function defaultSnoozeValue(): string {
-  const value = new Date(Date.now() + 60 * 60 * 1000);
-  const offset = value.getTimezoneOffset() * 60_000;
-  return new Date(value.getTime() - offset).toISOString().slice(0, 16);
-}
-
-export function AlertInbox({ dictionary, locale }: { dictionary: Dictionary; locale: Locale }) {
-  const fieldId = useId();
+export function AlertInbox({
+  alertId,
+  decisionId,
+  dictionary,
+  locale,
+  watchlistId,
+}: {
+  alertId?: string;
+  decisionId?: string;
+  dictionary: Dictionary;
+  locale: Locale;
+  watchlistId?: string;
+}) {
   const copy = dictionary.alertInbox;
+  const labels = dictionary.monitoring;
   const [inbox, setInbox] = useState<AlertInboxResponse>();
+  const [watchlist, setWatchlist] = useState<PresentationWatchlist>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [transitionError, setTransitionError] = useState<string>();
+  const [confirmation, setConfirmation] = useState<PendingSubmission>();
   const [pending, setPending] = useState<PendingSubmission>();
   const [submitting, setSubmitting] = useState(false);
-  const [snoozeValues, setSnoozeValues] = useState<Record<string, string>>({});
-  const initialSnooze = useMemo(() => defaultSnoozeValue(), []);
+  const [notice, setNotice] = useState<{ title: string; tone: "success" | "warning" | "danger" }>();
+  const read = useRef<AbortController | null>(null);
+  const write = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
+    read.current?.abort();
+    const controller = new AbortController();
+    read.current = controller;
     setLoading(true);
     setError(false);
+    const { signal } = controller;
     try {
-      setInbox(await apiRequest<AlertInboxResponse>("/api/v1/alerts?limit=50"));
+      const [result, list] = await Promise.all([
+        apiRequest<AlertInboxResponse>("/api/v1/alerts?limit=100", { signal }),
+        watchlistId
+          ? apiRequest<{ items: PresentationWatchlist[] }>("/api/v1/watchlists?limit=100", {
+              signal,
+            })
+          : undefined,
+      ]);
+      if (signal.aborted) return;
+      setInbox(result);
+      setWatchlist(list?.items.find((item) => item.watchlist_id === watchlistId));
     } catch {
-      setError(true);
+      if (!signal.aborted) setError(true);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
-  }, []);
+  }, [watchlistId]);
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(initialLoad);
+    return () => {
+      window.clearTimeout(initialLoad);
+      read.current?.abort();
+      write.current?.abort();
+    };
   }, [load]);
 
-  async function transition(item: AlertItem, action: "acknowledge" | "snooze") {
-    if (!inbox?.provider.generation) return;
-    const retry =
-      pending?.alertId === item.alert_id && pending.action === action ? pending : undefined;
-    const snooze = snoozeValues[item.alert_id] ?? initialSnooze;
-    const submission = retry ?? {
-      action,
+  function prepare(item: AlertItem, action: AlertAction, snoozeUntil: string | null) {
+    if (loading || write.current || pending || !inbox?.provider.generation) return;
+    setConfirmation({
       alertId: item.alert_id,
       body: {
         action,
         evidence_generation: inbox.provider.generation,
         expected_version: item.current_version,
         occurred_at: new Date().toISOString(),
-        snooze_until: action === "snooze" ? new Date(snooze).toISOString() : null,
+        snooze_until: snoozeUntil,
         source_evidence_checksum: item.source.checksum,
       },
       key: `nexora-alert-${crypto.randomUUID()}`,
-    };
-    setPending(submission);
+    });
+  }
+
+  async function transition(submission: PendingSubmission) {
+    if (write.current || loading) return;
+    if (submission.body.snooze_until && Date.parse(submission.body.snooze_until) <= Date.now()) {
+      setPending(undefined);
+      setConfirmation(undefined);
+      setNotice({ title: labels.futureSnooze, tone: "warning" });
+      if (pending) await load();
+      return;
+    }
+    const controller = new AbortController();
+    write.current = controller;
+    const { signal } = controller;
+    setConfirmation(undefined);
     setSubmitting(true);
-    setTransitionError(undefined);
+    setNotice(undefined);
     try {
       await apiRequest<AlertHistory>(
-        `/api/v1/alerts/${encodeURIComponent(item.alert_id)}/state-transitions`,
+        `/api/v1/alerts/${encodeURIComponent(submission.alertId)}/state-transitions`,
         {
           body: submission.body,
           headers: { "Idempotency-Key": submission.key },
           method: "POST",
+          signal,
         },
       );
+      if (signal.aborted) return;
       setPending(undefined);
+      setNotice({ title: labels.alertSaved, tone: "success" });
       await load();
-    } catch {
-      setTransitionError(item.alert_id);
+    } catch (error) {
+      if (signal.aborted) return;
+      switch (monitoringFailure(error)) {
+        case "conflict":
+          setPending(undefined);
+          setNotice({ title: labels.alertChanged, tone: "warning" });
+          await load();
+          break;
+        case "rejected":
+          setPending(undefined);
+          setNotice({ title: labels.alertRejected, tone: "danger" });
+          break;
+        case "unconfirmed":
+          setPending(submission);
+          setNotice({ title: labels.alertUnconfirmed, tone: "warning" });
+          break;
+      }
     } finally {
-      setSubmitting(false);
+      write.current = null;
+      if (!signal.aborted) setSubmitting(false);
     }
   }
+
+  const filterUnavailable = !!watchlistId && !watchlist && !alertId;
+  const items = (inbox?.items ?? []).filter(
+    (item) => !decisionId || alertDecisionId(item.evidence) === decisionId,
+  );
+  const visible = alertId
+    ? items.filter((item) => item.alert_id === alertId)
+    : watchlist
+      ? visibleAlerts(items, watchlist.preferences)
+      : items;
+  const actionLabel = confirmation?.body.action === "snooze" ? copy.snooze : copy.acknowledge;
 
   return (
     <section className="alert-inbox" id="alerts">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">{copy.eyebrow}</p>
           <h2>{copy.title}</h2>
           <p>{copy.description}</p>
         </div>
-        <Bell aria-hidden="true" size={28} />
       </div>
-
+      {alertId ? (
+        <Link
+          className="secondary-button"
+          href={alertsHref(locale, { decision: decisionId, watchlist: watchlistId })}
+        >
+          {labels.backToAlerts}
+        </Link>
+      ) : null}
+      {decisionId ? (
+        <div className="monitoring-filter">
+          <p>
+            {labels.alertsForDecision} <bdi>{decisionId}</bdi>
+          </p>
+          <Link className="secondary-button" href={alertsHref(locale, { watchlist: watchlistId })}>
+            {labels.showAllAlerts}
+          </Link>
+        </div>
+      ) : null}
+      <ToastRegion
+        label={labels.notifications}
+        messages={
+          notice
+            ? [
+                {
+                  ...notice,
+                  id: "alert-transition",
+                  action: (
+                    <IconButton aria-label={labels.dismiss} onClick={() => setNotice(undefined)}>
+                      <span aria-hidden="true">×</span>
+                    </IconButton>
+                  ),
+                },
+              ]
+            : []
+        }
+      />
+      {pending && !loading && !error ? (
+        <Button disabled={submitting} onClick={() => setConfirmation(pending)} variant="secondary">
+          {labels.retryAction}
+        </Button>
+      ) : null}
       {loading ? (
         <Alert className="alert-inbox-state" role="status">
           <Spinner label="" />
           <span>{copy.loading}</span>
         </Alert>
       ) : error ? (
-        <Alert tone="danger" className="alert-inbox-state error" role="alert">
-          <AlertTriangle aria-hidden="true" size={22} />
-          <span>{copy.error}</span>
-          <Button
-            variant="secondary"
-            className="secondary-button"
-            onClick={() => void load()}
-            type="button"
-          >
-            <RefreshCw aria-hidden="true" size={16} />
-            {copy.retry}
-          </Button>
-        </Alert>
+        <ErrorState
+          title={copy.error}
+          action={
+            <Button onClick={() => void load()} variant="secondary">
+              {copy.retry}
+            </Button>
+          }
+        />
       ) : (
         <>
-          {inbox?.provider?.state !== "ready" ? (
+          {inbox?.provider.state !== "ready" ? (
             <Alert tone="warning" className="provider-state" role="status">
-              <AlertTriangle aria-hidden="true" size={20} />
               <div>
                 <strong>{copy.providerDegraded}</strong>
-                <p>{copy.providerStates[inbox?.provider?.state ?? "degraded"]}</p>
+                <p>{copy.providerStates[inbox?.provider.state ?? "degraded"]}</p>
               </div>
             </Alert>
           ) : null}
-
-          {inbox?.items?.length ? (
+          {watchlist && !alertId ? (
+            <div className="monitoring-filter">
+              <p>
+                {labels.usingPreferences} <bdi>{watchlist.name}</bdi>. {labels.preferencesScope}
+              </p>
+              <div className="monitoring-links">
+                <Link
+                  className="secondary-button"
+                  href={watchlistsHref(locale, watchlist.watchlist_id)}
+                >
+                  {labels.editPreferences}
+                </Link>
+                <Link
+                  className="secondary-button"
+                  href={alertsHref(locale, { decision: decisionId })}
+                >
+                  {labels.clearPreferences}
+                </Link>
+              </div>
+            </div>
+          ) : null}
+          {filterUnavailable ? (
+            <EmptyState
+              title={labels.watchlistUnavailable}
+              action={
+                <Link
+                  className="secondary-button"
+                  href={alertsHref(locale, { decision: decisionId })}
+                >
+                  {labels.clearPreferences}
+                </Link>
+              }
+            />
+          ) : visible.length ? (
             <ResponsiveRecordList className="alert-list" label={copy.listLabel}>
-              {inbox.items.map((item) => {
-                const terminal = item.local_state === "resolved" || item.local_state === "expired";
-                const itemPending = submitting && pending?.alertId === item.alert_id;
-                return (
-                  <li className="alert-card" key={item.alert_id}>
-                    <div className="alert-card-heading">
-                      <div>
-                        <p className="eyebrow">{copy.sourceAlert}</p>
-                        <h3>{item.alert_id}</h3>
-                      </div>
-                      <span className={`evidence-state ${item.local_state}`}>
-                        {copy.states[item.local_state]}
-                      </span>
-                    </div>
-
-                    <dl className="alert-lineage">
-                      <div>
-                        <dt>{copy.observedAt}</dt>
-                        <dd>
-                          {new Intl.DateTimeFormat(locale, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(item.source.observed_at))}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{copy.sourceSchema}</dt>
-                        <dd>{item.source.resource_schema_version}</dd>
-                      </div>
-                      <div className="wide">
-                        <dt>{copy.sourceChecksum}</dt>
-                        <dd>
-                          <code dir="ltr">{item.source.checksum}</code>
-                        </dd>
-                      </div>
-                    </dl>
-
-                    <Disclosure label={copy.evidence}>
-                      <pre dir="ltr">{JSON.stringify(item.evidence, null, 2)}</pre>
-                    </Disclosure>
-
-                    {!terminal ? (
-                      <div className="alert-actions">
-                        <Button
-                          className="primary-button"
-                          disabled={itemPending || item.local_state === "acknowledged"}
-                          onClick={() => void transition(item, "acknowledge")}
-                          type="button"
-                        >
-                          <Check aria-hidden="true" size={16} />
-                          {itemPending && pending?.action === "acknowledge"
-                            ? copy.saving
-                            : copy.acknowledge}
-                        </Button>
-                        <FormField
-                          id={`${fieldId}-snooze-until-${item.alert_id}`}
-                          label={copy.snoozeUntil}
-                        >
-                          <Input
-                            id={`${fieldId}-snooze-until-${item.alert_id}`}
-                            min={initialSnooze}
-                            onChange={(event) =>
-                              setSnoozeValues((current) => ({
-                                ...current,
-                                [item.alert_id]: event.target.value,
-                              }))
-                            }
-                            type="datetime-local"
-                            value={snoozeValues[item.alert_id] ?? initialSnooze}
-                          />
-                        </FormField>
-                        <Button
-                          variant="secondary"
-                          className="secondary-button"
-                          disabled={itemPending}
-                          onClick={() => void transition(item, "snooze")}
-                          type="button"
-                        >
-                          <Clock3 aria-hidden="true" size={16} />
-                          {itemPending && pending?.action === "snooze" ? copy.saving : copy.snooze}
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    {transitionError === item.alert_id ? (
-                      <FieldError className="form-error">{copy.transitionError}</FieldError>
-                    ) : null}
-                    <small className="alert-history-count">
-                      {copy.historyCount.replace("{count}", String(item.history.length))}
-                    </small>
-                  </li>
-                );
-              })}
+              {visible.map((item) => (
+                <AlertRecordCard
+                  decisionFilter={decisionId}
+                  detail={!!alertId}
+                  dictionary={dictionary}
+                  disabled={submitting || !!pending || !inbox?.provider.generation}
+                  item={item}
+                  key={item.alert_id}
+                  locale={locale}
+                  onAction={prepare}
+                  watchlistId={watchlistId}
+                />
+              ))}
             </ResponsiveRecordList>
           ) : (
             <EmptyState
               className="empty-state-card"
               headingLevel={2}
-              icon={<Bell aria-hidden="true" size={28} />}
-              title={copy.emptyTitle}
+              title={
+                alertId
+                  ? labels.alertUnavailable
+                  : watchlist || decisionId
+                    ? labels.noMatchingAlerts
+                    : copy.emptyTitle
+              }
             >
-              <p>{copy.emptyDescription}</p>
+              {!alertId && !watchlist && !decisionId ? <p>{copy.emptyDescription}</p> : null}
             </EmptyState>
           )}
-
           <p className="alert-boundary">{copy.notificationDeferred}</p>
         </>
       )}
+      {confirmation ? (
+        <ConfirmationDialog
+          cancelLabel={labels.cancel}
+          confirmLabel={actionLabel}
+          description={
+            <>
+              <bdi>{confirmation.alertId}</bdi>
+              {confirmation.body.snooze_until ? (
+                <> · {formatTimestamp(confirmation.body.snooze_until, locale)}</>
+              ) : null}
+            </>
+          }
+          onCancel={() => setConfirmation(undefined)}
+          onConfirm={() => void transition(confirmation)}
+          open
+          title={
+            confirmation.body.action === "snooze" ? labels.confirmSnooze : labels.confirmAcknowledge
+          }
+        />
+      ) : null}
     </section>
   );
 }

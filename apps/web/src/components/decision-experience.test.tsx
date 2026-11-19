@@ -16,16 +16,12 @@ vi.mock("@/components/outcome-journal-panel", () => ({
     <output data-testid="journal-context">{decisionId ?? "none"}</output>
   ),
 }));
-vi.mock("@/components/alert-inbox", () => ({ AlertInbox: () => <section>Alerts</section> }));
-vi.mock("@/components/watchlist-panel", () => ({
-  WatchlistPanel: () => <section>Watchlists</section>,
-}));
 
 describe("DecisionExperience", () => {
   it("connects selected Decision evidence to the outcome journal", () => {
     render(<DecisionExperience dictionary={en} locale="en" />);
 
-    expect(screen.getByTestId("journal-context")).toHaveTextContent("none");
+    expect(screen.queryByTestId("journal-context")).not.toBeInTheDocument();
     const decisionStatus = screen.getByRole("status", { name: "Active Decision context" });
     expect(decisionStatus).toHaveTextContent(
       "Select Decision evidence to connect its outcome journal.",

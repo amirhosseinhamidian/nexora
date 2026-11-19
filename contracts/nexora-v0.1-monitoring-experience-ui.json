@@ -1,0 +1,54 @@
+{
+  "schema_version": "nexora-monitoring-experience-ui-v1",
+  "decision_id": "NEX-P4-08",
+  "status": "candidate",
+  "p4_07_prerequisite": {
+    "freeze_commit_sha": "567fdc1f12b64ce5549e692a0c1082f1c5afe00f",
+    "freeze_record_path": "artifacts/p4-07/decision-intelligence-ui-freeze.json",
+    "freeze_record_checksum": "77d48a9e5ec278bcb6fe122993ddb90b0f517b1fee98be267fbad0c0d76618be",
+    "successful_ci_run_id": 44478313009
+  },
+  "routes": {
+    "alerts": "/{locale}/alerts",
+    "watchlists": "/{locale}/alerts/watchlists",
+    "journal": "/{locale}/journal"
+  },
+  "route_context": {
+    "alerts": ["alert", "decision", "watchlist"],
+    "watchlists": ["watchlist"],
+    "journal": ["decision"]
+  },
+  "alert_presentation": {
+    "decision_reference_fields": ["evaluation_id", "decision_id"],
+    "preferences": ["presentation_order", "minimum_severity", "include_resolved"],
+    "watchlist_item_membership_inferred": false
+  },
+  "read_operations": {
+    "/v1/alerts": "listAlertInbox",
+    "/v1/watchlists": "listWatchlists",
+    "/v1/decisions/{decision_id}/journal": "listDecisionOutcomeJournal"
+  },
+  "write_operations": {
+    "/v1/alerts/{alert_id}/state-transitions": "createAlertStateTransition",
+    "/v1/watchlists": "createWatchlist",
+    "/v1/watchlists/{watchlist_id}/items": "createWatchlistItem",
+    "/v1/watchlists/{watchlist_id}/preferences": "updateWatchlistPreferences",
+    "/v1/decisions/{decision_id}/journal": "createDecisionOutcomeJournalEntry"
+  },
+  "boundary": {
+    "owner_scoped": true,
+    "alert_transitions_require_confirmation": true,
+    "journal_entries_require_confirmation": true,
+    "journal_corrections_append_with_original_entry_id": true,
+    "writes_preserve_idempotent_retry": true,
+    "notification_delivery_enabled": false,
+    "provider_subscription_management_enabled": false,
+    "execution_authorization": false,
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-08-FREEZE",
+    "post_freeze_stage": "NEX-P4-09"
+  }
+}

@@ -16,6 +16,7 @@ import {
   type DecisionRecord,
   type DecisionRoute,
 } from "@/lib/decision-intelligence";
+import { alertsHref, journalHref } from "@/lib/monitoring";
 
 export function DecisionRecordWorkspace({ route }: { route: DecisionRoute }) {
   const { dictionary, locale } = useWorkspace();
@@ -77,6 +78,19 @@ export function DecisionRecordWorkspace({ route }: { route: DecisionRoute }) {
       {record ? (
         <div className="decision-record-content">
           {!record.item ? <EmptyState title={copy.evidenceUnavailable} /> : null}
+          {record.item && record.decisionId ? (
+            <div className="monitoring-links">
+              <Link className="secondary-button" href={journalHref(locale, record.decisionId)}>
+                {dictionary.monitoring.openJournal}
+              </Link>
+              <Link
+                className="secondary-button"
+                href={alertsHref(locale, { decision: record.decisionId })}
+              >
+                {dictionary.monitoring.viewLinkedAlerts}
+              </Link>
+            </div>
+          ) : null}
           {record.item && route.panel !== "evidence" ? (
             <p className="decision-context">
               {feed.resourceTypes[record.item.resource_type]}{" "}

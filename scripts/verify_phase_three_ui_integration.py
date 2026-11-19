@@ -184,8 +184,9 @@ def validate_runtime_markers() -> None:
         "onDecisionChange={setActiveDecisionId}",
         "decisionId={activeDecisionId}",
         'aria-live="polite"',
-        "<AlertInbox",
-        "<WatchlistPanel",
+        "alertsHref(locale)",
+        "watchlistsHref(locale)",
+        "readOnly",
     ):
         require(marker in experience, f"Decision integration marker missing: {marker}")
     for marker in (

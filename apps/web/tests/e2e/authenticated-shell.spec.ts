@@ -623,9 +623,7 @@ test("Decision workflow is keyboard integrated and uses routed evidence", async 
 
   await secondDecision.press("Home");
   await expect(candidateButton).toBeFocused();
-  await expect(page.getByRole("heading", { name: "No active alerts" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "No watchlist yet" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Alerts", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Alerts inbox", exact: true })).toHaveAttribute(
     "href",
     "/en/alerts",
   );
@@ -633,6 +631,10 @@ test("Decision workflow is keyboard integrated and uses routed evidence", async 
   await page.getByRole("link", { name: "Open evidence" }).click();
   const candidatePath = "/en/decisions/candidates/candidate-1";
   await expect(page).toHaveURL(candidatePath);
+  await expect(page.getByRole("link", { name: "View linked alerts" })).toHaveAttribute(
+    "href",
+    "/en/alerts?decision=decision-evaluation-1",
+  );
   const sections = page.getByRole("navigation", { name: "Decision evidence pages" });
 
   await sections.getByRole("link", { name: "Risk Gate" }).click();
@@ -726,8 +728,10 @@ test("Phase 3 surfaces degraded, empty and error states explicitly", async ({ pa
   await expect(
     page.getByRole("heading", { name: "No Decision or Candidate evidence" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Alerts inbox", exact: true }).click();
   await expect(page.getByText("Provider alert evidence is degraded")).toBeVisible();
   await expect(page.getByRole("heading", { name: "No active alerts" })).toBeVisible();
+  await page.getByRole("link", { name: "Watchlists", exact: true }).click();
   await expect(
     page.getByText("Watchlists could not be loaded. No preference was changed."),
   ).toBeVisible();
@@ -826,4 +830,123 @@ test("accounting routes preserve context and import files stay local until previ
     "/en/transactions/reconciliation?portfolio=portfolio-1&basis=weighted_average",
   );
   await expect(page.getByText("No reconciliation case requires review.")).toBeVisible();
+});
+
+test("monitoring preferences lead from a linked alert to its outcome journal", async ({ page }) => {
+  await mockPrivateRuntime(page);
+  const checksum = `sha256:${"a".repeat(64)}`;
+  const watchlistId = "watchlist-1";
+  const decisionId = "decision-evaluation-2";
+  const primaryAlert = "critical-alert";
+  let preferences = {
+    include_resolved: false,
+    minimum_severity: "info",
+    presentation_order: "newest_first",
+    updated_at: "2026-11-14T10:00:00Z",
+  };
+  let watchlistVersion = 2;
+  const watchlist = () => ({
+    watchlist_id: watchlistId,
+    name: "Risk monitoring",
+    created_at: "2026-11-14T10:00:00Z",
+    updated_at: "2026-11-14T10:00:00Z",
+    row_version: watchlistVersion,
+    items: [],
+    preferences,
+  });
+  await page.route("**/api/v1/watchlists?**", (route) =>
+    route.fulfill({ json: { items: [watchlist()] } }),
+  );
+  await page.route(`**/api/v1/watchlists/${watchlistId}/preferences`, (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toEqual({
+      expected_version: 2,
+      include_resolved: false,
+      minimum_severity: "critical",
+      presentation_order: "newest_first",
+    });
+    preferences = { ...preferences, minimum_severity: body.minimum_severity };
+    watchlistVersion += 1;
+    return route.fulfill({ json: watchlist() });
+  });
+
+  let transition:
+    | {
+        alert_history_id: string;
+        recorded_at: string;
+        state: string;
+        snooze_until: string;
+        state_version: number;
+      }
+    | undefined;
+  let alertWrites = 0;
+  const alert = (id: string, severity: string, state: string) => ({
+    alert_id: id,
+    current_version: id === primaryAlert && transition ? transition.state_version : 0,
+    evidence: { severity, evaluation_id: decisionId },
+    history: id === primaryAlert && transition ? [transition] : [],
+    local_state: id === primaryAlert && transition ? transition.state : state,
+    snooze_until: id === primaryAlert ? (transition?.snooze_until ?? null) : null,
+    source: {
+      checksum,
+      observed_at: "2026-11-14T10:00:00Z",
+      resource_schema_version: "trd-bot-alert-v1",
+    },
+  });
+  await page.route("**/api/v1/alerts?**", (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          alert(primaryAlert, "critical", "open"),
+          alert("low-severity-alert", "info", "open"),
+          alert("resolved-alert", "critical", "resolved"),
+        ],
+        provider: { generation: 3, state: "ready" },
+      },
+    }),
+  );
+  await page.route(`**/api/v1/alerts/${primaryAlert}/state-transitions`, (route) => {
+    alertWrites += 1;
+    const body = route.request().postDataJSON();
+    expect(body).toMatchObject({
+      action: "snooze",
+      evidence_generation: 3,
+      expected_version: 0,
+      source_evidence_checksum: checksum,
+    });
+    transition = {
+      alert_history_id: "transition-1",
+      recorded_at: new Date().toISOString(),
+      state: "snoozed",
+      snooze_until: body.snooze_until,
+      state_version: 1,
+    };
+    return route.fulfill({ json: transition });
+  });
+
+  await page.goto(`/en/alerts/watchlists?watchlist=${watchlistId}`);
+  await page.getByRole("combobox", { name: "Minimum visible severity" }).click();
+  await page.getByRole("option", { name: "Critical" }).click();
+  await page.getByRole("button", { name: "Save preferences" }).click();
+  await expect(page.getByText("Watchlist saved.")).toBeVisible();
+  await page.getByRole("link", { name: "View alerts with these preferences" }).click();
+  await expect(page).toHaveURL(`/en/alerts?watchlist=${watchlistId}`);
+  await expect(page.getByRole("link", { name: primaryAlert })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "low-severity-alert" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "resolved-alert" })).toHaveCount(0);
+  await page.getByRole("link", { name: primaryAlert }).click();
+  await expect(page).toHaveURL(`/en/alerts?watchlist=${watchlistId}&alert=${primaryAlert}`);
+  await page.getByRole("button", { name: "Snooze", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Snooze this alert?" });
+  await expect(dialog).toContainText(primaryAlert);
+  expect(alertWrites).toBe(0);
+  await dialog.getByRole("button", { name: "Snooze", exact: true }).click();
+  await expect(page.getByText("Alert updated.")).toBeVisible();
+  await page.getByText("Alert history (1)", { exact: true }).click();
+  await expect(page.getByText("Version 1 · Snoozed", { exact: true })).toBeVisible();
+  expect(alertWrites).toBe(1);
+  await page.getByRole("link", { name: "Open outcome journal" }).click();
+  await expect(page).toHaveURL(`/en/journal?decision=${decisionId}`);
+  await expect(page.getByLabel("Decision ID")).toHaveValue(decisionId);
+  await expect(page.getByRole("heading", { name: "No journal entry yet" })).toBeVisible();
 });

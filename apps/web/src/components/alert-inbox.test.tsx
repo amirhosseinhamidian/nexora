@@ -1,11 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import en from "../../messages/en.json";
 import { apiRequest } from "@/lib/api-client";
 import { AlertInbox } from "./alert-inbox";
 
-vi.mock("@/lib/api-client", () => ({ apiRequest: vi.fn() }));
+vi.mock("@/lib/api-client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api-client")>()),
+  apiRequest: vi.fn(),
+}));
 
 const request = vi.mocked(apiRequest);
 const checksum = `sha256:${"a".repeat(64)}`;
@@ -80,6 +83,9 @@ describe("AlertInbox", () => {
     expect(screen.getByText(/Notification delivery is deferred/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Acknowledge" }));
+    expect(request).toHaveBeenCalledTimes(1);
+    const dialog = screen.getByRole("dialog", { name: "Acknowledge this alert?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Acknowledge" }));
     await waitFor(() =>
       expect(request).toHaveBeenCalledWith(
         "/api/v1/alerts/alert-1/state-transitions",
@@ -110,5 +116,22 @@ describe("AlertInbox", () => {
 
     expect(await screen.findByText("Provider alert evidence is degraded")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "No active alerts" })).toBeInTheDocument();
+  });
+
+  it("keeps an invalid snooze local and omits ambiguous Decision links", async () => {
+    request.mockResolvedValueOnce({
+      items: [{ ...alert, evidence: { evaluation_id: "decision-1", decision_id: "decision-2" } }],
+      provider,
+    });
+    render(<AlertInbox alertId="alert-1" dictionary={en} locale="en" />);
+    const input = await screen.findByLabelText("Resume alert at");
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Snooze" }));
+    expect(
+      screen.getByText("Choose a time in the future to resume this alert."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open outcome journal" })).not.toBeInTheDocument();
+    expect(request).toHaveBeenCalledTimes(1);
   });
 });

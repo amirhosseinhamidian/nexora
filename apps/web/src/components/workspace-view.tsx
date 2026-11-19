@@ -2,6 +2,7 @@
 
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useSyncExternalStore } from "react";
 
 import { AlertInbox } from "@/components/alert-inbox";
@@ -9,12 +10,14 @@ import { useWorkspace } from "@/components/authenticated-shell";
 import { DecisionExperience } from "@/components/decision-experience";
 import { DecisionRecordWorkspace } from "@/components/decision-record-workspace";
 import { FirstRunOnboarding } from "@/components/first-run-onboarding";
+import { MonitoringNavigation } from "@/components/monitoring-navigation";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
 import { PortfolioDashboard } from "@/components/portfolio-dashboard";
 import { RegistryManagement } from "@/components/registry-management";
 import { TransactionsWorkspace } from "@/components/transactions-workspace";
 import { WatchlistPanel } from "@/components/watchlist-panel";
 import { hasOnboardingDraft } from "@/lib/first-run-onboarding";
+import { journalHref } from "@/lib/monitoring";
 import type { DecisionRoute } from "@/lib/decision-intelligence";
 import type { AccountingQuery, AccountingView } from "@/lib/portfolio-accounting";
 
@@ -22,6 +25,9 @@ type WorkspaceViewProps =
   | { section: "portfolioDetail"; portfolioId: string }
   | { section: "transactions"; query: AccountingQuery; view: AccountingView }
   | { section: "decisionRecord"; route: DecisionRoute }
+  | { section: "alerts"; alertId?: string; decisionId?: string; watchlistId?: string }
+  | { section: "watchlists"; watchlistId?: string }
+  | { section: "journal"; decisionId?: string }
   | {
       section:
         | "overview"
@@ -30,8 +36,6 @@ type WorkspaceViewProps =
         | "assets"
         | "accounts"
         | "decisions"
-        | "alerts"
-        | "journal"
         | "exports"
         | "settings";
     };
@@ -88,6 +92,7 @@ function ResumeOnboarding() {
 
 export function WorkspaceView(props: WorkspaceViewProps) {
   const { dictionary, locale, session } = useWorkspace();
+  const router = useRouter();
   const copy = dictionary.workspacePages;
   const navigation = dictionary.navigation;
   let title: string;
@@ -186,14 +191,58 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       title = navigation.alerts;
       content = (
         <>
-          <AlertInbox dictionary={dictionary} locale={locale} />
-          <WatchlistPanel dictionary={dictionary} locale={locale} />
+          <MonitoringNavigation
+            copy={dictionary.monitoring}
+            locale={locale}
+            view="alerts"
+            watchlist={props.watchlistId}
+          />
+          <AlertInbox
+            alertId={props.alertId}
+            decisionId={props.decisionId}
+            dictionary={dictionary}
+            key={JSON.stringify([
+              session.owner_id,
+              props.alertId,
+              props.decisionId,
+              props.watchlistId,
+            ])}
+            locale={locale}
+            watchlistId={props.watchlistId}
+          />
+        </>
+      );
+      break;
+    case "watchlists":
+      title = dictionary.monitoring.watchlists;
+      content = (
+        <>
+          <MonitoringNavigation
+            copy={dictionary.monitoring}
+            locale={locale}
+            view="watchlists"
+            watchlist={props.watchlistId}
+          />
+          <WatchlistPanel
+            dictionary={dictionary}
+            key={JSON.stringify([session.owner_id, props.watchlistId])}
+            locale={locale}
+            initialWatchlistId={props.watchlistId}
+          />
         </>
       );
       break;
     case "journal":
       title = navigation.journal;
-      content = <OutcomeJournalPanel dictionary={dictionary} locale={locale} />;
+      content = (
+        <OutcomeJournalPanel
+          decisionId={props.decisionId}
+          dictionary={dictionary}
+          key={JSON.stringify([session.owner_id, props.decisionId])}
+          locale={locale}
+          onDecisionSearch={(id) => router.push(journalHref(locale, id))}
+        />
+      );
       break;
     case "exports":
       title = navigation.exports;

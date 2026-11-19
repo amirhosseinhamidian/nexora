@@ -106,6 +106,10 @@
   @apply grid grid-cols-2 gap-3;
 }
 
+.journal-form-grid {
+  @apply min-w-0 m-0 border-0 p-0;
+}
+
 .journal-form-grid .wide,
 .journal-lineage .wide {
   @apply col-span-full;

@@ -1,11 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import en from "../../messages/en.json";
 import { apiRequest } from "@/lib/api-client";
 import { OutcomeJournalPanel } from "./outcome-journal-panel";
 
-vi.mock("@/lib/api-client", () => ({ apiRequest: vi.fn() }));
+vi.mock("@/lib/api-client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api-client")>()),
+  apiRequest: vi.fn(),
+}));
 
 const request = vi.mocked(apiRequest);
 const occurredAtInput = "2026-11-17T10:00";
@@ -58,7 +61,9 @@ describe("OutcomeJournalPanel", () => {
     expect(
       await screen.findByRole("heading", { name: "No journal entry yet" }),
     ).toBeInTheDocument();
-    expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-1/journal?limit=50");
+    expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-1/journal?limit=50", {
+      signal: expect.any(AbortSignal),
+    });
   });
 
   it("keeps the same idempotency key when an unchanged append is retried", async () => {
@@ -83,9 +88,19 @@ describe("OutcomeJournalPanel", () => {
       target: { value: "Observe without changing the evidence." },
     });
     fireEvent.click(screen.getByRole("button", { name: "Append entry" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Append this entry?" })).getByRole("button", {
+        name: "Append entry",
+      }),
+    );
     expect(await screen.findByText(/Retry keeps the same idempotency key/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Append entry" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Append this entry?" })).getByRole("button", {
+        name: "Append entry",
+      }),
+    );
     await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
     const expectedOptions = {
       body: {
@@ -102,6 +117,7 @@ describe("OutcomeJournalPanel", () => {
       },
       headers: { "Idempotency-Key": "nexora-outcome-journal-journal-key-1" },
       method: "POST",
+      signal: expect.any(AbortSignal),
     };
     expect(request).toHaveBeenNthCalledWith(
       2,
@@ -128,6 +144,46 @@ describe("OutcomeJournalPanel", () => {
       await screen.findByRole("heading", { name: "No journal entry yet" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Decision ID")).toHaveValue("decision-1");
-    expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-1/journal?limit=50");
+    expect(request).toHaveBeenCalledWith("/api/v1/decisions/decision-1/journal?limit=50", {
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it("appends a correction against the selected original entry", async () => {
+    const correction = {
+      ...entry,
+      entry_id: "correction-1",
+      content: "Corrected description.",
+      entry_kind: "correction",
+      supersedes_entry_id: entry.entry_id,
+    };
+    request
+      .mockResolvedValueOnce({ decision_id: "decision-1", items: [entry] })
+      .mockResolvedValueOnce(correction);
+    render(<OutcomeJournalPanel decisionId="decision-1" dictionary={en} locale="en" />);
+    fireEvent.click(await screen.findByRole("button", { name: "Add a correction" }));
+    expect(screen.getByLabelText("Superseded entry ID")).toHaveValue(entry.entry_id);
+    fireEvent.change(screen.getByLabelText("Occurred at"), { target: { value: occurredAtInput } });
+    fireEvent.change(screen.getByLabelText("Owner-authored content"), {
+      target: { value: correction.content },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Append entry" }));
+    const dialog = screen.getByRole("dialog", { name: "Append this entry?" });
+    expect(dialog).toHaveTextContent(entry.entry_id);
+    expect(request).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Append entry" }));
+    expect(await screen.findByText(correction.content)).toBeInTheDocument();
+    expect(screen.getByText(entry.content)).toBeInTheDocument();
+    expect(request).toHaveBeenLastCalledWith(
+      "/api/v1/decisions/decision-1/journal",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          content: correction.content,
+          entry_kind: "correction",
+          supersedes_entry_id: entry.entry_id,
+        }),
+        method: "POST",
+      }),
+    );
   });
 });

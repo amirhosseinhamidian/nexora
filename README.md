@@ -294,6 +294,9 @@ It delivers direct Decision and Candidate pages, with separate risk, simulated
 portfolio impact, scenarios and review history. Reviews record the owner's
 assessment against a specific evidence version. Its Freeze record opens
 `NEX-P4-08` for alerts, watchlists and outcome journals.
+The `NEX-P4-08` candidate links those pages to Decision evidence, applies
+saved display preferences in the inbox and confirms changes before recording
+an alert transition or a new journal entry.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -645,3 +648,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-decision-intelligence-ui.json`](contracts/nexora-v0.1-decision-intelligence-ui.json)
 - [`docs/v0.1/54-decision-intelligence-ui.md`](docs/v0.1/54-decision-intelligence-ui.md)
 - [`artifacts/p4-07/decision-intelligence-ui-freeze.json`](artifacts/p4-07/decision-intelligence-ui-freeze.json)
+- [`contracts/nexora-v0.1-monitoring-experience-ui.json`](contracts/nexora-v0.1-monitoring-experience-ui.json)
+- [`docs/v0.1/55-monitoring-experience-ui.md`](docs/v0.1/55-monitoring-experience-ui.md)

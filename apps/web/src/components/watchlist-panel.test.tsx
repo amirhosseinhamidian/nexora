@@ -5,7 +5,10 @@ import en from "../../messages/en.json";
 import { apiRequest } from "@/lib/api-client";
 import { WatchlistPanel } from "./watchlist-panel";
 
-vi.mock("@/lib/api-client", () => ({ apiRequest: vi.fn() }));
+vi.mock("@/lib/api-client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api-client")>()),
+  apiRequest: vi.fn(),
+}));
 
 const request = vi.mocked(apiRequest);
 const watchlist = {
@@ -52,6 +55,7 @@ describe("WatchlistPanel", () => {
         body: { name: "Decision candidates" },
         headers: { "Idempotency-Key": "nexora-watchlist-fixture-key-1" },
         method: "POST",
+        signal: expect.any(AbortSignal),
       }),
     );
     const selector = await screen.findByRole("combobox", { name: "Active watchlist" });
@@ -94,11 +98,13 @@ describe("WatchlistPanel", () => {
       body: { name: "Decision candidates" },
       headers: { "Idempotency-Key": "nexora-watchlist-fixture-key-1" },
       method: "POST",
+      signal: expect.any(AbortSignal),
     });
     expect(request).toHaveBeenNthCalledWith(3, "/api/v1/watchlists", {
       body: { name: "Decision candidates" },
       headers: { "Idempotency-Key": "nexora-watchlist-fixture-key-1" },
       method: "POST",
+      signal: expect.any(AbortSignal),
     });
   });
 });

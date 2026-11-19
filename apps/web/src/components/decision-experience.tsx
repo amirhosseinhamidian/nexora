@@ -2,14 +2,14 @@
 
 import { Alert } from "@nexora/ui/primitives";
 import { Workflow } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
-import { AlertInbox } from "@/components/alert-inbox";
 import { DecisionFeed } from "@/components/decision-feed";
 import { OutcomeJournalPanel } from "@/components/outcome-journal-panel";
-import { WatchlistPanel } from "@/components/watchlist-panel";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { alertsHref, watchlistsHref } from "@/lib/monitoring";
 
 export function DecisionExperience({
   dictionary,
@@ -51,9 +51,23 @@ export function DecisionExperience({
         locale={locale}
         onDecisionChange={setActiveDecisionId}
       />
-      <OutcomeJournalPanel decisionId={activeDecisionId} dictionary={dictionary} locale={locale} />
-      <AlertInbox dictionary={dictionary} locale={locale} />
-      <WatchlistPanel dictionary={dictionary} locale={locale} />
+      {activeDecisionId ? (
+        <OutcomeJournalPanel
+          decisionId={activeDecisionId}
+          dictionary={dictionary}
+          key={activeDecisionId}
+          locale={locale}
+          readOnly
+        />
+      ) : null}
+      <div className="monitoring-links">
+        <Link className="secondary-button" href={alertsHref(locale)}>
+          {dictionary.monitoring.inbox}
+        </Link>
+        <Link className="secondary-button" href={watchlistsHref(locale)}>
+          {dictionary.monitoring.watchlists}
+        </Link>
+      </div>
     </section>
   );
 }

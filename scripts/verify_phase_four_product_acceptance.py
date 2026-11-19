@@ -173,6 +173,25 @@ def browser_results(contract: dict[str, Any], report: dict[str, Any]) -> dict[st
     return {"journeys": _browser_journeys(contract), "automated_viewports": profiles}
 
 
+def validate_browser_evidence(
+    browser: dict[str, Any],
+    contract: dict[str, Any],
+    identity: dict[str, str],
+    run: dict[str, int],
+) -> None:
+    require(browser.get("schema_version") == BROWSER_SCHEMA, "browser evidence schema drift")
+    require(browser.get("contract_checksum") == CONTRACT_CHECKSUM, "browser evidence contract checksum drift")
+    for key, value in identity.items():
+        require(browser.get(key) == value, f"browser evidence {key} does not match the candidate")
+    require(browser.get("github_actions") == run, "browser evidence CI run drift")
+    require(browser.get("journeys") == _browser_journeys(contract), "browser evidence journey results drift")
+    require(
+        browser.get("automated_viewports") == _browser_viewports(contract), "browser evidence viewport results drift"
+    )
+    browser_payload = {key: value for key, value in browser.items() if key != "record_checksum"}
+    require(browser.get("record_checksum") == checksum(browser_payload), "browser evidence record checksum drift")
+
+
 def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> None:
     require(record.get("schema_version") == "nexora-phase-four-product-acceptance-freeze-v1", "Freeze schema drift")
     require(record.get("decision_id") == contract["decision_id"], "Freeze decision drift")
@@ -201,21 +220,12 @@ def validate_freeze_record(record: dict[str, Any], contract: dict[str, Any]) -> 
         require(job.get("conclusion") == "success", f"CI job did not succeed: {name}")
     require(workflow["browser_artifact"].get("name") == contract["browser"]["artifact_name"], "browser artifact drift")
 
-    browser = record["browser_evidence"]
-    require(browser.get("schema_version") == BROWSER_SCHEMA, "browser evidence schema drift")
-    require(browser.get("contract_checksum") == CONTRACT_CHECKSUM, "browser evidence contract checksum drift")
-    for key, value in identity.items():
-        require(browser.get(key) == value, f"browser evidence {key} does not match the candidate")
-    require(
-        browser.get("github_actions") == {"run_id": workflow["run_id"], "attempt": workflow["attempt"]},
-        "browser evidence CI run drift",
+    validate_browser_evidence(
+        record["browser_evidence"],
+        contract,
+        identity,
+        {"run_id": workflow["run_id"], "attempt": workflow["attempt"]},
     )
-    require(browser.get("journeys") == _browser_journeys(contract), "browser evidence journey results drift")
-    require(
-        browser.get("automated_viewports") == _browser_viewports(contract), "browser evidence viewport results drift"
-    )
-    browser_payload = {key: value for key, value in browser.items() if key != "record_checksum"}
-    require(browser.get("record_checksum") == checksum(browser_payload), "browser evidence record checksum drift")
 
     manual = record["manual_visual"]
     validate_manual(manual["record"], contract, identity)

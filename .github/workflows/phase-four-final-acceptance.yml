@@ -1,0 +1,22 @@
+name: Phase 4 final acceptance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  phase-four-final-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify Phase 4 final acceptance candidate
+        run: python3 scripts/verify_phase_four_final_acceptance.py
+      - name: Run repository contract regressions
+        run: python3 -m unittest discover -s tests -v

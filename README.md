@@ -309,6 +309,9 @@ opens `NEX-P4-11` for end-to-end product acceptance.
 `NEX-P4-11` is frozen at candidate `102a3c711e72aeecfb75b505d5afa890628c762c`.
 Its Freeze record binds the successful browser journeys and all 16 owner
 visual reviews to that commit and opens `NEX-P4-12` for Phase 4 final acceptance.
+The `NEX-P4-12` candidate defines the final record for the local v0.1
+experience, including same-commit CI, owner visual review, known limitations
+and the roadmap's deferred scope.
 
 The P1-13 reference host defaults to TLS-protected `loopback_only` deployment
 for same-machine personal use. Authenticated private-overlay deployment remains
@@ -672,3 +675,5 @@ P3-13 candidate contract: [`contracts/nexora-v0.1-phase-three-final-acceptance.j
 - [`contracts/nexora-v0.1-phase-four-product-acceptance.json`](contracts/nexora-v0.1-phase-four-product-acceptance.json)
 - [`docs/v0.1/58-phase-four-product-acceptance.md`](docs/v0.1/58-phase-four-product-acceptance.md)
 - [`artifacts/p4-11/phase-four-product-acceptance-freeze.json`](artifacts/p4-11/phase-four-product-acceptance-freeze.json)
+- [`contracts/nexora-v0.1-phase-four-final-acceptance.json`](contracts/nexora-v0.1-phase-four-final-acceptance.json)
+- [`docs/v0.1/59-phase-four-final-acceptance.md`](docs/v0.1/59-phase-four-final-acceptance.md)

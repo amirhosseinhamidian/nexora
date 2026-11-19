@@ -1,0 +1,172 @@
+{
+  "schema_version": "nexora-phase-four-final-acceptance-v1",
+  "decision_id": "NEX-P4-12",
+  "product_version": "0.1.0",
+  "status": "candidate",
+  "repository": "amirhosseinhamidian/nexora",
+  "candidate_branch": "feature/v0.1-decision-intelligence",
+  "roadmap": {
+    "path": "contracts/nexora-v0.1-phase-four-product-experience-roadmap.json",
+    "checksum": "023b800af6e339ce0fa18a0c20bcb6d06282f11110dc16f134151364e6fb6b61"
+  },
+  "p4_11_prerequisite": {
+    "freeze_commit_sha": "87f2eb4d48d033d879c6fe9998b46fa99ae56c94",
+    "freeze_tree_sha": "61c79347978b8a6a4f568b822ca80b65ad743aa7",
+    "successful_ci_run_id": 44513286286,
+    "accepted_product_commit_sha": "102a3c711e72aeecfb75b505d5afa890628c762c"
+  },
+  "freeze_chain": {
+    "NEX-P4-00": {
+      "path": "artifacts/p4-00/phase-four-product-experience-roadmap-freeze.json",
+      "checksum": "df373401cf0982b09708d0093d0492cdddf365c85195fbc2e1374293bc3a5584"
+    },
+    "NEX-P4-01": {
+      "path": "artifacts/p4-01/ui-foundation-freeze.json",
+      "checksum": "5c335ffbd731d9cea0df1e2cf1bfecfdf17b575531cb218f41b091a0ae22905d"
+    },
+    "NEX-P4-02": {
+      "path": "artifacts/p4-02/platform-shell-freeze.json",
+      "checksum": "bb5885b69dc6526ee22adde1f7ccdf0e1a882e4a6567d2cb380894a59317221d"
+    },
+    "NEX-P4-03": {
+      "path": "artifacts/p4-03/first-run-onboarding-freeze.json",
+      "checksum": "c2bda9d47b9e6d69eacd268b5449fa77e70cefc8ef8f62647db48fd3b55078bf"
+    },
+    "NEX-P4-04": {
+      "path": "artifacts/p4-04/registry-management-ui-freeze.json",
+      "checksum": "fde080e0d1ac0a260ad1214340c46fee9c9fd7f9453122e485ce36d662394ef9"
+    },
+    "NEX-P4-05": {
+      "path": "artifacts/p4-05/portfolio-analytics-ui-freeze.json",
+      "checksum": "2ea7cb5dfda189daa7241a164005dd68d8e2f1f6a2056089239e6d61a0792c1f"
+    },
+    "NEX-P4-06": {
+      "path": "artifacts/p4-06/accounting-experience-ui-freeze.json",
+      "checksum": "5892cbd085c9f81f26a38b41e02d9a1c9a0ec852aad0fa433c3c77b008c6d67f"
+    },
+    "NEX-P4-07": {
+      "path": "artifacts/p4-07/decision-intelligence-ui-freeze.json",
+      "checksum": "77d48a9e5ec278bcb6fe122993ddb90b0f517b1fee98be267fbad0c0d76618be"
+    },
+    "NEX-P4-08": {
+      "path": "artifacts/p4-08/monitoring-experience-ui-freeze.json",
+      "checksum": "225a153858bfd377d9bd6f6691770d7e4eedb7be2e7634ea68ca9790a6b4ef92"
+    },
+    "NEX-P4-09": {
+      "path": "artifacts/p4-09/exports-settings-ui-freeze.json",
+      "checksum": "142d49d36483801bd1089d84756abfb681c74b7bc214f5f159a9103270f5d943"
+    },
+    "NEX-P4-10": {
+      "path": "artifacts/p4-10/experience-hardening-ui-freeze.json",
+      "checksum": "c611dd65bc15bb3f91f56f2da2191b56b139502a102dca5f408c958c7bd5c070"
+    },
+    "NEX-P4-11": {
+      "path": "artifacts/p4-11/phase-four-product-acceptance-freeze.json",
+      "checksum": "30ba72c475b19997adf8b4b86c04916ea42533e1b012d918f5427995fe00e2fe"
+    }
+  },
+  "reviewed_product_paths": [
+    "apps",
+    "packages",
+    "alembic",
+    "alembic.ini",
+    "infra",
+    ".node-version",
+    ".npmrc",
+    ".python-version",
+    "docker-compose.nexora-local.yml",
+    "nexora-local.sh",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "pyproject.toml",
+    "uv.lock",
+    "contracts/runtime"
+  ],
+  "required_ci_gates": {
+    "phase_four_contract_chain": {
+      "workflow": ".github/workflows/phase-four-final-acceptance.yml",
+      "job": "phase-four-final-contract",
+      "steps": ["Verify Phase 4 final acceptance candidate", "Run repository contract regressions"]
+    },
+    "backend_regressions": {
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "job": "backend",
+      "steps": ["Typecheck backend", "Run backend tests", "Check generated runtime contracts"]
+    },
+    "postgresql_migration_from_zero": {
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "job": "postgresql-17",
+      "steps": [
+        "Upgrade repository head from zero",
+        "Run PostgreSQL projection and recovery tests",
+        "Downgrade to base",
+        "Rebuild repository head",
+        "Check migration drift"
+      ]
+    },
+    "web_regressions_and_reconciliation": {
+      "workflow": ".github/workflows/accounting-experience-ui.yml",
+      "job": "accounting-experience-web",
+      "steps": [
+        "Check Web format",
+        "Lint Web",
+        "Typecheck Web",
+        "Test Web",
+        "Build and test accounting paths in Chromium"
+      ]
+    },
+    "private_scope_and_security": {
+      "workflow": ".github/workflows/phase-three-final-acceptance.yml",
+      "job": "phase-three-evidence",
+      "steps": [
+        "Verify scope boundary",
+        "Verify security inventory",
+        "Verify integration contracts"
+      ]
+    },
+    "product_browser_journeys": {
+      "workflow": ".github/workflows/phase-four-product-acceptance.yml",
+      "job": "product-acceptance-browser",
+      "steps": [
+        "Build and exercise the owner journeys",
+        "Bind browser evidence to the candidate",
+        "Upload browser evidence"
+      ]
+    }
+  },
+  "known_limitations": {
+    "browser_automation": "Chromium acceptance uses synthetic API responses and a virtual passkey authenticator. The owner reviewed the 16 visual profiles locally.",
+    "provider_compatibility": "The local reference configuration disables incompatible TRD Bot 0.3.0. It preserves existing compatible-provider evidence from Phase 3 and makes no new claim of live provider sync.",
+    "portfolio_analytics": "Portfolio charts use sampled snapshots and can show gaps where valuations are unavailable.",
+    "export_history": "Export history shows up to 20 receipt summaries captured in the current browser for the owner."
+  },
+  "deferred": [
+    "ai_copilot",
+    "portfolio_ml",
+    "connected_financial_accounts",
+    "exchange_trade_credentials",
+    "wallet_keys_and_fund_transfer",
+    "live_trading",
+    "multi_user_saas",
+    "public_registration",
+    "native_mobile_application",
+    "autonomous_ai_actions",
+    "financial_or_tax_advice"
+  ],
+  "server_deployment_gate": {
+    "gate_id": "NEX-V0.1-SERVER-DEPLOYMENT-ACCEPTANCE",
+    "debt_id": "NEX-DEBT-P1-13-001",
+    "status": "deferred_until_private_vps_available",
+    "required_before": ["v0.1-production-deployment", "v0.1-release"],
+    "removed": false,
+    "bypassed": false,
+    "production_readiness_claimed": false
+  },
+  "production_readiness_claimed": false,
+  "transition": {
+    "next_allowed_stage": "NEX-P4-12-FREEZE",
+    "completes_phase_four": true
+  },
+  "reviewed_product_tree_checksum": "e8982a9d49b7a6d8bced7614acbbd0415e0c0f25269331cd8d98524419919666"
+}

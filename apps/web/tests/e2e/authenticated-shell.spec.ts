@@ -464,7 +464,7 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("نمای کلی");
   await expect(page.locator(".ready-badge")).toHaveText("نشست مالک فعال است");
-  await expect(page.getByRole("heading", { name: "نمای کلی پورتفولیو" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "نمای کلی پرتفوی" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "دفتر حساب‌ها" })).toBeVisible();
   const sidebar = page.locator("#desktop-sidebar");
   const main = page.getByRole("main");
@@ -481,12 +481,12 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
     "aria-current",
     "page",
   );
-  await expect(page.getByRole("heading", { name: "ژورنال، دارایی‌ها و تطبیق" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "حسابداری پرتفوی" })).toBeVisible();
   await expect(page.getByText("Opening evidence")).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(sidebar).toBeHidden();
-  await expect(page.getByRole("link", { name: "ژورنال", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "دفتر تراکنش", exact: true })).toHaveAttribute(
     "aria-current",
     "page",
   );
@@ -499,6 +499,7 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await menu.press("Enter");
   const drawer = page.getByRole("dialog", { name: "منوی فضای کاری" });
   await expect(drawer.getByRole("button", { name: "بستن منو" })).toBeFocused();
+  await expect(page.locator(".workspace")).toHaveAttribute("inert", "");
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
   const close = drawer.getByRole("button", { name: "بستن منو" });
   await close.press("Shift+Tab");
@@ -512,6 +513,7 @@ test("Persian authenticated shell is RTL and responsive", async ({ page }) => {
   await drawer.getByRole("link", { name: "تصمیم‌ها" }).click();
   await expect(page).toHaveURL("/fa/decisions");
   await expect(drawer).toBeHidden();
+  await expect(main).toBeFocused();
   await expect(page.getByRole("heading", { name: "فضای کاری هوشمندی تصمیم" })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "تصمیم‌ها و پیشنهادها", exact: true }),
@@ -1066,4 +1068,83 @@ test("persists presentation settings and uses the chosen time zone for evidence"
   await expect(page.locator('time[datetime="2026-11-14T10:00:00Z"]')).toContainText("13:30");
   await page.goto("/");
   await expect(page).toHaveURL("/en/overview");
+});
+
+const workspaceAuditRoutes = [
+  "onboarding",
+  "overview",
+  "assets",
+  "portfolios",
+  "portfolios/portfolio-1",
+  "accounts",
+  "transactions",
+  "transactions/holdings?portfolio=portfolio-1",
+  "transactions/lots?portfolio=portfolio-1",
+  "transactions/imports",
+  "transactions/reconciliation",
+  "decisions",
+  "decisions/records/decision-evaluation-2",
+  "decisions/candidates/candidate-1",
+  "decisions/candidates/candidate-1/risk",
+  "decisions/candidates/candidate-1/impact",
+  "decisions/candidates/candidate-1/scenarios",
+  "decisions/candidates/candidate-1/reviews",
+  "alerts",
+  "alerts/watchlists",
+  "journal?decision=decision-evaluation-2",
+  "exports",
+  "settings",
+] as const;
+
+for (const [index, width] of [320, 768, 1280, 1920].entries()) {
+  for (const locale of ["en", "fa"] as const) {
+    const theme = (index % 2 === 0) === (locale === "en") ? "light" : "dark";
+    test(`workspace audit · ${locale} · ${theme} · ${width}px`, async ({ page }) => {
+      test.setTimeout(120_000);
+      await mockPrivateRuntime(page);
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+
+      for (const route of ["login", "bootstrap", ...workspaceAuditRoutes]) {
+        await test.step(route, async () => {
+          await page.goto(`/${locale}/${route}`);
+          const html = page.locator("html");
+          await expect(html).toHaveAttribute("lang", locale);
+          await expect(html).toHaveAttribute("dir", locale === "fa" ? "rtl" : "ltr");
+          await expect(html).toHaveAttribute("data-theme", theme);
+          const main = page.getByRole("main");
+          await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
+
+          if (route !== "login" && route !== "bootstrap") {
+            await expect(page.locator(".application-shell")).toBeVisible();
+          }
+          await expect(main.locator(".nx-spinner")).toHaveCount(0);
+          await page.evaluate(() => document.fonts.ready.then(() => undefined));
+          const documentFits = await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          );
+          expect(documentFits, `Viewport overflow on /${locale}/${route} at ${width}px`).toBe(true);
+        });
+      }
+    });
+  }
+}
+
+test("language switch keeps a journal link and the back-to-content shortcut is reachable", async ({
+  page,
+}) => {
+  await mockPrivateRuntime(page);
+  await page.goto("/en/journal?decision=decision-evaluation-2");
+  await expect(page.getByRole("heading", { level: 1, name: "Journal" })).toBeVisible();
+  await page.keyboard.press("Tab");
+  const skip = page.locator("a.skip-link");
+  await expect(skip).toBeFocused();
+  await skip.press("Enter");
+  await expect(page.getByRole("main")).toBeFocused();
+  await page.getByRole("link", { name: "Language: فارسی" }).click();
+  await expect(page).toHaveURL("/fa/journal?decision=decision-evaluation-2");
+  await expect(page.getByRole("heading", { level: 1, name: "دفتر نتایج" })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "شناسهٔ تصمیم" })).toHaveValue(
+    "decision-evaluation-2",
+  );
 });

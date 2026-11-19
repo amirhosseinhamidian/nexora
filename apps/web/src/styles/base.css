@@ -11,6 +11,10 @@ a {
   @apply [color:inherit] [text-decoration:none];
 }
 
+:where(code[dir="ltr"], pre[dir="ltr"]) {
+  @apply [unicode-bidi:isolate] wrap-anywhere;
+}
+
 button,
 input,
 textarea {

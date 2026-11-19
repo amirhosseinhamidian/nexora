@@ -10,6 +10,7 @@ const replace = vi.fn();
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en/login",
+  useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace, refresh }),
 }));
 vi.mock("next-themes", () => ({ useTheme: () => ({ resolvedTheme: "dark", setTheme: vi.fn() }) }));

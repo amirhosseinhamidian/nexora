@@ -4,6 +4,7 @@
   --color-nx-surface: var(--nx-surface);
   --color-nx-surface-raised: var(--nx-surface-raised);
   --color-nx-border: var(--nx-border);
+  --color-nx-control-border: var(--nx-control-border);
   --color-nx-text: var(--nx-text);
   --color-nx-text-muted: var(--nx-text-muted);
   --color-nx-primary: var(--nx-primary);
@@ -13,6 +14,7 @@
   --color-nx-success: var(--nx-success);
   --color-nx-warning: var(--nx-warning);
   --color-nx-danger: var(--nx-danger);
+  --color-nx-danger-on: var(--nx-danger-on);
   --color-nx-info-soft: var(--nx-info-soft);
   --color-nx-success-soft: var(--nx-success-soft);
   --color-nx-warning-soft: var(--nx-warning-soft);
@@ -49,20 +51,22 @@
   --nx-surface: #ffffff;
   --nx-surface-raised: #f8fafc;
   --nx-border: #dce4ec;
+  --nx-control-border: #748398;
   --nx-text: #10203b;
-  --nx-text-muted: #64748b;
+  --nx-text-muted: #53647a;
   --nx-primary: #0aa887;
-  --nx-primary-strong: #087f6a;
+  --nx-primary-strong: #086858;
   --nx-primary-soft: #e2f8f2;
-  --nx-info: #1685ea;
-  --nx-success: #087f6a;
-  --nx-warning: #d98c00;
-  --nx-danger: #d9435f;
+  --nx-info: #075fab;
+  --nx-success: #086858;
+  --nx-warning: #885100;
+  --nx-danger: #b52642;
+  --nx-danger-on: #ffffff;
   --nx-info-soft: #e8f3ff;
   --nx-success-soft: #e2f8f2;
   --nx-warning-soft: #fff5dc;
   --nx-danger-soft: #ffedf1;
-  --nx-focus: #1685ea;
+  --nx-focus: #1b65bf;
   --nx-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
@@ -73,6 +77,7 @@
   --nx-surface: #121a22;
   --nx-surface-raised: #18222c;
   --nx-border: #293541;
+  --nx-control-border: #62778c;
   --nx-text: #f4f7fa;
   --nx-text-muted: #9eacbd;
   --nx-primary: #2ee6c2;
@@ -82,6 +87,7 @@
   --nx-success: #5af0d2;
   --nx-warning: #ffb627;
   --nx-danger: #ff6b7f;
+  --nx-danger-on: #230a10;
   --nx-info-soft: #112d42;
   --nx-success-soft: #12372f;
   --nx-warning-soft: #382b0e;
@@ -95,7 +101,7 @@
 }
 
 :focus-visible {
-  @apply [outline:3px_solid_color-mix(in_srgb,_var(--nx-focus)_55%,_transparent)];
+  @apply outline-3 outline-solid outline-nx-focus;
   @apply [outline-offset:2px];
 }
 

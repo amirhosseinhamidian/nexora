@@ -20,8 +20,13 @@ import { describe, expect, it, vi } from "vitest";
 describe("shared UI primitives", () => {
   it("exposes labelled form controls and contextual errors", () => {
     render(
-      <FormField error="Enter a valid name." id="portfolio-name" label="Portfolio name">
-        <Input aria-describedby="portfolio-name-error" aria-invalid="true" id="portfolio-name" />
+      <FormField
+        description="Use a name you recognise."
+        error="Enter a valid name."
+        id="portfolio-name"
+        label="Portfolio name"
+      >
+        <Input id="portfolio-name" />
       </FormField>,
     );
 
@@ -30,6 +35,9 @@ describe("shared UI primitives", () => {
       "true",
     );
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid name.");
+    expect(screen.getByRole("textbox", { name: "Portfolio name" })).toHaveAccessibleDescription(
+      "Use a name you recognise. Enter a valid name.",
+    );
   });
 
   it("keeps choice and switch labels accessible", () => {
@@ -130,10 +138,12 @@ describe("shared UI primitives", () => {
     rerender(dialog(true));
 
     expect(document.body.style.overflow).toBe("hidden");
+    expect(trigger).toHaveAttribute("inert");
     expect(screen.getByRole("dialog", { name: "Archive this portfolio?" })).toBeVisible();
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onCancel).toHaveBeenCalledOnce();
     rerender(dialog(false));
+    expect(trigger).not.toHaveAttribute("inert");
     expect(trigger).toHaveFocus();
     expect(document.body.style.overflow).toBe("");
   });
@@ -179,6 +189,10 @@ describe("shared UI primitives", () => {
       "Allocation across asset classes",
     );
     expect(screen.getByRole("table", { name: "Allocation values" })).toHaveTextContent("25%");
+    expect(screen.getByRole("region", { name: "Allocation values" })).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
     expect(screen.queryByRole("img", { name: "Allocation graphic" })).not.toBeInTheDocument();
   });
 

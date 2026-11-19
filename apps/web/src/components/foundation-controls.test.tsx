@@ -6,15 +6,21 @@ import { FoundationControls } from "./foundation-controls";
 
 const setTheme = vi.fn();
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/en" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en/journal",
+  useSearchParams: () => new URLSearchParams({ decision: "decision-1" }),
+}));
 vi.mock("next-themes", () => ({ useTheme: () => ({ resolvedTheme: "dark", setTheme }) }));
 
 describe("FoundationControls", () => {
   beforeEach(() => setTheme.mockClear());
 
-  it("links to the alternate locale", () => {
+  it("preserves the current record when switching languages", () => {
     render(<FoundationControls dictionary={en.header} locale="en" />);
-    expect(screen.getByRole("link", { name: /Language: FA/ })).toHaveAttribute("href", "/fa");
+    expect(screen.getByRole("link", { name: "Language: فارسی" })).toHaveAttribute(
+      "href",
+      "/fa/journal?decision=decision-1",
+    );
   });
 
   it("switches from dark to light", () => {

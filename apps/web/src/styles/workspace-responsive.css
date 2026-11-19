@@ -46,6 +46,15 @@
 }
 
 @media (max-width: 620px) {
+  .topbar {
+    @apply gap-2;
+  }
+
+  .topbar-actions,
+  .foundation-controls {
+    @apply gap-1.5;
+  }
+
   .mode-pill {
     @apply hidden;
   }
@@ -105,7 +114,11 @@
 
   .decision-evidence-heading,
   .source-reference-grid,
-  .evidence-payload {
+  .evidence-payload,
+  .decision-review-form,
+  .risk-policy-grid,
+  .portfolio-impact-summary,
+  .alert-lineage {
     @apply grid-cols-[1fr];
   }
 

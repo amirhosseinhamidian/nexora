@@ -8,7 +8,10 @@ import { AuthenticatedShell } from "./authenticated-shell";
 vi.mock("@/components/foundation-controls", () => ({
   FoundationControls: () => <div>controls</div>,
 }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/en/overview" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en/overview",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("@/lib/api-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api-client")>("@/lib/api-client");
   return { ...actual, apiRequest: vi.fn() };

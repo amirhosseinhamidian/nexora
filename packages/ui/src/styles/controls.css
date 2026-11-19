@@ -28,7 +28,7 @@
   @apply [background:var(--nx-primary-strong)] text-nx-surface;
 }
 .nx-button--secondary {
-  @apply border-nx-border [background:var(--nx-surface)] text-nx-text;
+  @apply border-nx-control-border [background:var(--nx-surface)] text-nx-text;
 }
 .nx-button--secondary:hover:not(:disabled),
 .nx-button--ghost:hover:not(:disabled) {
@@ -38,10 +38,10 @@
   @apply [background:transparent] text-nx-text-muted;
 }
 .nx-button--danger {
-  @apply [background:var(--nx-danger)] [color:#fff];
+  @apply bg-nx-danger text-nx-danger-on;
 }
 .nx-button--danger:hover:not(:disabled) {
-  @apply [background:color-mix(in_srgb,_var(--nx-danger)_82%,_#000)];
+  @apply underline;
 }
 .nx-control--sm {
   @apply min-block-[var(--nx-control-sm)] text-[length:0.82rem];
@@ -53,7 +53,7 @@
   @apply min-block-[var(--nx-control-lg)] text-[length:1rem];
 }
 .nx-field {
-  @apply grid gap-[var(--nx-space-2)];
+  @apply grid min-inline-0 gap-[var(--nx-space-2)];
 }
 .nx-field__label-row {
   @apply flex items-baseline justify-between gap-[var(--nx-space-3)];
@@ -75,17 +75,17 @@
   @apply text-nx-danger;
 }
 .nx-input {
-  @apply inline-full min-block-[var(--nx-control-md)] [padding:0.65rem_0.8rem] [border:1px_solid_var(--nx-border)];
+  @apply inline-full min-inline-0 min-block-[var(--nx-control-md)] [padding:0.65rem_0.8rem] [border:1px_solid_var(--nx-control-border)];
   @apply rounded-nx-md [background:var(--nx-surface)] text-nx-text [transition:border-color_160ms_ease,_box-shadow_160ms_ease];
 }
 .nx-input::placeholder {
-  @apply [color:color-mix(in_srgb,_var(--nx-text-muted)_75%,_transparent)];
+  @apply text-nx-text-muted opacity-100;
 }
 .nx-input:hover:not(:disabled) {
   @apply [border-color:color-mix(in_srgb,_var(--nx-primary)_65%,_var(--nx-border))];
 }
-.nx-input:focus {
-  @apply border-nx-focus [box-shadow:0_0_0_3px_color-mix(in_srgb,_var(--nx-focus)_16%,_transparent)] [outline:none];
+.nx-input:focus-visible {
+  @apply border-nx-focus outline-3 outline-solid outline-nx-focus outline-offset-2;
 }
 .nx-input:disabled {
   @apply cursor-not-allowed opacity-[0.58];
@@ -115,7 +115,7 @@
   @apply list-none p-1 rounded-nx-md border border-nx-border bg-nx-surface text-nx-text [box-shadow:var(--nx-shadow)];
 }
 .nx-select__option {
-  @apply flex min-h-10 items-center justify-between gap-2 rounded-nx-sm px-3 py-2 cursor-pointer;
+  @apply flex min-h-11 items-center justify-between gap-2 rounded-nx-sm px-3 py-2 cursor-pointer;
 }
 .nx-select__option-text {
   @apply grid min-inline-0 gap-1 wrap-anywhere;
@@ -138,7 +138,7 @@
 }
 .nx-choice,
 .nx-switch {
-  @apply inline-flex items-center gap-[var(--nx-space-2)] text-nx-text cursor-pointer;
+  @apply inline-flex min-block-[var(--nx-control-md)] items-center gap-[var(--nx-space-2)] text-nx-text cursor-pointer;
 }
 .nx-choice input {
   @apply inline-[1.1rem] block-[1.1rem] m-0 [accent-color:var(--nx-primary-strong)];
@@ -147,7 +147,7 @@
   @apply absolute inline-[1px] block-[1px] overflow-hidden [clip-path:inset(50%)];
 }
 .nx-switch__track {
-  @apply inline-flex inline-[2.6rem] block-6 [flex:0_0_auto] items-center p-[0.15rem] [border:1px_solid_var(--nx-border)];
+  @apply inline-flex inline-[2.6rem] block-6 [flex:0_0_auto] items-center p-[0.15rem] [border:1px_solid_var(--nx-control-border)];
   @apply rounded-[999px] [background:var(--nx-surface-raised)] [transition:background-color_160ms_ease];
 }
 .nx-switch__track > span {
@@ -163,6 +163,13 @@
   @apply [transform:translateX(-1.05rem)];
 }
 .nx-switch input:focus-visible + .nx-switch__track {
-  @apply [outline:3px_solid_color-mix(in_srgb,_var(--nx-focus)_55%,_transparent)];
+  @apply outline-3 outline-solid outline-nx-focus;
   @apply [outline-offset:2px];
+}
+
+@media (pointer: coarse) {
+  .nx-control--sm,
+  .nx-icon-button {
+    @apply min-block-[var(--nx-control-md)];
+  }
 }

@@ -60,6 +60,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .nx-button:hover:not(:disabled) {
+    @apply transform-none;
+  }
+
   .nx-button,
   .nx-input,
   .nx-switch__track,

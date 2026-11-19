@@ -196,21 +196,25 @@
   },
   "header": {
     "environment": "Private workspace",
-    "mode": "RESEARCH MODE · PAPER / SHADOW",
+    "mode": "Research and simulation",
     "language": "Language",
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "Use device setting",
+    "locales": {
+      "en": "English",
+      "fa": "فارسی"
+    }
   },
   "auth": {
-    "eyebrow": "PRIVATE SINGLE-OWNER ACCESS",
+    "eyebrow": "Private access",
     "loginTitle": "Continue with your passkey",
-    "loginDescription": "Nexora uses a device-bound passkey. No password or exchange credential is accepted.",
+    "loginDescription": "Approve the request on your device to sign in.",
     "loginAction": "Sign in with passkey",
-    "bootstrapTitle": "Secure owner bootstrap",
-    "bootstrapDescription": "Use the one-time token created locally, then register the first passkey.",
-    "bootstrapToken": "One-time bootstrap token",
+    "bootstrapTitle": "Set up owner access",
+    "bootstrapDescription": "Enter the one-time setup code and register your first passkey.",
+    "bootstrapToken": "One-time setup code",
     "bootstrapAction": "Register owner passkey",
     "bootstrapLink": "First-time setup",
     "loginLink": "Return to sign in",
@@ -218,9 +222,10 @@
     "recoveryTitle": "Save recovery codes now",
     "recoveryDescription": "These single-use codes are shown once. Store them outside this browser before continuing.",
     "recoverySaved": "I saved the recovery codes",
-    "unavailable": "Passkeys require a supported browser in a secure private origin.",
-    "denied": "The secure authentication request was not completed.",
-    "failed": "Authentication could not be completed. No credential was stored in the browser."
+    "unavailable": "Open the secure Nexora address in a browser that supports passkeys.",
+    "denied": "Sign-in was not approved. Try again and check the request on your device.",
+    "failed": "Sign-in could not be completed. Check your connection and try again.",
+    "bootstrapTokenHint": "Use the code generated on this computer when you set up Nexora."
   },
   "shell": {
     "eyebrow": "NEX-P2-11",
@@ -551,7 +556,7 @@
   "decisionExperience": {
     "eyebrow": "INTEGRATED DECISION INTELLIGENCE",
     "title": "Decision intelligence workspace",
-    "description": "Move from immutable provider evidence to human review, outcome history, alerts and bounded monitoring without leaving the private owner workspace.",
+    "description": "Review Decision evidence, record your assessment and follow related outcomes and alerts.",
     "activeDecision": "Active Decision context",
     "noActiveDecision": "Select Decision evidence to connect its outcome journal."
   },
@@ -1049,16 +1054,19 @@
     "boundary": "Journal entries are owner-authored and append-only. AI and providers cannot rewrite them, and they cannot authorize execution, create orders, post transactions or move funds."
   },
   "states": {
-    "loadingTitle": "Restoring secure session",
-    "loadingDescription": "Checking the private runtime without exposing session material.",
-    "offlineTitle": "Nexora is offline",
-    "offlineDescription": "The shell could not reach the private API. Data was not changed.",
+    "loadingTitle": "Loading your workspace",
+    "loadingDescription": "Please wait a moment.",
+    "offlineTitle": "Could not reach Nexora",
+    "offlineDescription": "Check your connection and the server, then try again.",
     "retry": "Try again",
     "expiredTitle": "Session expired",
-    "expiredDescription": "Your server-side session is no longer valid. Sign in again with your passkey.",
+    "expiredDescription": "Sign in again with your passkey to continue.",
     "signIn": "Go to sign in",
     "errorTitle": "The workspace could not load",
-    "errorDescription": "A bounded runtime error occurred. Reload to retry safely.",
-    "reload": "Reload"
+    "errorDescription": "Reload the page to try again.",
+    "reload": "Reload",
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "Check the address or return to the overview.",
+    "backToOverview": "Back to overview"
   }
 }

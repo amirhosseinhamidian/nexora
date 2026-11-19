@@ -7,7 +7,7 @@ import type {
   RegistrationOptionsResponse,
   SessionResponse,
 } from "@nexora/contracts";
-import { Fingerprint, KeyRound, ShieldCheck } from "lucide-react";
+import { Fingerprint, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -101,6 +101,9 @@ export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPa
 
   return (
     <div className="auth-page">
+      <a className="skip-link" href="#main-content">
+        {dictionary.skipToContent}
+      </a>
       <header className="auth-header">
         <Link className="brand" dir="ltr" href={`/${locale}`}>
           <span aria-hidden="true" className="brand-mark">
@@ -110,7 +113,7 @@ export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPa
         </Link>
         <FoundationControls dictionary={dictionary.header} locale={locale} />
       </header>
-      <main className="auth-main" id="main-content">
+      <main className="auth-main" id="main-content" tabIndex={-1}>
         <section className="auth-card">
           <span className="auth-icon">
             <ShieldCheck aria-hidden="true" size={28} />
@@ -145,18 +148,20 @@ export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPa
             <>
               <h1>{auth.bootstrapTitle}</h1>
               <p className="auth-description">{auth.bootstrapDescription}</p>
-              <FormField id="bootstrap-token" label={auth.bootstrapToken}>
-                <div className="secure-input">
-                  <KeyRound aria-hidden="true" size={19} />
-                  <Input
-                    autoComplete="off"
-                    id="bootstrap-token"
-                    onChange={(event) => setBootstrapToken(event.target.value.trim())}
-                    spellCheck={false}
-                    type="password"
-                    value={bootstrapToken}
-                  />
-                </div>
+              <FormField
+                id="bootstrap-token"
+                label={auth.bootstrapToken}
+                description={auth.bootstrapTokenHint}
+              >
+                <Input
+                  autoComplete="off"
+                  dir="ltr"
+                  id="bootstrap-token"
+                  onChange={(event) => setBootstrapToken(event.target.value.trim())}
+                  spellCheck={false}
+                  type="password"
+                  value={bootstrapToken}
+                />
               </FormField>
               <Button
                 className="primary-button"

@@ -9,7 +9,15 @@ import { Drawer, IconButton } from "@nexora/ui/primitives";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { FoundationControls } from "@/components/foundation-controls";
 import { StatePanel } from "@/components/state-panel";
@@ -53,12 +61,23 @@ export function useWorkspace() {
 
 export function AuthenticatedShell({ children, dictionary, locale }: AuthenticatedShellProps) {
   const pathname = usePathname();
+  const previousPath = useRef(pathname);
   const [state, setState] = useState<ShellState>("loading");
   const [session, setSession] = useState<SessionResponse>();
   const [servicesReady, setServicesReady] = useState(false);
   const [display, setDisplay] = useState<{ ownerId: string; preferences: DisplayPreferences }>();
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = () => setMobileOpen(false);
+
+  useEffect(() => {
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
+    if (state !== "authenticated") return;
+    const focus = window.requestAnimationFrame(() => {
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(focus);
+  }, [pathname, state]);
 
   useEffect(() => {
     const desktop = window.matchMedia("(width > 900px)");

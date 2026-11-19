@@ -9,7 +9,7 @@
 }
 
 :where(a, button, input, select, textarea, summary):focus-visible {
-  @apply [outline:3px_solid_var(--nx-primary-strong)];
+  @apply outline-3 outline-solid outline-nx-focus;
   @apply [outline-offset:3px];
 }
 
@@ -134,7 +134,7 @@
 }
 
 .control-button {
-  @apply min-h-[2.35rem] [padding:0.4rem_0.7rem] cursor-pointer;
+  @apply min-h-11 [padding:0.4rem_0.7rem] cursor-pointer;
 }
 
 .control-button:hover {
@@ -142,11 +142,11 @@
 }
 
 .control-button.icon-only {
-  @apply w-[2.35rem] justify-center p-0;
+  @apply w-11 justify-center p-0;
 }
 
 .main-content {
-  @apply min-inline-0 [padding-block:clamp(2rem,_5vw,_3.5rem)];
+  @apply min-inline-0 wrap-anywhere [padding-block:clamp(2rem,_5vw,_3.5rem)];
   @apply [padding-inline:clamp(1rem,_3vw,_2.5rem)];
 }
 

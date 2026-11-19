@@ -336,8 +336,8 @@ def validate_runtime_markers() -> None:
             _require(key in operations, f"{locale} P2-11 dictionary key missing: {key}")
     for marker in (
         "Persian authenticated shell is RTL and responsive",
-        'name: "ژورنال، دارایی‌ها و تطبیق"',  # noqa: RUF001
-        'name: "ژورنال"',
+        'name: "حسابداری پرتفوی"',
+        'name: "دفتر تراکنش"',
         'page.getByText("Opening evidence")',
     ):
         _require(marker in browser, f"P2-11 browser acceptance marker missing: {marker}")

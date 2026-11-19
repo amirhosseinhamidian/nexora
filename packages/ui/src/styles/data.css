@@ -1,6 +1,10 @@
 .nx-table-scroll {
-  @apply max-inline-full overflow-auto [border:1px_solid_var(--nx-border)];
+  @apply min-inline-0 max-inline-full overflow-auto overscroll-x-contain [border:1px_solid_var(--nx-border)];
   @apply rounded-nx-lg;
+}
+
+.nx-disclosure > summary {
+  @apply min-h-11 py-2 cursor-pointer;
 }
 .nx-table {
   @apply inline-full border-collapse [background:var(--nx-surface)] text-[length:0.86rem];

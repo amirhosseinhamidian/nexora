@@ -1,0 +1,42 @@
+{
+  "schema_version": "nexora-experience-hardening-ui-v1",
+  "decision_id": "NEX-P4-10",
+  "status": "candidate",
+  "p4_09_prerequisite": {
+    "freeze_commit_sha": "86c013131de77e036e0a8b81c98ea8a2644b6891",
+    "freeze_record_path": "artifacts/p4-09/exports-settings-ui-freeze.json",
+    "freeze_record_checksum": "142d49d36483801bd1089d84756abfb681c74b7bc214f5f159a9103270f5d943",
+    "successful_ci_run_id": 44490292631
+  },
+  "copy": {
+    "locales": ["en", "fa"],
+    "matching_message_keys": true,
+    "preserving_route_context_on_language_switch": true
+  },
+  "interaction": {
+    "skip_links": true,
+    "focus_moves_to_workspace_on_route_change": true,
+    "dialog_background_is_inert": true,
+    "dialog_restores_focus": true,
+    "form_errors_are_associated_with_controls": true,
+    "scrollable_tables_have_a_name": true
+  },
+  "presentation": {
+    "directions": {"en": "ltr", "fa": "rtl"},
+    "themes": ["light", "dark"],
+    "viewport_widths_px": [320, 768, 1280, 1920],
+    "reduced_motion": true,
+    "text_token_contrast_min": 4.5,
+    "control_token_contrast_min": 3,
+    "mixed_direction_identifiers_isolated": true
+  },
+  "boundary": {
+    "manual_visual_acceptance_stage": "NEX-P4-11",
+    "backend_contract_changed": false,
+    "production_readiness_claimed": false
+  },
+  "transition": {
+    "next_allowed_stage": "NEX-P4-10-FREEZE",
+    "post_freeze_stage": "NEX-P4-11"
+  }
+}

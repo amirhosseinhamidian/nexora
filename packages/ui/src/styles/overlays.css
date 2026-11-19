@@ -3,7 +3,7 @@
   @apply [backdrop-filter:blur(4px)];
 }
 .nx-overlay__panel {
-  @apply flex [inline-size:min(34rem,_100%)] [max-block-size:min(44rem,_calc(100vh_-_2rem))] flex-col overflow-auto;
+  @apply flex [inline-size:min(34rem,_100%)] [max-block-size:min(44rem,_calc(100dvh_-_2rem))] flex-col overflow-auto overscroll-contain wrap-anywhere;
   @apply [border:1px_solid_var(--nx-border)];
   @apply rounded-nx-lg [background:var(--nx-surface)] [box-shadow:0_1.5rem_4rem_rgb(3_14_24_/_0.28)];
 }
@@ -37,14 +37,18 @@
 }
 .nx-overlay--drawer .nx-overlay__panel,
 .nx-overlay--sheet .nx-overlay__panel {
-  @apply [inline-size:min(26rem,_calc(100vw_-_2rem))] max-block-[100vh] min-block-[100vh] [border-block:0];
+  @apply [inline-size:min(26rem,_calc(100vw_-_2rem))] max-block-[100dvh] min-block-[100dvh] [border-block:0];
   @apply [border-inline-start:0];
   @apply [border-radius:0];
   @apply [border-start-end-radius:var(--nx-radius-lg)];
   @apply [border-end-end-radius:var(--nx-radius-lg)];
 }
 .nx-tooltip {
+  --nx-tooltip-offset: -50%;
   @apply relative inline-flex;
+}
+[dir="rtl"] .nx-tooltip {
+  --nx-tooltip-offset: 50%;
 }
 .nx-tooltip__trigger {
   @apply inline-flex;
@@ -53,11 +57,11 @@
   @apply absolute z-130 [inset-block-end:calc(100%_+_0.5rem)];
   @apply start-[50%] inline-[max-content] [max-inline-size:min(18rem,_calc(100vw_-_2rem))] [padding:0.45rem_0.65rem] rounded-nx-sm;
   @apply [background:var(--nx-text)] text-nx-surface text-[length:0.76rem] [line-height:1.45] opacity-[0] pointer-events-none;
-  @apply [transform:translateX(-50%)_translateY(0.25rem)] [transition:opacity_120ms_ease,_transform_120ms_ease];
+  @apply [transform:translateX(var(--nx-tooltip-offset))_translateY(0.25rem)] [transition:opacity_120ms_ease,_transform_120ms_ease];
 }
 .nx-tooltip:hover .nx-tooltip__content,
 .nx-tooltip:focus-within .nx-tooltip__content {
-  @apply opacity-[1] [transform:translateX(-50%)_translateY(0)];
+  @apply opacity-[1] [transform:translateX(var(--nx-tooltip-offset))_translateY(0)];
 }
 .nx-popover,
 .nx-dropdown {

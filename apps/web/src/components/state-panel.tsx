@@ -13,7 +13,7 @@ export function StatePanel({ action, description, kind, title }: StatePanelProps
   const Icon = kind === "offline" ? WifiOff : AlertTriangle;
   return (
     <main className="centered-state" id="main-content">
-      <section aria-live="polite" className="state-card">
+      <section className="state-card">
         <span className={`state-icon ${kind}`}>
           {kind === "loading" ? (
             <Spinner label="" size="lg" />
@@ -21,8 +21,10 @@ export function StatePanel({ action, description, kind, title }: StatePanelProps
             <Icon aria-hidden="true" size={24} />
           )}
         </span>
-        <h1>{title}</h1>
-        <p>{description}</p>
+        <div role={kind === "loading" ? "status" : "alert"}>
+          <h1>{title}</h1>
+          <p>{description}</p>
+        </div>
         {action?.href ? (
           <Link className="primary-button" href={action.href}>
             {action.label}

@@ -3,7 +3,7 @@
 import { IconButton } from "@nexora/ui/primitives";
 import { Languages, Moon, Sun } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 
@@ -18,6 +18,7 @@ type FoundationControlsProps = {
 
 export function FoundationControls({ dictionary, locale }: FoundationControlsProps) {
   const pathname = usePathname();
+  const search = useSearchParams().toString();
   const { resolvedTheme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => undefined,
@@ -34,14 +35,14 @@ export function FoundationControls({ dictionary, locale }: FoundationControlsPro
   return (
     <div className="foundation-controls">
       <Link
-        aria-label={`${dictionary.language}: ${nextLocale.toUpperCase()}`}
+        aria-label={`${dictionary.language}: ${dictionary.locales[nextLocale]}`}
         className="control-button"
-        href={localePath}
+        href={search ? `${localePath}?${search}` : localePath}
         hrefLang={nextLocale}
         onNavigate={() => rememberLocale(nextLocale)}
       >
         <Languages aria-hidden="true" size={18} />
-        <span>{nextLocale.toUpperCase()}</span>
+        <bdi lang={nextLocale}>{dictionary.locales[nextLocale]}</bdi>
       </Link>
       <IconButton
         variant="ghost"

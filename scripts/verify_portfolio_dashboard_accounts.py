@@ -246,7 +246,7 @@ def validate_runtime_markers() -> None:
             _require(key in dashboard, f"{locale} dashboard dictionary key missing: {key}")
     for marker in (
         "Persian authenticated shell is RTL and responsive",
-        'name: "نمای کلی پورتفولیو"',
+        'name: "نمای کلی پرتفوی"',
         'name: "دفتر حساب‌ها"',  # noqa: RUF001
     ):
         _require(marker in browser, f"browser acceptance marker missing: {marker}")

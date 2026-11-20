@@ -93,6 +93,7 @@ def test_known_infrastructure_variables_do_not_enter_runtime_settings() -> None:
         {
             "NEXORA_DEV_DB_PASSWORD_FILE": "/private/dev-password",
             "NEXORA_DEV_DB_PORT": "55432",
+            "NEXORA_LOCAL_DIR": "/private/test-compose-directory",
             "NEXORA_MIGRATION_DATABASE_DSN_FILE": "/private/migration-dsn",
             "NEXORA_LOG_FILE": "/private/nexora.jsonl",
         }
@@ -101,9 +102,10 @@ def test_known_infrastructure_variables_do_not_enter_runtime_settings() -> None:
     assert settings == load_settings({})
 
 
-def test_infrastructure_variable_typo_is_still_rejected() -> None:
-    with pytest.raises(ConfigurationError, match="NEXORA_MIGRATION_DATABASE_DSN_FIL"):
-        load_settings({"NEXORA_MIGRATION_DATABASE_DSN_FIL": "/private/migration-dsn"})
+@pytest.mark.parametrize("variable", ("NEXORA_MIGRATION_DATABASE_DSN_FIL", "NEXORA_LOCAL_DI"))
+def test_infrastructure_variable_typo_is_still_rejected(variable: str) -> None:
+    with pytest.raises(ConfigurationError, match=variable):
+        load_settings({variable: "/private/test-path"})
 
 
 def test_blank_value_is_rejected_without_echoing_it() -> None:

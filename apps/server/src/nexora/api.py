@@ -262,6 +262,8 @@ from nexora.watchlists import (
 CORRELATION_HEADER = "X-Correlation-ID"
 CSRF_HEADER = "X-CSRF-Token"
 CSRF_COOKIE_NAME = "__Host-nexora_csrf"
+PASSKEY_LOGIN_OPTIONS_PATH = "/v1/auth/authentication/options"
+PASSKEY_LOGIN_COMPLETE_PATH = "/v1/auth/authentication/complete"
 
 
 class LivenessResponse(BaseModel):
@@ -1103,8 +1105,13 @@ def create_app(
                     ),
                     correlation_id,
                 )
+            # Fresh login proves identity with a new assertion instead of using session authority.
+            fresh_passkey_login = request.method == "POST" and request.url.path in {
+                PASSKEY_LOGIN_OPTIONS_PATH,
+                PASSKEY_LOGIN_COMPLETE_PATH,
+            }
             session_token = request.cookies.get(SESSION_COOKIE_NAME)
-            if session_token is not None:
+            if session_token is not None and not fresh_passkey_login:
                 csrf_token = request.headers.get(CSRF_HEADER)
                 repository = resolved_container.identity_repository
                 if repository is None or csrf_token is None:
@@ -1399,7 +1406,7 @@ def create_app(
         )
 
     @application.post(
-        "/v1/auth/authentication/options",
+        PASSKEY_LOGIN_OPTIONS_PATH,
         response_model=AuthenticationOptionsResponse,
         operation_id="createAuthenticationOptions",
     )
@@ -1407,7 +1414,7 @@ def create_app(
         return authentication_options_payload()
 
     @application.post(
-        "/v1/auth/authentication/complete",
+        PASSKEY_LOGIN_COMPLETE_PATH,
         response_model=SessionResponse,
         operation_id="completeAuthentication",
     )

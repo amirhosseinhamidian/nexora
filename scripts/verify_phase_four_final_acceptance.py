@@ -193,19 +193,21 @@ def main() -> int:
         if args.command == "capture":
             record = build_record(contract, p4_11, candidate_identity(contract), product.load_json(args.ci_evidence))
             product.write_evidence(args.output, record)
-        elif args.command == "verify-record":
-            record = product.load_json(args.path)
+        elif args.command == "verify-record" or RECORD_PATH.exists():
+            path = args.path if args.command == "verify-record" else RECORD_PATH
+            record = product.load_json(path)
             validate_final_record(record, contract, p4_11)
+            candidate = record["candidate_commit_sha"]
+            candidate_tree = git_output("rev-parse", f"{candidate}^{{tree}}").decode().strip()
+            product.require(candidate_tree == record["candidate_tree_sha"], "recorded candidate Git tree drift")
+            validate_reviewed_product_tree(contract, candidate)
         else:
             candidate = git_output("rev-parse", "HEAD").decode().strip()
             validate_reviewed_product_tree(contract, candidate)
             print(f"contract_checksum={CONTRACT_CHECKSUM}")
             print("NEX_P4_12_FINAL_ACCEPTANCE_CANDIDATE=PASS")
-            if not RECORD_PATH.exists():
-                print("NEX_P4_12_FREEZE=PENDING_SAME_SHA_CI")
-                return 0
-            record = product.load_json(RECORD_PATH)
-            validate_final_record(record, contract, p4_11)
+            print("NEX_P4_12_FREEZE=PENDING_SAME_SHA_CI")
+            return 0
         print(f"candidate_commit_sha={record['candidate_commit_sha']}")
         print(f"record_checksum={record['record_checksum']}")
         print("NEX_P4_12_FINAL_ACCEPTANCE_RECORD=PASS")

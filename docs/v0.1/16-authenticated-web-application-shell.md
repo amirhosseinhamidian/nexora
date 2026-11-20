@@ -29,6 +29,16 @@ The opaque session token is available only to the server through
 in browser storage. The API client rejects absolute, protocol-relative and
 non-`/api` targets.
 
+For QA-01-001, `POST /v1/auth/authentication/options` and
+`POST /v1/auth/authentication/complete` start a fresh passkey ceremony and use
+the exact configured Origin and JSON checks. The CSRF check for existing
+sessions applies to session-authorized actions, including reauthentication
+and rotation. An expired, revoked or replaced cookie can accompany a login
+request because the assertion and single-use challenge establish the new
+session. Successful verification replaces both cookies. A failed or
+cancelled attempt preserves the cookies so a concurrent tab's sign-in can
+finish independently.
+
 Exports are never mounted into the Web container or served statically. An
 authenticated owner may download only an artifact in their own `export`
 namespace; missing or invalid identities return 404 and integrity failures fail

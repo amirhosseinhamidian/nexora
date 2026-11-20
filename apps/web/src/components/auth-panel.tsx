@@ -25,14 +25,23 @@ type AuthPanelProps = {
   resumeOnboarding?: boolean;
 };
 
-function errorMessage(error: unknown, dictionary: Dictionary["auth"]): string {
+function errorMessage(
+  error: unknown,
+  dictionary: Dictionary["auth"],
+  loginStep?: "request" | "passkey",
+): string {
   if (error instanceof Error && error.message === "WEBAUTHN_UNAVAILABLE")
     return dictionary.unavailable;
   if (error instanceof DOMException && ["AbortError", "NotAllowedError"].includes(error.name)) {
     return dictionary.denied;
   }
-  if (error instanceof ApiRequestError && error.code === "AUTHENTICATION_DENIED")
-    return dictionary.denied;
+  if (loginStep === "passkey") return dictionary.denied;
+  if (error instanceof ApiRequestError) {
+    if (error.code === "AUTHENTICATION_DENIED") return dictionary.denied;
+    if (loginStep === "request" && error.code === "CSRF_DENIED") return dictionary.sessionConflict;
+    if (loginStep === "request" && error.code === "ORIGIN_DENIED") return dictionary.originDenied;
+  }
+  if (loginStep === "request" && error instanceof TypeError) return dictionary.connectionFailed;
   return dictionary.failed;
 }
 
@@ -47,12 +56,15 @@ export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPa
   async function login() {
     setBusy(true);
     setError(undefined);
+    let step: "request" | "passkey" = "request";
     try {
       const options = await apiRequest<AuthenticationOptionsResponse>(
         "/api/v1/auth/authentication/options",
         { body: {}, method: "POST", signalSessionExpiry: false },
       );
+      step = "passkey";
       const assertion = await createPasskeyAssertion(options);
+      step = "request";
       await apiRequest<SessionResponse>("/api/v1/auth/authentication/complete", {
         body: assertion,
         method: "POST",
@@ -61,7 +73,7 @@ export function AuthPanel({ dictionary, locale, mode, resumeOnboarding }: AuthPa
       router.replace(resumeOnboarding ? `/${locale}/onboarding` : `/${locale}`);
       router.refresh();
     } catch (caught) {
-      setError(errorMessage(caught, auth));
+      setError(errorMessage(caught, auth, step));
     } finally {
       setBusy(false);
     }

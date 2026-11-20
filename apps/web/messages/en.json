@@ -224,7 +224,10 @@
     "recoverySaved": "I saved the recovery codes",
     "unavailable": "Open the secure Nexora address in a browser that supports passkeys.",
     "denied": "Sign-in was not approved. Try again and check the request on your device.",
-    "failed": "Sign-in could not be completed. Check your connection and try again.",
+    "failed": "Sign-in could not be completed. Try again.",
+    "connectionFailed": "Could not connect to Nexora. Check your connection and try again.",
+    "sessionConflict": "The saved session could not be checked. Reload the page and try signing in again.",
+    "originDenied": "Open the secure Nexora address to sign in.",
     "bootstrapTokenHint": "Use the code generated on this computer when you set up Nexora."
   },
   "shell": {

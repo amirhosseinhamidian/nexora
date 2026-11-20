@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import importlib.util
+import io
+import sys
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -80,6 +85,25 @@ class PhaseFourFinalAcceptanceTests(unittest.TestCase):
         self.ci["workflows"][workflow]["head_sha"] = "c" * 40
         with self.assertRaisesRegex(product.ProductAcceptanceError, "CI head SHA drift"):
             acceptance.build_record(self.contract, self.p4_11, self.identity, self.ci)
+
+    def test_frozen_record_checks_the_historical_tree_even_after_the_product_changes(self) -> None:
+        record = acceptance.build_record(self.contract, self.p4_11, self.identity, self.ci)
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "phase-four-final-acceptance.json"
+            product.write_evidence(path, record)
+            with (
+                patch.object(sys, "argv", ["verify_phase_four_final_acceptance.py"]),
+                patch.object(acceptance, "RECORD_PATH", path),
+                patch.object(
+                    acceptance, "git_output", return_value=self.identity["candidate_tree_sha"].encode()
+                ) as git,
+                patch.object(acceptance, "validate_reviewed_product_tree") as validate_tree,
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(acceptance.main(), 0)
+        candidate = self.identity["candidate_commit_sha"]
+        git.assert_called_once_with("rev-parse", f"{candidate}^{{tree}}")
+        validate_tree.assert_called_once_with(self.contract, candidate)
 
     def test_successful_workflow_cannot_substitute_for_migration_step(self) -> None:
         gate = self.contract["required_ci_gates"]["postgresql_migration_from_zero"]
